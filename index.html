@@ -14,15 +14,12 @@
             --bg-color: #fafafa;
             --sidebar-bg: #ffffff;
             --text-color: #262626;
-            --primary-color: #ff5e00;
+            --primary-color: #ff5e00; /* LARANJA NARUTO */
             --card-bg: #ffffff;
             --border-color: #dbdbdb;
             --green-color: #2ecc71;
             --yellow-color: #f1c40f;
             --danger-color: #ed4956;
-            --ranking-gold: #ffd700;
-            --ranking-silver: #c0c0c0;
-            --ranking-bronze: #cd7f32;
         }
         body.dark-mode {
             --bg-color: #000000;
@@ -40,10 +37,9 @@
         .login-box input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
         .login-box button { background: var(--primary-color); color: white; border: none; padding: 12px; width: 100%; cursor: pointer; border-radius: 5px; font-weight: bold; font-size: 16px; }
 
-        /* LAYOUT GERAL */
+        /* LAYOUT */
         #app-container { display: flex; height: 100vh; position: relative; }
         
-        /* MENU MOBILE (OVERLAY & SIDEBAR) */
         .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 998; opacity: 0; transition: opacity 0.3s; }
         .sidebar-overlay.active { display: block; opacity: 1; }
 
@@ -53,10 +49,8 @@
         .sidebar button:hover, .sidebar button.active { background-color: rgba(0,0,0,0.05); font-weight: bold; color: var(--primary-color); }
         #btn-admin-panel { display: none; color: #ed4956; font-weight: bold; }
 
-        /* ÁREA PRINCIPAL */
         .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; width: 100%; }
         
-        /* HEADER */
         header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; padding: 0 15px; flex-shrink: 0; z-index: 10; }
         
         #mobile-menu-btn { display: none; background: none; border: none; font-size: 1.5rem; color: var(--text-color); cursor: pointer; margin-right: 10px; }
@@ -76,35 +70,53 @@
         .dropdown-item { display: block; padding: 12px 15px; color: var(--text-color); text-decoration: none; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 10px; }
         .dropdown-item:hover { background: rgba(0,0,0,0.03); }
 
-        /* ÁREA DE CONTEÚDO */
         #content-area { padding: 20px; overflow-y: auto; background-color: var(--bg-color); flex: 1; }
         .tab-content { display: none; animation: fadeIn 0.3s; }
         .tab-content.active { display: block; }
 
-        /* GRID DE CARDS (JUTSUS, ITENS, ETC) - IMPORTANTE */
-        .bucket-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); /* Largura mínima do card */
-            gap: 15px; 
-            margin-top: 20px; 
-        }
-        .card { background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); text-align: center; cursor: pointer; transition: 0.2s; }
+        /* CARDS DA LOJA */
+        .bucket-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-top: 20px; }
+        .card { background: var(--card-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); text-align: center; cursor: pointer; transition: 0.2s; overflow: hidden; }
         .card:hover { transform: translateY(-2px); border-color: var(--primary-color); }
-        .card-img-top { width: 100%; height: 120px; object-fit: cover; border-radius: 4px; margin-bottom: 10px; }
-        .card h4 { font-size: 1rem; margin: 5px 0; }
+        .card-img-top { width: 100%; height: 120px; object-fit: cover; border-radius: 4px; margin-bottom: 8px; border: 1px solid #eee; }
+        
+        /* BOTÃO DE COMPRAR (CORRIGIDO) */
+        .buy-btn { 
+            background-color: var(--primary-color); 
+            color: white; 
+            border: none; 
+            padding: 10px; 
+            width: 100%; 
+            border-radius: 5px; 
+            font-weight: bold; 
+            margin-top: 8px; 
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .buy-btn:hover { background-color: #e05200; }
+        .buy-btn:active { transform: scale(0.98); }
 
-        /* FEED (POSTS) - CENTRALIZADO */
+        /* Botões de Missão */
+        .mission-btn-start { background: var(--primary-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        .mission-btn-collect { background: var(--green-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 5px; animation: pulse 1.5s infinite; }
+        .mission-btn-wait { background: var(--yellow-color); color: #333; width: 100%; border: none; padding: 10px; border-radius: 5px; font-weight: bold; margin-top: 5px; cursor: not-allowed; }
+        .mission-btn-done { background: #ccc; color: #666; width: 100%; border: none; padding: 10px; border-radius: 5px; font-weight: bold; margin-top: 5px; cursor: not-allowed; }
+
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        /* FEED */
         #feed { max-width: 600px; margin: 0 auto; width: 100%; }
         .create-post { background: var(--card-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border-color); }
-        .create-post textarea { width: 100%; padding: 10px; border: none; outline: none; background: transparent; color: var(--text-color); resize: none; font-size: 1rem; font-family: inherit; }
+        .create-post textarea { width: 100%; padding: 10px; border: none; outline: none; background: transparent; color: var(--text-color); resize: none; font-size: 1rem; }
         .post-tools { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 10px; margin-top: 10px; }
         .upload-btn { cursor: pointer; color: var(--primary-color); font-size: 0.9rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
         #imageInput { display: none; }
         #preview-container { margin-top: 10px; display: none; position: relative; width: 100%; text-align: center; background: #000; border-radius: 4px; overflow: hidden; }
         #preview-image { max-width: 100%; max-height: 300px; object-fit: contain; }
         .remove-img { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .btn-post { background: var(--primary-color); color: white; border: none; padding: 6px 16px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 0.9rem; }
-
+        .btn-post { background: var(--primary-color); color: white; border: none; padding: 8px 20px; border-radius: 20px; font-weight: 600; cursor: pointer; font-size: 0.9rem; }
+        
         .post { background: var(--card-bg); border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); position: relative; }
         .post-header { display: flex; align-items: center; padding: 10px; }
         .user-avatar-post { width: 35px; height: 35px; border-radius: 50%; background: #efefef; margin-right: 10px; overflow: hidden; border: 1px solid var(--border-color); }
@@ -113,7 +125,6 @@
         .post-author { font-weight: 600; font-size: 0.95rem; color: var(--text-color); }
         .post-time { font-size: 0.75rem; color: #8e8e8e; }
         
-        /* MENU DO POST (CORREÇÃO) */
         .post-menu-container { margin-left: auto; position: relative; }
         .post-options-btn { cursor: pointer; color: var(--text-color); padding: 8px; width: 30px; text-align: center; }
         .post-dropdown { display: none; position: absolute; top: 100%; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; width: 140px; }
@@ -167,26 +178,18 @@
         /* CSS RESPONSIVO (CELULAR) */
         @media (max-width: 768px) {
             #mobile-menu-btn { display: block; }
-            
-            /* Sidebar vira gaveta */
             .sidebar { position: fixed; top: 0; left: -260px; height: 100%; box-shadow: 2px 0 10px rgba(0,0,0,0.3); transition: left 0.3s ease; }
             .sidebar.mobile-active { left: 0; }
-            
             .main-content { width: 100%; }
             header { padding: 0 10px; }
             #content-area { padding: 10px; }
-            
-            /* Ajuste de Grids no celular */
             .bucket-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
             .profile-stats-grid { grid-template-columns: repeat(2, 1fr); }
-            
-            /* Modais no celular */
             .modal-content-comment { flex-direction: column; height: 100%; width: 100%; border-radius: 0; }
             .modal-left { height: 40%; }
             .modal-content-profile { width: 100%; height: 100%; border-radius: 0; }
         }
         
-        /* ANIMAÇÕES */
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
@@ -249,54 +252,31 @@
                 <div id="feed" class="tab-content active">
                     <div class="create-post">
                         <textarea id="postInput" placeholder="No que você está pensando?" rows="2"></textarea>
-                        <div id="preview-container">
-                            <img id="preview-image" src="" alt="">
-                            <button class="remove-img" onclick="removeImage()">×</button>
+                        <div id="preview-container" style="display:none; margin-top:10px; position:relative;">
+                            <img id="preview-image" src="" style="max-width:100%; max-height:300px; border-radius:4px;">
+                            <button onclick="removeImage()" style="position:absolute; top:5px; right:5px; background:rgba(0,0,0,0.6); color:white; border:none; border-radius:50%; width:25px; height:25px;">×</button>
                         </div>
                         <div class="post-tools">
-                            <label for="imageInput" class="upload-btn" title="Adicionar Imagem">
+                            <label for="imageInput" style="cursor:pointer; color:var(--primary-color); font-weight:600; display:flex; align-items:center; gap:5px;">
                                 <i class="fa-regular fa-image"></i> Foto/Vídeo
                             </label>
-                            <input type="file" id="imageInput" accept="image/*" onchange="handleImageUpload(event)">
+                            <input type="file" id="imageInput" accept="image/*" onchange="handleImageUpload(event)" style="display:none;">
                             <button class="btn-post" onclick="publicarPost()">Publicar</button>
                         </div>
                     </div>
-                    <div id="feed-container"><p style="text-align:center; color:#777;">Carregando...</p></div>
+                    <div id="feed-container"><p style="text-align:center; color:#777; padding:20px;">Carregando feed...</p></div>
                 </div>
 
-                <div id="jutsus" class="tab-content">
-                    <h3>Meus Jutsus</h3><div class="bucket-grid" id="meus-jutsus-grid"><p>Carregando...</p></div>
-                    <hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;">
-                    <h3>Loja de Jutsus</h3><div class="bucket-grid" id="loja-jutsus-grid"><p>Carregando...</p></div>
-                </div>
-
-                <div id="ferramentas" class="tab-content">
-                    <h3>Minhas Ferramentas</h3>
-                    <div class="bucket-grid" id="minhas-ferramentas-grid"><p>Carregando...</p></div>
-                    <hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;">
-                    <h3>Loja de Ferramentas</h3>
-                    <div class="bucket-grid" id="loja-ferramentas-grid"><p>Carregando...</p></div>
-                </div>
-
-                <div id="loja" class="tab-content">
-                    <h3>Meus Itens</h3>
-                    <div class="bucket-grid" id="meus-itens-grid"><p>Carregando...</p></div>
-                    <hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;">
-                    <h3>Mercado Geral</h3>
-                    <div class="bucket-grid" id="loja-itens-grid"><p>Carregando...</p></div>
-                </div>
-
-                <div id="personagens" class="tab-content">
-                    <h2>Diretório de Ninjas</h2>
-                    <div class="bucket-grid" id="directory-grid"><p>Carregando lista...</p></div>
-                </div>
-
+                <div id="jutsus" class="tab-content"><h3>Meus Jutsus</h3><div class="bucket-grid" id="meus-jutsus-grid"><p>Carregando...</p></div><hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;"><h3>Loja de Jutsus</h3><div class="bucket-grid" id="loja-jutsus-grid"><p>Carregando...</p></div></div>
+                <div id="ferramentas" class="tab-content"><h3>Minhas Ferramentas</h3><div class="bucket-grid" id="minhas-ferramentas-grid"><p>Carregando...</p></div><hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;"><h3>Loja de Ferramentas</h3><div class="bucket-grid" id="loja-ferramentas-grid"><p>Carregando...</p></div></div>
+                <div id="loja" class="tab-content"><h3>Meus Itens</h3><div class="bucket-grid" id="meus-itens-grid"><p>Carregando...</p></div><hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;"><h3>Mercado Geral</h3><div class="bucket-grid" id="loja-itens-grid"><p>Carregando...</p></div></div>
+                <div id="personagens" class="tab-content"><h2>Diretório de Ninjas</h2><div class="bucket-grid" id="directory-grid"><p>Carregando...</p></div></div>
                 <div id="missoes" class="tab-content"><h2>Quadro de Missões</h2><div class="bucket-grid" id="missoes-grid"><p>Carregando...</p></div></div>
                 <div id="rankings" class="tab-content"><h2>Rankings Globais</h2><div class="rankings-wrapper" id="ranking-container"><p>Carregando Rankings...</p></div></div>
                 <div id="admin-panel" class="tab-content"><h2>Painel Kage</h2><div class="bucket-grid" id="admin-missoes-grid"><p>Carregando...</p></div></div>
                 
                 <div id="dashboard" class="tab-content">
-                    <h2>Estatísticas</h2>
+                    <h2>Estatísticas do Ninja</h2>
                     <div class="profile-stats-grid">
                         <div class="stat-card"><div class="stat-value" id="dash-nivel">1</div><div class="stat-label">Nível</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-cargo">Genin</div><div class="stat-label">Cargo</div></div>
@@ -335,7 +315,7 @@
 
     <div class="modal-overlay-comment" id="jutsuModal" style="z-index: 2001;">
         <div class="modal-content-card">
-            <span class="close-modal" onclick="fecharJutsuModal()" style="color:#333; top:10px; right:15px;">&times;</span>
+            <span class="close-modal" onclick="fecharJutsuModal()" style="color: #333; top: 10px; right: 15px;">&times;</span>
             <img id="jutsu-img-modal" src="" class="jutsu-modal-img">
             <h2 id="jutsu-name-modal" style="color:var(--primary-color);"></h2>
             <div id="jutsu-rank-modal" class="jutsu-modal-rank"></div>
@@ -345,35 +325,35 @@
     </div>
     
     <div class="modal-overlay-comment" id="toolModal" style="z-index: 2001;">
-        <div class="modal-content-card" style="border-color:#555;">
-            <span class="close-modal" onclick="fecharToolModal()" style="color:#333; top:10px; right:15px;">&times;</span>
+        <div class="modal-content-card" style="border-color: #555;">
+            <span class="close-modal" onclick="fecharToolModal()" style="color: #333; top: 10px; right: 15px;">&times;</span>
             <img id="tool-img-modal" src="" class="jutsu-modal-img" style="border-color:#555;">
-            <h2 id="tool-name-modal" style="color:#333;"></h2>
-            <div id="tool-rank-modal" class="jutsu-modal-rank" style="background-color:#555;"></div>
+            <h2 id="tool-name-modal" style="color: #333;"></h2>
+            <div id="tool-rank-modal" class="jutsu-modal-rank" style="background-color: #555;"></div>
             <p id="tool-desc-modal" style="margin-top:10px;"></p>
             <div id="tool-price-modal" class="jutsu-modal-price" style="border-color:#555; color:#555;"></div>
         </div>
     </div>
 
     <div class="modal-overlay-comment" id="itemModal" style="z-index: 2001;">
-        <div class="modal-content-card" style="border-color:#2ecc71;">
-            <span class="close-modal" onclick="fecharItemModal()" style="color:#333; top:10px; right:15px;">&times;</span>
+        <div class="modal-content-card" style="border-color: #2ecc71;">
+            <span class="close-modal" onclick="fecharItemModal()" style="color: #333; top: 10px; right: 15px;">&times;</span>
             <img id="item-img-modal" src="" class="jutsu-modal-img" style="border-color:#2ecc71;">
-            <h2 id="item-name-modal" style="color:#333;"></h2>
-            <div id="item-rank-modal" class="jutsu-modal-rank" style="background-color:#2ecc71;"></div>
+            <h2 id="item-name-modal" style="color: #333;"></h2>
+            <div id="item-rank-modal" class="jutsu-modal-rank" style="background-color: #2ecc71;"></div>
             <p id="item-desc-modal" style="margin-top:10px;"></p>
             <div id="item-price-modal" class="jutsu-modal-price" style="border-color:#2ecc71; color:#2ecc71;"></div>
         </div>
     </div>
 
     <div class="modal-overlay-comment" id="missaoModal" style="z-index: 2001;">
-        <div class="modal-content-card" style="border-color:#e6b800; max-width:500px;">
-            <span class="close-modal" onclick="fecharMissaoModal()" style="color:#333; top:10px; right:15px;">&times;</span>
-            <img id="missao-img-modal" src="" class="jutsu-modal-img" style="border-color:#e6b800; height:150px;">
-            <h2 id="missao-name-modal" style="color:#e6b800;"></h2>
-            <p id="missao-desc-modal" style="margin-top:10px; max-height:200px; overflow-y:auto;"></p>
-            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #e6b800; padding-top:15px; margin-top:15px;">
-                <div style="font-weight:bold; color:#2ecc71;">Recompensa: <span id="missao-reward-modal"></span> Ryos</div>
+        <div class="modal-content-card" style="border-color: #e6b800; max-width: 500px;">
+            <span class="close-modal" onclick="fecharMissaoModal()" style="color: #333; top: 10px; right: 15px;">&times;</span>
+            <img id="missao-img-modal" src="" class="jutsu-modal-img" style="border-color:#e6b800; height: 150px;">
+            <h2 id="missao-name-modal" style="color: #e6b800;"></h2>
+            <p id="missao-desc-modal" style="margin-top:10px; max-height: 200px; overflow-y: auto;"></p>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e6b800; padding-top: 15px;">
+                <div style="font-weight: bold; color: #2ecc71;">Recompensa: <span id="missao-reward-modal"></span> Ryos</div>
                 <div id="missao-actions-modal"></div>
             </div>
         </div>
@@ -381,7 +361,7 @@
 
     <div class="modal-overlay-comment" id="profileModal" style="z-index: 2002;">
         <div class="modal-content-profile">
-            <span class="close-modal" onclick="fecharProfileModal()" style="color:white; top:15px; right:15px;">&times;</span>
+            <span class="close-modal" onclick="fecharProfileModal()" style="color: white; top: 15px; right: 15px;">&times;</span>
             <div class="profile-header">
                 <div class="profile-avatar-large"><img src="" id="profile-modal-img"></div>
                 <h2 id="profile-modal-name" style="color:white;"></h2>
@@ -409,7 +389,7 @@
         <div class="modal-content-comment">
             <div class="modal-left" id="modalPostContent"></div>
             <div class="modal-right">
-                <div style="padding:15px; border-bottom:1px solid #eee;">Comentários</div>
+                <div style="padding: 15px; border-bottom: 1px solid #eee;">Comentários</div>
                 <div class="comments-list" id="commentsList"></div>
                 <div class="comment-input-area"><input type="text" id="newCommentText" placeholder="Comentar..."><button onclick="submitComment()" style="border:none; background:none; color:var(--primary-color); font-weight:bold;">Enviar</button></div>
             </div>
@@ -418,14 +398,14 @@
 
     <div class="modal-overlay-comment" id="editProfileModal" style="z-index: 2003;">
         <div class="modal-content-card">
-            <span class="close-modal" onclick="closeEditProfileModal()" style="color:#333; top:10px; right:15px;">&times;</span>
+            <span class="close-modal" onclick="closeEditProfileModal()" style="color: #333; top: 10px; right: 15px;">&times;</span>
             <h3>Editar Perfil</h3>
             <img id="edit-avatar-preview" src="" style="width:80px; height:80px; border-radius:50%; margin:10px auto; display:block;">
-            <label for="edit-avatar-input" class="btn-post" style="display:block; width:fit-content; margin:10px auto;">Escolher Foto</label>
+            <label for="edit-avatar-input" class="btn-post" style="display:block; width: fit-content; margin: 10px auto;">Escolher Foto</label>
             <input type="file" id="edit-avatar-input" hidden accept="image/*" onchange="handleAvatarPreview(event)">
             <input type="text" id="edit-name-input" class="edit-input" placeholder="Nome do Personagem">
             <input type="text" id="edit-nick-input" class="edit-input" placeholder="Apelido">
-            <button class="btn-post" onclick="salvarPerfil()" style="width:100%;">Salvar</button>
+            <button class="btn-post" onclick="salvarPerfil()" style="width: 100%;">Salvar</button>
         </div>
     </div>
 
@@ -528,7 +508,6 @@
             set('dash-draws', dados.empates || 0);
         }
 
-        // --- COMPRESSOR IMAGEM ---
         function comprimirImagem(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -818,6 +797,8 @@
         
         window.carregarRankings = async () => { const c=document.getElementById('ranking-container'); if(!c)return; const s=await getDocs(collection(db,"users")); let l=[]; s.forEach(d=>l.push(d.data())); c.innerHTML=''; renderRank(c,"Ryos",l,'ryos'); renderRank(c,"Vitórias",l,'vitorias'); };
         function renderRank(c,t,l,f) { const s=[...l].sort((a,b)=>(b[f]||0)-(a[f]||0)).slice(0,5); let h=`<div class="ranking-col"><h3>${t}</h3><table class="ranking-table">`; s.forEach((u,i)=>h+=`<tr><td>${i+1}. ${u.nome}</td><td>${formatarNum(u[f])}</td></tr>`); h+='</table></div>'; c.innerHTML+=h; }
+        function editarHistoria() { const n=prompt("História:",currentUserData.historiaTexto||""); if(n){ const i=prompt("Imagem URL:",currentUserData.historiaImagem||""); updateDoc(doc(db,"users",auth.currentUser.uid),{historiaTexto:n,historiaImagem:i}).then(()=>location.reload()); } }
+        async function adicionarFrase() { const t=document.getElementById('novaFraseInput').value; if(t){ await addDoc(collection(db,"frases"),{texto:t,autor:currentUserData.nome,data:serverTimestamp()}); document.getElementById('novaFraseInput').value=''; } }
     </script>
 </body>
 </html>
