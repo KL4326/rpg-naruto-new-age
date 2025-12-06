@@ -91,18 +91,21 @@
         .btn-post { background: var(--primary-color); color: white; border: none; padding: 8px 20px; border-radius: 20px; font-weight: 600; cursor: pointer; font-size: 0.9rem; }
         
         .post { background: var(--card-bg); border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); position: relative; overflow: visible; }
-        .post-header { display: flex; align-items: center; padding: 10px; }
+        .post-header { display: flex; align-items: center; padding: 10px; position: relative; }
         .user-avatar-post { width: 35px; height: 35px; border-radius: 50%; background: #efefef; margin-right: 10px; overflow: hidden; border: 1px solid var(--border-color); }
         .user-avatar-post img { width: 100%; height: 100%; object-fit: cover; }
         .post-info { display: flex; flex-direction: column; }
         .post-author { font-weight: 600; font-size: 0.95rem; color: var(--text-color); }
         .post-time { font-size: 0.75rem; color: #8e8e8e; }
-        .post-menu-container { margin-left: auto; position: relative; }
-        .post-options-btn { cursor: pointer; color: var(--text-color); padding: 8px; width: 30px; text-align: center; }
-        .post-dropdown { display: none; position: absolute; top: 100%; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; width: 140px; }
-        .post-dropdown.active { display: block; }
-        .post-dropdown-item { padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-color); }
-        .post-dropdown-item.danger { color: var(--danger-color); }
+        
+        /* MENU GENÉRICO (Posts e Frases) */
+        .options-menu-container { margin-left: auto; position: relative; }
+        .options-btn { cursor: pointer; color: var(--text-color); padding: 8px; width: 30px; text-align: center; }
+        .options-dropdown { display: none; position: absolute; top: 100%; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; width: 140px; }
+        .options-dropdown.active { display: block; }
+        .options-item { padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-color); }
+        .options-item.danger { color: var(--danger-color); }
+
         .post-content { padding: 0 10px 10px 10px; line-height: 1.5; white-space: pre-wrap; font-size: 0.95rem; }
         .post-image { width: 100%; height: auto; display: block; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); max-height: 600px; object-fit: cover; }
         .post-actions { display: flex; padding: 10px; gap: 15px; }
@@ -110,7 +113,7 @@
         .action-btn.liked { color: var(--danger-color); }
         .edit-textarea { width: 100%; border: 1px solid var(--primary-color); border-radius: 4px; padding: 10px; margin: 10px 0; }
 
-        /* RANKINGS RESTAURADOS */
+        /* RANKINGS */
         .rankings-wrapper { display: flex; gap: 20px; flex-wrap: wrap; padding-bottom: 20px; }
         .ranking-col { flex: 1 1 300px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; }
         .ranking-col h3 { color: var(--primary-color); text-align: center; margin-bottom: 15px; border-bottom: 2px solid var(--primary-color); font-size: 1.1rem; }
@@ -145,7 +148,7 @@
         .edit-input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 5px; }
         .edit-avatar-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color); margin: 10px auto; display: block; }
 
-        /* ESTILO HISTORIA RESTAURADO */
+        /* HISTORIA */
         .historia-container { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; max-width: 800px; margin: 0 auto; }
         .historia-img-container { width: 100%; height: 300px; background-color: #000; position: relative; }
         .historia-img-container img { width: 100%; height: 100%; object-fit: cover; }
@@ -154,14 +157,15 @@
         .btn-edit-historia { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.6); color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 5px; }
         .btn-edit-historia:hover { background: var(--primary-color); }
 
-        /* ESTILO FRASES RESTAURADO */
+        /* FRASES */
         .frase-input-area { background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px; display: flex; gap: 10px; }
         .frase-input-area input { flex: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; outline: none; }
         .frases-list { display: flex; flex-direction: column; gap: 10px; }
-        .frase-item { background: var(--card-bg); padding: 20px; border-bottom: 1px solid #ccc; cursor: pointer; transition: background 0.2s; position: relative; border-radius: 5px; }
+        /* Frase Item - Agora com relative para menu */
+        .frase-item { background: var(--card-bg); padding: 20px; border-bottom: 1px solid #ccc; cursor: pointer; transition: background 0.2s; position: relative; border-radius: 5px; display: flex; justify-content: space-between; align-items: flex-start; }
         .frase-item:hover { background-color: rgba(0,0,0,0.02); }
-        .frase-content { font-size: 1.1rem; font-style: italic; margin-bottom: 5px; color: var(--text-color); }
-        .frase-author { font-size: 0.85rem; color: var(--primary-color); font-weight: bold; text-align: right; }
+        .frase-content { font-size: 1.1rem; font-style: italic; color: var(--text-color); flex: 1; padding-right: 30px; }
+        .frase-author { font-size: 0.85rem; color: var(--primary-color); font-weight: bold; margin-top: 5px; }
 
         /* MOBILE */
         @media (max-width: 768px) {
@@ -284,9 +288,7 @@
                             <button class="btn-edit-historia" onclick="editarHistoria()"><i class="fa-solid fa-pen"></i> Editar História</button>
                         </div>
                         <hr class="historia-divider">
-                        <div class="historia-text-content" id="historia-display-text">
-                            A história do seu ninja aparecerá aqui. Clique em "Editar História" para escrever sua lenda.
-                        </div>
+                        <div class="historia-text-content" id="historia-display-text">A história do seu ninja aparecerá aqui.</div>
                     </div>
                 </div>
 
@@ -296,9 +298,7 @@
                         <input type="text" id="novaFraseInput" placeholder="Digite uma frase icônica...">
                         <button class="btn-post" onclick="adicionarFrase()">Adicionar</button>
                     </div>
-                    <div class="frases-list" id="frases-list-container">
-                        <p style="color:#777; text-align:center;">Carregando frases...</p>
-                    </div>
+                    <div class="frases-list" id="frases-list-container"><p style="color:#777; text-align:center;">Carregando frases...</p></div>
                 </div>
             </div>
         </main>
@@ -746,7 +746,7 @@
         window.submitComment = async () => { const t = document.getElementById('newCommentText').value; if(!t) return; await updateDoc(doc(db, "posts", currentOpenPostId), { comments: arrayUnion({ autor: currentUserData.nome, texto: t }) }); document.getElementById('newCommentText').value = ""; verPost(currentOpenPostId); };
         window.closeModal = () => document.getElementById('commentModal').style.display = 'none';
 
-        // --- PERSONAGENS, MISSÕES & OUTROS (RESTAURADOS E BLINDADOS) ---
+        // --- PERSONAGENS & RANKING ---
         async function carregarPersonagens() {
             const c = document.getElementById('directory-grid'); c.innerHTML = 'Carregando...';
             try {
@@ -762,7 +762,6 @@
                 });
             } catch(e) { c.innerHTML = 'Erro ao carregar.'; }
         }
-
         window.verPerfil = async (uid) => {
             const s = await getDoc(doc(db, "users", uid));
             if(s.exists()) {
@@ -820,7 +819,6 @@
         };
         window.fecharMissaoModal = () => { document.getElementById('missaoModal').style.display = 'none'; };
 
-        // RANKINGS
         window.carregarRankings = async () => { 
             const c = document.getElementById('ranking-container'); if(!c) return; 
             try {
@@ -839,41 +837,96 @@
         
         async function carregarFrases() { 
             const c = document.getElementById('frases-list-container'); if(!c) return;
-            onSnapshot(query(collection(db, "frases"), orderBy("data", "desc")), (snap) => {
-                c.innerHTML = ''; if(snap.empty) { c.innerHTML = '<p style="text-align:center; color:#777;">Nenhuma frase.</p>'; return; }
-                snap.forEach(d => { 
-                    const f = d.data(); 
+            const q = query(collection(db, "frases"), orderBy("data", "desc"));
+            onSnapshot(q, (snapshot) => {
+                c.innerHTML = ''; 
+                if(snapshot.empty) { c.innerHTML = '<p style="text-align:center; color:#777;">Nenhuma frase.</p>'; return; }
+                snapshot.forEach((doc) => { 
+                    const f = doc.data(); 
                     const div = document.createElement('div'); 
-                    div.className = 'frase-item'; 
+                    div.className = 'frase-item';
+                    
+                    // Lógica para mostrar menu apenas para o dono
+                    const isOwner = f.uid === auth.currentUser.uid;
+                    const menuHTML = isOwner ? `
+                        <div class="options-menu-container">
+                            <div class="options-btn" onclick="toggleFraseMenu(this); event.stopPropagation();"><i class="fa-solid fa-ellipsis"></i></div>
+                            <div class="options-dropdown">
+                                <div class="options-item" onclick="editarFrase('${doc.id}', '${f.texto}'); event.stopPropagation();">Editar</div>
+                                <div class="options-item danger" onclick="deletarFrase('${doc.id}'); event.stopPropagation();">Excluir</div>
+                            </div>
+                        </div>
+                    ` : '';
+
                     div.onclick = () => copiarFrase(f.texto); 
-                    div.innerHTML = `<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor || "Desconhecido"}</div>`; 
+                    div.innerHTML = `
+                        <div class="frase-content">"${f.texto}"</div>
+                        <div class="frase-author">- ${f.autor || "Desconhecido"}</div>
+                        ${menuHTML}
+                    `; 
                     c.appendChild(div); 
                 });
             });
         }
-        async function adicionarFrase() { const t=document.getElementById('novaFraseInput').value; if(t){ await addDoc(collection(db,"frases"),{texto:t,autor:currentUserData.nome,data:serverTimestamp()}); document.getElementById('novaFraseInput').value=''; } }
+
+        window.toggleFraseMenu = (el) => {
+            const dropdown = el.nextElementSibling;
+            // Fecha outros abertos
+            document.querySelectorAll('.options-dropdown').forEach(d => { if(d !== dropdown) d.classList.remove('active'); });
+            dropdown.classList.toggle('active');
+        };
+
+        window.adicionarFrase = async () => { 
+            const t=document.getElementById('novaFraseInput').value; 
+            if(!t) return; 
+            try { 
+                await addDoc(collection(db,"frases"), { 
+                    texto:t, 
+                    autor:currentUserData.nome, 
+                    uid: auth.currentUser.uid, // Salva o ID do dono
+                    data:serverTimestamp() 
+                }); 
+                document.getElementById('novaFraseInput').value=''; 
+            } catch(e) { alert("Erro ao salvar."); } 
+        };
+
+        window.editarFrase = async (id, oldText) => {
+            const newText = prompt("Editar frase:", oldText);
+            if(newText && newText !== oldText) {
+                await updateDoc(doc(db, "frases", id), { texto: newText });
+            }
+        };
+
+        window.deletarFrase = async (id) => {
+            if(confirm("Excluir frase?")) {
+                await deleteDoc(doc(db, "frases", id));
+            }
+        };
+
         window.copiarFrase = (texto) => { navigator.clipboard.writeText(texto).then(() => { const f = document.getElementById('copyFeedback'); f.style.display = 'block'; setTimeout(() => { f.style.display = 'none'; }, 2000); }); };
 
         // ADMIN
         async function carregarPainelAdmin() {
             const c = document.getElementById('admin-missoes-grid'); if(!c) return;
             c.innerHTML = 'Carregando pendências...';
-            const s = await getDocs(collection(db, "users"));
-            c.innerHTML = '';
-            let found = false;
-            s.forEach(u => {
-                const d = u.data();
-                const m = d.statusMissoes || {};
-                for (const [mid, st] of Object.entries(m)) {
-                    if(st === 'em_andamento') {
-                        found = true;
-                        const k = document.createElement('div'); k.className = 'card';
-                        k.innerHTML = `<h4>${d.nome}</h4><p>Missão ID: ${mid}</p><button class="mission-btn-collect" onclick="aprovarMissao('${u.id}','${mid}')">Aprovar</button>`;
-                        c.appendChild(k);
+            try {
+                const s = await getDocs(collection(db, "users"));
+                c.innerHTML = '';
+                let found = false;
+                s.forEach(u => {
+                    const d = u.data();
+                    const m = d.statusMissoes || {};
+                    for (const [mid, st] of Object.entries(m)) {
+                        if(st === 'em_andamento') {
+                            found = true;
+                            const k = document.createElement('div'); k.className = 'card';
+                            k.innerHTML = `<h4>${d.nome}</h4><p>Missão ID: ${mid}</p><button class="mission-btn-collect" onclick="aprovarMissao('${u.id}','${mid}')">Aprovar</button>`;
+                            c.appendChild(k);
+                        }
                     }
-                }
-            });
-            if(!found) c.innerHTML = '<p>Nenhuma missão pendente.</p>';
+                });
+                if(!found) c.innerHTML = '<p>Nenhuma missão pendente.</p>';
+            } catch(e) { c.innerHTML = 'Erro no painel.'; }
         }
         window.aprovarMissao = async (uid, mid) => { if(confirm("Aprovar?")) { await updateDoc(doc(db, "users", uid), { [`statusMissoes.${mid}`]: 'aprovado' }); alert("Aprovado!"); location.reload(); } };
 
