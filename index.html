@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RPG Naruto</title>
-    
     <link rel="icon" href="favicon.png" type="image/png">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
@@ -14,20 +12,17 @@
             --bg-color: #fafafa;
             --sidebar-bg: #ffffff;
             --text-color: #262626;
-            --primary-color: #ff5e00; /* LARANJA NARUTO */
+            --primary-color: #ff5e00;
             --card-bg: #ffffff;
             --border-color: #dbdbdb;
             --green-color: #2ecc71;
             --yellow-color: #f1c40f;
             --danger-color: #ed4956;
+            --ranking-gold: #ffd700;
+            --ranking-silver: #c0c0c0;
+            --ranking-bronze: #cd7f32;
         }
-        body.dark-mode {
-            --bg-color: #000000;
-            --sidebar-bg: #000000;
-            --text-color: #f5f5f5;
-            --card-bg: #121212;
-            --border-color: #363636;
-        }
+        body.dark-mode { --bg-color: #000000; --sidebar-bg: #000000; --text-color: #f5f5f5; --card-bg: #121212; --border-color: #363636; }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background-color: var(--bg-color); color: var(--text-color); height: 100vh; overflow: hidden; }
 
@@ -39,10 +34,8 @@
 
         /* LAYOUT */
         #app-container { display: flex; height: 100vh; position: relative; }
-        
         .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 998; opacity: 0; transition: opacity 0.3s; }
         .sidebar-overlay.active { display: block; opacity: 1; }
-
         .sidebar { width: 250px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 20px; overflow-y: auto; flex-shrink: 0; z-index: 999; transition: transform 0.3s ease; }
         .logo { font-size: 24px; font-weight: bold; color: var(--primary-color); margin-bottom: 40px; font-family: 'Segoe UI', sans-serif; letter-spacing: 1px; }
         .sidebar button { background: none; border: none; color: var(--text-color); width: 100%; text-align: left; padding: 12px 15px; cursor: pointer; border-radius: 8px; transition: 0.2s; display: flex; align-items: center; gap: 15px; margin-bottom: 5px; font-size: 1rem; }
@@ -50,13 +43,9 @@
         #btn-admin-panel { display: none; color: #ed4956; font-weight: bold; }
 
         .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; width: 100%; }
-        
         header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; padding: 0 15px; flex-shrink: 0; z-index: 10; }
-        
         #mobile-menu-btn { display: none; background: none; border: none; font-size: 1.5rem; color: var(--text-color); cursor: pointer; margin-right: 10px; }
-
         .top-nav { display: flex; gap: 15px; overflow-x: auto; flex: 1; margin-right: 10px; scrollbar-width: none; }
-        .top-nav::-webkit-scrollbar { display: none; }
         .top-btn { background: none; border: none; padding: 10px 5px; color: #8e8e8e; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; font-size: 0.9rem; font-weight: 500; }
         .top-btn.active { border-bottom-color: var(--primary-color); color: var(--text-color); font-weight: bold; }
 
@@ -64,7 +53,6 @@
         .ryos { font-weight: bold; color: #e6b800; background: rgba(230, 184, 0, 0.1); padding: 5px 10px; border-radius: 15px; white-space: nowrap; font-size: 0.8rem; }
         .profile-circle { width: 35px; height: 35px; border-radius: 50%; overflow: hidden; cursor: pointer; border: 1px solid var(--border-color); flex-shrink: 0; }
         .profile-circle img { width: 100%; height: 100%; object-fit: cover; }
-        
         .dropdown-menu { display: none; position: absolute; top: 50px; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); width: 200px; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 5px 0; z-index: 100; }
         .dropdown-menu.show { display: block; }
         .dropdown-item { display: block; padding: 12px 15px; color: var(--text-color); text-decoration: none; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 10px; }
@@ -74,35 +62,20 @@
         .tab-content { display: none; animation: fadeIn 0.3s; }
         .tab-content.active { display: block; }
 
-        /* CARDS DA LOJA */
-        .bucket-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-top: 20px; }
+        /* CARDS E GRIDS */
+        .bucket-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; margin-top: 20px; }
         .card { background: var(--card-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); text-align: center; cursor: pointer; transition: 0.2s; overflow: hidden; }
         .card:hover { transform: translateY(-2px); border-color: var(--primary-color); }
         .card-img-top { width: 100%; height: 120px; object-fit: cover; border-radius: 4px; margin-bottom: 8px; border: 1px solid #eee; }
         
-        /* BOTÃO DE COMPRAR (CORRIGIDO) */
-        .buy-btn { 
-            background-color: var(--primary-color); 
-            color: white; 
-            border: none; 
-            padding: 10px; 
-            width: 100%; 
-            border-radius: 5px; 
-            font-weight: bold; 
-            margin-top: 8px; 
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
+        .buy-btn { background-color: var(--primary-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; margin-top: 8px; font-size: 1rem; cursor: pointer; }
         .buy-btn:hover { background-color: #e05200; }
-        .buy-btn:active { transform: scale(0.98); }
-
-        /* Botões de Missão */
+        
+        /* MISSÕES E ADMIN */
         .mission-btn-start { background: var(--primary-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 5px; }
         .mission-btn-collect { background: var(--green-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 5px; animation: pulse 1.5s infinite; }
         .mission-btn-wait { background: var(--yellow-color); color: #333; width: 100%; border: none; padding: 10px; border-radius: 5px; font-weight: bold; margin-top: 5px; cursor: not-allowed; }
         .mission-btn-done { background: #ccc; color: #666; width: 100%; border: none; padding: 10px; border-radius: 5px; font-weight: bold; margin-top: 5px; cursor: not-allowed; }
-
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
 
         /* FEED */
@@ -117,21 +90,19 @@
         .remove-img { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .btn-post { background: var(--primary-color); color: white; border: none; padding: 8px 20px; border-radius: 20px; font-weight: 600; cursor: pointer; font-size: 0.9rem; }
         
-        .post { background: var(--card-bg); border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); position: relative; }
+        .post { background: var(--card-bg); border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); position: relative; overflow: visible; }
         .post-header { display: flex; align-items: center; padding: 10px; }
         .user-avatar-post { width: 35px; height: 35px; border-radius: 50%; background: #efefef; margin-right: 10px; overflow: hidden; border: 1px solid var(--border-color); }
         .user-avatar-post img { width: 100%; height: 100%; object-fit: cover; }
         .post-info { display: flex; flex-direction: column; }
         .post-author { font-weight: 600; font-size: 0.95rem; color: var(--text-color); }
         .post-time { font-size: 0.75rem; color: #8e8e8e; }
-        
         .post-menu-container { margin-left: auto; position: relative; }
         .post-options-btn { cursor: pointer; color: var(--text-color); padding: 8px; width: 30px; text-align: center; }
         .post-dropdown { display: none; position: absolute; top: 100%; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; width: 140px; }
         .post-dropdown.active { display: block; }
         .post-dropdown-item { padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-color); }
         .post-dropdown-item.danger { color: var(--danger-color); }
-
         .post-content { padding: 0 10px 10px 10px; line-height: 1.5; white-space: pre-wrap; font-size: 0.95rem; }
         .post-image { width: 100%; height: auto; display: block; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); max-height: 600px; object-fit: cover; }
         .post-actions { display: flex; padding: 10px; gap: 15px; }
@@ -139,7 +110,7 @@
         .action-btn.liked { color: var(--danger-color); }
         .edit-textarea { width: 100%; border: 1px solid var(--primary-color); border-radius: 4px; padding: 10px; margin: 10px 0; }
 
-        /* RANKINGS */
+        /* RANKINGS RESTAURADOS */
         .rankings-wrapper { display: flex; gap: 20px; flex-wrap: wrap; padding-bottom: 20px; }
         .ranking-col { flex: 1 1 300px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; }
         .ranking-col h3 { color: var(--primary-color); text-align: center; margin-bottom: 15px; border-bottom: 2px solid var(--primary-color); font-size: 1.1rem; }
@@ -149,12 +120,10 @@
         /* MODAIS */
         .modal-overlay-comment { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
         .close-modal { position: absolute; top: 10px; left: 15px; font-size: 1.8rem; color: white; cursor: pointer; z-index: 20; text-shadow: 0 0 5px black; }
-
         .modal-content-card { background: var(--card-bg); padding: 30px; border-radius: 10px; width: 90%; max-width: 350px; text-align: center; position: relative; border: 1px solid var(--border-color); }
         .jutsu-modal-img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); }
         .jutsu-modal-rank { display: inline-block; background: var(--primary-color); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-bottom: 10px; }
         .jutsu-modal-price { color: var(--green-color); font-weight: bold; font-size: 1.2rem; border-top: 1px solid var(--border-color); padding-top: 15px; }
-
         .modal-content-profile { background: var(--card-bg); width: 90%; max-width: 800px; max-height: 90vh; border-radius: 15px; overflow-y: auto; position: relative; border: 1px solid var(--border-color); }
         .profile-header { background: linear-gradient(to right, #ff5e00, #ff9100); padding: 40px 20px; text-align: center; color: white; }
         .profile-avatar-large { width: 100px; height: 100px; border-radius: 50%; border: 4px solid white; margin: 0 auto 15px auto; overflow: hidden; background: #fff; }
@@ -166,7 +135,6 @@
         .stat-card { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; text-align: center; }
         .stat-value { font-size: 1.5rem; font-weight: bold; color: var(--primary-color); }
         .stat-label { font-size: 0.85rem; color: #777; margin-top: 5px; text-transform: uppercase; }
-
         .modal-content-comment { background: var(--card-bg); width: 90%; max-width: 900px; height: 80vh; border-radius: 4px; display: flex; overflow: hidden; position: relative; }
         .modal-left { flex: 1.5; background: #000; display: flex; align-items: center; justify-content: center; }
         .modal-left img { max-width: 100%; max-height: 100%; object-fit: contain; }
@@ -174,8 +142,28 @@
         .comments-list { flex: 1; padding: 15px; overflow-y: auto; }
         .comment-input-area { padding: 15px; border-top: 1px solid var(--border-color); display: flex; gap: 10px; }
         .comment-input-area input { flex: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 20px; outline: none; }
+        .edit-input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 5px; }
+        .edit-avatar-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color); margin: 10px auto; display: block; }
 
-        /* CSS RESPONSIVO (CELULAR) */
+        /* ESTILO HISTORIA RESTAURADO */
+        .historia-container { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; max-width: 800px; margin: 0 auto; }
+        .historia-img-container { width: 100%; height: 300px; background-color: #000; position: relative; }
+        .historia-img-container img { width: 100%; height: 100%; object-fit: cover; }
+        .historia-divider { height: 4px; background-color: #dbdbdb; border: none; margin: 0; }
+        .historia-text-content { padding: 30px; line-height: 1.8; font-size: 1.1rem; color: var(--text-color); white-space: pre-wrap; }
+        .btn-edit-historia { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.6); color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 5px; }
+        .btn-edit-historia:hover { background: var(--primary-color); }
+
+        /* ESTILO FRASES RESTAURADO */
+        .frase-input-area { background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px; display: flex; gap: 10px; }
+        .frase-input-area input { flex: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; outline: none; }
+        .frases-list { display: flex; flex-direction: column; gap: 10px; }
+        .frase-item { background: var(--card-bg); padding: 20px; border-bottom: 1px solid #ccc; cursor: pointer; transition: background 0.2s; position: relative; border-radius: 5px; }
+        .frase-item:hover { background-color: rgba(0,0,0,0.02); }
+        .frase-content { font-size: 1.1rem; font-style: italic; margin-bottom: 5px; color: var(--text-color); }
+        .frase-author { font-size: 0.85rem; color: var(--primary-color); font-weight: bold; text-align: right; }
+
+        /* MOBILE */
         @media (max-width: 768px) {
             #mobile-menu-btn { display: block; }
             .sidebar { position: fixed; top: 0; left: -260px; height: 100%; box-shadow: 2px 0 10px rgba(0,0,0,0.3); transition: left 0.3s ease; }
@@ -188,9 +176,8 @@
             .modal-content-comment { flex-direction: column; height: 100%; width: 100%; border-radius: 0; }
             .modal-left { height: 40%; }
             .modal-content-profile { width: 100%; height: 100%; border-radius: 0; }
+            .historia-img-container { height: 200px; }
         }
-        
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -297,7 +284,9 @@
                             <button class="btn-edit-historia" onclick="editarHistoria()"><i class="fa-solid fa-pen"></i> Editar História</button>
                         </div>
                         <hr class="historia-divider">
-                        <div class="historia-text-content" id="historia-display-text">A história do seu ninja aparecerá aqui.</div>
+                        <div class="historia-text-content" id="historia-display-text">
+                            A história do seu ninja aparecerá aqui. Clique em "Editar História" para escrever sua lenda.
+                        </div>
                     </div>
                 </div>
 
@@ -307,7 +296,9 @@
                         <input type="text" id="novaFraseInput" placeholder="Digite uma frase icônica...">
                         <button class="btn-post" onclick="adicionarFrase()">Adicionar</button>
                     </div>
-                    <div class="frases-list" id="frases-list-container"><p style="color:#777; text-align:center;">Carregando frases...</p></div>
+                    <div class="frases-list" id="frases-list-container">
+                        <p style="color:#777; text-align:center;">Carregando frases...</p>
+                    </div>
                 </div>
             </div>
         </main>
@@ -352,7 +343,7 @@
             <img id="missao-img-modal" src="" class="jutsu-modal-img" style="border-color:#e6b800; height: 150px;">
             <h2 id="missao-name-modal" style="color: #e6b800;"></h2>
             <p id="missao-desc-modal" style="margin-top:10px; max-height: 200px; overflow-y: auto;"></p>
-            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e6b800; padding-top: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e6b800; padding-top: 15px; margin-top: 15px;">
                 <div style="font-weight: bold; color: #2ecc71;">Recompensa: <span id="missao-reward-modal"></span> Ryos</div>
                 <div id="missao-actions-modal"></div>
             </div>
@@ -483,7 +474,9 @@
             carregarLoja(); carregarMeusJutsus(currentUserData.meusJutsus);
             carregarLojaFerramentas(); carregarMinhasFerramentas(currentUserData.ferramentas);
             carregarLojaItens(); carregarMeusItens(currentUserData.itens);
-            carregarMissoes(); carregarRankings(); carregarFrases();
+            carregarMissoes(); carregarRankings(); carregarFrases(); 
+            // Painel admin simplificado
+            if(auth.currentUser.email === "admin@rpgnaruto.com") carregarPainelAdmin();
         }
 
         function formatarNum(v) { return Number(v||0).toLocaleString('pt-BR'); }
@@ -538,8 +531,9 @@
             const btn = document.getElementById('nav-btn-'+t);
             if(btn) btn.classList.add('active');
             if(t==='personagens') carregarPersonagens();
-            if(window.innerWidth <= 768) window.toggleMobileMenu(); // Fecha menu mobile
+            if(window.innerWidth <= 768) window.toggleMobileMenu(); 
         };
+
         window.toggleMenu = () => document.getElementById('user-menu').classList.toggle('show');
         window.fazerLogout = () => signOut(auth).then(() => location.reload());
 
@@ -570,13 +564,10 @@
             const div = document.createElement('div');
             div.className = 'card';
             div.onclick = () => clickFn(id, dados);
-            
-            // Definir subtítulo baseado no tipo
             let sub = "";
             if(tipo === 'jutsu') sub = "Rank " + dados.rank;
             else if(tipo === 'ferramenta') sub = dados.dano || "Ferramenta";
             else if(tipo === 'item') sub = dados.efeito || "Item";
-            
             div.innerHTML = `<img src="${img}" class="card-img-top" onerror="this.src='${IMG_PADRAO}'"><h4>${dados.nome}</h4><small>${sub}</small>`;
             c.appendChild(div);
         }
@@ -586,19 +577,13 @@
             const img = dados.imagem || IMG_PADRAO;
             const div = document.createElement('div');
             div.className = 'card';
-            // Clique no card abre detalhes
             div.onclick = (e) => { if(!e.target.classList.contains('buy-btn')) clickFn(id, dados); };
-            
             let sub = "";
             if(tipo === 'jutsu') sub = "Rank " + dados.rank;
             else if(tipo === 'ferramenta') sub = dados.dano || "Ferramenta";
             else if(tipo === 'item') sub = dados.efeito || "Item";
-            
             div.innerHTML = `<img src="${img}" class="card-img-top" onerror="this.src='${IMG_PADRAO}'"><h4>${dados.nome}</h4><small>${sub}</small><p style="color:var(--primary-color); font-weight:bold;">${formatarNum(dados.preco)} Ryos</p><button class="buy-btn">Comprar</button>`;
-            
-            // Evento separado para o botão comprar
             div.querySelector('.buy-btn').onclick = (e) => { e.stopPropagation(); buyFn(id, dados.preco, dados.nome); };
-            
             c.appendChild(div);
         }
 
@@ -609,7 +594,6 @@
             const snap = await getDocs(collection(db, "jutsus"));
             snap.forEach(d => {
                 const i = d.data();
-                // Filtro de personagem
                 const permitidos = i.restrito_a || [];
                 if(permitidos.length > 0 && !permitidos.includes(currentUserData.nome)) return;
                 if(!m.includes(d.id)) criarCardLoja('loja-jutsus-grid', i, d.id, 'jutsu', (id, p, n) => comprar(id, p, n, 'meusJutsus'), (id, i) => verDetalhesJutsu(id, i));
@@ -637,7 +621,6 @@
 
         async function carregarLojaItens() {
             const c = document.getElementById('loja-itens-grid'); if(!c) return; c.innerHTML = '';
-            // Itens podem repetir? Se sim, removemos a checagem de includes. Aqui vou deixar livre.
             const snap = await getDocs(collection(db, "itens"));
             snap.forEach(d => {
                 criarCardLoja('loja-itens-grid', d.data(), d.id, 'item', (id, p, n) => comprar(id, p, n, 'itens'), (id, i) => verDetalhesItem(id, i));
@@ -659,12 +642,9 @@
                 [campoDb]: arrayUnion(id)
             });
             alert("Comprado!");
-            
-            // Refresh SPA
             const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
             currentUserData = snap.data();
             atualizarInterface(currentUserData);
-            // Recarrega a lista específica
             if(campoDb === 'meusJutsus') { carregarLoja(); carregarMeusJutsus(currentUserData.meusJutsus); }
             if(campoDb === 'ferramentas') { carregarLojaFerramentas(); carregarMinhasFerramentas(currentUserData.ferramentas); }
             if(campoDb === 'itens') { carregarLojaItens(); carregarMeusItens(currentUserData.itens); }
@@ -766,19 +746,23 @@
         window.submitComment = async () => { const t = document.getElementById('newCommentText').value; if(!t) return; await updateDoc(doc(db, "posts", currentOpenPostId), { comments: arrayUnion({ autor: currentUserData.nome, texto: t }) }); document.getElementById('newCommentText').value = ""; verPost(currentOpenPostId); };
         window.closeModal = () => document.getElementById('commentModal').style.display = 'none';
 
-        // --- PERSONAGENS & RANKING ---
+        // --- PERSONAGENS, MISSÕES & OUTROS (RESTAURADOS E BLINDADOS) ---
         async function carregarPersonagens() {
             const c = document.getElementById('directory-grid'); c.innerHTML = 'Carregando...';
-            const s = await getDocs(collection(db, "users"));
-            c.innerHTML = '';
-            s.forEach(d => {
-                const u = d.data();
-                const k = document.createElement('div'); k.className = 'card';
-                k.onclick = () => window.verPerfil(d.id);
-                k.innerHTML = `<div style="width:60px; height:60px; border-radius:50%; overflow:hidden; margin:0 auto 10px;"><img src="${u.avatar || IMG_PADRAO}" style="width:100%; height:100%; object-fit:cover;"></div><h4>${u.nome}</h4>`;
-                c.appendChild(k);
-            });
+            try {
+                const s = await getDocs(collection(db, "users"));
+                c.innerHTML = '';
+                if(s.empty) { c.innerHTML = '<p>Nenhum ninja.</p>'; return; }
+                s.forEach(d => {
+                    const u = d.data();
+                    const k = document.createElement('div'); k.className = 'card';
+                    k.onclick = () => window.verPerfil(d.id);
+                    k.innerHTML = `<div style="width:60px; height:60px; border-radius:50%; overflow:hidden; margin:0 auto 10px;"><img src="${u.avatar || IMG_PADRAO}" style="width:100%; height:100%; object-fit:cover;"></div><h4>${u.nome}</h4><p>${u.apelido||"Desconhecido"}</p>`;
+                    c.appendChild(k);
+                });
+            } catch(e) { c.innerHTML = 'Erro ao carregar.'; }
         }
+
         window.verPerfil = async (uid) => {
             const s = await getDoc(doc(db, "users", uid));
             if(s.exists()) {
@@ -795,10 +779,104 @@
         }
         window.fecharProfileModal = () => document.getElementById('profileModal').style.display = 'none';
         
-        window.carregarRankings = async () => { const c=document.getElementById('ranking-container'); if(!c)return; const s=await getDocs(collection(db,"users")); let l=[]; s.forEach(d=>l.push(d.data())); c.innerHTML=''; renderRank(c,"Ryos",l,'ryos'); renderRank(c,"Vitórias",l,'vitorias'); };
+        async function carregarMissoes() { 
+            const c = document.getElementById('missoes-grid'); 
+            const map = currentUserData.statusMissoes || {}; 
+            try {
+                const s = await getDocs(collection(db, "missoes")); 
+                c.innerHTML = ''; 
+                if(s.empty) { c.innerHTML = '<p>Sem missões.</p>'; return; }
+                s.forEach((d) => { 
+                    const m = d.data(); const id = d.id; const st = map[id] || 'neutro'; 
+                    const k = document.createElement('div'); k.className = 'card'; 
+                    let statusText="Disponível", statusColor="#777"; 
+                    if(st==='em_andamento'){statusText="Em Andamento";statusColor="orange";}
+                    else if(st==='aprovado'){statusText="Coletar!";statusColor="green";}
+                    else if(st==='concluido'){statusText="Concluída";statusColor="blue";} 
+                    k.onclick = () => verDetalhesMissao(id, st); 
+                    k.innerHTML=`<h4>${m.titulo}</h4><p style="font-size:0.9rem; color:${statusColor}; font-weight:bold;">${statusText}</p>`; 
+                    c.appendChild(k); 
+                }); 
+            } catch(e) { c.innerHTML = 'Erro.'; }
+        }
+        
+        window.verDetalhesMissao = async (id, status) => { 
+            const docRef = doc(db, "missoes", id); 
+            const docSnap = await getDoc(docRef); 
+            if(docSnap.exists()){ 
+                const m = docSnap.data(); 
+                document.getElementById('missao-name-modal').innerText = m.titulo; 
+                document.getElementById('missao-desc-modal').innerText = m.descricao; 
+                document.getElementById('missao-reward-modal').innerText = formatarNum(m.recompensa); 
+                document.getElementById('missao-img-modal').src = m.imagem || IMG_PADRAO; 
+                const actionDiv = document.getElementById('missao-actions-modal'); 
+                actionDiv.innerHTML = ''; 
+                if(status === 'neutro') { actionDiv.innerHTML = `<button class="mission-btn-start" onclick="iniciarMissao('${id}')">Aceitar Missão</button>`; } 
+                else if(status === 'em_andamento') { actionDiv.innerHTML = `<button class="mission-btn-wait">Aguardando Aprovação...</button>`; } 
+                else if(status === 'aprovado') { actionDiv.innerHTML = `<button class="mission-btn-collect" onclick="coletarRecompensa('${id}', ${m.recompensa})">Receber Recompensa</button>`; } 
+                else if(status === 'concluido') { actionDiv.innerHTML = `<button class="mission-btn-done">Missão Concluída</button>`; } 
+                document.getElementById('missaoModal').style.display = 'flex'; 
+            } 
+        };
+        window.fecharMissaoModal = () => { document.getElementById('missaoModal').style.display = 'none'; };
+
+        // RANKINGS
+        window.carregarRankings = async () => { 
+            const c = document.getElementById('ranking-container'); if(!c) return; 
+            try {
+                const s = await getDocs(collection(db, "users")); 
+                let l = []; s.forEach(d=>l.push(d.data())); 
+                c.innerHTML = ''; 
+                renderRank(c,"Ryos",l,'ryos'); renderRank(c,"Vitórias",l,'vitorias'); 
+            } catch(e) { c.innerHTML = 'Erro.'; }
+        };
         function renderRank(c,t,l,f) { const s=[...l].sort((a,b)=>(b[f]||0)-(a[f]||0)).slice(0,5); let h=`<div class="ranking-col"><h3>${t}</h3><table class="ranking-table">`; s.forEach((u,i)=>h+=`<tr><td>${i+1}. ${u.nome}</td><td>${formatarNum(u[f])}</td></tr>`); h+='</table></div>'; c.innerHTML+=h; }
+
+        window.iniciarMissao = async (id) => { await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusMissoes.${id}`]: 'em_andamento' }); alert("Iniciada!"); location.reload(); };
+        window.coletarRecompensa = async (id, val) => { await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(val), [`statusMissoes.${id}`]: 'concluido' }); alert(`Recebido ${val} Ryos!`); location.reload(); };
+
         function editarHistoria() { const n=prompt("História:",currentUserData.historiaTexto||""); if(n){ const i=prompt("Imagem URL:",currentUserData.historiaImagem||""); updateDoc(doc(db,"users",auth.currentUser.uid),{historiaTexto:n,historiaImagem:i}).then(()=>location.reload()); } }
+        
+        async function carregarFrases() { 
+            const c = document.getElementById('frases-list-container'); if(!c) return;
+            onSnapshot(query(collection(db, "frases"), orderBy("data", "desc")), (snap) => {
+                c.innerHTML = ''; if(snap.empty) { c.innerHTML = '<p style="text-align:center; color:#777;">Nenhuma frase.</p>'; return; }
+                snap.forEach(d => { 
+                    const f = d.data(); 
+                    const div = document.createElement('div'); 
+                    div.className = 'frase-item'; 
+                    div.onclick = () => copiarFrase(f.texto); 
+                    div.innerHTML = `<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor || "Desconhecido"}</div>`; 
+                    c.appendChild(div); 
+                });
+            });
+        }
         async function adicionarFrase() { const t=document.getElementById('novaFraseInput').value; if(t){ await addDoc(collection(db,"frases"),{texto:t,autor:currentUserData.nome,data:serverTimestamp()}); document.getElementById('novaFraseInput').value=''; } }
+        window.copiarFrase = (texto) => { navigator.clipboard.writeText(texto).then(() => { const f = document.getElementById('copyFeedback'); f.style.display = 'block'; setTimeout(() => { f.style.display = 'none'; }, 2000); }); };
+
+        // ADMIN
+        async function carregarPainelAdmin() {
+            const c = document.getElementById('admin-missoes-grid'); if(!c) return;
+            c.innerHTML = 'Carregando pendências...';
+            const s = await getDocs(collection(db, "users"));
+            c.innerHTML = '';
+            let found = false;
+            s.forEach(u => {
+                const d = u.data();
+                const m = d.statusMissoes || {};
+                for (const [mid, st] of Object.entries(m)) {
+                    if(st === 'em_andamento') {
+                        found = true;
+                        const k = document.createElement('div'); k.className = 'card';
+                        k.innerHTML = `<h4>${d.nome}</h4><p>Missão ID: ${mid}</p><button class="mission-btn-collect" onclick="aprovarMissao('${u.id}','${mid}')">Aprovar</button>`;
+                        c.appendChild(k);
+                    }
+                }
+            });
+            if(!found) c.innerHTML = '<p>Nenhuma missão pendente.</p>';
+        }
+        window.aprovarMissao = async (uid, mid) => { if(confirm("Aprovar?")) { await updateDoc(doc(db, "users", uid), { [`statusMissoes.${mid}`]: 'aprovado' }); alert("Aprovado!"); location.reload(); } };
+
     </script>
 </body>
 </html>
