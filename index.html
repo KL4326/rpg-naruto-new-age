@@ -91,21 +91,18 @@
         .btn-post { background: var(--primary-color); color: white; border: none; padding: 8px 20px; border-radius: 20px; font-weight: 600; cursor: pointer; font-size: 0.9rem; }
         
         .post { background: var(--card-bg); border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); position: relative; overflow: visible; }
-        .post-header { display: flex; align-items: center; padding: 10px; position: relative; }
+        .post-header { display: flex; align-items: center; padding: 10px; }
         .user-avatar-post { width: 35px; height: 35px; border-radius: 50%; background: #efefef; margin-right: 10px; overflow: hidden; border: 1px solid var(--border-color); }
         .user-avatar-post img { width: 100%; height: 100%; object-fit: cover; }
         .post-info { display: flex; flex-direction: column; }
         .post-author { font-weight: 600; font-size: 0.95rem; color: var(--text-color); }
         .post-time { font-size: 0.75rem; color: #8e8e8e; }
-        
-        /* MENU GENÉRICO (Posts e Frases) */
-        .options-menu-container { margin-left: auto; position: relative; }
-        .options-btn { cursor: pointer; color: var(--text-color); padding: 8px; width: 30px; text-align: center; }
-        .options-dropdown { display: none; position: absolute; top: 100%; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; width: 140px; }
-        .options-dropdown.active { display: block; }
-        .options-item { padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-color); }
-        .options-item.danger { color: var(--danger-color); }
-
+        .post-menu-container { margin-left: auto; position: relative; }
+        .post-options-btn { cursor: pointer; color: var(--text-color); padding: 8px; width: 30px; text-align: center; }
+        .post-dropdown { display: none; position: absolute; top: 100%; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; width: 140px; }
+        .post-dropdown.active { display: block; }
+        .post-dropdown-item { padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-color); }
+        .post-dropdown-item.danger { color: var(--danger-color); }
         .post-content { padding: 0 10px 10px 10px; line-height: 1.5; white-space: pre-wrap; font-size: 0.95rem; }
         .post-image { width: 100%; height: auto; display: block; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); max-height: 600px; object-fit: cover; }
         .post-actions { display: flex; padding: 10px; gap: 15px; }
@@ -161,11 +158,18 @@
         .frase-input-area { background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px; display: flex; gap: 10px; }
         .frase-input-area input { flex: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; outline: none; }
         .frases-list { display: flex; flex-direction: column; gap: 10px; }
-        /* Frase Item - Agora com relative para menu */
         .frase-item { background: var(--card-bg); padding: 20px; border-bottom: 1px solid #ccc; cursor: pointer; transition: background 0.2s; position: relative; border-radius: 5px; display: flex; justify-content: space-between; align-items: flex-start; }
         .frase-item:hover { background-color: rgba(0,0,0,0.02); }
         .frase-content { font-size: 1.1rem; font-style: italic; color: var(--text-color); flex: 1; padding-right: 30px; }
         .frase-author { font-size: 0.85rem; color: var(--primary-color); font-weight: bold; margin-top: 5px; }
+        
+        /* MENU GENÉRICO (Posts e Frases) */
+        .options-menu-container { margin-left: auto; position: relative; }
+        .options-btn { cursor: pointer; color: var(--text-color); padding: 8px; width: 30px; text-align: center; }
+        .options-dropdown { display: none; position: absolute; top: 100%; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; width: 140px; }
+        .options-dropdown.active { display: block; }
+        .options-item { padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-color); }
+        .options-item.danger { color: var(--danger-color); }
 
         /* MOBILE */
         @media (max-width: 768px) {
@@ -232,6 +236,7 @@
                     <div id="user-menu" class="dropdown-menu">
                         <div class="user-info" style="padding:10px 15px; font-weight:bold; border-bottom:1px solid var(--border-color);">...</div>
                         <div class="dropdown-item" onclick="openEditProfileModal()"><i class="fa-solid fa-user-pen"></i> Perfil e Personagem</div>
+                        <div class="dropdown-item" onclick="openChangePasswordModal()"><i class="fa-solid fa-lock"></i> Alterar Senha</div>
                         <div class="dropdown-item" onclick="renderFeed('saved')"><i class="fa-regular fa-bookmark"></i> Salvos</div>
                         <div class="dropdown-item" onclick="renderFeed('all')"><i class="fa-solid fa-globe"></i> Feed Geral</div>
                         <div class="dropdown-item" onclick="fazerLogout()" style="color:var(--danger-color);"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sair</div>
@@ -400,9 +405,18 @@
         </div>
     </div>
 
+    <div class="modal-overlay-comment" id="changePasswordModal" style="z-index: 2004;">
+        <div class="modal-content-card">
+            <span class="close-modal" onclick="closeChangePasswordModal()" style="color: #333; top: 10px; right: 15px;">&times;</span>
+            <h3>Alterar Senha</h3>
+            <input type="password" id="new-password" class="edit-input" placeholder="Nova Senha" style="margin-top:20px;">
+            <button class="btn-post" onclick="salvarNovaSenha()" style="width: 100%;">Atualizar Senha</button>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, addDoc, serverTimestamp, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -537,7 +551,7 @@
         window.toggleMenu = () => document.getElementById('user-menu').classList.toggle('show');
         window.fazerLogout = () => signOut(auth).then(() => location.reload());
 
-        // --- PERFIL ---
+        // --- PERFIL & SENHA ---
         window.openEditProfileModal = () => {
             document.getElementById('editProfileModal').style.display = 'flex';
             document.getElementById('edit-name-input').value = currentUserData.nome || "";
@@ -555,6 +569,15 @@
             if(newAvatarBase64) updates.avatar = newAvatarBase64;
             await updateDoc(doc(db, "users", auth.currentUser.uid), updates);
             location.reload();
+        };
+
+        window.openChangePasswordModal = () => { document.getElementById('changePasswordModal').style.display='flex'; document.getElementById('user-menu').classList.remove('show'); };
+        window.closeChangePasswordModal = () => document.getElementById('changePasswordModal').style.display='none';
+        window.salvarNovaSenha = async () => {
+            const pass = document.getElementById('new-password').value;
+            if(!pass || pass.length < 6) return alert("Senha deve ter 6+ caracteres");
+            try { await updatePassword(auth.currentUser, pass); alert("Senha atualizada!"); closeChangePasswordModal(); }
+            catch(e) { if(e.code === 'auth/requires-recent-login') alert("Por segurança, faça login novamente antes de mudar a senha."); else alert("Erro: " + e.message); }
         };
         
         // --- CARREGAMENTO DE CARDS ---
@@ -727,7 +750,7 @@
                     `;
                     c.appendChild(div);
                 });
-            });
+            }, (error) => { c.innerHTML = `<p style='text-align:center; color:red;'>Erro ao carregar feed.</p>`; });
         };
         
         window.deletarPost = async (id) => { if(confirm("Apagar?")) await deleteDoc(doc(db, "posts", id)); };
@@ -787,7 +810,7 @@
                 if(s.empty) { c.innerHTML = '<p>Sem missões.</p>'; return; }
                 s.forEach((d) => { 
                     const m = d.data(); const id = d.id; const st = map[id] || 'neutro'; 
-                    const k = document.createElement('div'); k.className = 'card'; 
+                    const k = document.createElement('div'); k.className = 'card jutsu-card-click'; 
                     let statusText="Disponível", statusColor="#777"; 
                     if(st==='em_andamento'){statusText="Em Andamento";statusColor="orange";}
                     else if(st==='aprovado'){statusText="Coletar!";statusColor="green";}
@@ -837,72 +860,32 @@
         
         async function carregarFrases() { 
             const c = document.getElementById('frases-list-container'); if(!c) return;
-            const q = query(collection(db, "frases"), orderBy("data", "desc"));
-            onSnapshot(q, (snapshot) => {
-                c.innerHTML = ''; 
-                if(snapshot.empty) { c.innerHTML = '<p style="text-align:center; color:#777;">Nenhuma frase.</p>'; return; }
-                snapshot.forEach((doc) => { 
-                    const f = doc.data(); 
+            onSnapshot(query(collection(db, "frases"), orderBy("data", "desc")), (snap) => {
+                c.innerHTML = ''; if(snap.empty) { c.innerHTML = '<p style="text-align:center; color:#777;">Nenhuma frase.</p>'; return; }
+                snap.forEach(d => { 
+                    const f = d.data(); 
                     const div = document.createElement('div'); 
-                    div.className = 'frase-item';
+                    div.className = 'frase-item'; 
                     
-                    // Lógica para mostrar menu apenas para o dono
                     const isOwner = f.uid === auth.currentUser.uid;
                     const menuHTML = isOwner ? `
                         <div class="options-menu-container">
-                            <div class="options-btn" onclick="toggleFraseMenu(this); event.stopPropagation();"><i class="fa-solid fa-ellipsis"></i></div>
+                            <div class="options-btn" onclick="this.nextElementSibling.classList.toggle('active'); event.stopPropagation();">...</div>
                             <div class="options-dropdown">
-                                <div class="options-item" onclick="editarFrase('${doc.id}', '${f.texto}'); event.stopPropagation();">Editar</div>
-                                <div class="options-item danger" onclick="deletarFrase('${doc.id}'); event.stopPropagation();">Excluir</div>
+                                <div class="options-item" onclick="editarFrase('${d.id}', '${f.texto}'); event.stopPropagation();">Editar</div>
+                                <div class="options-item danger" onclick="deletarFrase('${d.id}'); event.stopPropagation();">Excluir</div>
                             </div>
-                        </div>
-                    ` : '';
+                        </div>` : '';
 
                     div.onclick = () => copiarFrase(f.texto); 
-                    div.innerHTML = `
-                        <div class="frase-content">"${f.texto}"</div>
-                        <div class="frase-author">- ${f.autor || "Desconhecido"}</div>
-                        ${menuHTML}
-                    `; 
+                    div.innerHTML = `<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor || "Desconhecido"}</div>${menuHTML}`; 
                     c.appendChild(div); 
                 });
             });
         }
-
-        window.toggleFraseMenu = (el) => {
-            const dropdown = el.nextElementSibling;
-            // Fecha outros abertos
-            document.querySelectorAll('.options-dropdown').forEach(d => { if(d !== dropdown) d.classList.remove('active'); });
-            dropdown.classList.toggle('active');
-        };
-
-        window.adicionarFrase = async () => { 
-            const t=document.getElementById('novaFraseInput').value; 
-            if(!t) return; 
-            try { 
-                await addDoc(collection(db,"frases"), { 
-                    texto:t, 
-                    autor:currentUserData.nome, 
-                    uid: auth.currentUser.uid, // Salva o ID do dono
-                    data:serverTimestamp() 
-                }); 
-                document.getElementById('novaFraseInput').value=''; 
-            } catch(e) { alert("Erro ao salvar."); } 
-        };
-
-        window.editarFrase = async (id, oldText) => {
-            const newText = prompt("Editar frase:", oldText);
-            if(newText && newText !== oldText) {
-                await updateDoc(doc(db, "frases", id), { texto: newText });
-            }
-        };
-
-        window.deletarFrase = async (id) => {
-            if(confirm("Excluir frase?")) {
-                await deleteDoc(doc(db, "frases", id));
-            }
-        };
-
+        window.adicionarFrase = async () => { const t=document.getElementById('novaFraseInput').value; if(t){ await addDoc(collection(db,"frases"),{texto:t,autor:currentUserData.nome,uid:auth.currentUser.uid,data:serverTimestamp()}); document.getElementById('novaFraseInput').value=''; } }
+        window.editarFrase = async (id, oldText) => { const n = prompt("Editar:", oldText); if(n) await updateDoc(doc(db, "frases", id), { texto: n }); };
+        window.deletarFrase = async (id) => { if(confirm("Excluir?")) await deleteDoc(doc(db, "frases", id)); };
         window.copiarFrase = (texto) => { navigator.clipboard.writeText(texto).then(() => { const f = document.getElementById('copyFeedback'); f.style.display = 'block'; setTimeout(() => { f.style.display = 'none'; }, 2000); }); };
 
         // ADMIN
