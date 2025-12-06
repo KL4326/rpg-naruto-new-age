@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPG Naruto</title>
+    
+    <link rel="icon" href="favicon.png" type="image/png" sizes="any">
+    
+    <link rel="apple-touch-icon" href="favicon.png">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #fafafa;
+            --sidebar-bg: #ffffff;
+            --text-color: #262626;
+            --primary-color: #ff5e00;
+            --card-bg: #ffffff;
+            --border-color: #dbdbdb;
+            --green-color: #2ecc71;
+            --yellow-color: #f1c40f;
+            --danger-color: #ed4956;
+            --ranking-gold: #ffd700;
+            --ranking-silver: #c0c0c0;
+            --ranking-bronze: #cd7f32;
+        }
+        body.dark-mode {
+            --bg-color: #000000;
+            --sidebar-bg: #000000;
+            --text-color: #f5f5f5;
+            --card-bg: #121212;
+            --border-color: #363636;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); height: 100vh; overflow: hidden; }
+
+        /* LOGIN */
+        .login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999; display: flex; justify-content: center; align-items: center; }
+        .login-box { background: white; padding: 40px; border-radius: 10px; width: 320px; text-align: center; }
+        .login-box input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
+        .login-box button { background: var(--primary-color); color: white; border: none; padding: 12px; width: 100%; cursor: pointer; border-radius: 5px; font-weight: bold; font-size: 16px; }
+
+        /* LAYOUT */
+        #app-container { display: flex; height: 100vh; }
+        .sidebar { width: 250px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 20px; overflow-y: auto; flex-shrink: 0; }
+        .logo { font-size: 24px; font-weight: bold; color: var(--primary-color); margin-bottom: 40px; font-family: 'Segoe UI', sans-serif; letter-spacing: 1px; }
+        .sidebar button { background: none; border: none; color: var(--text-color); width: 100%; text-align: left; padding: 15px; cursor: pointer; border-radius: 8px; transition: 0.2s; display: flex; align-items: center; gap: 15px; margin-bottom: 5px; font-size: 1rem; }
+        .sidebar button:hover, .sidebar button.active { background-color: rgba(0,0,0,0.05); font-weight: bold; }
+        #btn-admin-panel { display: none; color: #ed4956; font-weight: bold; }
+
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+        header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; padding: 0 20px; flex-shrink: 0; z-index: 10; }
+        .top-nav { display: flex; gap: 20px; overflow-x: auto; }
+        .top-btn { background: none; border: none; padding: 10px 5px; color: #8e8e8e; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; font-size: 0.9rem; font-weight: 500; transition: 0.2s; }
+        .top-btn:hover { color: var(--text-color); }
+        .top-btn.active { border-bottom-color: var(--text-color); color: var(--text-color); font-weight: bold; }
+
+        .user-area { display: flex; align-items: center; gap: 15px; position: relative; }
+        .ryos { font-weight: bold; color: #e6b800; background: rgba(230, 184, 0, 0.1); padding: 5px 10px; border-radius: 15px; white-space: nowrap; font-size: 0.9rem; }
+        .profile-circle { width: 35px; height: 35px; border-radius: 50%; overflow: hidden; cursor: pointer; border: 1px solid var(--border-color); }
+        .profile-circle img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .dropdown-menu { display: none; position: absolute; top: 50px; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); width: 200px; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 5px 0; z-index: 100; }
+        .dropdown-menu.show { display: block; }
+        .dropdown-item { display: block; padding: 10px 15px; color: var(--text-color); text-decoration: none; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+        .dropdown-item:hover { background: rgba(0,0,0,0.03); }
+
+        #content-area { padding: 20px; overflow-y: auto; background-color: var(--bg-color); flex: 1; }
+        .tab-content { display: none; animation: fadeIn 0.3s; }
+        .tab-content.active { display: block; }
+
+        /* FEED */
+        #feed { max-width: 600px; margin: 0 auto; width: 100%; }
+        .create-post { background: var(--card-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border-color); }
+        .create-post textarea { width: 100%; padding: 10px; border: none; outline: none; background: transparent; color: var(--text-color); resize: none; font-size: 1rem; font-family: inherit; }
+        .post-tools { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 10px; margin-top: 10px; }
+        .upload-btn { cursor: pointer; color: var(--primary-color); font-size: 0.9rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+        #imageInput { display: none; }
+        #preview-container { margin-top: 10px; display: none; position: relative; width: 100%; text-align: center; background: #000; border-radius: 4px; overflow: hidden; }
+        #preview-image { max-width: 100%; max-height: 300px; object-fit: contain; }
+        .remove-img { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .btn-post { background: var(--primary-color); color: white; border: none; padding: 6px 16px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 0.9rem; }
+        
+        .post { background: var(--card-bg); border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); overflow: visible; }
+        .post-header { display: flex; align-items: center; padding: 10px; position: relative; }
+        .user-avatar-post { width: 32px; height: 32px; border-radius: 50%; background: #efefef; margin-right: 10px; overflow: hidden; border: 1px solid var(--border-color); }
+        .user-avatar-post img { width: 100%; height: 100%; object-fit: cover; }
+        .post-info { display: flex; flex-direction: column; }
+        .post-author { font-weight: 600; font-size: 0.9rem; color: var(--text-color); }
+        .post-time { font-size: 0.75rem; color: #8e8e8e; }
+        
+        .post-menu-container { margin-left: auto; position: relative; }
+        .post-options-btn { cursor: pointer; color: var(--text-color); padding: 8px; width: 30px; text-align: center; }
+        .post-dropdown { display: none; position: absolute; top: 100%; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; width: 140px; }
+        .post-dropdown.active { display: block; }
+        .post-dropdown-item { padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-color); }
+        .post-dropdown-item.danger { color: var(--danger-color); }
+
+        .post-content { padding: 0 10px 10px 10px; line-height: 1.5; white-space: pre-wrap; font-size: 0.95rem; }
+        .post-image { width: 100%; height: auto; display: block; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); max-height: 600px; object-fit: cover; }
+        .post-actions { display: flex; padding: 10px; gap: 15px; }
+        .action-btn { background: none; border: none; cursor: pointer; color: var(--text-color); font-size: 1.5rem; display: flex; align-items: center; gap: 5px; padding: 0; }
+        .action-btn.liked { color: var(--danger-color); }
+        .edit-textarea { width: 100%; border: 1px solid var(--primary-color); border-radius: 4px; padding: 10px; margin: 10px 0; }
+
+        /* RANKINGS */
+        .rankings-wrapper { display: flex; gap: 20px; flex-wrap: wrap; padding-bottom: 20px; }
+        .ranking-col { flex: 1 1 300px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; }
+        .ranking-col h3 { color: var(--primary-color); text-align: center; margin-bottom: 15px; border-bottom: 2px solid var(--primary-color); }
+        .ranking-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .ranking-table td { padding: 8px; border-bottom: 1px solid var(--border-color); }
+
+        /* CARDS */
+        .bucket-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; margin-top: 20px; }
+        .card { background: var(--card-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); text-align: center; cursor: pointer; transition: 0.2s; overflow: hidden; }
+        .card:hover { transform: translateY(-2px); border-color: var(--primary-color); }
+        .card-img-top { width: 100%; height: 120px; object-fit: cover; border-radius: 4px; margin-bottom: 8px; border: 1px solid #eee; }
+        
+        .buy-btn, .mission-btn-start, .mission-btn-collect { background: var(--primary-color); color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: 600; margin-top: 5px; font-size: 0.9rem;}
+        .mission-btn-wait, .mission-btn-done { background: #ccc; width: 100%; border: none; padding: 6px; border-radius: 4px; margin-top: 5px; cursor: not-allowed; }
+
+        /* MODALS */
+        .modal-overlay-comment { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
+        .close-modal { position: absolute; top: 10px; left: 15px; font-size: 1.5rem; color: white; cursor: pointer; z-index: 20; text-shadow: 0 0 5px black; }
+
+        .modal-content-comment { background: var(--card-bg); width: 90%; max-width: 900px; height: 80vh; border-radius: 4px; display: flex; overflow: hidden; position: relative; }
+        .modal-left { flex: 1.5; background: #000; display: flex; align-items: center; justify-content: center; }
+        .modal-left img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .modal-right { flex: 1; display: flex; flex-direction: column; background: var(--card-bg); border-left: 1px solid var(--border-color); }
+        .comments-list { flex: 1; padding: 15px; overflow-y: auto; }
+        .comment-input-area { padding: 15px; border-top: 1px solid var(--border-color); display: flex; gap: 10px; }
+        .comment-input-area input { flex: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 20px; outline: none; }
+
+        .modal-content-card { background: var(--card-bg); padding: 30px; border-radius: 10px; width: 90%; max-width: 350px; text-align: center; position: relative; border: 1px solid var(--border-color); }
+        .jutsu-modal-img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); }
+        .jutsu-modal-rank { display: inline-block; background: var(--primary-color); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-bottom: 10px; }
+        .jutsu-modal-price { color: var(--green-color); font-weight: bold; font-size: 1.2rem; border-top: 1px solid var(--border-color); padding-top: 15px; }
+
+        .modal-content-profile { background: var(--card-bg); width: 90%; max-width: 800px; max-height: 90vh; border-radius: 15px; overflow-y: auto; position: relative; border: 1px solid var(--border-color); }
+        .profile-header { background: linear-gradient(to right, #ff5e00, #ff9100); padding: 40px 20px; text-align: center; color: white; }
+        .profile-avatar-large { width: 100px; height: 100px; border-radius: 50%; border: 4px solid white; margin: 0 auto 15px auto; overflow: hidden; background: #fff; }
+        .profile-avatar-large img { width: 100%; height: 100%; object-fit: cover; }
+        .profile-name { font-size: 1.8rem; font-weight: bold; }
+        .profile-char { font-size: 1.1rem; opacity: 0.9; }
+        .profile-body { padding: 20px; }
+        .profile-section-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; color: var(--text-color); border-left: 4px solid var(--primary-color); padding-left: 10px; }
+        .profile-stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .stat-card { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .stat-value { font-size: 1.5rem; font-weight: bold; color: var(--primary-color); }
+        .stat-label { font-size: 0.85rem; color: #777; margin-top: 5px; text-transform: uppercase; }
+
+        .edit-input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 5px; }
+        .edit-avatar-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color); margin: 10px auto; display: block; }
+        
+        .jutsu-card-click { cursor: pointer; transition: transform 0.2s; }
+        .jutsu-card-click:hover { transform: translateY(-5px); border-color: var(--primary-color); }
+
+        /* HISTORIA */
+        .historia-container { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; max-width: 800px; margin: 0 auto; }
+        .historia-img-container { width: 100%; height: 300px; background-color: #000; position: relative; }
+        .historia-img-container img { width: 100%; height: 100%; object-fit: cover; }
+        .historia-divider { height: 4px; background-color: #dbdbdb; border: none; margin: 0; }
+        .historia-text-content { padding: 30px; line-height: 1.8; font-size: 1.1rem; color: var(--text-color); white-space: pre-wrap; }
+        .btn-edit-historia { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.6); color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 5px; }
+        .btn-edit-historia:hover { background: var(--primary-color); }
+
+        /* FRASES */
+        .frase-input-area { background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px; display: flex; gap: 10px; }
+        .frase-input-area input { flex: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; outline: none; }
+        .frases-list { display: flex; flex-direction: column; gap: 10px; }
+        .frase-item { background: var(--card-bg); padding: 20px; border-bottom: 1px solid #ccc; cursor: pointer; transition: background 0.2s; position: relative; border-radius: 5px; }
+        .frase-item:hover { background-color: rgba(0,0,0,0.02); }
+        .frase-content { font-size: 1.1rem; font-style: italic; margin-bottom: 5px; color: var(--text-color); }
+        .frase-author { font-size: 0.85rem; color: var(--primary-color); font-weight: bold; text-align: right; }
+        .copy-feedback { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 10px 25px; border-radius: 30px; font-weight: bold; display: none; z-index: 3000; animation: fadeIn 0.3s; }
+
+        @media (max-width: 768px) { .modal-content-comment { flex-direction: column; } .modal-left { height: 40%; } }
+    </style>
+</head>
+<body>
+
+    <div id="copyFeedback" class="copy-feedback">Frase copiada!</div>
+
+    <div id="login-screen" class="login-overlay">
+        <div class="login-box">
+            <h2>RPG Naruto</h2>
+            <input type="email" id="emailInput" placeholder="E-mail">
+            <input type="password" id="passwordInput" placeholder="Senha">
+            <button id="btnLogin">Entrar</button>
+            <p style="font-size: 12px; margin-top: 10px;">Não possui uma conta? Fale com o administrador.</p>
+            <p id="msgError" style="color: red; font-size: 12px; margin-top: 10px;"></p>
+        </div>
+    </div>
+
+    <div id="app-container" style="display: none;">
+        <aside class="sidebar">
+            <div class="logo"><i class="fa-solid fa-scroll"></i> RPG NARUTO</div>
+            <nav>
+                <button onclick="showTab('dashboard')" class="active"><i class="fa-solid fa-chart-line"></i> Dashboard</button>
+                <button onclick="showTab('missoes')"><i class="fa-solid fa-scroll"></i> Missões</button>
+                <button onclick="showTab('personagens')"><i class="fa-solid fa-users"></i> Personagens</button>
+                <button onclick="showTab('loja')"><i class="fa-solid fa-store"></i> Loja</button>
+                <button onclick="showTab('ferramentas')"><i class="fa-solid fa-gavel"></i> Ferramentas</button>
+                <button onclick="showTab('rankings')"><i class="fa-solid fa-trophy"></i> Rankings</button>
+                <button id="btn-admin-panel" onclick="showTab('admin-panel')"><i class="fa-solid fa-user-shield"></i> Painel Kage</button>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header>
+                <nav class="top-nav">
+                    <button id="nav-btn-feed" onclick="showTab('feed')" class="top-btn active">Feed</button>
+                    <button id="nav-btn-jutsus" onclick="showTab('jutsus')" class="top-btn">Jutsus</button>
+                    <button id="nav-btn-ferramentas" onclick="showTab('ferramentas')" class="top-btn">Ferramentas</button>
+                    <button id="nav-btn-historia" onclick="showTab('historia')" class="top-btn">História</button>
+                    <button id="nav-btn-frases" onclick="showTab('frases')" class="top-btn">Frases</button>
+                </nav>
+                <div class="user-area">
+                    <span class="ryos"><i class="fa-solid fa-coins"></i> ...</span>
+                    <div class="profile-circle" onclick="toggleMenu()">
+                        <img id="header-avatar" src="https://placehold.co/40x40/orange/white?text=N" alt="Avatar">
+                    </div>
+                    <div id="user-menu" class="dropdown-menu">
+                        <div class="user-info" style="padding:10px 15px; font-weight:bold; border-bottom:1px solid var(--border-color);">...</div>
+                        <div class="dropdown-item" onclick="openEditProfileModal()"><i class="fa-solid fa-user-pen"></i> Perfil e Personagem</div>
+                        <div class="dropdown-item" onclick="renderFeed('saved')"><i class="fa-regular fa-bookmark"></i> Salvos</div>
+                        <div class="dropdown-item" onclick="renderFeed('all')"><i class="fa-solid fa-globe"></i> Feed Geral</div>
+                        <div class="dropdown-item" onclick="fazerLogout()" style="color:var(--danger-color);"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sair</div>
+                    </div>
+                </div>
+            </header>
+
+            <div id="content-area">
+                <div id="feed" class="tab-content active">
+                    <div class="create-post">
+                        <textarea id="postInput" placeholder="No que você está pensando?" rows="2"></textarea>
+                        <div id="preview-container">
+                            <img id="preview-image" src="" alt="">
+                            <button class="remove-img" onclick="removeImage()">×</button>
+                        </div>
+                        <div class="post-tools">
+                            <label for="imageInput" class="upload-btn" title="Adicionar Imagem">
+                                <i class="fa-regular fa-image"></i> Foto/Vídeo
+                            </label>
+                            <input type="file" id="imageInput" accept="image/*" onchange="handleImageUpload(event)">
+                            <button class="btn-post" onclick="publicarPost()">Publicar</button>
+                        </div>
+                    </div>
+                    <div id="feed-container"><p style="text-align:center; color:#777;">Carregando...</p></div>
+                </div>
+
+                <div id="jutsus" class="tab-content">
+                    <h3>Meus Jutsus</h3><div class="bucket-grid" id="meus-jutsus-grid"><p>Carregando...</p></div>
+                    <hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;">
+                    <h3>Loja de Jutsus</h3><div class="bucket-grid" id="loja-jutsus-grid"><p>Carregando...</p></div>
+                </div>
+
+                <div id="ferramentas" class="tab-content">
+                    <h3>Minhas Ferramentas</h3>
+                    <div class="bucket-grid" id="minhas-ferramentas-grid"><p>Carregando...</p></div>
+                    <hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;">
+                    <h3>Loja de Ferramentas</h3>
+                    <div class="bucket-grid" id="loja-ferramentas-grid"><p>Carregando...</p></div>
+                </div>
+
+                <div id="loja" class="tab-content">
+                    <h3>Meus Itens</h3>
+                    <div class="bucket-grid" id="meus-itens-grid"><p>Carregando...</p></div>
+                    <hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;">
+                    <h3>Mercado Geral</h3>
+                    <div class="bucket-grid" id="loja-itens-grid"><p>Carregando...</p></div>
+                </div>
+
+                <div id="personagens" class="tab-content">
+                    <h2>Diretório de Ninjas</h2>
+                    <div class="bucket-grid" id="directory-grid">
+                        <p>Carregando lista...</p>
+                    </div>
+                </div>
+
+                <div id="missoes" class="tab-content"><h2>Quadro de Missões</h2><div class="bucket-grid" id="missoes-grid"><p>Carregando...</p></div></div>
+                <div id="rankings" class="tab-content"><h2>Rankings Globais</h2><div class="rankings-wrapper" id="ranking-container"><p>Carregando Rankings...</p></div></div>
+                <div id="admin-panel" class="tab-content"><h2>Painel Kage</h2><div class="bucket-grid" id="admin-missoes-grid"><p>Carregando...</p></div></div>
+                
+                <div id="dashboard" class="tab-content">
+                    <h2>Dashboard</h2>
+                    <div class="bucket-grid">
+                        <div class="card"><h3>0</h3><p>Jutsus</p></div>
+                        <div class="card"><h3>0</h3><p>Ferramentas</p></div>
+                        <div class="card"><h3>0</h3><p>Itens</p></div>
+                        <div class="card"><h3>0</h3><p>Missões</p></div>
+                    </div>
+                </div>
+                
+                <div id="historia" class="tab-content">
+                    <div class="historia-container">
+                        <div class="historia-img-container">
+                            <img id="historia-display-img" src="https://img.freepik.com/vetores-gratis/fundo-de-paisagem-de-anime-de-design-plano_23-2149275367.jpg" alt="Capa da História">
+                            <button class="btn-edit-historia" onclick="editarHistoria()"><i class="fa-solid fa-pen"></i> Editar História</button>
+                        </div>
+                        <hr class="historia-divider">
+                        <div class="historia-text-content" id="historia-display-text">
+                            A história do seu ninja aparecerá aqui. Clique em "Editar História" para escrever sua lenda.
+                        </div>
+                    </div>
+                </div>
+
+                <div id="frases" class="tab-content">
+                    <h2>Frases Marcantes</h2>
+                    <div class="frase-input-area">
+                        <input type="text" id="novaFraseInput" placeholder="Digite uma frase icônica...">
+                        <button class="btn-post" onclick="adicionarFrase()">Adicionar</button>
+                    </div>
+                    <div class="frases-list" id="frases-list-container">
+                        <p style="color:#777; text-align:center;">Carregando frases...</p>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <div class="modal-overlay-comment" id="commentModal">
+        <span class="close-modal" onclick="closeModal()">&times;</span>
+        <div class="modal-content-comment">
+            <div class="modal-left" id="modalPostContent"></div>
+            <div class="modal-right">
+                <div style="padding: 15px; border-bottom: 1px solid var(--border-color); font-weight: bold;">Comentários</div>
+                <div class="comments-list" id="commentsList"></div>
+                <div class="comment-input-area"><input type="text" id="newCommentText" placeholder="Adicione um comentário..."><button class="btn-post" onclick="submitComment()" style="background:none; color:var(--primary-color);">Publicar</button></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay-comment" id="jutsuModal" style="z-index: 2001;">
+        <div class="modal-content-card">
+            <span class="close-modal" onclick="fecharJutsuModal()" style="color: #333; background: transparent; top: 10px; right: 15px; left: auto; text-shadow:none; font-size:2rem;">&times;</span>
+            <img id="jutsu-img-modal" src="" class="jutsu-modal-img" alt="Imagem Jutsu">
+            <h2 id="jutsu-name-modal" style="margin-bottom: 10px; color: var(--primary-color);"></h2>
+            <div id="jutsu-rank-modal" class="jutsu-modal-rank">Rank ?</div>
+            <p id="jutsu-desc-modal" class="jutsu-modal-desc">Descrição...</p>
+            <div id="jutsu-price-modal" class="jutsu-modal-price">Valor: 0 Ryos</div>
+        </div>
+    </div>
+
+    <div class="modal-overlay-comment" id="toolModal" style="z-index: 2001;">
+        <div class="modal-content-card" style="border-color: #555;">
+            <span class="close-modal" onclick="fecharToolModal()" style="color: #333; background: transparent; top: 10px; right: 15px; left: auto; text-shadow:none; font-size:2rem;">&times;</span>
+            <img id="tool-img-modal" src="" class="jutsu-modal-img" alt="Imagem Ferramenta" style="border-color:#555;">
+            <h2 id="tool-name-modal" style="margin-bottom: 10px; color: #333;"></h2>
+            <div id="tool-rank-modal" class="jutsu-modal-rank" style="background-color: #555;">Tipo Comum</div>
+            <p id="tool-desc-modal" class="jutsu-modal-desc">Descrição...</p>
+            <div id="tool-price-modal" class="jutsu-modal-price" style="border-color:#555; color:#555;">Valor: 0 Ryos</div>
+        </div>
+    </div>
+
+    <div class="modal-overlay-comment" id="itemModal" style="z-index: 2001;">
+        <div class="modal-content-card" style="border-color: #2ecc71;">
+            <span class="close-modal" onclick="fecharItemModal()" style="color: #333; background: transparent; top: 10px; right: 15px; left: auto; text-shadow:none; font-size:2rem;">&times;</span>
+            <img id="item-img-modal" src="" class="jutsu-modal-img" alt="Imagem Item" style="border-color:#2ecc71;">
+            <h2 id="item-name-modal" style="margin-bottom: 10px; color: #333;"></h2>
+            <div id="item-rank-modal" class="jutsu-modal-rank" style="background-color: #2ecc71;">Consumível</div>
+            <p id="item-desc-modal" class="jutsu-modal-desc">Descrição...</p>
+            <div id="item-price-modal" class="jutsu-modal-price" style="border-color:#2ecc71; color:#2ecc71;">Valor: 0 Ryos</div>
+        </div>
+    </div>
+
+    <div class="modal-overlay-comment" id="missaoModal" style="z-index: 2001;">
+        <div class="modal-content-card" style="border-color: #e6b800; max-width: 500px;">
+            <span class="close-modal" onclick="fecharMissaoModal()" style="color: #333; background: transparent; top: 10px; right: 15px; left: auto; text-shadow:none; font-size:2rem;">&times;</span>
+            <img id="missao-img-modal" src="" class="jutsu-modal-img" alt="Imagem Missão" style="border-color:#e6b800; height: 150px; object-fit: cover;">
+            <h2 id="missao-name-modal" style="margin-bottom: 10px; color: #e6b800; text-transform: uppercase; border-bottom: 2px solid #e6b800; padding-bottom: 10px;">Título da Missão</h2>
+            <div style="text-align: left; margin-bottom: 20px; max-height: 200px; overflow-y: auto; padding-right: 5px;">
+                <p id="missao-desc-modal" style="color: #555; line-height: 1.6;">Descrição detalhada da missão...</p>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e6b800; padding-top: 15px;">
+                <div style="font-weight: bold; color: #2ecc71; font-size: 1.2rem;">Recompensa: <span id="missao-reward-modal">0</span> Ryos</div>
+                <div id="missao-actions-modal"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay-comment" id="profileModal" style="z-index: 2002;">
+        <div class="modal-content-profile">
+            <span class="close-modal" onclick="fecharProfileModal()" style="color: white; top: 15px; right: 20px; left: auto;">&times;</span>
+            <div class="profile-header">
+                <div class="profile-avatar-large">
+                    <img src="https://placehold.co/100x100/orange/white?text=N" id="profile-modal-img" alt="Avatar">
+                </div>
+                <div class="profile-name" id="profile-modal-name">Nome do Ninja</div>
+                <div class="profile-char" id="profile-modal-char">Apelido: Desconhecido</div>
+            </div>
+            <div class="profile-body">
+                <div class="profile-section-title">Estatísticas Gerais</div>
+                <div class="profile-stats-grid">
+                    <div class="stat-card"><div class="stat-value" id="prof-nivel">1</div><div class="stat-label">Nível</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-cargo">Genin</div><div class="stat-label">Cargo</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-ryos">0</div><div class="stat-label">Ryos</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-jutsus">0</div><div class="stat-label">Jutsus</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-wins">0</div><div class="stat-label">Vitórias</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-draws">0</div><div class="stat-label">Empates</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-loses">0</div><div class="stat-label">Derrotas</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-tools">0</div><div class="stat-label">Ferramentas</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-items">0</div><div class="stat-label">Itens</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay-comment" id="editProfileModal" style="z-index: 2003;">
+        <div class="modal-content-card">
+            <span class="close-modal" onclick="closeEditProfileModal()" style="color: #333; background: transparent; top: 10px; right: 15px; left: auto; text-shadow:none; font-size:2rem;">&times;</span>
+            <h3 style="margin-bottom: 20px;">Editar Perfil</h3>
+            <img id="edit-avatar-preview" src="" class="edit-avatar-preview" alt="Preview">
+            <label for="edit-avatar-input" class="btn-post" style="display:block; width: fit-content; margin: 0 auto 15px auto;">Escolher Foto</label>
+            <input type="file" id="edit-avatar-input" style="display:none;" accept="image/*" onchange="handleAvatarPreview(event)">
+            
+            <label style="display:block; text-align:left; font-size:0.8rem; margin-top:10px; font-weight:bold;">Nome do Personagem (Base para Jutsus):</label>
+            <input type="text" id="edit-name-input" class="edit-input" placeholder="Ex: Naruto Uzumaki">
+            
+            <label style="display:block; text-align:left; font-size:0.8rem; font-weight:bold;">Apelido (Exibição):</label>
+            <input type="text" id="edit-nick-input" class="edit-input" placeholder="Ex: O Ninja Número 1">
+            
+            <button class="btn-post" onclick="salvarPerfil()" style="width: 100%; padding: 10px;">Salvar Alterações</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, addDoc, serverTimestamp, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyC3HOor32_p5Z-iADm0VgZ279rt1kj8ICg",
+            authDomain: "rpg-naruto-5150a.firebaseapp.com",
+            projectId: "rpg-naruto-5150a",
+            storageBucket: "rpg-naruto-5150a.firebasestorage.app",
+            messagingSenderId: "1007094335306",
+            appId: "1:1007094335306:web:ac96fa96f9494f90fd63b3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUserData = null;
+        let currentImageBase64 = null;
+        let currentOpenPostId = null;
+        let newAvatarBase64 = null;
+
+        const IMG_PADRAO = "https://img.freepik.com/vetores-gratis/ilustracao-de-pergaminho-ninja-desenhada-a-mao_23-2151159846.jpg";
+
+        const btnLogin = document.getElementById('btnLogin');
+        if(btnLogin) {
+            btnLogin.addEventListener('click', () => {
+                const email = document.getElementById('emailInput').value;
+                const senha = document.getElementById('passwordInput').value;
+                if(!email || !senha) return alert("Preencha todos os campos!");
+                btnLogin.innerText = "Carregando...";
+                signInWithEmailAndPassword(auth, email, senha)
+                    .catch((e) => { btnLogin.innerText = "Entrar"; document.getElementById('msgError').innerText = e.message; });
+            });
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('app-container').style.display = 'flex';
+                
+                if(user.email === "admin@rpgnaruto.com") document.getElementById('btn-admin-panel').style.display = 'flex';
+
+                const docRef = doc(db, "users", user.uid);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    currentUserData = docSnap.data();
+                    atualizarInterface(currentUserData);
+                    carregarLoja(); 
+                    carregarMeusJutsus(currentUserData.meusJutsus || []); 
+                    carregarLojaFerramentas(); 
+                    carregarMinhasFerramentas(currentUserData.ferramentas || []); 
+                    carregarLojaItens(); 
+                    carregarMeusItens(currentUserData.itens || []); 
+                    carregarMissoes(); 
+                    carregarRankings();
+                    carregarFrases(); 
+                } else {
+                    const dadosPadrao = { nome: "Novo Ninja", ryos: 100, email: user.email, meusJutsus: [], ferramentas: [], itens: [], statusMissoes: {} };
+                    await setDoc(docRef, dadosPadrao);
+                    currentUserData = dadosPadrao;
+                    atualizarInterface(dadosPadrao);
+                    carregarRankings();
+                }
+                
+                // Correção de erro de carregamento (Try/Catch)
+                try {
+                    window.renderFeed('all');
+                } catch(e) { console.log('Feed erro', e); }
+            } else {
+                document.getElementById('login-screen').style.display = 'flex';
+                document.getElementById('app-container').style.display = 'none';
+            }
+        });
+
+        // FORMATAÇÃO DE NÚMERO
+        function formatarNum(valor) {
+            return Number(valor || 0).toLocaleString('pt-BR');
+        }
+
+        function atualizarInterface(dados) {
+            const nomeEl = document.querySelector('.user-info');
+            const ryosEl = document.querySelector('.ryos');
+            const stats = document.querySelectorAll('#dashboard .card h3');
+            const avatarImg = document.getElementById('header-avatar');
+
+            const nomeExibicao = dados.apelido || dados.nome || "Ninja";
+            if(nomeEl) nomeEl.innerText = nomeExibicao;
+            
+            if(ryosEl) ryosEl.innerHTML = `<i class="fa-solid fa-coins"></i> ${formatarNum(dados.ryos)} Ryos`;
+            
+            if(avatarImg) {
+                avatarImg.src = dados.avatar || `https://placehold.co/40x40/orange/white?text=${dados.nome ? dados.nome[0] : 'N'}`;
+            }
+
+            if(stats[0]) stats[0].innerText = dados.meusJutsus ? dados.meusJutsus.length : 0;
+            if(stats[1]) stats[1].innerText = dados.ferramentas ? dados.ferramentas.length : 0;
+            if(stats[2]) stats[2].innerText = dados.itens ? dados.itens.length : 0;
+            if(stats[3] && dados.statusMissoes) {
+                const completas = Object.values(dados.statusMissoes).filter(s => s === 'concluido').length;
+                stats[3].innerText = completas;
+            }
+
+            if(dados.historiaTexto) document.getElementById('historia-display-text').innerText = dados.historiaTexto;
+            if(dados.historiaImagem) document.getElementById('historia-display-img').src = dados.historiaImagem;
+        }
+
+        function comprimirImagem(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 500; 
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                        canvas.width = width; canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.7)); 
+                    };
+                };
+                reader.onerror = (error) => reject(error);
+            });
+        }
+
+        // TABS
+        window.showTab = (t) => { 
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); 
+            document.getElementById(t).classList.add('active'); 
+            document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
+            const btn = document.getElementById('nav-btn-' + t);
+            if(btn) btn.classList.add('active');
+            if(t === 'personagens') carregarPersonagens();
+            if(t === 'frases') carregarFrases(); 
+        };
+
+        window.toggleMenu = () => document.getElementById('user-menu').classList.toggle('show');
+        window.fazerLogout = () => signOut(auth).then(() => location.reload());
+        
+        // PERFIL
+        window.openEditProfileModal = () => {
+            document.getElementById('editProfileModal').style.display = 'flex';
+            document.getElementById('edit-name-input').value = currentUserData.nome || "";
+            document.getElementById('edit-nick-input').value = currentUserData.apelido || "";
+            document.getElementById('edit-avatar-preview').src = currentUserData.avatar || "https://via.placeholder.com/80";
+            newAvatarBase64 = null;
+        };
+        window.closeEditProfileModal = () => { document.getElementById('editProfileModal').style.display = 'none'; };
+        window.handleAvatarPreview = async (event) => {
+            const file = event.target.files[0];
+            if(file) {
+                try {
+                    newAvatarBase64 = await comprimirImagem(file);
+                    document.getElementById('edit-avatar-preview').src = newAvatarBase64;
+                } catch(e) { alert("Erro na imagem."); }
+            }
+        };
+        window.salvarPerfil = async () => {
+            const novoNome = document.getElementById('edit-name-input').value;
+            const novoApelido = document.getElementById('edit-nick-input').value;
+            
+            if(!novoNome) return alert("O Nome do Personagem é obrigatório!");
+            
+            const updates = { 
+                nome: novoNome, 
+                apelido: novoApelido, 
+                personagem: novoNome 
+            };
+            if(newAvatarBase64) updates.avatar = newAvatarBase64;
+            
+            try {
+                await updateDoc(doc(db, "users", auth.currentUser.uid), updates);
+                const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
+                currentUserData = snap.data();
+                atualizarInterface(currentUserData);
+                closeEditProfileModal();
+                alert("Perfil atualizado!"); 
+            } catch(e) { alert("Erro ao salvar perfil."); }
+        };
+
+        // HISTORIA
+        window.editarHistoria = async () => {
+            const novaHistoria = prompt("Digite a história do seu personagem:", currentUserData.historiaTexto || "");
+            if(novaHistoria) {
+                const novaImagem = prompt("Cole o link da imagem de capa (URL):", currentUserData.historiaImagem || "");
+                const updates = { historiaTexto: novaHistoria };
+                if(novaImagem) updates.historiaImagem = novaImagem;
+                try {
+                    await updateDoc(doc(db, "users", auth.currentUser.uid), updates);
+                    currentUserData.historiaTexto = novaHistoria;
+                    if(novaImagem) currentUserData.historiaImagem = novaImagem;
+                    atualizarInterface(currentUserData);
+                    alert("História atualizada!");
+                } catch(e) { alert("Erro ao salvar história."); }
+            }
+        };
+
+        // FRASES
+        window.carregarFrases = async () => {
+            const container = document.getElementById('frases-list-container');
+            if(!container) return;
+            const q = query(collection(db, "frases"), orderBy("data", "desc"));
+            onSnapshot(q, (snapshot) => {
+                container.innerHTML = '';
+                if(snapshot.empty) { container.innerHTML = '<p style="text-align:center; color:#777;">Nenhuma frase encontrada.</p>'; return; }
+                snapshot.forEach((doc) => {
+                    const f = doc.data();
+                    const div = document.createElement('div');
+                    div.className = 'frase-item';
+                    div.onclick = () => copiarFrase(f.texto);
+                    div.innerHTML = `<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor || "Desconhecido"}</div>`;
+                    container.appendChild(div);
+                });
+            }, (error) => {
+                container.innerHTML = '<p style="text-align:center; color:red;">Erro ao carregar.</p>';
+            });
+        };
+        window.adicionarFrase = async () => {
+            const input = document.getElementById('novaFraseInput');
+            const texto = input.value;
+            if(!texto || texto.trim() === "") return alert("Digite uma frase.");
+            
+            const autorNome = currentUserData.apelido || currentUserData.nome || "Anônimo";
+            
+            try {
+                await addDoc(collection(db, "frases"), { texto: texto, autor: autorNome, data: serverTimestamp() });
+                input.value = ""; 
+            } catch(e) { alert("Erro ao salvar frase."); }
+        };
+        window.copiarFrase = (texto) => {
+            navigator.clipboard.writeText(texto).then(() => {
+                const feedback = document.getElementById('copyFeedback');
+                feedback.style.display = 'block';
+                setTimeout(() => { feedback.style.display = 'none'; }, 2000);
+            });
+        };
+
+        // --- SISTEMAS DE LOJA ---
+        async function carregarLoja() { 
+            const c = document.getElementById('loja-jutsus-grid'); if(!c) return; 
+            const m = currentUserData.meusJutsus || []; 
+            const meuNome = currentUserData.nome || ""; 
+            const s = await getDocs(collection(db, "jutsus")); 
+            c.innerHTML = ''; 
+            s.forEach((d) => { 
+                const i = d.data(); 
+                if(m.includes(d.id)) return; 
+                const permitidos = i.restrito_a || []; 
+                if (permitidos.length > 0 && !permitidos.includes(meuNome)) return; 
+                const img = i.imagem || IMG_PADRAO;
+                const k = document.createElement('div'); k.className = 'card'; 
+                k.onclick = (e) => { if(e.target.classList.contains('buy-btn')) return; verDetalhesJutsu(d.id); };
+                k.innerHTML = `<img src="${img}" class="card-img-top" onerror="this.src='${IMG_PADRAO}'"><h4>${i.nome}</h4><p>${i.rank}</p><p style="color:var(--primary-color)">${formatarNum(i.preco)} Ryos</p><button class="buy-btn" onclick="comprarJutsu('${d.id}', ${i.preco}, '${i.nome}'); event.stopPropagation();">Comprar</button>`; 
+                c.appendChild(k); 
+            }); 
+        }
+
+        async function carregarMeusJutsus(lista) { 
+            const container = document.getElementById('meus-jutsus-grid'); if(!container) return; container.innerHTML = ''; 
+            if(!lista || lista.length === 0) { container.innerHTML = '<p>Vazio.</p>'; return; } 
+            for(const id of lista) { 
+                const s = await getDoc(doc(db, "jutsus", id)); 
+                if(s.exists()) { 
+                    const j = s.data(); 
+                    const img = j.imagem || IMG_PADRAO;
+                    const k = document.createElement('div'); k.className = 'card jutsu-card-click'; k.onclick = () => verDetalhesJutsu(id); 
+                    k.innerHTML = `<img src="${img}" class="card-img-top" onerror="this.src='${IMG_PADRAO}'"><h4>${j.nome}</h4><small>Rank ${j.rank}</small>`; 
+                    container.appendChild(k); 
+                } 
+            } 
+        }
+
+        window.verDetalhesJutsu = async (id) => {
+            const docRef = doc(db, "jutsus", id);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                document.getElementById('jutsu-name-modal').innerText = data.nome;
+                document.getElementById('jutsu-rank-modal').innerText = "Rank " + data.rank;
+                document.getElementById('jutsu-desc-modal').innerText = data.descricao || "Sem descrição disponível.";
+                document.getElementById('jutsu-price-modal').innerText = "Valor de Mercado: " + formatarNum(data.preco) + " Ryos";
+                const imgEl = document.getElementById('jutsu-img-modal');
+                imgEl.src = data.imagem || IMG_PADRAO;
+                imgEl.onerror = () => { imgEl.src = IMG_PADRAO; }; 
+                document.getElementById('jutsuModal').style.display = 'flex';
+            }
+        };
+        window.fecharJutsuModal = () => { document.getElementById('jutsuModal').style.display = 'none'; };
+
+        async function carregarLojaFerramentas() { 
+            const c = document.getElementById('loja-ferramentas-grid'); if(!c) return; 
+            const m = currentUserData.ferramentas || []; 
+            const s = await getDocs(collection(db, "ferramentas")); 
+            c.innerHTML = ''; 
+            s.forEach((d) => { 
+                const i = d.data(); 
+                if(m.includes(d.id)) return; 
+                const img = i.imagem || IMG_PADRAO;
+                const k = document.createElement('div'); k.className = 'card'; 
+                k.onclick = (e) => { if(e.target.classList.contains('buy-btn')) return; verDetalhesFerramenta(d.id); };
+                k.innerHTML = `<img src="${img}" class="card-img-top" onerror="this.src='${IMG_PADRAO}'"><h4>${i.nome}</h4><p style="font-size:0.8rem">${i.dano || "Ferramenta"}</p><p style="color:var(--primary-color)">${formatarNum(i.preco)} Ryos</p><button class="buy-btn" onclick="comprarFerramenta('${d.id}', ${i.preco}, '${i.nome}'); event.stopPropagation();">Comprar</button>`; 
+                c.appendChild(k); 
+            }); 
+        }
+        async function carregarMinhasFerramentas(lista) {
+            const container = document.getElementById('minhas-ferramentas-grid'); if(!container) return; container.innerHTML = '';
+            if(!lista || lista.length === 0) { container.innerHTML = '<p>Vazio.</p>'; return; }
+            for(const id of lista) {
+                const s = await getDoc(doc(db, "ferramentas", id));
+                if(s.exists()) {
+                    const j = s.data();
+                    const img = j.imagem || IMG_PADRAO;
+                    const k = document.createElement('div'); k.className = 'card jutsu-card-click'; k.onclick = () => verDetalhesFerramenta(id);
+                    k.innerHTML = `<img src="${img}" class="card-img-top" onerror="this.src='${IMG_PADRAO}'"><h4>${j.nome}</h4><small>${j.dano || "Item"}</small>`;
+                    container.appendChild(k);
+                }
+            }
+        }
+        window.verDetalhesFerramenta = async (id) => {
+            const docRef = doc(db, "ferramentas", id);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                document.getElementById('tool-name-modal').innerText = data.nome;
+                document.getElementById('tool-rank-modal').innerText = data.dano || "Item";
+                document.getElementById('tool-desc-modal').innerText = data.descricao || "Sem descrição.";
+                document.getElementById('tool-price-modal').innerText = "Pago: " + formatarNum(data.preco) + " Ryos";
+                const imgEl = document.getElementById('tool-img-modal');
+                imgEl.src = data.imagem || IMG_PADRAO;
+                imgEl.onerror = () => { imgEl.src = IMG_PADRAO; };
+                document.getElementById('toolModal').style.display = 'flex';
+            }
+        };
+        window.fecharToolModal = () => { document.getElementById('toolModal').style.display = 'none'; };
+
+        async function carregarLojaItens() { 
+            const c = document.getElementById('loja-itens-grid'); if(!c) return; 
+            const m = currentUserData.itens || []; 
+            const s = await getDocs(collection(db, "itens")); 
+            c.innerHTML = ''; 
+            s.forEach((d) => { 
+                const i = d.data(); 
+                const img = i.imagem || IMG_PADRAO;
+                const k = document.createElement('div'); k.className = 'card'; 
+                k.onclick = (e) => { if(e.target.classList.contains('buy-btn')) return; verDetalhesItem(d.id); };
+                k.innerHTML = `<img src="${img}" class="card-img-top" onerror="this.src='${IMG_PADRAO}'"><h4>${i.nome}</h4><p style="font-size:0.8rem">${i.efeito || "Consumível"}</p><p style="color:var(--primary-color)">${formatarNum(i.preco)} Ryos</p><button class="buy-btn" onclick="comprarItem('${d.id}', ${i.preco}, '${i.nome}'); event.stopPropagation();">Comprar</button>`; 
+                c.appendChild(k); 
+            }); 
+        }
+        async function carregarMeusItens(lista) {
+            const container = document.getElementById('meus-itens-grid'); if(!container) return; container.innerHTML = '';
+            if(!lista || lista.length === 0) { container.innerHTML = '<p>Vazio.</p>'; return; }
+            for(const id of lista) {
+                const s = await getDoc(doc(db, "itens", id));
+                if(s.exists()) {
+                    const j = s.data();
+                    const img = j.imagem || IMG_PADRAO;
+                    const k = document.createElement('div'); k.className = 'card jutsu-card-click'; k.onclick = () => verDetalhesItem(id);
+                    k.innerHTML = `<img src="${img}" class="card-img-top" onerror="this.src='${IMG_PADRAO}'"><h4>${j.nome}</h4><small>${j.efeito || "Item"}</small>`;
+                    container.appendChild(k);
+                }
+            }
+        }
+        window.verDetalhesItem = async (id) => {
+            const docRef = doc(db, "itens", id);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                document.getElementById('item-name-modal').innerText = data.nome;
+                document.getElementById('item-rank-modal').innerText = data.efeito || "Consumível";
+                document.getElementById('item-desc-modal').innerText = data.descricao || "Sem descrição.";
+                document.getElementById('item-price-modal').innerText = "Valor: " + formatarNum(data.preco) + " Ryos";
+                const imgEl = document.getElementById('item-img-modal');
+                imgEl.src = data.imagem || IMG_PADRAO;
+                imgEl.onerror = () => { imgEl.src = IMG_PADRAO; };
+                document.getElementById('itemModal').style.display = 'flex';
+            }
+        };
+        window.fecharItemModal = () => { document.getElementById('itemModal').style.display = 'none'; };
+
+        window.comprarJutsu = async (id, p, n) => {
+            if(!confirm(`Comprar ${n}?`)) return;
+            if(currentUserData.ryos < p) return alert("Sem Ryos suficientes!");
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(-p), meusJutsus: arrayUnion(id) });
+            alert("Comprado!");
+            const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
+            currentUserData = snap.data();
+            atualizarInterface(currentUserData);
+            carregarLoja(); carregarMeusJutsus(currentUserData.meusJutsus);
+        };
+        window.comprarFerramenta = async (id, p, n) => {
+            if(!confirm(`Comprar ${n}?`)) return;
+            if(currentUserData.ryos < p) return alert("Sem Ryos suficientes!");
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(-p), ferramentas: arrayUnion(id) });
+            alert("Comprado!");
+            const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
+            currentUserData = snap.data();
+            atualizarInterface(currentUserData);
+            carregarLojaFerramentas(); carregarMinhasFerramentas(currentUserData.ferramentas);
+        };
+        window.comprarItem = async (id, p, n) => {
+            if(!confirm(`Comprar ${n}?`)) return;
+            if(currentUserData.ryos < p) return alert("Sem Ryos suficientes!");
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(-p), itens: arrayUnion(id) });
+            alert("Comprado!");
+            const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
+            currentUserData = snap.data();
+            atualizarInterface(currentUserData);
+            carregarLojaItens(); carregarMeusItens(currentUserData.itens);
+        };
+
+        // FEED
+        window.handleImageUpload = async (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                try {
+                    currentImageBase64 = await comprimirImagem(file); 
+                    document.getElementById('preview-image').src = currentImageBase64;
+                    document.getElementById('preview-container').style.display = 'block';
+                } catch (error) { alert("Erro ao processar imagem."); }
+            }
+        };
+        window.removeImage = () => { document.getElementById('imageInput').value = ""; currentImageBase64 = null; document.getElementById('preview-container').style.display = 'none'; };
+        window.publicarPost = async () => {
+            const texto = document.getElementById('postInput').value;
+            const user = auth.currentUser;
+            
+            if(!user || !currentUserData) return alert("Aguarde o carregamento do perfil.");
+            if(!texto.trim() && !currentImageBase64) return alert("Escreva algo ou adicione uma foto!");
+            
+            const btn = document.querySelector('.post-tools .btn-post'); 
+            const btnOriginalText = btn.innerText; 
+            btn.innerText = "Enviando..."; btn.disabled = true;
+            
+            try {
+                const autorDisplay = currentUserData.apelido || currentUserData.nome || "Ninja";
+                await addDoc(collection(db, "posts"), {
+                    uid: user.uid, autor: autorDisplay, autorAvatar: currentUserData.avatar || null,
+                    conteudo: texto, imagem: currentImageBase64 || null,
+                    data: serverTimestamp(), likes: [], savedBy: [], comments: []
+                });
+                document.getElementById('postInput').value = ""; removeImage();
+            } catch(e) { console.error(e); alert("Erro ao enviar: " + e.message); } 
+            finally { btn.innerText = btnOriginalText; btn.disabled = false; }
+        };
+        window.renderFeed = (filterType) => {
+            const container = document.getElementById('feed-container');
+            if(!container) return;
+            const user = auth.currentUser;
+            document.getElementById('user-menu').classList.remove('show');
+            
+            const q = query(collection(db, "posts"), orderBy("data", "desc"));
+            onSnapshot(q, (snapshot) => {
+                container.innerHTML = '';
+                if(snapshot.empty) { container.innerHTML = '<p style="text-align:center; padding:20px;">Nenhuma publicação.</p>'; return; }
+                let posts = [];
+                snapshot.forEach(doc => posts.push({id: doc.id, ...doc.data()}));
+                if(filterType === 'saved') {
+                    posts = posts.filter(p => p.savedBy && p.savedBy.includes(user.uid));
+                    if(posts.length === 0) { container.innerHTML = '<p style="text-align:center; padding:20px; color:#777;">Nada salvo.</p>'; return; }
+                }
+                posts.forEach(post => {
+                    const isLiked = post.likes && post.likes.includes(user.uid);
+                    const isSaved = post.savedBy && post.savedBy.includes(user.uid);
+                    const isOwner = post.uid === user.uid;
+                    const numLikes = post.likes ? post.likes.length : 0;
+                    let dataFormatada = "Agora";
+                    if(post.data) { const d = post.data.toDate(); dataFormatada = d.toLocaleDateString(); }
+                    let avatarSrc = post.autorAvatar || `https://placehold.co/40x40/orange/white?text=${post.autor[0]}`;
+                    if(isOwner && currentUserData.avatar) avatarSrc = currentUserData.avatar;
+                    let optionsHTML = '';
+                    if(isOwner) {
+                        optionsHTML = `<div class="post-menu-container"><div class="post-options-btn" onclick="togglePostMenu('${post.id}')"><i class="fa-solid fa-ellipsis"></i></div>
+                            <div id="menu-${post.id}" class="post-dropdown">
+                                <div class="post-dropdown-item" onclick="startEdit('${post.id}')"><i class="fa-solid fa-pen"></i> Editar</div>
+                                <div class="post-dropdown-item danger" onclick="deletePost('${post.id}')"><i class="fa-solid fa-trash"></i> Excluir</div>
+                            </div></div>`;
+                    }
+                    const div = document.createElement('div'); div.className = 'post';
+                    div.innerHTML = `
+                        <div class="post-header">
+                            <div class="user-avatar-post"><img src="${avatarSrc}" alt="U"></div>
+                            <div class="post-info"><div class="post-author">${post.autor}</div><div class="post-time">${dataFormatada}</div></div>
+                            ${optionsHTML}
+                        </div>
+                        <div class="post-content" id="content-${post.id}">${post.conteudo}</div>
+                        ${post.imagem ? `<img src="${post.imagem}" class="post-image" onclick="openCommentModal('${post.id}')">` : ''}
+                        <div class="post-actions">
+                            <button class="action-btn ${isLiked?'liked':''}" onclick="toggleLike('${post.id}')"><i class="${isLiked?'fa-solid':'fa-regular'} fa-heart"></i></button>
+                            <button class="action-btn" onclick="openCommentModal('${post.id}')"><i class="fa-regular fa-comment"></i></button>
+                            <button class="action-btn ${isSaved?'saved':''}" onclick="toggleSave('${post.id}')" style="margin-left:auto;"><i class="${isSaved?'fa-solid':'fa-regular'} fa-bookmark"></i></button>
+                        </div>
+                        <div style="padding:0 10px 10px 10px; font-weight:600; font-size:0.9rem;">${numLikes} curtidas</div>
+                        <textarea id="edit-area-${post.id}" class="edit-textarea" style="display:none; margin:10px;" rows="3">${post.conteudo}</textarea>
+                        <div id="edit-btns-${post.id}" style="display:none; text-align:right; padding:10px;">
+                            <button onclick="cancelEdit('${post.id}')" style="margin-right:10px;">Cancelar</button>
+                            <button class="btn-post" onclick="saveEdit('${post.id}')">Salvar</button>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+            }, (error) => { container.innerHTML = `<p style='text-align:center; color:red;'>Erro ao carregar feed: ${error.message}</p>`; });
+        };
+
+        // HELPERS GERAIS
+        window.togglePostMenu = (id) => { const m = document.getElementById(`menu-${id}`); document.querySelectorAll('.post-dropdown').forEach(el => { if(el!==m) el.classList.remove('active'); }); m.classList.toggle('active'); };
+        window.deletePost = async (id) => { if(confirm("Excluir?")) await deleteDoc(doc(db, "posts", id)); };
+        window.startEdit = (id) => { document.getElementById(`content-${id}`).style.display = 'none'; document.getElementById(`edit-area-${id}`).style.display = 'block'; document.getElementById(`edit-btns-${id}`).style.display = 'block'; document.getElementById(`menu-${id}`).classList.remove('active'); };
+        window.cancelEdit = (id) => { document.getElementById(`content-${id}`).style.display = 'block'; document.getElementById(`edit-area-${id}`).style.display = 'none'; document.getElementById(`edit-btns-${id}`).style.display = 'none'; };
+        window.saveEdit = async (id) => { await updateDoc(doc(db, "posts", id), { conteudo: document.getElementById(`edit-area-${id}`).value }); };
+        window.toggleLike = async (id) => { const uid = auth.currentUser.uid; const ref = doc(db, "posts", id); const snap = await getDoc(ref); if(snap.exists()){ const likes = snap.data().likes || []; if(likes.includes(uid)) await updateDoc(ref, { likes: arrayRemove(uid) }); else await updateDoc(ref, { likes: arrayUnion(uid) }); } };
+        window.toggleSave = async (id) => { const uid = auth.currentUser.uid; const ref = doc(db, "posts", id); const snap = await getDoc(ref); if(snap.exists()){ const saved = snap.data().savedBy || []; if(saved.includes(uid)) await updateDoc(ref, { savedBy: arrayRemove(uid) }); else await updateDoc(ref, { savedBy: arrayUnion(uid) }); } };
+        window.openCommentModal = async (id) => { currentOpenPostId = id; const modal = document.getElementById('commentModal'); const left = document.getElementById('modalPostContent'); const snap = await getDoc(doc(db, "posts", id)); if(!snap.exists()) return; const post = snap.data(); if(post.imagem) left.innerHTML = `<img src="${post.imagem}">`; else left.innerHTML = `<div class="modal-left-text">${post.conteudo}</div>`; renderCommentsList(post.comments || []); modal.style.display = 'flex'; };
+        function renderCommentsList(comments) { const list = document.getElementById('commentsList'); if(comments.length === 0) { list.innerHTML = "<p style='color:#777; text-align:center;'>Nenhum comentário.</p>"; return; } list.innerHTML = comments.map(c => `<div class="comment-item" style="margin-bottom:10px;"><span style="font-weight:bold; margin-right:5px;">${c.autor}</span><span>${c.texto}</span></div>`).join(''); }
+        window.submitComment = async () => { const txt = document.getElementById('newCommentText').value; if(!txt) return; await updateDoc(doc(db, "posts", currentOpenPostId), { comments: arrayUnion({ uid: auth.currentUser.uid, autor: currentUserData.nome, texto: txt, data: new Date().toISOString() }) }); document.getElementById('newCommentText').value = ""; const snap = await getDoc(doc(db, "posts", currentOpenPostId)); renderCommentsList(snap.data().comments || []); };
+        window.closeModal = () => { document.getElementById('commentModal').style.display = 'none'; currentOpenPostId = null; };
+        window.verDetalhesJutsu = async (id) => { const docRef = doc(db, "jutsus", id); const docSnap = await getDoc(docRef); if (docSnap.exists()) { const data = docSnap.data(); document.getElementById('jutsu-name-modal').innerText = data.nome; document.getElementById('jutsu-rank-modal').innerText = "Rank " + data.rank; document.getElementById('jutsu-desc-modal').innerText = data.descricao || "Sem descrição."; document.getElementById('jutsu-price-modal').innerText = "Valor: " + data.preco + " Ryos"; document.getElementById('jutsu-img-modal').src = data.imagem || "https://img.freepik.com/vetores-gratis/ilustracao-de-pergaminho-ninja-desenhada-a-mao_23-2151159846.jpg"; document.getElementById('jutsuModal').style.display = 'flex'; } };
+        window.fecharJutsuModal = () => { document.getElementById('jutsuModal').style.display = 'none'; };
+        
+        // CARREGAMENTO SEGURO DE PERSONAGENS
+        async function carregarPersonagens() { 
+            const container = document.getElementById('directory-grid'); 
+            if (!container) return; 
+            container.innerHTML = '<p>Carregando...</p>'; 
+            try { 
+                const querySnapshot = await getDocs(collection(db, "users")); 
+                container.innerHTML = ''; 
+                if(querySnapshot.empty) { container.innerHTML = '<p>Nenhum ninja encontrado.</p>'; return; }
+                querySnapshot.forEach((doc) => { 
+                    const u = doc.data(); 
+                    const avatar = u.avatar || `https://placehold.co/60x60/orange/white?text=${u.nome ? u.nome[0] : 'N'}`; 
+                    const card = document.createElement('div'); 
+                    card.className = 'card jutsu-card-click'; 
+                    card.onclick = () => verPerfil(doc.id); 
+                    const apelidoDisplay = u.apelido || u.personagem || "Desconhecido"; 
+                    card.innerHTML = `<div style="width:60px; height:60px; border-radius:50%; background:#eee; margin:0 auto 10px auto; overflow:hidden;"><img src="${avatar}" style="width:100%; height:100%; object-fit:cover;"></div><h4 style="margin-bottom:5px;">${u.nome || "Ninja"}</h4><span style="font-size:0.8rem; color:#777;">${apelidoDisplay}</span>`; 
+                    container.appendChild(card); 
+                }); 
+            } catch(e) { container.innerHTML = '<p>Erro ao carregar ninjas.</p>'; } 
+        }
+        
+   // Substitua a função window.verPerfil antiga por esta:
+window.verPerfil = async (uid) => {
+    const docSnap = await getDoc(doc(db, "users", uid));
+    
+    if (docSnap.exists()) {
+        const u = docSnap.data();
+        
+        // Imagem e Nome
+        const avatar = u.avatar || `https://placehold.co/100x100/orange/white?text=${u.nome ? u.nome[0] : 'N'}`;
+        const apelidoDisplay = u.apelido || u.personagem || "Desconhecido";
+        
+        document.getElementById('profile-modal-name').innerText = u.nome || "Ninja";
+        document.getElementById('profile-modal-char').innerText = "Apelido: " + apelidoDisplay;
+        document.getElementById('profile-modal-img').src = avatar;
+
+        // Estatísticas Gerais
+        document.getElementById('prof-nivel').innerText = u.nivel || "1";
+        document.getElementById('prof-cargo').innerText = u.cargo || "Genin";
+        
+        // Ryos Formatados
+        document.getElementById('prof-ryos').innerText = (u.ryos || 0).toLocaleString('pt-BR');
+
+        // Contagens de Listas (Proteção contra erro se a lista não existir)
+        document.getElementById('prof-jutsus').innerText = u.meusJutsus ? u.meusJutsus.length : "0";
+        document.getElementById('prof-tools').innerText = u.ferramentas ? u.ferramentas.length : "0";
+        document.getElementById('prof-items').innerText = u.itens ? u.itens.length : "0";
+
+        // --- AQUI ESTÁ A MUDANÇA PARA LER OS NOVOS CAMPOS ---
+        document.getElementById('prof-wins').innerText = u.vitorias || "0";
+        document.getElementById('prof-draws').innerText = u.empates || "0";
+        document.getElementById('prof-loses').innerText = u.derrotas || "0";
+        // -----------------------------------------------------
+
+        document.getElementById('profileModal').style.display = 'flex';
+    }
+};
+        window.fecharProfileModal = () => { document.getElementById('profileModal').style.display = 'none'; };
+        
+        async function carregarMissoes() { const c = document.getElementById('missoes-grid'); const map = currentUserData.statusMissoes || {}; const s = await getDocs(collection(db, "missoes")); c.innerHTML = ''; s.forEach((d) => { const m = d.data(); const id = d.id; const st = map[id] || 'neutro'; const k = document.createElement('div'); k.className = 'card jutsu-card-click'; let statusText="Disponível", statusColor="#777"; if(st==='em_andamento'){statusText="Em Andamento";statusColor="orange";}else if(st==='aprovado'){statusText="Coletar!";statusColor="green";}else if(st==='concluido'){statusText="Concluída";statusColor="blue";} k.onclick = () => verDetalhesMissao(id, st); k.innerHTML=`<h4>${m.titulo}</h4><p style="font-size:0.9rem; color:${statusColor}; font-weight:bold;">${statusText}</p>`; c.appendChild(k); }); }
+        window.verDetalhesMissao = async (id, status) => { const docRef = doc(db, "missoes", id); const docSnap = await getDoc(docRef); if(docSnap.exists()){ const m = docSnap.data(); document.getElementById('missao-name-modal').innerText = m.titulo; document.getElementById('missao-desc-modal').innerText = m.descricao; document.getElementById('missao-reward-modal').innerText = formatarNum(m.recompensa); document.getElementById('missao-img-modal').src = m.imagem || "https://img.freepik.com/vetores-gratis/ilustracao-de-pergaminho-ninja-desenhada-a-mao_23-2151159846.jpg"; const actionDiv = document.getElementById('missao-actions-modal'); actionDiv.innerHTML = ''; if(status === 'neutro') { actionDiv.innerHTML = `<button class="btn-post" onclick="iniciarMissao('${id}')">Aceitar Missão</button>`; } else if(status === 'em_andamento') { actionDiv.innerHTML = `<span style="color:orange; font-weight:bold;">Aguardando Aprovação...</span>`; } else if(status === 'aprovado') { actionDiv.innerHTML = `<button class="btn-post" style="background:green;" onclick="coletarRecompensa('${id}', ${m.recompensa})">Receber Recompensa</button>`; } else if(status === 'concluido') { actionDiv.innerHTML = `<span style="color:blue; font-weight:bold;">Missão Concluída</span>`; } document.getElementById('missaoModal').style.display = 'flex'; } };
+        window.fecharMissaoModal = () => { document.getElementById('missaoModal').style.display = 'none'; };
+        window.carregarRankings = async () => { const c = document.getElementById('ranking-container'); if(!c) return; const s = await getDocs(collection(db, "users")); let l = []; s.forEach(d=>l.push(d.data())); c.innerHTML = ''; renderizarColunaRanking(c, "Ranking Financeiro", l, 'ryos'); renderizarColunaRanking(c, "Missões Rankeadas", l, 'pontos_rankeada'); renderizarColunaRanking(c, "Torneios", l, 'vitorias_torneio'); renderizarColunaRanking(c, "Amistosos", l, 'pontos_amistoso'); renderizarColunaRanking(c, "Em Dupla", l, 'vitorias_dupla'); renderizarRankingCla(c, "Guerra de Clãs", l); }
+        function renderizarColunaRanking(c, t, d, f) { const sorted = [...d].sort((a,b)=>(b[f]||0)-(a[f]||0)); let h = `<div class="ranking-col"><h3>${t}</h3><table class="ranking-table">`; sorted.slice(0,5).forEach((u,i)=>{ h+=`<tr><td>${i+1}</td><td>${u.nome||"Anônimo"}</td><td>${formatarNum(u[f]||0)}</td></tr>`; }); h+=`</table></div>`; c.innerHTML+=h; }
+        function renderizarRankingCla(c, t, d) { const sorted = [...d].filter(u => u.vitorias_cla > 0).sort((a, b) => b.vitorias_cla - a.vitorias_cla); let h = `<div class="ranking-col"><h3>${t}</h3><table class="ranking-table">`; if(sorted.length===0) h+=`<tr><td colspan="3" style="text-align:center;">Sem guerras.</td></tr>`; else sorted.slice(0, 5).forEach((u, index) => { h += `<tr><td>${index+1}</td><td>${u.cla} (${u.nome})</td><td>${u.vitorias_cla}</td></tr>`; }); h += `</table></div>`; c.innerHTML+=h; }
+        window.iniciarMissao = async (id) => { await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusMissoes.${id}`]: 'em_andamento' }); alert("Iniciada!"); location.reload(); };
+        window.coletarRecompensa = async (id, val) => { await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(val), [`statusMissoes.${id}`]: 'concluido' }); alert(`Recebido ${val} Ryos!`); location.reload(); };
+        window.comprarJutsu = async (id, p, n) => { if(!confirm(`Comprar ${n}?`)) return; if(currentUserData.ryos < p) return alert("Sem Ryos!"); await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(-p), meusJutsus: arrayUnion(id) }); alert("Comprado!"); location.reload(); };
+        window.comprarFerramenta = async (id, p, n) => { if(!confirm(`Comprar ${n}?`)) return; if(currentUserData.ryos < p) return alert("Sem Ryos!"); await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(-p), ferramentas: arrayUnion(id) }); alert("Comprado!"); location.reload(); };
+        window.comprarItem = async (id, p, n) => { if(!confirm(`Comprar ${n}?`)) return; if(currentUserData.ryos < p) return alert("Sem Ryos!"); await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(-p), itens: arrayUnion(id) }); alert("Comprado!"); location.reload(); };
+    </script>
+</body>
+</html>
