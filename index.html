@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RPG Naruto - Mobile</title>
+    <title>RPG Naruto</title>
     
     <link rel="icon" href="favicon.png" type="image/png">
 
@@ -20,6 +20,9 @@
             --green-color: #2ecc71;
             --yellow-color: #f1c40f;
             --danger-color: #ed4956;
+            --ranking-gold: #ffd700;
+            --ranking-silver: #c0c0c0;
+            --ranking-bronze: #cd7f32;
         }
         body.dark-mode {
             --bg-color: #000000;
@@ -33,156 +36,178 @@
 
         /* LOGIN */
         .login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999; display: flex; justify-content: center; align-items: center; padding: 20px; }
-        .login-box { background: white; padding: 30px 20px; border-radius: 10px; width: 100%; max-width: 320px; text-align: center; }
-        .login-box input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
-        .login-box button { background: var(--primary-color); color: white; border: none; padding: 12px; width: 100%; cursor: pointer; border-radius: 5px; font-weight: bold; font-size: 16px; transition: 0.2s;}
-        .login-box button:active { transform: scale(0.98); }
+        .login-box { background: white; padding: 30px; border-radius: 10px; width: 100%; max-width: 320px; text-align: center; }
+        .login-box input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
+        .login-box button { background: var(--primary-color); color: white; border: none; padding: 12px; width: 100%; cursor: pointer; border-radius: 5px; font-weight: bold; font-size: 16px; }
 
         /* LAYOUT GERAL */
         #app-container { display: flex; height: 100vh; position: relative; }
         
-        /* OVERLAY DO MENU MOBILE */
+        /* MENU MOBILE (OVERLAY & SIDEBAR) */
         .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 998; opacity: 0; transition: opacity 0.3s; }
         .sidebar-overlay.active { display: block; opacity: 1; }
 
-        /* SIDEBAR (Menu Lateral) */
-        .sidebar { width: 250px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 20px; overflow-y: auto; flex-shrink: 0; z-index: 999; transition: all 0.3s ease; }
-        .logo { font-size: 24px; font-weight: bold; color: var(--primary-color); margin-bottom: 40px; font-family: 'Segoe UI', sans-serif; letter-spacing: 1px; display: flex; align-items: center; gap: 10px;}
+        .sidebar { width: 250px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 20px; overflow-y: auto; flex-shrink: 0; z-index: 999; transition: transform 0.3s ease; }
+        .logo { font-size: 24px; font-weight: bold; color: var(--primary-color); margin-bottom: 40px; font-family: 'Segoe UI', sans-serif; letter-spacing: 1px; }
         .sidebar button { background: none; border: none; color: var(--text-color); width: 100%; text-align: left; padding: 12px 15px; cursor: pointer; border-radius: 8px; transition: 0.2s; display: flex; align-items: center; gap: 15px; margin-bottom: 5px; font-size: 1rem; }
         .sidebar button:hover, .sidebar button.active { background-color: rgba(0,0,0,0.05); font-weight: bold; color: var(--primary-color); }
         #btn-admin-panel { display: none; color: #ed4956; font-weight: bold; }
 
-        /* CONTEÚDO PRINCIPAL */
+        /* ÁREA PRINCIPAL */
         .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; width: 100%; }
         
         /* HEADER */
         header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; padding: 0 15px; flex-shrink: 0; z-index: 10; }
         
-        /* Botão Hambúrguer Mobile */
-        #mobile-menu-btn { display: none; background: none; border: none; font-size: 1.6rem; color: var(--text-color); cursor: pointer; margin-right: 15px; padding: 5px; }
-        
-        /* Navegação Superior */
-        .top-nav { display: flex; gap: 10px; overflow-x: auto; flex: 1; margin-right: 10px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        #mobile-menu-btn { display: none; background: none; border: none; font-size: 1.5rem; color: var(--text-color); cursor: pointer; margin-right: 10px; }
+
+        .top-nav { display: flex; gap: 15px; overflow-x: auto; flex: 1; margin-right: 10px; scrollbar-width: none; }
         .top-nav::-webkit-scrollbar { display: none; }
-        .top-btn { background: none; border: none; padding: 10px 5px; color: #8e8e8e; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; font-size: 0.9rem; font-weight: 500; transition: 0.2s; }
+        .top-btn { background: none; border: none; padding: 10px 5px; color: #8e8e8e; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; font-size: 0.9rem; font-weight: 500; }
         .top-btn.active { border-bottom-color: var(--primary-color); color: var(--text-color); font-weight: bold; }
 
-        /* Área do Usuário */
         .user-area { display: flex; align-items: center; gap: 10px; position: relative; }
-        .ryos { font-weight: bold; color: #e6b800; background: rgba(230, 184, 0, 0.1); padding: 5px 10px; border-radius: 15px; white-space: nowrap; font-size: 0.85rem; display: flex; align-items: center; gap: 5px; }
+        .ryos { font-weight: bold; color: #e6b800; background: rgba(230, 184, 0, 0.1); padding: 5px 10px; border-radius: 15px; white-space: nowrap; font-size: 0.8rem; }
         .profile-circle { width: 35px; height: 35px; border-radius: 50%; overflow: hidden; cursor: pointer; border: 1px solid var(--border-color); flex-shrink: 0; }
         .profile-circle img { width: 100%; height: 100%; object-fit: cover; }
         
         .dropdown-menu { display: none; position: absolute; top: 50px; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); width: 200px; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 5px 0; z-index: 100; }
         .dropdown-menu.show { display: block; }
         .dropdown-item { display: block; padding: 12px 15px; color: var(--text-color); text-decoration: none; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 10px; }
-        .dropdown-item:active { background: rgba(0,0,0,0.05); }
+        .dropdown-item:hover { background: rgba(0,0,0,0.03); }
 
         /* ÁREA DE CONTEÚDO */
-        #content-area { padding: 15px; overflow-y: auto; background-color: var(--bg-color); flex: 1; -webkit-overflow-scrolling: touch; }
-        .tab-content { display: none; animation: fadeIn 0.2s; padding-bottom: 20px; }
+        #content-area { padding: 20px; overflow-y: auto; background-color: var(--bg-color); flex: 1; }
+        .tab-content { display: none; animation: fadeIn 0.3s; }
         .tab-content.active { display: block; }
-        h2, h3 { color: var(--text-color); margin-bottom: 15px; }
 
-        /* MEDIA QUERIES (RESPONSIVIDADE MOBILE) */
-        @media (max-width: 768px) {
-            /* Mostrar botão hambúrguer */
-            #mobile-menu-btn { display: block; }
-
-            /* Sidebar Escondida por padrão */
-            .sidebar {
-                position: fixed;
-                top: 0;
-                left: -260px; /* Esconde para fora da tela */
-                height: 100%;
-                box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-            }
-            
-            /* Classe para mostrar a sidebar */
-            .sidebar.mobile-active { left: 0; }
-
-            /* Ajustes no Header */
-            header { padding: 0 10px; }
-            .logo { font-size: 20px; margin-bottom: 30px; }
-            .ryos span { display: none; } /* Esconde texto "Ryos" no mobile se precisar de espaço */
-            .ryos { font-size: 0.8rem; padding: 4px 8px; }
-
-            /* Ajustes gerais de espaçamento */
-            #content-area { padding: 10px; }
-            .bucket-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+        /* GRID DE CARDS (JUTSUS, ITENS, ETC) - IMPORTANTE */
+        .bucket-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); /* Largura mínima do card */
+            gap: 15px; 
+            margin-top: 20px; 
         }
+        .card { background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); text-align: center; cursor: pointer; transition: 0.2s; }
+        .card:hover { transform: translateY(-2px); border-color: var(--primary-color); }
+        .card-img-top { width: 100%; height: 120px; object-fit: cover; border-radius: 4px; margin-bottom: 10px; }
+        .card h4 { font-size: 1rem; margin: 5px 0; }
 
-        /* ESTILOS ESPECÍFICOS DAS ABAS (Simplificados para mobile) */
-        /* FEED */
+        /* FEED (POSTS) - CENTRALIZADO */
         #feed { max-width: 600px; margin: 0 auto; width: 100%; }
-        .create-post, .post { border: 1px solid var(--border-color); border-radius: 8px; background: var(--card-bg); margin-bottom: 15px; }
-        .create-post textarea { width: 100%; padding: 12px; border: none; outline: none; background: transparent; color: var(--text-color); resize: none; font-size: 1rem; }
-        .post-tools { padding: 10px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; }
-        .btn-post { background: var(--primary-color); color: white; border: none; padding: 8px 20px; border-radius: 20px; font-weight: 600; cursor: pointer; }
-        .post-header { padding: 10px; display: flex; align-items: center; }
-        .user-avatar-post { width: 35px; height: 35px; border-radius: 50%; margin-right: 10px; overflow: hidden; }
-        .post-content { padding: 0 10px 10px; font-size: 0.95rem; line-height: 1.4; }
-        .post-image { width: 100%; max-height: 500px; object-fit: cover; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
-        .post-actions { padding: 10px; display: flex; gap: 20px; }
-        .action-btn { font-size: 1.4rem; color: var(--text-color); background: none; border: none; }
-        .action-btn.liked { color: var(--danger-color); }
+        .create-post { background: var(--card-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border-color); }
+        .create-post textarea { width: 100%; padding: 10px; border: none; outline: none; background: transparent; color: var(--text-color); resize: none; font-size: 1rem; font-family: inherit; }
+        .post-tools { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 10px; margin-top: 10px; }
+        .upload-btn { cursor: pointer; color: var(--primary-color); font-size: 0.9rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+        #imageInput { display: none; }
+        #preview-container { margin-top: 10px; display: none; position: relative; width: 100%; text-align: center; background: #000; border-radius: 4px; overflow: hidden; }
+        #preview-image { max-width: 100%; max-height: 300px; object-fit: contain; }
+        .remove-img { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .btn-post { background: var(--primary-color); color: white; border: none; padding: 6px 16px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 0.9rem; }
 
-        /* CARDS E GRIDS */
-        .card { background: var(--card-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); text-align: center; }
-        .card-img-top { width: 100%; height: 100px; object-fit: cover; border-radius: 4px; }
-        .card h4 { font-size: 0.95rem; margin: 5px 0; }
-        .buy-btn { background: var(--primary-color); color: white; border: none; padding: 8px; width: 100%; border-radius: 4px; font-weight: bold; margin-top: 5px; }
-
-        /* DASHBOARD E PERFIL */
-        .profile-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-        .stat-card { background: var(--bg-color); padding: 10px; border-radius: 8px; text-align: center; border: 1px solid var(--border-color); }
-        .stat-value { font-size: 1.2rem; font-weight: bold; color: var(--primary-color); }
-        .stat-label { font-size: 0.7rem; text-transform: uppercase; color: #888; }
-
-        /* MODAIS (Ajustados para celular) */
-        .modal-overlay-comment { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: center; align-items: end; }
-        .close-modal { position: absolute; top: 15px; left: 15px; font-size: 1.8rem; color: white; z-index: 20; padding: 5px; }
-        .modal-content-card { background: var(--card-bg); width: 90%; max-width: 350px; padding: 25px 20px; border-radius: 12px; text-align: center; position: relative; margin: auto; }
-        .jutsu-modal-img { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; margin-bottom: 15px; }
+        .post { background: var(--card-bg); border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); position: relative; }
+        .post-header { display: flex; align-items: center; padding: 10px; }
+        .user-avatar-post { width: 35px; height: 35px; border-radius: 50%; background: #efefef; margin-right: 10px; overflow: hidden; border: 1px solid var(--border-color); }
+        .user-avatar-post img { width: 100%; height: 100%; object-fit: cover; }
+        .post-info { display: flex; flex-direction: column; }
+        .post-author { font-weight: 600; font-size: 0.95rem; color: var(--text-color); }
+        .post-time { font-size: 0.75rem; color: #8e8e8e; }
         
-        /* Modal de Perfil e Comentários Fullscreen no Mobile */
-        .modal-content-profile, .modal-content-comment { background: var(--card-bg); width: 100%; height: 100%; max-width: none; max-height: none; border-radius: 0; display: flex; flex-direction: column; }
-        @media (min-width: 769px) {
-            .modal-overlay-comment { align-items: center; background: rgba(0,0,0,0.6); }
-            .modal-content-profile { width: 90%; max-width: 800px; height: auto; max-height: 90vh; border-radius: 15px; }
-            .modal-content-comment { width: 90%; max-width: 900px; height: 80vh; border-radius: 4px; flex-direction: row; }
-            .close-modal { color: #333; top: 10px; right: 15px; left: auto; }
+        /* MENU DO POST (CORREÇÃO) */
+        .post-menu-container { margin-left: auto; position: relative; }
+        .post-options-btn { cursor: pointer; color: var(--text-color); padding: 8px; width: 30px; text-align: center; }
+        .post-dropdown { display: none; position: absolute; top: 100%; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; width: 140px; }
+        .post-dropdown.active { display: block; }
+        .post-dropdown-item { padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-color); }
+        .post-dropdown-item.danger { color: var(--danger-color); }
+
+        .post-content { padding: 0 10px 10px 10px; line-height: 1.5; white-space: pre-wrap; font-size: 0.95rem; }
+        .post-image { width: 100%; height: auto; display: block; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); max-height: 600px; object-fit: cover; }
+        .post-actions { display: flex; padding: 10px; gap: 15px; }
+        .action-btn { background: none; border: none; cursor: pointer; color: var(--text-color); font-size: 1.5rem; display: flex; align-items: center; gap: 5px; padding: 0; }
+        .action-btn.liked { color: var(--danger-color); }
+        .edit-textarea { width: 100%; border: 1px solid var(--primary-color); border-radius: 4px; padding: 10px; margin: 10px 0; }
+
+        /* RANKINGS */
+        .rankings-wrapper { display: flex; gap: 20px; flex-wrap: wrap; padding-bottom: 20px; }
+        .ranking-col { flex: 1 1 300px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; }
+        .ranking-col h3 { color: var(--primary-color); text-align: center; margin-bottom: 15px; border-bottom: 2px solid var(--primary-color); font-size: 1.1rem; }
+        .ranking-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .ranking-table td { padding: 8px; border-bottom: 1px solid var(--border-color); }
+
+        /* MODAIS */
+        .modal-overlay-comment { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
+        .close-modal { position: absolute; top: 10px; left: 15px; font-size: 1.8rem; color: white; cursor: pointer; z-index: 20; text-shadow: 0 0 5px black; }
+
+        .modal-content-card { background: var(--card-bg); padding: 30px; border-radius: 10px; width: 90%; max-width: 350px; text-align: center; position: relative; border: 1px solid var(--border-color); }
+        .jutsu-modal-img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); }
+        .jutsu-modal-rank { display: inline-block; background: var(--primary-color); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-bottom: 10px; }
+        .jutsu-modal-price { color: var(--green-color); font-weight: bold; font-size: 1.2rem; border-top: 1px solid var(--border-color); padding-top: 15px; }
+
+        .modal-content-profile { background: var(--card-bg); width: 90%; max-width: 800px; max-height: 90vh; border-radius: 15px; overflow-y: auto; position: relative; border: 1px solid var(--border-color); }
+        .profile-header { background: linear-gradient(to right, #ff5e00, #ff9100); padding: 40px 20px; text-align: center; color: white; }
+        .profile-avatar-large { width: 100px; height: 100px; border-radius: 50%; border: 4px solid white; margin: 0 auto 15px auto; overflow: hidden; background: #fff; }
+        .profile-avatar-large img { width: 100%; height: 100%; object-fit: cover; }
+        .profile-name { font-size: 1.8rem; font-weight: bold; }
+        .profile-char { font-size: 1.1rem; opacity: 0.9; }
+        .profile-body { padding: 20px; }
+        .profile-stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .stat-card { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; text-align: center; }
+        .stat-value { font-size: 1.5rem; font-weight: bold; color: var(--primary-color); }
+        .stat-label { font-size: 0.85rem; color: #777; margin-top: 5px; text-transform: uppercase; }
+
+        .modal-content-comment { background: var(--card-bg); width: 90%; max-width: 900px; height: 80vh; border-radius: 4px; display: flex; overflow: hidden; position: relative; }
+        .modal-left { flex: 1.5; background: #000; display: flex; align-items: center; justify-content: center; }
+        .modal-left img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .modal-right { flex: 1; display: flex; flex-direction: column; background: var(--card-bg); border-left: 1px solid var(--border-color); }
+        .comments-list { flex: 1; padding: 15px; overflow-y: auto; }
+        .comment-input-area { padding: 15px; border-top: 1px solid var(--border-color); display: flex; gap: 10px; }
+        .comment-input-area input { flex: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 20px; outline: none; }
+
+        /* CSS RESPONSIVO (CELULAR) */
+        @media (max-width: 768px) {
+            #mobile-menu-btn { display: block; }
+            
+            /* Sidebar vira gaveta */
+            .sidebar { position: fixed; top: 0; left: -260px; height: 100%; box-shadow: 2px 0 10px rgba(0,0,0,0.3); transition: left 0.3s ease; }
+            .sidebar.mobile-active { left: 0; }
+            
+            .main-content { width: 100%; }
+            header { padding: 0 10px; }
+            #content-area { padding: 10px; }
+            
+            /* Ajuste de Grids no celular */
+            .bucket-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+            .profile-stats-grid { grid-template-columns: repeat(2, 1fr); }
+            
+            /* Modais no celular */
+            .modal-content-comment { flex-direction: column; height: 100%; width: 100%; border-radius: 0; }
+            .modal-left { height: 40%; }
+            .modal-content-profile { width: 100%; height: 100%; border-radius: 0; }
         }
         
-        /* Estilos internos dos modais */
-        .profile-header { padding: 30px 20px; background: linear-gradient(to right, var(--primary-color), #ff9100); color: white; text-align: center; }
-        .profile-avatar-large { width: 80px; height: 80px; margin: 0 auto 10px; border: 3px solid white; border-radius: 50%; overflow: hidden; }
-        .modal-left { flex: 1; background: #000; display: flex; align-items: center; justify-content: center; max-height: 40vh; }
-        .modal-right { flex: 1.5; display: flex; flex-direction: column; }
-        .comment-input-area { padding: 10px; border-top: 1px solid var(--border-color); display: flex; gap: 10px; }
-        .comment-input-area input { flex: 1; padding: 10px; border-radius: 20px; border: 1px solid var(--border-color); }
-
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        /* ANIMAÇÕES */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-    <div id="copyFeedback" class="copy-feedback" style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:white; padding:10px 20px; border-radius:20px; z-index:3000; display:none;">Frase copiada!</div>
+    <div id="copyFeedback" style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:white; padding:10px 20px; border-radius:20px; z-index:3000; display:none;">Frase copiada!</div>
 
     <div id="login-screen" class="login-overlay">
         <div class="login-box">
-            <h2 style="color:var(--primary-color); margin-bottom:20px;"><i class="fa-solid fa-scroll"></i> RPG Naruto</h2>
+            <h2>RPG Naruto</h2>
             <input type="email" id="emailInput" placeholder="E-mail">
             <input type="password" id="passwordInput" placeholder="Senha">
             <button id="btnLogin">Entrar</button>
-            <p style="font-size: 13px; margin-top: 15px; color:#777;">Não possui uma conta? Fale com o administrador.</p>
-            <p id="msgError" style="color: var(--danger-color); font-size: 13px; margin-top: 10px;"></p>
+            <p style="font-size: 12px; margin-top: 15px; color:#777;">Não possui uma conta? Fale com o administrador.</p>
+            <p id="msgError" style="color: red; font-size: 12px; margin-top: 10px;"></p>
         </div>
     </div>
 
     <div id="app-container" style="display: none;">
         <div class="sidebar-overlay" onclick="toggleMobileMenu()"></div>
-
+        
         <aside class="sidebar">
             <div class="logo"><i class="fa-solid fa-scroll"></i> RPG NARUTO</div>
             <nav>
@@ -198,7 +223,6 @@
         <main class="main-content">
             <header>
                 <button id="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fa-solid fa-bars"></i></button>
-                
                 <nav class="top-nav">
                     <button id="nav-btn-feed" onclick="showTab('feed')" class="top-btn active">Feed</button>
                     <button id="nav-btn-jutsus" onclick="showTab('jutsus')" class="top-btn">Jutsus</button>
@@ -212,80 +236,146 @@
                         <img id="header-avatar" src="https://placehold.co/40x40/orange/white?text=N" alt="Avatar">
                     </div>
                     <div id="user-menu" class="dropdown-menu">
-                        <div class="user-info" style="padding:12px 15px; font-weight:bold; border-bottom:1px solid var(--border-color); font-size:0.9rem;">...</div>
-                        <div class="dropdown-item" onclick="openEditProfileModal()"><i class="fa-solid fa-user-pen"></i> Perfil</div>
+                        <div class="user-info" style="padding:10px 15px; font-weight:bold; border-bottom:1px solid var(--border-color);">...</div>
+                        <div class="dropdown-item" onclick="openEditProfileModal()"><i class="fa-solid fa-user-pen"></i> Perfil e Personagem</div>
                         <div class="dropdown-item" onclick="renderFeed('saved')"><i class="fa-regular fa-bookmark"></i> Salvos</div>
-                        <div class="dropdown-item" onclick="renderFeed('all')"><i class="fa-solid fa-globe"></i> Geral</div>
+                        <div class="dropdown-item" onclick="renderFeed('all')"><i class="fa-solid fa-globe"></i> Feed Geral</div>
                         <div class="dropdown-item" onclick="fazerLogout()" style="color:var(--danger-color);"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sair</div>
                     </div>
                 </div>
             </header>
 
             <div id="content-area">
-                <div id="dashboard" class="tab-content active">
-                    <h2>Visão Geral</h2>
+                <div id="feed" class="tab-content active">
+                    <div class="create-post">
+                        <textarea id="postInput" placeholder="No que você está pensando?" rows="2"></textarea>
+                        <div id="preview-container">
+                            <img id="preview-image" src="" alt="">
+                            <button class="remove-img" onclick="removeImage()">×</button>
+                        </div>
+                        <div class="post-tools">
+                            <label for="imageInput" class="upload-btn" title="Adicionar Imagem">
+                                <i class="fa-regular fa-image"></i> Foto/Vídeo
+                            </label>
+                            <input type="file" id="imageInput" accept="image/*" onchange="handleImageUpload(event)">
+                            <button class="btn-post" onclick="publicarPost()">Publicar</button>
+                        </div>
+                    </div>
+                    <div id="feed-container"><p style="text-align:center; color:#777;">Carregando...</p></div>
+                </div>
+
+                <div id="jutsus" class="tab-content">
+                    <h3>Meus Jutsus</h3><div class="bucket-grid" id="meus-jutsus-grid"><p>Carregando...</p></div>
+                    <hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;">
+                    <h3>Loja de Jutsus</h3><div class="bucket-grid" id="loja-jutsus-grid"><p>Carregando...</p></div>
+                </div>
+
+                <div id="ferramentas" class="tab-content">
+                    <h3>Minhas Ferramentas</h3>
+                    <div class="bucket-grid" id="minhas-ferramentas-grid"><p>Carregando...</p></div>
+                    <hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;">
+                    <h3>Loja de Ferramentas</h3>
+                    <div class="bucket-grid" id="loja-ferramentas-grid"><p>Carregando...</p></div>
+                </div>
+
+                <div id="loja" class="tab-content">
+                    <h3>Meus Itens</h3>
+                    <div class="bucket-grid" id="meus-itens-grid"><p>Carregando...</p></div>
+                    <hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;">
+                    <h3>Mercado Geral</h3>
+                    <div class="bucket-grid" id="loja-itens-grid"><p>Carregando...</p></div>
+                </div>
+
+                <div id="personagens" class="tab-content">
+                    <h2>Diretório de Ninjas</h2>
+                    <div class="bucket-grid" id="directory-grid"><p>Carregando lista...</p></div>
+                </div>
+
+                <div id="missoes" class="tab-content"><h2>Quadro de Missões</h2><div class="bucket-grid" id="missoes-grid"><p>Carregando...</p></div></div>
+                <div id="rankings" class="tab-content"><h2>Rankings Globais</h2><div class="rankings-wrapper" id="ranking-container"><p>Carregando Rankings...</p></div></div>
+                <div id="admin-panel" class="tab-content"><h2>Painel Kage</h2><div class="bucket-grid" id="admin-missoes-grid"><p>Carregando...</p></div></div>
+                
+                <div id="dashboard" class="tab-content">
+                    <h2>Estatísticas</h2>
                     <div class="profile-stats-grid">
                         <div class="stat-card"><div class="stat-value" id="dash-nivel">1</div><div class="stat-label">Nível</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-cargo">Genin</div><div class="stat-label">Cargo</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-ryos">0</div><div class="stat-label">Ryos</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-jutsus">0</div><div class="stat-label">Jutsus</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-wins">0</div><div class="stat-label">Vitórias</div></div>
+                        <div class="stat-card"><div class="stat-value" id="dash-draws">0</div><div class="stat-label">Empates</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-loses">0</div><div class="stat-label">Derrotas</div></div>
+                        <div class="stat-card"><div class="stat-value" id="dash-tools">0</div><div class="stat-label">Ferramentas</div></div>
+                        <div class="stat-card"><div class="stat-value" id="dash-items">0</div><div class="stat-label">Itens</div></div>
                     </div>
                 </div>
-
-                <div id="feed" class="tab-content">
-                    <div class="create-post">
-                        <textarea id="postInput" placeholder="No que você está pensando?" rows="2"></textarea>
-                        <div id="preview-container" style="display:none; margin-top:10px; position:relative;">
-                            <img id="preview-image" src="" style="max-width:100%; max-height:300px; border-radius:4px;">
-                            <button onclick="removeImage()" style="position:absolute; top:5px; right:5px; background:rgba(0,0,0,0.6); color:white; border:none; border-radius:50%; width:25px; height:25px;">×</button>
-                        </div>
-                        <div class="post-tools">
-                            <label for="imageInput" style="cursor:pointer; color:var(--primary-color); font-weight:600; display:flex; align-items:center; gap:5px;">
-                                <i class="fa-regular fa-image"></i> Foto
-                            </label>
-                            <input type="file" id="imageInput" accept="image/*" onchange="handleImageUpload(event)" style="display:none;">
-                            <button class="btn-post" onclick="publicarPost()">Publicar</button>
-                        </div>
-                    </div>
-                    <div id="feed-container"><p style="text-align:center; color:#777; padding:20px;">Carregando feed...</p></div>
-                </div>
-
-                <div id="jutsus" class="tab-content"><h3>Meus Jutsus</h3><div class="bucket-grid" id="meus-jutsus-grid"><p>Carregando...</p></div><hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;"><h3>Loja de Jutsus</h3><div class="bucket-grid" id="loja-jutsus-grid"><p>Carregando...</p></div></div>
-                <div id="ferramentas" class="tab-content"><h3>Minhas Ferramentas</h3><div class="bucket-grid" id="minhas-ferramentas-grid"><p>Carregando...</p></div><hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;"><h3>Loja de Ferramentas</h3><div class="bucket-grid" id="loja-ferramentas-grid"><p>Carregando...</p></div></div>
-                <div id="loja" class="tab-content"><h3>Meus Itens</h3><div class="bucket-grid" id="meus-itens-grid"><p>Carregando...</p></div><hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;"><h3>Mercado Geral</h3><div class="bucket-grid" id="loja-itens-grid"><p>Carregando...</p></div></div>
-                <div id="personagens" class="tab-content"><h2>Ninjas</h2><div class="bucket-grid" id="directory-grid"><p>Carregando...</p></div></div>
-                <div id="missoes" class="tab-content"><h2>Missões</h2><div class="bucket-grid" id="missoes-grid"><p>Carregando...</p></div></div>
-                <div id="rankings" class="tab-content"><h2>Rankings</h2><div class="rankings-wrapper" id="ranking-container"><p>Carregando...</p></div></div>
-                <div id="admin-panel" class="tab-content"><h2>Painel Kage</h2><p>Área restrita.</p></div>
                 
-                <div id="historia" class="tab-content" style="position:relative;">
-                    <img id="historia-display-img" src="https://img.freepik.com/vetores-gratis/fundo-de-paisagem-de-anime-de-design-plano_23-2149275367.jpg" style="width:100%; height:200px; object-fit:cover; border-radius:8px;">
-                    <button onclick="editarHistoria()" style="position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.6); color:white; border:none; padding:5px 10px; border-radius:15px; font-size:0.8rem;"><i class="fa-solid fa-pen"></i> Editar</button>
-                    <div style="padding:20px 10px; line-height:1.6;" id="historia-display-text">Carregando história...</div>
+                <div id="historia" class="tab-content">
+                    <div class="historia-container">
+                        <div class="historia-img-container">
+                            <img id="historia-display-img" src="https://img.freepik.com/vetores-gratis/fundo-de-paisagem-de-anime-de-design-plano_23-2149275367.jpg" alt="Capa da História">
+                            <button class="btn-edit-historia" onclick="editarHistoria()"><i class="fa-solid fa-pen"></i> Editar História</button>
+                        </div>
+                        <hr class="historia-divider">
+                        <div class="historia-text-content" id="historia-display-text">A história do seu ninja aparecerá aqui.</div>
+                    </div>
                 </div>
 
                 <div id="frases" class="tab-content">
-                    <div style="display:flex; gap:10px; margin-bottom:20px;">
-                        <input type="text" id="novaFraseInput" placeholder="Digite uma frase..." style="flex:1; padding:10px; border:1px solid var(--border-color); border-radius:20px;">
-                        <button onclick="adicionarFrase()" style="background:var(--primary-color); color:white; border:none; padding:0 20px; border-radius:20px;"><i class="fa-solid fa-paper-plane"></i></button>
+                    <h2>Frases Marcantes</h2>
+                    <div class="frase-input-area">
+                        <input type="text" id="novaFraseInput" placeholder="Digite uma frase icônica...">
+                        <button class="btn-post" onclick="adicionarFrase()">Adicionar</button>
                     </div>
-                    <div id="frases-list-container" style="display:flex; flex-direction:column; gap:10px;"></div>
+                    <div class="frases-list" id="frases-list-container"><p style="color:#777; text-align:center;">Carregando frases...</p></div>
                 </div>
-
             </div>
         </main>
     </div>
 
-    <div class="modal-overlay-comment" id="genericModal" style="z-index: 2001;">
+    <div class="modal-overlay-comment" id="jutsuModal" style="z-index: 2001;">
         <div class="modal-content-card">
-            <span class="close-modal" onclick="closeGenericModal()" style="color:#333; top:10px; right:15px;">&times;</span>
-            <img id="modal-img" class="jutsu-modal-img" alt="Imagem">
-            <h2 id="modal-title" style="margin-bottom:10px; color:var(--primary-color);">Título</h2>
-            <div id="modal-subtitle" class="jutsu-modal-rank">Subtítulo</div>
-            <p id="modal-desc" style="margin-bottom:20px; color:#555; font-size:0.95rem; max-height:150px; overflow-y:auto;">Descrição...</p>
-            <div id="modal-footer" style="border-top:1px solid var(--border-color); padding-top:15px; font-weight:bold;">Footer</div>
+            <span class="close-modal" onclick="fecharJutsuModal()" style="color:#333; top:10px; right:15px;">&times;</span>
+            <img id="jutsu-img-modal" src="" class="jutsu-modal-img">
+            <h2 id="jutsu-name-modal" style="color:var(--primary-color);"></h2>
+            <div id="jutsu-rank-modal" class="jutsu-modal-rank"></div>
+            <p id="jutsu-desc-modal" style="margin-top:10px;"></p>
+            <div id="jutsu-price-modal" class="jutsu-modal-price"></div>
+        </div>
+    </div>
+    
+    <div class="modal-overlay-comment" id="toolModal" style="z-index: 2001;">
+        <div class="modal-content-card" style="border-color:#555;">
+            <span class="close-modal" onclick="fecharToolModal()" style="color:#333; top:10px; right:15px;">&times;</span>
+            <img id="tool-img-modal" src="" class="jutsu-modal-img" style="border-color:#555;">
+            <h2 id="tool-name-modal" style="color:#333;"></h2>
+            <div id="tool-rank-modal" class="jutsu-modal-rank" style="background-color:#555;"></div>
+            <p id="tool-desc-modal" style="margin-top:10px;"></p>
+            <div id="tool-price-modal" class="jutsu-modal-price" style="border-color:#555; color:#555;"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay-comment" id="itemModal" style="z-index: 2001;">
+        <div class="modal-content-card" style="border-color:#2ecc71;">
+            <span class="close-modal" onclick="fecharItemModal()" style="color:#333; top:10px; right:15px;">&times;</span>
+            <img id="item-img-modal" src="" class="jutsu-modal-img" style="border-color:#2ecc71;">
+            <h2 id="item-name-modal" style="color:#333;"></h2>
+            <div id="item-rank-modal" class="jutsu-modal-rank" style="background-color:#2ecc71;"></div>
+            <p id="item-desc-modal" style="margin-top:10px;"></p>
+            <div id="item-price-modal" class="jutsu-modal-price" style="border-color:#2ecc71; color:#2ecc71;"></div>
+        </div>
+    </div>
+
+    <div class="modal-overlay-comment" id="missaoModal" style="z-index: 2001;">
+        <div class="modal-content-card" style="border-color:#e6b800; max-width:500px;">
+            <span class="close-modal" onclick="fecharMissaoModal()" style="color:#333; top:10px; right:15px;">&times;</span>
+            <img id="missao-img-modal" src="" class="jutsu-modal-img" style="border-color:#e6b800; height:150px;">
+            <h2 id="missao-name-modal" style="color:#e6b800;"></h2>
+            <p id="missao-desc-modal" style="margin-top:10px; max-height:200px; overflow-y:auto;"></p>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid #e6b800; padding-top:15px; margin-top:15px;">
+                <div style="font-weight:bold; color:#2ecc71;">Recompensa: <span id="missao-reward-modal"></span> Ryos</div>
+                <div id="missao-actions-modal"></div>
+            </div>
         </div>
     </div>
 
@@ -294,18 +384,21 @@
             <span class="close-modal" onclick="fecharProfileModal()" style="color:white; top:15px; right:15px;">&times;</span>
             <div class="profile-header">
                 <div class="profile-avatar-large"><img src="" id="profile-modal-img"></div>
-                <h2 id="profile-modal-name" style="color:white; margin-bottom:5px;">Nome</h2>
-                <p id="profile-modal-char" style="opacity:0.9;">Apelido</p>
+                <h2 id="profile-modal-name" style="color:white;"></h2>
+                <p id="profile-modal-char" style="opacity:0.9;"></p>
             </div>
-            <div class="profile-body" style="flex:1; overflow-y:auto;">
-                <h3 style="border-left:4px solid var(--primary-color); padding-left:10px; margin: 20px 0 15px;">Estatísticas</h3>
+            <div class="profile-body">
+                <div class="profile-section-title">Estatísticas</div>
                 <div class="profile-stats-grid">
-                    <div class="stat-card"><div class="stat-value" id="prof-nivel">1</div><div class="stat-label">Nível</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-cargo">Genin</div><div class="stat-label">Cargo</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-ryos">0</div><div class="stat-label">Ryos</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-jutsus">0</div><div class="stat-label">Jutsus</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-wins">0</div><div class="stat-label">Vitórias</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-loses">0</div><div class="stat-label">Derrotas</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-nivel"></div><div class="stat-label">Nível</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-cargo"></div><div class="stat-label">Cargo</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-ryos"></div><div class="stat-label">Ryos</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-jutsus"></div><div class="stat-label">Jutsus</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-wins"></div><div class="stat-label">Vitórias</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-loses"></div><div class="stat-label">Derrotas</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-draws"></div><div class="stat-label">Empates</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-tools"></div><div class="stat-label">Ferramentas</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-items"></div><div class="stat-label">Itens</div></div>
                 </div>
             </div>
         </div>
@@ -316,29 +409,25 @@
         <div class="modal-content-comment">
             <div class="modal-left" id="modalPostContent"></div>
             <div class="modal-right">
-                <div style="padding:15px; font-weight:bold; border-bottom:1px solid var(--border-color);">Comentários</div>
-                <div class="comments-list" id="commentsList" style="flex:1; padding:15px; overflow-y:auto;"></div>
-                <div class="comment-input-area">
-                    <input type="text" id="newCommentText" placeholder="Escreva um comentário...">
-                    <button onclick="submitComment()" style="background:none; border:none; color:var(--primary-color); font-weight:bold; padding:0 10px;">Publicar</button>
-                </div>
+                <div style="padding:15px; border-bottom:1px solid #eee;">Comentários</div>
+                <div class="comments-list" id="commentsList"></div>
+                <div class="comment-input-area"><input type="text" id="newCommentText" placeholder="Comentar..."><button onclick="submitComment()" style="border:none; background:none; color:var(--primary-color); font-weight:bold;">Enviar</button></div>
             </div>
         </div>
     </div>
 
     <div class="modal-overlay-comment" id="editProfileModal" style="z-index: 2003;">
         <div class="modal-content-card">
-             <span class="close-modal" onclick="closeEditProfileModal()" style="color:#333; top:10px; right:15px;">&times;</span>
+            <span class="close-modal" onclick="closeEditProfileModal()" style="color:#333; top:10px; right:15px;">&times;</span>
             <h3>Editar Perfil</h3>
-            <img id="edit-avatar-preview" src="" style="width:80px; height:80px; border-radius:50%; margin:15px auto; display:block; border:2px solid var(--primary-color);">
-            <label for="edit-avatar-input" style="color:var(--primary-color); font-weight:bold; cursor:pointer; display:block; margin-bottom:15px;">Alterar Foto</label>
+            <img id="edit-avatar-preview" src="" style="width:80px; height:80px; border-radius:50%; margin:10px auto; display:block;">
+            <label for="edit-avatar-input" class="btn-post" style="display:block; width:fit-content; margin:10px auto;">Escolher Foto</label>
             <input type="file" id="edit-avatar-input" hidden accept="image/*" onchange="handleAvatarPreview(event)">
-            <input type="text" id="edit-name-input" placeholder="Nome do Personagem" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid var(--border-color); border-radius:5px;">
-            <input type="text" id="edit-nick-input" placeholder="Apelido" style="width:100%; padding:10px; margin-bottom:20px; border:1px solid var(--border-color); border-radius:5px;">
+            <input type="text" id="edit-name-input" class="edit-input" placeholder="Nome do Personagem">
+            <input type="text" id="edit-nick-input" class="edit-input" placeholder="Apelido">
             <button class="btn-post" onclick="salvarPerfil()" style="width:100%;">Salvar</button>
         </div>
     </div>
-
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -363,24 +452,23 @@
         let currentOpenPostId = null;
         let newAvatarBase64 = null;
 
-        const IMG_PADRAO = "https://placehold.co/400x200/orange/white?text=Imagem";
+        const IMG_PADRAO = "https://img.freepik.com/vetores-gratis/ilustracao-de-pergaminho-ninja-desenhada-a-mao_23-2151159846.jpg";
 
-        // --- FUNÇÕES DE UI MOBILE ---
+        // --- UI MOBILE ---
         window.toggleMobileMenu = () => {
             document.querySelector('.sidebar').classList.toggle('mobile-active');
             document.querySelector('.sidebar-overlay').classList.toggle('active');
         };
 
-        // LOGIN
+        // --- AUTH ---
         const btnLogin = document.getElementById('btnLogin');
         if(btnLogin) {
             btnLogin.addEventListener('click', () => {
                 const email = document.getElementById('emailInput').value;
                 const senha = document.getElementById('passwordInput').value;
-                if(!email || !senha) return alert("Preencha todos os campos!");
-                btnLogin.innerText = "Entrando..."; btnLogin.disabled = true;
-                signInWithEmailAndPassword(auth, email, senha)
-                    .catch((e) => { btnLogin.innerText = "Entrar"; btnLogin.disabled = false; document.getElementById('msgError').innerText = "Erro ao entrar. Verifique os dados."; });
+                if(!email || !senha) return alert("Preencha tudo!");
+                btnLogin.innerText = "Carregando...";
+                signInWithEmailAndPassword(auth, email, senha).catch((e) => { btnLogin.innerText = "Entrar"; alert(e.message); });
             });
         }
 
@@ -389,166 +477,347 @@
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('app-container').style.display = 'flex';
                 if(user.email === "admin@rpgnaruto.com") document.getElementById('btn-admin-panel').style.display = 'flex';
+
                 const docRef = doc(db, "users", user.uid);
                 const docSnap = await getDoc(docRef);
+
                 if (docSnap.exists()) {
                     currentUserData = docSnap.data();
                     atualizarInterface(currentUserData);
-                    carregarDadosIniciais();
+                    carregarTudo();
                 } else {
                     const dadosPadrao = { nome: "Novo Ninja", ryos: 100, email: user.email, meusJutsus: [], ferramentas: [], itens: [], statusMissoes: {} };
                     await setDoc(docRef, dadosPadrao);
                     currentUserData = dadosPadrao;
                     atualizarInterface(dadosPadrao);
-                    carregarDadosIniciais();
+                    carregarTudo();
                 }
-                try { window.renderFeed('all'); } catch(e) { console.log('Feed erro', e); }
+                try { window.renderFeed('all'); } catch(e) {}
             } else {
                 document.getElementById('login-screen').style.display = 'flex';
                 document.getElementById('app-container').style.display = 'none';
             }
         });
 
-        function carregarDadosIniciais() {
+        function carregarTudo() {
             carregarLoja(); carregarMeusJutsus(currentUserData.meusJutsus);
             carregarLojaFerramentas(); carregarMinhasFerramentas(currentUserData.ferramentas);
             carregarLojaItens(); carregarMeusItens(currentUserData.itens);
             carregarMissoes(); carregarRankings(); carregarFrases();
         }
 
-        function formatarNum(valor) { return Number(valor || 0).toLocaleString('pt-BR'); }
+        function formatarNum(v) { return Number(v||0).toLocaleString('pt-BR'); }
 
         function atualizarInterface(dados) {
-            const nomeEl = document.querySelector('.user-info');
-            const ryosTextEl = document.getElementById('ryos-text');
-            const avatarImg = document.getElementById('header-avatar');
-            const nomeExibicao = dados.apelido || dados.nome || "Ninja";
-            if(nomeEl) nomeEl.innerText = nomeExibicao;
-            if(ryosTextEl) ryosTextEl.innerText = formatarNum(dados.ryos);
-            if(avatarImg) avatarImg.src = dados.avatar || `https://placehold.co/40x40/orange/white?text=${dados.nome ? dados.nome[0] : 'N'}`;
+            document.querySelector('.user-info').innerText = dados.apelido || dados.nome || "Ninja";
+            document.getElementById('ryos-text').innerText = formatarNum(dados.ryos);
+            if(dados.avatar) document.getElementById('header-avatar').src = dados.avatar;
             if(dados.historiaTexto) document.getElementById('historia-display-text').innerText = dados.historiaTexto;
             if(dados.historiaImagem) document.getElementById('historia-display-img').src = dados.historiaImagem;
 
-            const setText = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
-            setText('dash-nivel', dados.nivel || "1"); setText('dash-cargo', dados.cargo || "Genin");
-            setText('dash-ryos', formatarNum(dados.ryos)); setText('dash-jutsus', dados.meusJutsus?.length || 0);
-            setText('dash-wins', dados.vitorias || 0); setText('dash-loses', dados.derrotas || 0);
+            // Atualiza Dashboard
+            const set = (id, val) => { if(document.getElementById(id)) document.getElementById(id).innerText = val; };
+            set('dash-nivel', dados.nivel || 1);
+            set('dash-cargo', dados.cargo || "Genin");
+            set('dash-ryos', formatarNum(dados.ryos));
+            set('dash-jutsus', dados.meusJutsus?.length || 0);
+            set('dash-tools', dados.ferramentas?.length || 0);
+            set('dash-items', dados.itens?.length || 0);
+            set('dash-wins', dados.vitorias || 0);
+            set('dash-loses', dados.derrotas || 0);
+            set('dash-draws', dados.empates || 0);
         }
 
+        // --- COMPRESSOR IMAGEM ---
         function comprimirImagem(file) {
             return new Promise((resolve, reject) => {
-                const reader = new FileReader(); reader.readAsDataURL(file);
-                reader.onload = (event) => { const img = new Image(); img.src = event.target.result; img.onload = () => { const canvas = document.createElement('canvas'); const MAX_WIDTH = 500; let width = img.width; let height = img.height; if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height); resolve(canvas.toDataURL('image/jpeg', 0.7)); }; };
-                reader.onerror = (error) => reject(error);
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 600;
+                        let w = img.width, h = img.height;
+                        if (w > MAX_WIDTH) { h *= MAX_WIDTH / w; w = MAX_WIDTH; }
+                        canvas.width = w; canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, w, h);
+                        resolve(canvas.toDataURL('image/jpeg', 0.7));
+                    };
+                };
+                reader.onerror = reject;
             });
         }
 
-        // TABS - Atualizado para fechar menu mobile
-        window.showTab = (t) => { 
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); 
-            document.getElementById(t).classList.add('active'); 
+        // --- TAB SYSTEM ---
+        window.showTab = (t) => {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(t).classList.add('active');
             document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
-            const btn = document.getElementById('nav-btn-' + t);
+            const btn = document.getElementById('nav-btn-'+t);
             if(btn) btn.classList.add('active');
-            if(t === 'personagens') carregarPersonagens();
-            if(window.innerWidth <= 768) toggleMobileMenu(); // Fecha menu no mobile
+            if(t==='personagens') carregarPersonagens();
+            if(window.innerWidth <= 768) window.toggleMobileMenu(); // Fecha menu mobile
         };
-
         window.toggleMenu = () => document.getElementById('user-menu').classList.toggle('show');
         window.fazerLogout = () => signOut(auth).then(() => location.reload());
+
+        // --- PERFIL ---
+        window.openEditProfileModal = () => {
+            document.getElementById('editProfileModal').style.display = 'flex';
+            document.getElementById('edit-name-input').value = currentUserData.nome || "";
+            document.getElementById('edit-nick-input').value = currentUserData.apelido || "";
+            document.getElementById('user-menu').classList.remove('show');
+        };
+        window.closeEditProfileModal = () => document.getElementById('editProfileModal').style.display = 'none';
+        window.handleAvatarPreview = async (e) => {
+            if(e.target.files[0]) { newAvatarBase64 = await comprimirImagem(e.target.files[0]); document.getElementById('edit-avatar-preview').src = newAvatarBase64; }
+        };
+        window.salvarPerfil = async () => {
+            const nome = document.getElementById('edit-name-input').value;
+            const apelido = document.getElementById('edit-nick-input').value;
+            const updates = { nome: nome, apelido: apelido, personagem: nome };
+            if(newAvatarBase64) updates.avatar = newAvatarBase64;
+            await updateDoc(doc(db, "users", auth.currentUser.uid), updates);
+            location.reload();
+        };
         
-        // PERFIL
-        window.openEditProfileModal = () => { document.getElementById('editProfileModal').style.display = 'flex'; document.getElementById('edit-name-input').value = currentUserData.nome || ""; document.getElementById('edit-nick-input').value = currentUserData.apelido || ""; document.getElementById('edit-avatar-preview').src = currentUserData.avatar || "https://via.placeholder.com/80"; newAvatarBase64 = null; document.getElementById('user-menu').classList.remove('show');};
-        window.closeEditProfileModal = () => { document.getElementById('editProfileModal').style.display = 'none'; };
-        window.handleAvatarPreview = async (event) => { const file = event.target.files[0]; if(file) { try { newAvatarBase64 = await comprimirImagem(file); document.getElementById('edit-avatar-preview').src = newAvatarBase64; } catch(e) { alert("Erro na imagem."); } } };
-        window.salvarPerfil = async () => { const novoNome = document.getElementById('edit-name-input').value; const novoApelido = document.getElementById('edit-nick-input').value; if(!novoNome) return alert("Nome obrigatório!"); const updates = { nome: novoNome, apelido: novoApelido, personagem: novoNome }; if(newAvatarBase64) updates.avatar = newAvatarBase64; try { await updateDoc(doc(db, "users", auth.currentUser.uid), updates); const snap = await getDoc(doc(db, "users", auth.currentUser.uid)); currentUserData = snap.data(); atualizarInterface(currentUserData); closeEditProfileModal(); } catch(e) { alert("Erro ao salvar."); } };
-
-        window.editarHistoria = async () => { const novaHistoria = prompt("História:", currentUserData.historiaTexto || ""); if(novaHistoria) { const novaImagem = prompt("Link da Imagem (URL):", currentUserData.historiaImagem || ""); const updates = { historiaTexto: novaHistoria }; if(novaImagem) updates.historiaImagem = novaImagem; try { await updateDoc(doc(db, "users", auth.currentUser.uid), updates); currentUserData.historiaTexto = novaHistoria; if(novaImagem) currentUserData.historiaImagem = novaImagem; atualizarInterface(currentUserData); } catch(e) { alert("Erro ao salvar."); } } };
-
-        window.carregarFrases = async () => { const container = document.getElementById('frases-list-container'); if(!container) return; const q = query(collection(db, "frases"), orderBy("data", "desc")); onSnapshot(q, (snapshot) => { container.innerHTML = ''; if(snapshot.empty) { container.innerHTML = '<p style="text-align:center; color:#777;">Nenhuma frase.</p>'; return; } snapshot.forEach((doc) => { const f = doc.data(); const div = document.createElement('div'); div.className = 'frase-item'; div.style.padding='15px'; div.style.background='var(--card-bg)'; div.style.borderRadius='8px'; div.style.border='1px solid var(--border-color)'; div.onclick = () => copiarFrase(f.texto); div.innerHTML = `<div style="font-style:italic; margin-bottom:5px;">"${f.texto}"</div><div style="text-align:right; font-size:0.8rem; color:var(--primary-color); font-weight:bold;">- ${f.autor || "Anônimo"}</div>`; container.appendChild(div); }); }); };
-        window.adicionarFrase = async () => { const input = document.getElementById('novaFraseInput'); const texto = input.value; if(!texto || texto.trim() === "") return; const autorNome = currentUserData.apelido || currentUserData.nome || "Anônimo"; try { await addDoc(collection(db, "frases"), { texto: texto, autor: autorNome, data: serverTimestamp() }); input.value = ""; } catch(e) { alert("Erro ao salvar."); } };
-        window.copiarFrase = (texto) => { navigator.clipboard.writeText(texto).then(() => { const feedback = document.getElementById('copyFeedback'); feedback.style.display = 'block'; setTimeout(() => { feedback.style.display = 'none'; }, 2000); }); };
-
-        // --- SISTEMA DE CARDS E MODAIS GENÉRICOS ---
-        function criarCard(containerId, dados, idDoc, tipo, clickFn) {
+        // --- CARREGAMENTO DE CARDS ---
+        function criarCard(containerId, dados, id, tipo, clickFn) {
             const c = document.getElementById(containerId); if(!c) return;
             const img = dados.imagem || IMG_PADRAO;
-            const k = document.createElement('div'); k.className = 'card jutsu-card-click';
-            k.onclick = () => clickFn(idDoc, dados);
-            let subtitle = dados.rank ? `Rank ${dados.rank}` : (dados.dano || dados.efeito || "");
-            k.innerHTML = `<img src="${img}" class="card-img-top" onerror="this.src='${IMG_PADRAO}'"><h4>${dados.nome || dados.titulo}</h4><small>${subtitle}</small>`;
-            c.appendChild(k);
-        }
-
-        function abrirModalGenerico(dados, tipo) {
-            document.getElementById('modal-img').src = dados.imagem || IMG_PADRAO;
-            document.getElementById('modal-title').innerText = dados.nome || dados.titulo;
-            let subtitle = "", footer = "", color = "var(--primary-color)";
-            if(tipo === 'jutsu') { subtitle = "Rank " + dados.rank; footer = "Valor: " + formatarNum(dados.preco) + " Ryos"; color = "var(--primary-color)"; }
-            else if(tipo === 'ferramenta') { subtitle = dados.dano || "Ferramenta"; footer = "Valor: " + formatarNum(dados.preco) + " Ryos"; color = "#555"; }
-            else if(tipo === 'item') { subtitle = dados.efeito || "Consumível"; footer = "Valor: " + formatarNum(dados.preco) + " Ryos"; color = "#2ecc71"; }
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.onclick = () => clickFn(id, dados);
             
-            document.getElementById('modal-title').style.color = color;
-            document.getElementById('modal-subtitle').innerText = subtitle;
-            document.getElementById('modal-subtitle').style.backgroundColor = color;
-            document.getElementById('modal-desc').innerText = dados.descricao || "Sem descrição.";
-            document.getElementById('modal-footer').innerText = footer;
-            document.getElementById('modal-footer').style.color = (tipo==='jutsu'||tipo==='item') ? "var(--green-color)" : color;
-            document.getElementById('genericModal').style.display = 'flex';
+            // Definir subtítulo baseado no tipo
+            let sub = "";
+            if(tipo === 'jutsu') sub = "Rank " + dados.rank;
+            else if(tipo === 'ferramenta') sub = dados.dano || "Ferramenta";
+            else if(tipo === 'item') sub = dados.efeito || "Item";
+            
+            div.innerHTML = `<img src="${img}" class="card-img-top" onerror="this.src='${IMG_PADRAO}'"><h4>${dados.nome}</h4><small>${sub}</small>`;
+            c.appendChild(div);
         }
-        window.closeGenericModal = () => { document.getElementById('genericModal').style.display = 'none'; };
 
-        // --- LOJAS E INVENTÁRIO ---
-        async function carregarLoja() { const c=document.getElementById('loja-jutsus-grid'); if(!c)return; c.innerHTML=''; const m=currentUserData.meusJutsus||[]; const s=await getDocs(collection(db,"jutsus")); s.forEach(d=>{const i=d.data(); if(m.includes(d.id))return; const img=i.imagem||IMG_PADRAO; const k=document.createElement('div'); k.className='card'; k.onclick=(e)=>{if(e.target.classList.contains('buy-btn'))return; abrirModalGenerico(i,'jutsu')}; k.innerHTML=`<img src="${img}" class="card-img-top"><h4>${i.nome}</h4><p>${i.rank}</p><p style="color:var(--primary-color)">${formatarNum(i.preco)} Ryos</p><button class="buy-btn" onclick="comprar('jutsus','meusJutsus','${d.id}',${i.preco});event.stopPropagation()">Comprar</button>`; c.appendChild(k);}); }
-        async function carregarMeusJutsus(l) { const c=document.getElementById('meus-jutsus-grid'); if(!c)return; c.innerHTML=''; if(!l||l.length===0){c.innerHTML='<p>Vazio.</p>';return;} for(const id of l){const s=await getDoc(doc(db,"jutsus",id)); if(s.exists()) criarCard('meus-jutsus-grid',s.data(),id,'jutsu',(id,d)=>abrirModalGenerico(d,'jutsu'));} }
-        async function carregarLojaFerramentas() { const c=document.getElementById('loja-ferramentas-grid'); if(!c)return; c.innerHTML=''; const m=currentUserData.ferramentas||[]; const s=await getDocs(collection(db,"ferramentas")); s.forEach(d=>{const i=d.data(); if(m.includes(d.id))return; const img=i.imagem||IMG_PADRAO; const k=document.createElement('div'); k.className='card'; k.onclick=(e)=>{if(e.target.classList.contains('buy-btn'))return; abrirModalGenerico(i,'ferramenta')}; k.innerHTML=`<img src="${img}" class="card-img-top"><h4>${i.nome}</h4><p>${i.dano||''}</p><p style="color:var(--primary-color)">${formatarNum(i.preco)} Ryos</p><button class="buy-btn" onclick="comprar('ferramentas','ferramentas','${d.id}',${i.preco});event.stopPropagation()">Comprar</button>`; c.appendChild(k);}); }
-        async function carregarMinhasFerramentas(l) { const c=document.getElementById('minhas-ferramentas-grid'); if(!c)return; c.innerHTML=''; if(!l||l.length===0){c.innerHTML='<p>Vazio.</p>';return;} for(const id of l){const s=await getDoc(doc(db,"ferramentas",id)); if(s.exists()) criarCard('minhas-ferramentas-grid',s.data(),id,'ferramenta',(id,d)=>abrirModalGenerico(d,'ferramenta'));} }
-        async function carregarLojaItens() { const c=document.getElementById('loja-itens-grid'); if(!c)return; c.innerHTML=''; const m=currentUserData.itens||[]; const s=await getDocs(collection(db,"itens")); s.forEach(d=>{const i=d.data(); const img=i.imagem||IMG_PADRAO; const k=document.createElement('div'); k.className='card'; k.onclick=(e)=>{if(e.target.classList.contains('buy-btn'))return; abrirModalGenerico(i,'item')}; k.innerHTML=`<img src="${img}" class="card-img-top"><h4>${i.nome}</h4><p>${i.efeito||''}</p><p style="color:var(--primary-color)">${formatarNum(i.preco)} Ryos</p><button class="buy-btn" onclick="comprar('itens','itens','${d.id}',${i.preco});event.stopPropagation()">Comprar</button>`; c.appendChild(k);}); }
-        async function carregarMeusItens(l) { const c=document.getElementById('meus-itens-grid'); if(!c)return; c.innerHTML=''; if(!l||l.length===0){c.innerHTML='<p>Vazio.</p>';return;} for(const id of l){const s=await getDoc(doc(db,"itens",id)); if(s.exists()) criarCard('meus-itens-grid',s.data(),id,'item',(id,d)=>abrirModalGenerico(d,'item'));} }
+        function criarCardLoja(containerId, dados, id, tipo, buyFn, clickFn) {
+            const c = document.getElementById(containerId); if(!c) return;
+            const img = dados.imagem || IMG_PADRAO;
+            const div = document.createElement('div');
+            div.className = 'card';
+            // Clique no card abre detalhes
+            div.onclick = (e) => { if(!e.target.classList.contains('buy-btn')) clickFn(id, dados); };
+            
+            let sub = "";
+            if(tipo === 'jutsu') sub = "Rank " + dados.rank;
+            else if(tipo === 'ferramenta') sub = dados.dano || "Ferramenta";
+            else if(tipo === 'item') sub = dados.efeito || "Item";
+            
+            div.innerHTML = `<img src="${img}" class="card-img-top" onerror="this.src='${IMG_PADRAO}'"><h4>${dados.nome}</h4><small>${sub}</small><p style="color:var(--primary-color); font-weight:bold;">${formatarNum(dados.preco)} Ryos</p><button class="buy-btn">Comprar</button>`;
+            
+            // Evento separado para o botão comprar
+            div.querySelector('.buy-btn').onclick = (e) => { e.stopPropagation(); buyFn(id, dados.preco, dados.nome); };
+            
+            c.appendChild(div);
+        }
 
-        window.comprar = async (colDb, fieldUser, id, price) => { if(!confirm('Comprar?'))return; if(currentUserData.ryos<price)return alert('Ryos insuficientes!'); await updateDoc(doc(db,"users",auth.currentUser.uid),{ryos:increment(-price),[fieldUser]:arrayUnion(id)}); alert('Comprado!'); location.reload(); }
-
-        // FEED
-        window.handleImageUpload = async (event) => { const file = event.target.files[0]; if (file) { try { currentImageBase64 = await comprimirImagem(file); document.getElementById('preview-image').src = currentImageBase64; document.getElementById('preview-container').style.display = 'block'; } catch (e) { alert("Erro imagem."); } } };
-        window.removeImage = () => { document.getElementById('imageInput').value = ""; currentImageBase64 = null; document.getElementById('preview-container').style.display = 'none'; };
-        window.publicarPost = async () => { const texto = document.getElementById('postInput').value; const user = auth.currentUser; if(!user || !currentUserData) return; if(!texto.trim() && !currentImageBase64) return alert("Escreva algo!"); const btn = document.querySelector('.post-tools .btn-post'); btn.innerText = "..."; btn.disabled = true; try { const autorDisplay = currentUserData.apelido || currentUserData.nome || "Ninja"; await addDoc(collection(db, "posts"), { uid: user.uid, autor: autorDisplay, autorAvatar: currentUserData.avatar || null, conteudo: texto, imagem: currentImageBase64 || null, data: serverTimestamp(), likes: [], savedBy: [], comments: [] }); document.getElementById('postInput').value = ""; removeImage(); } catch(e) { alert("Erro ao enviar."); } finally { btn.innerText = "Publicar"; btn.disabled = false; } };
+        // --- LOJAS ---
+        async function carregarLoja() {
+            const c = document.getElementById('loja-jutsus-grid'); if(!c) return; c.innerHTML = '';
+            const m = currentUserData.meusJutsus || [];
+            const snap = await getDocs(collection(db, "jutsus"));
+            snap.forEach(d => {
+                const i = d.data();
+                // Filtro de personagem
+                const permitidos = i.restrito_a || [];
+                if(permitidos.length > 0 && !permitidos.includes(currentUserData.nome)) return;
+                if(!m.includes(d.id)) criarCardLoja('loja-jutsus-grid', i, d.id, 'jutsu', (id, p, n) => comprar(id, p, n, 'meusJutsus'), (id, i) => verDetalhesJutsu(id, i));
+            });
+        }
+        async function carregarMeusJutsus(lista) {
+            const c = document.getElementById('meus-jutsus-grid'); if(!c) return; c.innerHTML = '';
+            if(!lista || lista.length === 0) { c.innerHTML = '<p>Vazio.</p>'; return; }
+            for(const id of lista) { const s = await getDoc(doc(db, "jutsus", id)); if(s.exists()) criarCard('meus-jutsus-grid', s.data(), id, 'jutsu', (id, i) => verDetalhesJutsu(id, i)); }
+        }
         
-        window.renderFeed = (filterType) => {
-            const container = document.getElementById('feed-container'); if(!container) return; const user = auth.currentUser; document.getElementById('user-menu').classList.remove('show');
-            onSnapshot(query(collection(db, "posts"), orderBy("data", "desc")), (snapshot) => {
-                container.innerHTML = ''; if(snapshot.empty) { container.innerHTML = '<p style="text-align:center; padding:20px;">Nenhuma publicação.</p>'; return; }
-                let posts = []; snapshot.forEach(doc => posts.push({id: doc.id, ...doc.data()}));
-                if(filterType === 'saved') { posts = posts.filter(p => p.savedBy && p.savedBy.includes(user.uid)); if(posts.length === 0) { container.innerHTML = '<p style="text-align:center; padding:20px; color:#777;">Nada salvo.</p>'; return; } }
-                posts.forEach(post => {
-                    const isLiked = post.likes && post.likes.includes(user.uid); const isSaved = post.savedBy && post.savedBy.includes(user.uid); const isOwner = post.uid === user.uid;
-                    let dataFormatada = post.data ? post.data.toDate().toLocaleDateString() : "Agora";
-                    let avatarSrc = post.autorAvatar || `https://placehold.co/40x40/orange/white?text=${post.autor[0]}`; if(isOwner && currentUserData.avatar) avatarSrc = currentUserData.avatar;
-                    let optionsHTML = isOwner ? `<div class="post-menu-container" style="margin-left:auto; position:relative;"><button onclick="this.nextElementSibling.classList.toggle('active')" style="background:none;border:none;color:var(--text-color);padding:5px;"><i class="fa-solid fa-ellipsis"></i></button><div class="post-dropdown" style="right:0; top:100%;"><div class="dropdown-item danger" onclick="deletePost('${post.id}')">Excluir</div></div></div>` : '';
+        async function carregarLojaFerramentas() {
+            const c = document.getElementById('loja-ferramentas-grid'); if(!c) return; c.innerHTML = '';
+            const m = currentUserData.ferramentas || [];
+            const snap = await getDocs(collection(db, "ferramentas"));
+            snap.forEach(d => {
+                if(!m.includes(d.id)) criarCardLoja('loja-ferramentas-grid', d.data(), d.id, 'ferramenta', (id, p, n) => comprar(id, p, n, 'ferramentas'), (id, i) => verDetalhesFerramenta(id, i));
+            });
+        }
+        async function carregarMinhasFerramentas(lista) {
+            const c = document.getElementById('minhas-ferramentas-grid'); if(!c) return; c.innerHTML = '';
+            if(!lista || lista.length === 0) { c.innerHTML = '<p>Vazio.</p>'; return; }
+            for(const id of lista) { const s = await getDoc(doc(db, "ferramentas", id)); if(s.exists()) criarCard('minhas-ferramentas-grid', s.data(), id, 'ferramenta', (id, i) => verDetalhesFerramenta(id, i)); }
+        }
+
+        async function carregarLojaItens() {
+            const c = document.getElementById('loja-itens-grid'); if(!c) return; c.innerHTML = '';
+            // Itens podem repetir? Se sim, removemos a checagem de includes. Aqui vou deixar livre.
+            const snap = await getDocs(collection(db, "itens"));
+            snap.forEach(d => {
+                criarCardLoja('loja-itens-grid', d.data(), d.id, 'item', (id, p, n) => comprar(id, p, n, 'itens'), (id, i) => verDetalhesItem(id, i));
+            });
+        }
+        async function carregarMeusItens(lista) {
+            const c = document.getElementById('meus-itens-grid'); if(!c) return; c.innerHTML = '';
+            if(!lista || lista.length === 0) { c.innerHTML = '<p>Vazio.</p>'; return; }
+            for(const id of lista) { const s = await getDoc(doc(db, "itens", id)); if(s.exists()) criarCard('meus-itens-grid', s.data(), id, 'item', (id, i) => verDetalhesItem(id, i)); }
+        }
+
+        // --- COMPRA GENÉRICA ---
+        async function comprar(id, preco, nome, campoDb) {
+            if(!confirm(`Comprar ${nome}?`)) return;
+            if(currentUserData.ryos < preco) return alert("Sem Ryos!");
+            
+            await updateDoc(doc(db, "users", auth.currentUser.uid), {
+                ryos: increment(-preco),
+                [campoDb]: arrayUnion(id)
+            });
+            alert("Comprado!");
+            
+            // Refresh SPA
+            const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
+            currentUserData = snap.data();
+            atualizarInterface(currentUserData);
+            // Recarrega a lista específica
+            if(campoDb === 'meusJutsus') { carregarLoja(); carregarMeusJutsus(currentUserData.meusJutsus); }
+            if(campoDb === 'ferramentas') { carregarLojaFerramentas(); carregarMinhasFerramentas(currentUserData.ferramentas); }
+            if(campoDb === 'itens') { carregarLojaItens(); carregarMeusItens(currentUserData.itens); }
+        }
+
+        // --- MODAIS DE DETALHES ---
+        function abrirModal(tipo, dados) {
+            let prefix = tipo; // jutsu, tool, item
+            document.getElementById(prefix + '-name-modal').innerText = dados.nome;
+            document.getElementById(prefix + '-desc-modal').innerText = dados.descricao || "Sem descrição.";
+            document.getElementById(prefix + '-price-modal').innerText = "Valor: " + formatarNum(dados.preco) + " Ryos";
+            const img = document.getElementById(prefix + '-img-modal');
+            img.src = dados.imagem || IMG_PADRAO;
+            img.onerror = () => img.src = IMG_PADRAO;
+            
+            if(tipo === 'jutsu') document.getElementById(prefix + '-rank-modal').innerText = "Rank " + dados.rank;
+            if(tipo === 'tool') document.getElementById(prefix + '-rank-modal').innerText = dados.dano || "Ferramenta";
+            if(tipo === 'item') document.getElementById(prefix + '-rank-modal').innerText = dados.efeito || "Item";
+            
+            document.getElementById(tipo + 'Modal').style.display = 'flex';
+        }
+
+        window.verDetalhesJutsu = (id, dados) => abrirModal('jutsu', dados);
+        window.verDetalhesFerramenta = (id, dados) => abrirModal('tool', dados);
+        window.verDetalhesItem = (id, dados) => abrirModal('item', dados);
+        
+        window.fecharJutsuModal = () => document.getElementById('jutsuModal').style.display = 'none';
+        window.fecharToolModal = () => document.getElementById('toolModal').style.display = 'none';
+        window.fecharItemModal = () => document.getElementById('itemModal').style.display = 'none';
+
+        // --- FEED POST ---
+        window.handleImageUpload = async (e) => { if(e.target.files[0]) { try { currentImageBase64 = await comprimirImagem(e.target.files[0]); document.getElementById('preview-image').src = currentImageBase64; document.getElementById('preview-container').style.display='block'; } catch(e){alert("Erro imagem");} } };
+        window.removeImage = () => { document.getElementById('imageInput').value=''; currentImageBase64=null; document.getElementById('preview-container').style.display='none'; };
+        
+        window.publicarPost = async () => {
+            const txt = document.getElementById('postInput').value;
+            if(!txt.trim() && !currentImageBase64) return alert("Escreva algo!");
+            const btn = document.querySelector('.btn-post'); btn.innerText="..."; btn.disabled=true;
+            try {
+                const autor = currentUserData.apelido || currentUserData.nome || "Ninja";
+                await addDoc(collection(db, "posts"), {
+                    uid: auth.currentUser.uid, autor: autor, autorAvatar: currentUserData.avatar,
+                    conteudo: txt, imagem: currentImageBase64, data: serverTimestamp(), likes: [], savedBy: [], comments: []
+                });
+                document.getElementById('postInput').value=''; removeImage();
+            } catch(e) { alert("Erro ao postar."); } finally { btn.innerText="Publicar"; btn.disabled=false; }
+        };
+
+        window.renderFeed = (filter) => {
+            const c = document.getElementById('feed-container'); if(!c) return;
+            onSnapshot(query(collection(db, "posts"), orderBy("data", "desc")), (snap) => {
+                c.innerHTML = ''; if(snap.empty) { c.innerHTML = '<p style="text-align:center; padding:20px;">Nenhuma publicação.</p>'; return; }
+                snap.forEach(d => {
+                    const p = d.data(); const id = d.id;
+                    if(filter === 'saved' && !p.savedBy.includes(auth.currentUser.uid)) return;
+                    
+                    const isOwner = p.uid === auth.currentUser.uid;
+                    const menuHTML = isOwner ? `
+                        <div class="post-menu-container">
+                            <div class="post-options-btn" onclick="this.nextElementSibling.classList.toggle('active')">...</div>
+                            <div class="post-dropdown">
+                                <div class="dropdown-item danger" onclick="deletarPost('${id}')">Excluir</div>
+                            </div>
+                        </div>` : '';
+                        
                     const div = document.createElement('div'); div.className = 'post';
-                    div.innerHTML = `<div class="post-header"><div class="user-avatar-post"><img src="${avatarSrc}"></div><div><div style="font-weight:600;">${post.autor}</div><div style="font-size:0.75rem;color:#888;">${dataFormatada}</div></div>${optionsHTML}</div><div class="post-content">${post.conteudo}</div>${post.imagem ? `<img src="${post.imagem}" class="post-image" onclick="openCommentModal('${post.id}')">` : ''}<div class="post-actions"><button class="action-btn ${isLiked?'liked':''}" onclick="toggleLike('${post.id}')"><i class="${isLiked?'fa-solid':'fa-regular'} fa-heart"></i> ${post.likes?post.likes.length:0}</button><button class="action-btn" onclick="openCommentModal('${post.id}')"><i class="fa-regular fa-comment"></i> ${post.comments?post.comments.length:0}</button><button class="action-btn ${isSaved?'saved':''}" onclick="toggleSave('${post.id}')" style="margin-left:auto;"><i class="${isSaved?'fa-solid':'fa-regular'} fa-bookmark"></i></button></div>`;
-                    container.appendChild(div);
+                    div.innerHTML = `
+                        <div class="post-header">
+                            <div class="user-avatar-post"><img src="${p.autorAvatar || IMG_PADRAO}"></div>
+                            <div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">Agora</span></div>
+                            ${menuHTML}
+                        </div>
+                        <div class="post-content">${p.conteudo}</div>
+                        ${p.imagem ? `<img src="${p.imagem}" class="post-image" onclick="verPost('${id}')">` : ''}
+                        <div class="post-actions">
+                            <button class="action-btn ${p.likes.includes(auth.currentUser.uid)?'liked':''}" onclick="toggleLike('${id}')"><i class="${p.likes.includes(auth.currentUser.uid)?'fa-solid':'fa-regular'} fa-heart"></i> ${p.likes.length}</button>
+                            <button class="action-btn" onclick="verPost('${id}')"><i class="fa-regular fa-comment"></i> ${p.comments.length}</button>
+                            <button class="action-btn ${p.savedBy.includes(auth.currentUser.uid)?'saved':''}" onclick="toggleSave('${id}')" style="margin-left:auto;"><i class="${p.savedBy.includes(auth.currentUser.uid)?'fa-solid':'fa-regular'} fa-bookmark"></i></button>
+                        </div>
+                    `;
+                    c.appendChild(div);
                 });
             });
         };
+        
+        window.deletarPost = async (id) => { if(confirm("Apagar?")) await deleteDoc(doc(db, "posts", id)); };
+        window.toggleLike = async (id) => { const ref=doc(db,"posts",id); const s=await getDoc(ref); const l=s.data().likes||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(ref,{likes:arrayRemove(auth.currentUser.uid)}); else await updateDoc(ref,{likes:arrayUnion(auth.currentUser.uid)}); };
+        window.toggleSave = async (id) => { const ref=doc(db,"posts",id); const s=await getDoc(ref); const l=s.data().savedBy||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(ref,{savedBy:arrayRemove(auth.currentUser.uid)}); else await updateDoc(ref,{savedBy:arrayUnion(auth.currentUser.uid)}); };
+        
+        window.verPost = async (id) => {
+            currentOpenPostId = id;
+            const s = await getDoc(doc(db, "posts", id));
+            const p = s.data();
+            document.getElementById('modalPostContent').innerHTML = p.imagem ? `<img src="${p.imagem}" style="width:100%; height:100%; object-fit:contain;">` : `<div style="padding:20px;">${p.conteudo}</div>`;
+            renderComentarios(p.comments);
+            document.getElementById('commentModal').style.display = 'flex';
+        };
+        function renderComentarios(l) { document.getElementById('commentsList').innerHTML = l.map(c => `<div><b>${c.autor}</b>: ${c.texto}</div>`).join(''); }
+        window.submitComment = async () => { const t = document.getElementById('newCommentText').value; if(!t) return; await updateDoc(doc(db, "posts", currentOpenPostId), { comments: arrayUnion({ autor: currentUserData.nome, texto: t }) }); document.getElementById('newCommentText').value = ""; verPost(currentOpenPostId); };
+        window.closeModal = () => document.getElementById('commentModal').style.display = 'none';
 
-        window.deletePost = async (id) => { if(confirm("Excluir?")) await deleteDoc(doc(db, "posts", id)); };
-        window.toggleLike = async (id) => { const ref = doc(db, "posts", id); const snap = await getDoc(ref); if(snap.exists()){ const likes = snap.data().likes || []; if(likes.includes(auth.currentUser.uid)) await updateDoc(ref, { likes: arrayRemove(auth.currentUser.uid) }); else await updateDoc(ref, { likes: arrayUnion(auth.currentUser.uid) }); } };
-        window.toggleSave = async (id) => { const ref = doc(db, "posts", id); const snap = await getDoc(ref); if(snap.exists()){ const saved = snap.data().savedBy || []; if(saved.includes(auth.currentUser.uid)) await updateDoc(ref, { savedBy: arrayRemove(auth.currentUser.uid) }); else await updateDoc(ref, { savedBy: arrayUnion(auth.currentUser.uid) }); } };
-        window.openCommentModal = async (id) => { currentOpenPostId = id; document.getElementById('commentModal').style.display = 'flex'; const left = document.getElementById('modalPostContent'); const snap = await getDoc(doc(db, "posts", id)); if(!snap.exists()) return; const post = snap.data(); left.innerHTML = post.imagem ? `<img src="${post.imagem}" style="width:100%; height:100%; object-fit:contain;">` : `<div style="padding:20px; color:white;">${post.conteudo}</div>`; renderCommentsList(post.comments || []); };
-        function renderCommentsList(c) { const l = document.getElementById('commentsList'); if(c.length === 0) { l.innerHTML = "<p style='color:#777; text-align:center;'>Nenhum comentário.</p>"; return; } l.innerHTML = c.map(i => `<div style="margin-bottom:10px;"><span style="font-weight:bold; margin-right:5px;">${i.autor}</span><span>${i.texto}</span></div>`).join(''); }
-        window.submitComment = async () => { const txt = document.getElementById('newCommentText').value; if(!txt) return; await updateDoc(doc(db, "posts", currentOpenPostId), { comments: arrayUnion({ uid: auth.currentUser.uid, autor: currentUserData.nome, texto: txt, data: new Date().toISOString() }) }); document.getElementById('newCommentText').value = ""; const snap = await getDoc(doc(db, "posts", currentOpenPostId)); renderCommentsList(snap.data().comments || []); };
-        window.closeModal = () => { document.getElementById('commentModal').style.display = 'none'; currentOpenPostId = null; };
+        // --- PERSONAGENS & RANKING ---
+        async function carregarPersonagens() {
+            const c = document.getElementById('directory-grid'); c.innerHTML = 'Carregando...';
+            const s = await getDocs(collection(db, "users"));
+            c.innerHTML = '';
+            s.forEach(d => {
+                const u = d.data();
+                const k = document.createElement('div'); k.className = 'card';
+                k.onclick = () => window.verPerfil(d.id);
+                k.innerHTML = `<div style="width:60px; height:60px; border-radius:50%; overflow:hidden; margin:0 auto 10px;"><img src="${u.avatar || IMG_PADRAO}" style="width:100%; height:100%; object-fit:cover;"></div><h4>${u.nome}</h4>`;
+                c.appendChild(k);
+            });
+        }
+        window.verPerfil = async (uid) => {
+            const s = await getDoc(doc(db, "users", uid));
+            if(s.exists()) {
+                const u = s.data();
+                document.getElementById('profile-modal-name').innerText = u.nome || "Ninja";
+                document.getElementById('profile-modal-char').innerText = u.apelido || "";
+                document.getElementById('profile-modal-img').src = u.avatar || IMG_PADRAO;
+                const set = (id, v) => document.getElementById(id).innerText = v;
+                set('prof-nivel', u.nivel || 1); set('prof-cargo', u.cargo || "Genin"); set('prof-ryos', formatarNum(u.ryos));
+                set('prof-jutsus', u.meusJutsus?.length||0); set('prof-tools', u.ferramentas?.length||0); set('prof-items', u.itens?.length||0);
+                set('prof-wins', u.vitorias||0); set('prof-loses', u.derrotas||0); set('prof-draws', u.empates||0);
+                document.getElementById('profileModal').style.display = 'flex';
+            }
+        }
+        window.fecharProfileModal = () => document.getElementById('profileModal').style.display = 'none';
         
-        async function carregarPersonagens() { const c = document.getElementById('directory-grid'); if (!c) return; c.innerHTML = '<p>Carregando...</p>'; const s = await getDocs(collection(db, "users")); c.innerHTML = ''; if(s.empty) { c.innerHTML = '<p>Nenhum ninja.</p>'; return; } s.forEach((d) => { const u = d.data(); const card = document.createElement('div'); card.className = 'card jutsu-card-click'; card.onclick = () => verPerfil(d.id); card.innerHTML = `<div style="width:60px; height:60px; border-radius:50%; background:#eee; margin:0 auto 10px auto; overflow:hidden;"><img src="${u.avatar || IMG_PADRAO}" style="width:100%; height:100%; object-fit:cover;"></div><h4 style="margin-bottom:5px;">${u.nome || "Ninja"}</h4><span style="font-size:0.8rem; color:#777;">${u.apelido || "Desconhecido"}</span>`; c.appendChild(card); }); }
-        window.verPerfil = async (uid) => { const s = await getDoc(doc(db, "users", uid)); if (s.exists()) { const u = s.data(); document.getElementById('profile-modal-name').innerText = u.nome || "Ninja"; document.getElementById('profile-modal-char').innerText = u.apelido || ""; document.getElementById('profile-modal-img').src = u.avatar || IMG_PADRAO; document.getElementById('prof-nivel').innerText = u.nivel || "1"; document.getElementById('prof-cargo').innerText = u.cargo || "Genin"; document.getElementById('prof-ryos').innerText = formatarNum(u.ryos); document.getElementById('prof-jutsus').innerText = u.meusJutsus?.length || 0; document.getElementById('prof-wins').innerText = u.vitorias || 0; document.getElementById('prof-loses').innerText = u.derrotas || 0; document.getElementById('profileModal').style.display = 'flex'; } };
-        window.fecharProfileModal = () => { document.getElementById('profileModal').style.display = 'none'; };
-        
-        async function carregarMissoes() { const c=document.getElementById('missoes-grid'); const m=currentUserData.statusMissoes||{}; const s=await getDocs(collection(db,"missoes")); c.innerHTML=''; s.forEach(d=>{const i=d.data(); const st=m[d.id]||'neutro'; const k=document.createElement('div'); k.className='card jutsu-card-click'; let t="Disponível",cl="#777"; if(st==='em_andamento'){t="Em Andamento";cl="orange";}else if(st==='aprovado'){t="Coletar!";cl="green";}else if(st==='concluido'){t="Concluída";cl="blue";} k.onclick=()=>abrirModalMissao(d.id,i,st); k.innerHTML=`<h4>${i.titulo}</h4><p style="font-size:0.9rem; color:${cl}; font-weight:bold;">${t}</p>`; c.appendChild(k);}); }
-        function abrirModalMissao(id, dados, status) { abrirModalGenerico(dados, 'missao'); document.getElementById('modal-footer').innerHTML = `Recompensa: ${formatarNum(dados.recompensa)} Ryos`; const footer = document.getElementById('modal-footer'); let btn = ""; if(status === 'neutro') btn = `<button class="btn-post" onclick="iniciarMissao('${id}')" style="width:100%; margin-top:10px;">Aceitar Missão</button>`; else if(status === 'em_andamento') btn = `<p style="color:orange; margin-top:10px;">Aguardando Aprovação...</p>`; else if(status === 'aprovado') btn = `<button class="btn-post" style="background:green; width:100%; margin-top:10px;" onclick="coletarRecompensa('${id}', ${dados.recompensa})">Receber Recompensa</button>`; else if(status === 'concluido') btn = `<p style="color:blue; margin-top:10px;">Missão Concluída</p>`; footer.innerHTML += btn; }
-        window.iniciarMissao = async (id) => { await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusMissoes.${id}`]: 'em_andamento' }); alert("Iniciada!"); location.reload(); };
-        window.coletarRecompensa = async (id, val) => { await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(val), [`statusMissoes.${id}`]: 'concluido' }); alert(`Recebido ${val} Ryos!`); location.reload(); };
-        window.carregarRankings = async () => { const c = document.getElementById('ranking-container'); if(!c) return; const s = await getDocs(collection(db, "users")); let l = []; s.forEach(d=>l.push(d.data())); c.innerHTML = ''; renderRanking(c, "Ryos", l, 'ryos'); renderRanking(c, "Vitórias", l, 'vitorias'); }
-        function renderRanking(c, t, d, f) { const s = [...d].sort((a,b)=>(b[f]||0)-(a[f]||0)).slice(0,5); let h = `<div class="ranking-col"><h3>${t}</h3><table class="ranking-table" style="width:100%; text-align:left;">`; s.forEach((u,i)=>{ h+=`<tr><td>${i+1}. ${u.nome}</td><td style="text-align:right;">${formatarNum(u[f])}</td></tr>`; }); h+=`</table></div>`; c.innerHTML+=h; }
+        window.carregarRankings = async () => { const c=document.getElementById('ranking-container'); if(!c)return; const s=await getDocs(collection(db,"users")); let l=[]; s.forEach(d=>l.push(d.data())); c.innerHTML=''; renderRank(c,"Ryos",l,'ryos'); renderRank(c,"Vitórias",l,'vitorias'); };
+        function renderRank(c,t,l,f) { const s=[...l].sort((a,b)=>(b[f]||0)-(a[f]||0)).slice(0,5); let h=`<div class="ranking-col"><h3>${t}</h3><table class="ranking-table">`; s.forEach((u,i)=>h+=`<tr><td>${i+1}. ${u.nome}</td><td>${formatarNum(u[f])}</td></tr>`); h+='</table></div>'; c.innerHTML+=h; }
     </script>
 </body>
 </html>
