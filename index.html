@@ -18,9 +18,8 @@
             --green-color: #2ecc71;
             --yellow-color: #f1c40f;
             --danger-color: #ed4956;
-            --ranking-gold: #ffd700;
-            --ranking-silver: #c0c0c0;
-            --ranking-bronze: #cd7f32;
+            --chakra-color: #0099ff;
+            --stamina-color: #27ae60;
         }
         body.dark-mode { --bg-color: #000000; --sidebar-bg: #000000; --text-color: #f5f5f5; --card-bg: #121212; --border-color: #363636; }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -124,7 +123,6 @@
         .jutsu-modal-img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); }
         .jutsu-modal-rank { display: inline-block; background: var(--primary-color); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-bottom: 10px; }
         .jutsu-modal-price { color: var(--green-color); font-weight: bold; font-size: 1.2rem; border-top: 1px solid var(--border-color); padding-top: 15px; }
-        
         .modal-content-profile { background: var(--card-bg); width: 90%; max-width: 800px; max-height: 90vh; border-radius: 15px; overflow-y: auto; position: relative; border: 1px solid var(--border-color); }
         .profile-header { background: linear-gradient(to right, #ff5e00, #ff9100); padding: 40px 20px; text-align: center; color: white; }
         .profile-avatar-large { width: 100px; height: 100px; border-radius: 50%; border: 4px solid white; margin: 0 auto 15px auto; overflow: hidden; background: #fff; }
@@ -132,13 +130,18 @@
         .profile-name { font-size: 1.8rem; font-weight: bold; }
         .profile-char { font-size: 1.1rem; opacity: 0.9; }
         .profile-body { padding: 20px; }
-        
-        /* STATS (DASHBOARD & PERFIL) */
         .profile-stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; margin-bottom: 30px; }
         .stat-card { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px; text-align: center; }
         .stat-value { font-size: 1.2rem; font-weight: bold; color: var(--primary-color); }
         .stat-label { font-size: 0.75rem; color: #777; margin-top: 3px; text-transform: uppercase; font-weight: bold; }
         .stats-divider { grid-column: 1 / -1; font-weight: bold; color: var(--text-color); margin: 20px 0 5px 0; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
+        
+        /* Stats Específicos para Modal de Jutsu */
+        .jutsu-stats-row { display: flex; justify-content: space-around; margin: 15px 0; gap: 5px; flex-wrap: wrap;}
+        .jutsu-stat-tag { padding: 5px 10px; border-radius: 15px; font-weight: bold; font-size: 0.85rem; color: white; }
+        .tag-chakra { background-color: var(--chakra-color); }
+        .tag-stamina { background-color: var(--stamina-color); }
+        .tag-dano { background-color: var(--danger-color); }
 
         .modal-content-comment { background: var(--card-bg); width: 90%; max-width: 900px; height: 80vh; border-radius: 4px; display: flex; overflow: hidden; position: relative; }
         .modal-left { flex: 1.5; background: #000; display: flex; align-items: center; justify-content: center; }
@@ -217,7 +220,6 @@
                 <button onclick="showTab('missoes')"><i class="fa-solid fa-scroll"></i> Missões</button>
                 <button onclick="showTab('personagens')"><i class="fa-solid fa-users"></i> Personagens</button>
                 <button onclick="showTab('loja')"><i class="fa-solid fa-store"></i> Loja</button>
-                <button onclick="showTab('ferramentas')"><i class="fa-solid fa-gavel"></i> Ferramentas</button>
                 <button onclick="showTab('rankings')"><i class="fa-solid fa-trophy"></i> Rankings</button>
                 <button id="btn-admin-panel" onclick="showTab('admin-panel')"><i class="fa-solid fa-user-shield"></i> Painel Kage</button>
             </nav>
@@ -340,6 +342,10 @@
             <img id="jutsu-img-modal" src="" class="jutsu-modal-img">
             <h2 id="jutsu-name-modal" style="color:var(--primary-color);"></h2>
             <div id="jutsu-rank-modal" class="jutsu-modal-rank"></div>
+            
+            <div id="jutsu-stats-row" class="jutsu-stats-row">
+                </div>
+
             <p id="jutsu-desc-modal" style="margin-top:10px;"></p>
             <div id="jutsu-price-modal" class="jutsu-modal-price"></div>
         </div>
@@ -571,7 +577,6 @@
             set('dash-loses', dados.derrotas || 0);
             set('dash-draws', dados.empates || 0);
             
-            // Novos Atributos
             set('dash-vida', dados.vida || 100);
             set('dash-sanidade', dados.sanidade || 100);
             set('dash-chakra', dados.chakra || 100);
@@ -745,7 +750,7 @@
 
         // --- MODAIS DE DETALHES ---
         function abrirModal(tipo, dados) {
-            let prefix = tipo; // jutsu, tool, item
+            let prefix = tipo; 
             document.getElementById(prefix + '-name-modal').innerText = dados.nome;
             document.getElementById(prefix + '-desc-modal').innerText = dados.descricao || "Sem descrição.";
             document.getElementById(prefix + '-price-modal').innerText = "Valor: " + formatarNum(dados.preco) + " Ryos";
@@ -753,7 +758,15 @@
             img.src = dados.imagem || IMG_PADRAO;
             img.onerror = () => img.src = IMG_PADRAO;
             
-            if(tipo === 'jutsu') document.getElementById(prefix + '-rank-modal').innerText = "Rank " + dados.rank;
+            if(tipo === 'jutsu') {
+                document.getElementById(prefix + '-rank-modal').innerText = "Rank " + dados.rank;
+                // Mostrar Custo e Dano do Jutsu
+                let statsHtml = "";
+                if(dados.dano) statsHtml += `<span class="jutsu-stat-tag tag-dano">${dados.dano}</span>`;
+                if(dados.chakra) statsHtml += `<span class="jutsu-stat-tag tag-chakra">Chakra: ${dados.chakra}</span>`;
+                if(dados.stamina) statsHtml += `<span class="jutsu-stat-tag tag-stamina">Stamina: ${dados.stamina}</span>`;
+                document.getElementById('jutsu-stats-row').innerHTML = statsHtml;
+            }
             if(tipo === 'tool') document.getElementById(prefix + '-rank-modal').innerText = dados.dano || "Ferramenta";
             if(tipo === 'item') document.getElementById(prefix + '-rank-modal').innerText = dados.efeito || "Item";
             
