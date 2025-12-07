@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RPG Naruto</title>
+    
     <link rel="icon" href="favicon.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -18,9 +19,6 @@
             --green-color: #2ecc71;
             --yellow-color: #f1c40f;
             --danger-color: #ed4956;
-            --ranking-gold: #ffd700;
-            --ranking-silver: #c0c0c0;
-            --ranking-bronze: #cd7f32;
         }
         body.dark-mode { --bg-color: #000000; --sidebar-bg: #000000; --text-color: #f5f5f5; --card-bg: #121212; --border-color: #363636; }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -97,12 +95,14 @@
         .post-info { display: flex; flex-direction: column; }
         .post-author { font-weight: 600; font-size: 0.95rem; color: var(--text-color); }
         .post-time { font-size: 0.75rem; color: #8e8e8e; }
+        
         .post-menu-container { margin-left: auto; position: relative; }
         .post-options-btn { cursor: pointer; color: var(--text-color); padding: 8px; width: 30px; text-align: center; }
         .post-dropdown { display: none; position: absolute; top: 100%; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; width: 140px; }
         .post-dropdown.active { display: block; }
         .post-dropdown-item { padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-color); }
         .post-dropdown-item.danger { color: var(--danger-color); }
+
         .post-content { padding: 0 10px 10px 10px; line-height: 1.5; white-space: pre-wrap; font-size: 0.95rem; }
         .post-image { width: 100%; height: auto; display: block; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); max-height: 600px; object-fit: cover; }
         .post-actions { display: flex; padding: 10px; gap: 15px; }
@@ -131,16 +131,10 @@
         .profile-name { font-size: 1.8rem; font-weight: bold; }
         .profile-char { font-size: 1.1rem; opacity: 0.9; }
         .profile-body { padding: 20px; }
-        
-        /* STATS GRID - ATRIBUTOS */
-        .profile-stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; margin-bottom: 30px; }
-        .stat-card { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px; text-align: center; }
-        .stat-value { font-size: 1.2rem; font-weight: bold; color: var(--primary-color); }
-        .stat-label { font-size: 0.75rem; color: #777; margin-top: 3px; text-transform: uppercase; font-weight: bold; }
-        
-        /* SEPARADOR DE STATS */
-        .stats-divider { grid-column: 1 / -1; font-weight: bold; color: var(--text-color); margin: 15px 0 5px 0; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
-
+        .profile-stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .stat-card { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; text-align: center; }
+        .stat-value { font-size: 1.5rem; font-weight: bold; color: var(--primary-color); }
+        .stat-label { font-size: 0.85rem; color: #777; margin-top: 5px; text-transform: uppercase; }
         .modal-content-comment { background: var(--card-bg); width: 90%; max-width: 900px; height: 80vh; border-radius: 4px; display: flex; overflow: hidden; position: relative; }
         .modal-left { flex: 1.5; background: #000; display: flex; align-items: center; justify-content: center; }
         .modal-left img { max-width: 100%; max-height: 100%; object-fit: contain; }
@@ -279,35 +273,15 @@
                 <div id="dashboard" class="tab-content">
                     <h2>Estatísticas do Ninja</h2>
                     <div class="profile-stats-grid">
-                        <div class="stats-divider">Geral</div>
                         <div class="stat-card"><div class="stat-value" id="dash-nivel">1</div><div class="stat-label">Nível</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-cargo">Genin</div><div class="stat-label">Cargo</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-ryos">0</div><div class="stat-label">Ryos</div></div>
-                        
-                        <div class="stats-divider">Batalha</div>
+                        <div class="stat-card"><div class="stat-value" id="dash-jutsus">0</div><div class="stat-label">Jutsus</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-wins">0</div><div class="stat-label">Vitórias</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-draws">0</div><div class="stat-label">Empates</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-loses">0</div><div class="stat-label">Derrotas</div></div>
-
-                        <div class="stats-divider">Inventário</div>
-                        <div class="stat-card"><div class="stat-value" id="dash-jutsus">0</div><div class="stat-label">Jutsus</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-tools">0</div><div class="stat-label">Ferramentas</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-items">0</div><div class="stat-label">Itens</div></div>
-
-                        <div class="stats-divider">VITALIDADE</div>
-                        <div class="stat-card"><div class="stat-value" id="dash-vida">100</div><div class="stat-label">Vida</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-sanidade">100</div><div class="stat-label">Sanidade</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-chakra">100</div><div class="stat-label">Chakra</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-stamina">100</div><div class="stat-label">Stamina</div></div>
-
-                        <div class="stats-divider">ATRIBUTOS</div>
-                        <div class="stat-card"><div class="stat-value" id="dash-forca">10</div><div class="stat-label">Força</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-defesa">10</div><div class="stat-label">Defesa</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-constituicao">10</div><div class="stat-label">Constituição</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-destreza">10</div><div class="stat-label">Destreza</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-intelecto">10</div><div class="stat-label">Intelecto</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-agilidade">10</div><div class="stat-label">Agilidade</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-velocidade">10</div><div class="stat-label">Velocidade</div></div>
                     </div>
                 </div>
                 
@@ -315,7 +289,7 @@
                     <div class="historia-container">
                         <div class="historia-img-container">
                             <img id="historia-display-img" src="https://img.freepik.com/vetores-gratis/fundo-de-paisagem-de-anime-de-design-plano_23-2149275367.jpg" alt="Capa da História">
-                            <button class="btn-edit-historia" onclick="window.editarHistoria()"><i class="fa-solid fa-pen"></i> Editar História</button>
+                            <button class="btn-edit-historia" onclick="editarHistoria()"><i class="fa-solid fa-pen"></i> Editar História</button>
                         </div>
                         <hr class="historia-divider">
                         <div class="historia-text-content" id="historia-display-text">A história do seu ninja aparecerá aqui.</div>
@@ -326,7 +300,7 @@
                     <h2>Frases Marcantes</h2>
                     <div class="frase-input-area">
                         <input type="text" id="novaFraseInput" placeholder="Digite uma frase icônica...">
-                        <button class="btn-post" onclick="window.adicionarFrase()">Adicionar</button>
+                        <button class="btn-post" onclick="adicionarFrase()">Adicionar</button>
                     </div>
                     <div class="frases-list" id="frases-list-container"><p style="color:#777; text-align:center;">Carregando frases...</p></div>
                 </div>
@@ -391,35 +365,15 @@
             <div class="profile-body">
                 <div class="profile-section-title">Estatísticas</div>
                 <div class="profile-stats-grid">
-                    <div class="stats-divider">Geral</div>
                     <div class="stat-card"><div class="stat-value" id="prof-nivel"></div><div class="stat-label">Nível</div></div>
                     <div class="stat-card"><div class="stat-value" id="prof-cargo"></div><div class="stat-label">Cargo</div></div>
                     <div class="stat-card"><div class="stat-value" id="prof-ryos"></div><div class="stat-label">Ryos</div></div>
-                    
-                    <div class="stats-divider">Batalha</div>
-                    <div class="stat-card"><div class="stat-value" id="prof-wins"></div><div class="stat-label">Vitórias</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-draws"></div><div class="stat-label">Empates</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-loses"></div><div class="stat-label">Derrotas</div></div>
-
-                    <div class="stats-divider">Inventário</div>
                     <div class="stat-card"><div class="stat-value" id="prof-jutsus"></div><div class="stat-label">Jutsus</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-wins"></div><div class="stat-label">Vitórias</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-loses"></div><div class="stat-label">Derrotas</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-draws"></div><div class="stat-label">Empates</div></div>
                     <div class="stat-card"><div class="stat-value" id="prof-tools"></div><div class="stat-label">Ferramentas</div></div>
                     <div class="stat-card"><div class="stat-value" id="prof-items"></div><div class="stat-label">Itens</div></div>
-
-                    <div class="stats-divider">Vitalidade</div>
-                    <div class="stat-card"><div class="stat-value" id="prof-vida"></div><div class="stat-label">Vida</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-sanidade"></div><div class="stat-label">Sanidade</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-chakra"></div><div class="stat-label">Chakra</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-stamina"></div><div class="stat-label">Stamina</div></div>
-
-                    <div class="stats-divider">Atributos</div>
-                    <div class="stat-card"><div class="stat-value" id="prof-forca"></div><div class="stat-label">Força</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-defesa"></div><div class="stat-label">Defesa</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-constituicao"></div><div class="stat-label">Constituição</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-destreza"></div><div class="stat-label">Destreza</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-intelecto"></div><div class="stat-label">Intelecto</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-agilidade"></div><div class="stat-label">Agilidade</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-velocidade"></div><div class="stat-label">Velocidade</div></div>
                 </div>
             </div>
         </div>
@@ -484,6 +438,19 @@
 
         const IMG_PADRAO = "https://img.freepik.com/vetores-gratis/ilustracao-de-pergaminho-ninja-desenhada-a-mao_23-2151159846.jpg";
 
+        // --- CALCULADORA DE TEMPO ---
+        function calcularTempo(timestamp) {
+            if (!timestamp) return "Agora";
+            const date = timestamp.toDate();
+            const now = new Date();
+            const diff = Math.floor((now - date) / 1000);
+            if (diff < 60) return "Agora";
+            if (diff < 3600) return `Há ${Math.floor(diff / 60)} min`;
+            if (diff < 86400) return `Há ${Math.floor(diff / 3600)} h`;
+            if (diff < 604800) return `Há ${Math.floor(diff / 86400)} dias`;
+            return date.toLocaleDateString('pt-BR');
+        }
+
         // --- UI MOBILE ---
         window.toggleMobileMenu = () => {
             document.querySelector('.sidebar').classList.toggle('mobile-active');
@@ -546,8 +513,8 @@
             if(dados.historiaTexto) document.getElementById('historia-display-text').innerText = dados.historiaTexto;
             if(dados.historiaImagem) document.getElementById('historia-display-img').src = dados.historiaImagem;
 
-            // Atualiza Dashboard com NOVOS ATRIBUTOS
-            const set = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
+            // Atualiza Dashboard
+            const set = (id, val) => { if(document.getElementById(id)) document.getElementById(id).innerText = val; };
             set('dash-nivel', dados.nivel || 1);
             set('dash-cargo', dados.cargo || "Genin");
             set('dash-ryos', formatarNum(dados.ryos));
@@ -557,19 +524,6 @@
             set('dash-wins', dados.vitorias || 0);
             set('dash-loses', dados.derrotas || 0);
             set('dash-draws', dados.empates || 0);
-            
-            // Novos Atributos
-            set('dash-vida', dados.vida || 100);
-            set('dash-sanidade', dados.sanidade || 100);
-            set('dash-chakra', dados.chakra || 100);
-            set('dash-stamina', dados.stamina || 100);
-            set('dash-forca', dados.forca || 10);
-            set('dash-defesa', dados.defesa || 10);
-            set('dash-constituicao', dados.constituicao || 10);
-            set('dash-destreza', dados.destreza || 10);
-            set('dash-intelecto', dados.intelecto || 10);
-            set('dash-agilidade', dados.agilidade || 10);
-            set('dash-velocidade', dados.velocidade || 10);
         }
 
         function comprimirImagem(file) {
@@ -761,25 +715,16 @@
         
         window.publicarPost = async () => {
             const txt = document.getElementById('postInput').value;
-            const user = auth.currentUser;
-            
-            if(!user || !currentUserData) return alert("Aguarde o carregamento do perfil.");
-            if(!txt.trim() && !currentImageBase64) return alert("Escreva algo ou adicione uma foto!");
-            
-            const btn = document.querySelector('.post-tools .btn-post'); 
-            const btnOriginalText = btn.innerText; 
-            btn.innerText = "Enviando..."; btn.disabled = true;
-            
+            if(!txt.trim() && !currentImageBase64) return alert("Escreva algo!");
+            const btn = document.querySelector('.btn-post'); btn.innerText="..."; btn.disabled=true;
             try {
                 const autor = currentUserData.apelido || currentUserData.nome || "Ninja";
                 await addDoc(collection(db, "posts"), {
-                    uid: auth.currentUser.uid, autor: autor, autorAvatar: currentUserData.avatar || null,
-                    conteudo: txt, imagem: currentImageBase64 || null,
-                    data: serverTimestamp(), likes: [], savedBy: [], comments: []
+                    uid: auth.currentUser.uid, autor: autor, autorAvatar: currentUserData.avatar,
+                    conteudo: txt, imagem: currentImageBase64, data: serverTimestamp(), likes: [], savedBy: [], comments: []
                 });
                 document.getElementById('postInput').value=''; removeImage();
-            } catch(e) { console.error(e); alert("Erro ao enviar: " + e.message); } 
-            finally { btn.innerText = btnOriginalText; btn.disabled = false; }
+            } catch(e) { alert("Erro ao postar."); } finally { btn.innerText="Publicar"; btn.disabled=false; }
         };
 
         window.renderFeed = (filter) => {
@@ -798,12 +743,15 @@
                                 <div class="dropdown-item danger" onclick="deletarPost('${id}')">Excluir</div>
                             </div>
                         </div>` : '';
-                        
+                    
+                    // Cálculo de tempo
+                    const tempoFormatado = calcularTempo(p.data);
+
                     const div = document.createElement('div'); div.className = 'post';
                     div.innerHTML = `
                         <div class="post-header">
                             <div class="user-avatar-post"><img src="${p.autorAvatar || IMG_PADRAO}"></div>
-                            <div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">Agora</span></div>
+                            <div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">${tempoFormatado}</span></div>
                             ${menuHTML}
                         </div>
                         <div class="post-content">${p.conteudo}</div>
@@ -866,14 +814,6 @@
                 set('prof-jutsus', u.meusJutsus?.length||0); set('prof-tools', u.ferramentas?.length||0); set('prof-items', u.itens?.length||0);
                 set('prof-wins', u.vitorias||0); set('prof-loses', u.derrotas||0); set('prof-draws', u.empates||0);
                 
-                // Novos Atributos
-                set('prof-vida', u.vida || 100); set('prof-sanidade', u.sanidade || 100);
-                set('prof-chakra', u.chakra || 100); set('prof-stamina', u.stamina || 100);
-                set('prof-forca', u.forca || 10); set('prof-defesa', u.defesa || 10);
-                set('prof-constituicao', u.constituicao || 10); set('prof-destreza', u.destreza || 10);
-                set('prof-intelecto', u.intelecto || 10); set('prof-agilidade', u.agilidade || 10);
-                set('prof-velocidade', u.velocidade || 10);
-
                 document.getElementById('profileModal').style.display = 'flex';
             }
         }
@@ -958,12 +898,12 @@
                 snapshot.forEach((doc) => { 
                     const f = doc.data(); 
                     const div = document.createElement('div'); 
-                    div.className = 'frase-item'; 
+                    div.className = 'frase-item';
                     
                     const isOwner = f.uid === auth.currentUser.uid;
                     const menuHTML = isOwner ? `
                         <div class="options-menu-container">
-                            <div class="options-btn" onclick="this.nextElementSibling.classList.toggle('active'); event.stopPropagation();">...</div>
+                            <div class="options-btn" onclick="toggleFraseMenu(this); event.stopPropagation();"><i class="fa-solid fa-ellipsis"></i></div>
                             <div class="options-dropdown">
                                 <div class="options-item" onclick="editarFrase('${doc.id}', '${f.texto}'); event.stopPropagation();">Editar</div>
                                 <div class="options-item danger" onclick="deletarFrase('${doc.id}'); event.stopPropagation();">Excluir</div>
@@ -977,6 +917,13 @@
                 });
             });
         }
+
+        window.toggleFraseMenu = (el) => {
+            const dropdown = el.nextElementSibling;
+            document.querySelectorAll('.options-dropdown').forEach(d => { if(d !== dropdown) d.classList.remove('active'); });
+            dropdown.classList.toggle('active');
+        };
+
         window.adicionarFrase = async () => { const t=document.getElementById('novaFraseInput').value; if(t){ await addDoc(collection(db,"frases"),{texto:t,autor:currentUserData.nome,uid:auth.currentUser.uid,data:serverTimestamp()}); document.getElementById('novaFraseInput').value=''; } }
         window.editarFrase = async (id, oldText) => { const n = prompt("Editar:", oldText); if(n) await updateDoc(doc(db, "frases", id), { texto: n }); };
         window.deletarFrase = async (id) => { if(confirm("Excluir?")) await deleteDoc(doc(db, "frases", id)); };
