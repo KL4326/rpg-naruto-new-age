@@ -19,14 +19,11 @@
             --yellow-color: #f1c40f;
             --danger-color: #ed4956;
             
-            /* NOVAS CORES DE STATUS */
-            --stat-chakra: #7f8c8d; /* Cinza */
-            --stat-stamina: #27ae60; /* Verde */
-            --stat-dano: #e74c3c;   /* Vermelho */
-            --stat-buff: #3498db;   /* Azul */
-            --ranking-gold: #ffd700;
-            --ranking-silver: #c0c0c0;
-            --ranking-bronze: #cd7f32;
+            /* CORES DE STATUS */
+            --stat-chakra: #7f8c8d; 
+            --stat-stamina: #27ae60; 
+            --stat-dano: #e74c3c;   
+            --stat-buff: #3498db;   
         }
         body.dark-mode { --bg-color: #000000; --sidebar-bg: #000000; --text-color: #f5f5f5; --card-bg: #121212; --border-color: #363636; }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -77,14 +74,24 @@
         .buy-btn { background-color: var(--primary-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; margin-top: 8px; font-size: 1rem; cursor: pointer; }
         .buy-btn:hover { background-color: #e05200; }
         
-        /* RANKINGS */
-        .rankings-wrapper { display: flex; gap: 20px; flex-wrap: wrap; padding-bottom: 20px; }
-        .ranking-col { flex: 1 1 300px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; }
-        .ranking-col h3 { color: var(--primary-color); text-align: center; margin-bottom: 15px; border-bottom: 2px solid var(--primary-color); font-size: 1.1rem; }
-        .ranking-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        .ranking-table td { padding: 8px; border-bottom: 1px solid var(--border-color); }
+        /* Maestria no Card */
+        .maestria-display { 
+            display: block; 
+            font-size: 0.85rem; 
+            color: var(--yellow-color); 
+            font-weight: bold; 
+            margin-top: 4px; 
+            text-shadow: 0 0 1px rgba(0,0,0,0.1);
+        }
 
-        /* FEED STYLE */
+        /* MISSÕES */
+        .mission-btn-start { background: var(--primary-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        .mission-btn-collect { background: var(--green-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 5px; animation: pulse 1.5s infinite; }
+        .mission-btn-wait { background: var(--yellow-color); color: #333; width: 100%; border: none; padding: 10px; border-radius: 5px; font-weight: bold; margin-top: 5px; cursor: not-allowed; }
+        .mission-btn-done { background: #ccc; color: #666; width: 100%; border: none; padding: 10px; border-radius: 5px; font-weight: bold; margin-top: 5px; cursor: not-allowed; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        /* FEED */
         #feed { max-width: 600px; margin: 0 auto; width: 100%; }
         .create-post { background: var(--card-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border-color); }
         .create-post textarea { width: 100%; padding: 10px; border: none; outline: none; background: transparent; color: var(--text-color); resize: none; font-size: 1rem; }
@@ -95,6 +102,7 @@
         #preview-image { max-width: 100%; max-height: 300px; object-fit: contain; }
         .remove-img { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .btn-post { background: var(--primary-color); color: white; border: none; padding: 8px 20px; border-radius: 20px; font-weight: 600; cursor: pointer; font-size: 0.9rem; }
+        
         .post { background: var(--card-bg); border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); position: relative; overflow: visible; }
         .post-header { display: flex; align-items: center; padding: 10px; }
         .user-avatar-post { width: 35px; height: 35px; border-radius: 50%; background: #efefef; margin-right: 10px; overflow: hidden; border: 1px solid var(--border-color); }
@@ -102,18 +110,27 @@
         .post-info { display: flex; flex-direction: column; }
         .post-author { font-weight: 600; font-size: 0.95rem; color: var(--text-color); }
         .post-time { font-size: 0.75rem; color: #8e8e8e; }
+        
         .post-menu-container { margin-left: auto; position: relative; }
         .post-options-btn { cursor: pointer; color: var(--text-color); padding: 8px; width: 30px; text-align: center; }
         .post-dropdown { display: none; position: absolute; top: 100%; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; width: 140px; }
         .post-dropdown.active { display: block; }
         .post-dropdown-item { padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-color); }
         .post-dropdown-item.danger { color: var(--danger-color); }
+
         .post-content { padding: 0 10px 10px 10px; line-height: 1.5; white-space: pre-wrap; font-size: 0.95rem; }
         .post-image { width: 100%; height: auto; display: block; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); max-height: 600px; object-fit: cover; }
         .post-actions { display: flex; padding: 10px; gap: 15px; }
         .action-btn { background: none; border: none; cursor: pointer; color: var(--text-color); font-size: 1.5rem; display: flex; align-items: center; gap: 5px; padding: 0; }
         .action-btn.liked { color: var(--danger-color); }
         .edit-textarea { width: 100%; border: 1px solid var(--primary-color); border-radius: 4px; padding: 10px; margin: 10px 0; }
+
+        /* RANKINGS */
+        .rankings-wrapper { display: flex; gap: 20px; flex-wrap: wrap; padding-bottom: 20px; }
+        .ranking-col { flex: 1 1 300px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; }
+        .ranking-col h3 { color: var(--primary-color); text-align: center; margin-bottom: 15px; border-bottom: 2px solid var(--primary-color); font-size: 1.1rem; }
+        .ranking-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .ranking-table td { padding: 8px; border-bottom: 1px solid var(--border-color); }
 
         /* MODAIS */
         .modal-overlay-comment { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
@@ -123,16 +140,12 @@
         .jutsu-modal-rank { display: inline-block; background: var(--primary-color); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-bottom: 10px; }
         .jutsu-modal-price { color: var(--green-color); font-weight: bold; font-size: 1.2rem; border-top: 1px solid var(--border-color); padding-top: 15px; }
         
-        /* TAGS DE ESTATÍSTICAS DO JUTSU (COLORIDAS) */
         .jutsu-stats-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
         .jutsu-stat-tag { padding: 4px 12px; border-radius: 15px; color: white; font-weight: bold; font-size: 0.8rem; }
         .tag-dano { background-color: var(--stat-dano); }
         .tag-chakra { background-color: var(--stat-chakra); }
         .tag-stamina { background-color: var(--stat-stamina); }
         .tag-buff { background-color: var(--stat-buff); }
-
-        /* MAESTRIA */
-        .maestria-text { display: block; font-size: 0.8rem; color: var(--yellow-color); font-weight: bold; margin-top: 2px; }
 
         .modal-content-profile { background: var(--card-bg); width: 90%; max-width: 800px; max-height: 90vh; border-radius: 15px; overflow-y: auto; position: relative; border: 1px solid var(--border-color); }
         .profile-header { background: linear-gradient(to right, #ff5e00, #ff9100); padding: 40px 20px; text-align: center; color: white; }
@@ -142,8 +155,8 @@
         .profile-char { font-size: 1.1rem; opacity: 0.9; }
         .profile-body { padding: 20px; }
         .profile-stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; margin-bottom: 30px; }
-        .stat-card { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px; text-align: center; }
-        .stat-value { font-size: 1.2rem; font-weight: bold; color: var(--primary-color); }
+        .stat-card { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; text-align: center; }
+        .stat-value { font-size: 1.5rem; font-weight: bold; color: var(--primary-color); }
         .stat-label { font-size: 0.75rem; color: #777; margin-top: 3px; text-transform: uppercase; font-weight: bold; }
         .stats-divider { grid-column: 1 / -1; font-weight: bold; color: var(--text-color); margin: 20px 0 5px 0; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
 
@@ -174,19 +187,15 @@
         .frase-item:hover { background-color: rgba(0,0,0,0.02); }
         .frase-content { font-size: 1.1rem; font-style: italic; color: var(--text-color); flex: 1; padding-right: 30px; }
         .frase-author { font-size: 0.85rem; color: var(--primary-color); font-weight: bold; margin-top: 5px; }
+        
         .options-menu-container { margin-left: auto; position: relative; }
         .options-btn { cursor: pointer; color: var(--text-color); padding: 8px; width: 30px; text-align: center; }
         .options-dropdown { display: none; position: absolute; top: 100%; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; width: 140px; }
         .options-dropdown.active { display: block; }
         .options-item { padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-color); }
         .options-item.danger { color: var(--danger-color); }
-        
-        /* MISSÕES */
-        .mission-btn-start { background: var(--primary-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 5px; }
-        .mission-btn-collect { background: var(--green-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 5px; animation: pulse 1.5s infinite; }
-        .mission-btn-wait { background: var(--yellow-color); color: #333; width: 100%; border: none; padding: 10px; border-radius: 5px; font-weight: bold; margin-top: 5px; cursor: not-allowed; }
-        .mission-btn-done { background: #ccc; color: #666; width: 100%; border: none; padding: 10px; border-radius: 5px; font-weight: bold; margin-top: 5px; cursor: not-allowed; }
 
+        /* MOBILE */
         @media (max-width: 768px) {
             #mobile-menu-btn { display: block; }
             .sidebar { position: fixed; top: 0; left: -260px; height: 100%; box-shadow: 2px 0 10px rgba(0,0,0,0.3); transition: left 0.3s ease; }
@@ -670,11 +679,20 @@
             const div = document.createElement('div');
             div.className = 'card';
             div.onclick = () => clickFn(id, dados);
+            
+            // Lógica de Maestria para cards de Jutsus comprados
+            let maestriaHtml = "";
+            if(tipo === 'jutsu' && currentUserData.maestrias) {
+                const nivel = currentUserData.maestrias[id] || 0;
+                maestriaHtml = `<span class="maestria-display">Maestria: ${nivel}</span>`;
+            }
+
             let sub = "";
             if(tipo === 'jutsu') sub = "Rank " + dados.rank;
             else if(tipo === 'ferramenta') sub = dados.dano || "Ferramenta";
             else if(tipo === 'item') sub = dados.efeito || "Item";
-            div.innerHTML = `<img src="${img}" class="card-img-top" onerror="this.src='${IMG_PADRAO}'"><h4>${dados.nome}</h4><small>${sub}</small>`;
+            
+            div.innerHTML = `<img src="${img}" class="card-img-top" onerror="this.src='${IMG_PADRAO}'"><h4>${dados.nome}</h4><small>${sub}</small>${maestriaHtml}`;
             c.appendChild(div);
         }
 
@@ -702,7 +720,7 @@
                 const i = d.data();
                 const permitidos = i.restrito_a || [];
                 if(permitidos.length > 0 && !permitidos.includes(currentUserData.nome)) return;
-                if(!m.includes(d.id)) criarCardLoja('loja-jutsus-grid', i, d.id, 'jutsu', (id, p, n) => comprar(id, p, n, 'meusJutsus'), (id, i) => verDetalhesJutsu(id, i));
+                if(!m.includes(d.id)) criarCardLoja('loja-jutsus-grid', i, d.id, 'jutsu', (id, p, n) => comprarJutsu(id, p, n), (id, i) => verDetalhesJutsu(id, i));
             });
         }
         async function carregarMeusJutsus(lista) {
@@ -716,7 +734,7 @@
             const m = currentUserData.ferramentas || [];
             const snap = await getDocs(collection(db, "ferramentas"));
             snap.forEach(d => {
-                if(!m.includes(d.id)) criarCardLoja('loja-ferramentas-grid', d.data(), d.id, 'ferramenta', (id, p, n) => comprar(id, p, n, 'ferramentas'), (id, i) => verDetalhesFerramenta(id, i));
+                if(!m.includes(d.id)) criarCardLoja('loja-ferramentas-grid', d.data(), d.id, 'ferramenta', (id, p, n) => comprarFerramenta(id, p, n), (id, i) => verDetalhesFerramenta(id, i));
             });
         }
         async function carregarMinhasFerramentas(lista) {
@@ -729,7 +747,7 @@
             const c = document.getElementById('loja-itens-grid'); if(!c) return; c.innerHTML = '';
             const snap = await getDocs(collection(db, "itens"));
             snap.forEach(d => {
-                criarCardLoja('loja-itens-grid', d.data(), d.id, 'item', (id, p, n) => comprar(id, p, n, 'itens'), (id, i) => verDetalhesItem(id, i));
+                criarCardLoja('loja-itens-grid', d.data(), d.id, 'item', (id, p, n) => comprarItem(id, p, n), (id, i) => verDetalhesItem(id, i));
             });
         }
         async function carregarMeusItens(lista) {
@@ -738,23 +756,45 @@
             for(const id of lista) { const s = await getDoc(doc(db, "itens", id)); if(s.exists()) criarCard('meus-itens-grid', s.data(), id, 'item', (id, i) => verDetalhesItem(id, i)); }
         }
 
-        // --- COMPRA GENÉRICA ---
-        async function comprar(id, preco, nome, campoDb) {
-            if(!confirm(`Comprar ${nome}?`)) return;
-            if(currentUserData.ryos < preco) return alert("Sem Ryos suficientes!");
+        // --- COMPRAS ESPECÍFICAS (PARA GERAR MAESTRIA) ---
+        
+        window.comprarJutsu = async (id, p, n) => {
+            if(!confirm(`Comprar ${n}?`)) return;
+            if(currentUserData.ryos < p) return alert("Sem Ryos suficientes!");
             
             await updateDoc(doc(db, "users", auth.currentUser.uid), {
-                ryos: increment(-preco),
-                [campoDb]: arrayUnion(id)
+                ryos: increment(-p),
+                meusJutsus: arrayUnion(id),
+                [`maestrias.${id}`]: 0 // INICIALIZA MAESTRIA EM 0
             });
             alert("Comprado!");
             const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
             currentUserData = snap.data();
             atualizarInterface(currentUserData);
-            if(campoDb === 'meusJutsus') { carregarLoja(); carregarMeusJutsus(currentUserData.meusJutsus); }
-            if(campoDb === 'ferramentas') { carregarLojaFerramentas(); carregarMinhasFerramentas(currentUserData.ferramentas); }
-            if(campoDb === 'itens') { carregarLojaItens(); carregarMeusItens(currentUserData.itens); }
-        }
+            carregarLoja(); carregarMeusJutsus(currentUserData.meusJutsus);
+        };
+
+        window.comprarFerramenta = async (id, p, n) => {
+            if(!confirm(`Comprar ${n}?`)) return;
+            if(currentUserData.ryos < p) return alert("Sem Ryos suficientes!");
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(-p), ferramentas: arrayUnion(id) });
+            alert("Comprado!");
+            const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
+            currentUserData = snap.data();
+            atualizarInterface(currentUserData);
+            carregarLojaFerramentas(); carregarMinhasFerramentas(currentUserData.ferramentas);
+        };
+
+        window.comprarItem = async (id, p, n) => {
+            if(!confirm(`Comprar ${n}?`)) return;
+            if(currentUserData.ryos < p) return alert("Sem Ryos suficientes!");
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(-p), itens: arrayUnion(id) });
+            alert("Comprado!");
+            const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
+            currentUserData = snap.data();
+            atualizarInterface(currentUserData);
+            carregarLojaItens(); carregarMeusItens(currentUserData.itens);
+        };
 
         // --- MODAIS DE DETALHES ---
         function abrirModal(tipo, dados) {
@@ -772,6 +812,7 @@
                 if(dados.dano) statsHtml += `<span class="jutsu-stat-tag tag-dano">${dados.dano}</span>`;
                 if(dados.chakra) statsHtml += `<span class="jutsu-stat-tag tag-chakra">Chakra: ${dados.chakra}</span>`;
                 if(dados.stamina) statsHtml += `<span class="jutsu-stat-tag tag-stamina">Stamina: ${dados.stamina}</span>`;
+                if(dados.bonus) statsHtml += `<span class="jutsu-stat-tag tag-buff">${dados.bonus}</span>`;
                 document.getElementById('jutsu-stats-row').innerHTML = statsHtml;
             }
             if(tipo === 'tool') document.getElementById(prefix + '-rank-modal').innerText = dados.dano || "Ferramenta";
