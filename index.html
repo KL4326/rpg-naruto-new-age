@@ -110,14 +110,12 @@
         .post-info { display: flex; flex-direction: column; }
         .post-author { font-weight: 600; font-size: 0.95rem; color: var(--text-color); }
         .post-time { font-size: 0.75rem; color: #8e8e8e; }
-        
         .post-menu-container { margin-left: auto; position: relative; }
         .post-options-btn { cursor: pointer; color: var(--text-color); padding: 8px; width: 30px; text-align: center; }
         .post-dropdown { display: none; position: absolute; top: 100%; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; width: 140px; }
         .post-dropdown.active { display: block; }
         .post-dropdown-item { padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-color); }
         .post-dropdown-item.danger { color: var(--danger-color); }
-
         .post-content { padding: 0 10px 10px 10px; line-height: 1.5; white-space: pre-wrap; font-size: 0.95rem; }
         .post-image { width: 100%; height: auto; display: block; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); max-height: 600px; object-fit: cover; }
         .post-actions { display: flex; padding: 10px; gap: 15px; }
@@ -155,8 +153,8 @@
         .profile-char { font-size: 1.1rem; opacity: 0.9; }
         .profile-body { padding: 20px; }
         .profile-stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; margin-bottom: 30px; }
-        .stat-card { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; text-align: center; }
-        .stat-value { font-size: 1.5rem; font-weight: bold; color: var(--primary-color); }
+        .stat-card { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px; text-align: center; }
+        .stat-value { font-size: 1.2rem; font-weight: bold; color: var(--primary-color); }
         .stat-label { font-size: 0.75rem; color: #777; margin-top: 3px; text-transform: uppercase; font-weight: bold; }
         .stats-divider { grid-column: 1 / -1; font-weight: bold; color: var(--text-color); margin: 20px 0 5px 0; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
 
@@ -318,6 +316,7 @@
                         <div class="stat-card"><div class="stat-value" id="dash-sanidade">100</div><div class="stat-label">Sanidade</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-chakra">100</div><div class="stat-label">Chakra</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-stamina">100</div><div class="stat-label">Stamina</div></div>
+                        <div class="stat-card"><div class="stat-value" id="dash-controle">Baixo</div><div class="stat-label">Controle de Chakra</div></div>
 
                         <div class="stats-divider">Atributos</div>
                         <div class="stat-card"><div class="stat-value" id="dash-forca">10</div><div class="stat-label">Força</div></div>
@@ -433,6 +432,7 @@
                     <div class="stat-card"><div class="stat-value" id="prof-sanidade"></div><div class="stat-label">Sanidade</div></div>
                     <div class="stat-card"><div class="stat-value" id="prof-chakra"></div><div class="stat-label">Chakra</div></div>
                     <div class="stat-card"><div class="stat-value" id="prof-stamina"></div><div class="stat-label">Stamina</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-controle"></div><div class="stat-label">Controle de Chakra</div></div>
 
                     <div class="stats-divider">Atributos</div>
                     <div class="stat-card"><div class="stat-value" id="prof-forca"></div><div class="stat-label">Força</div></div>
@@ -598,6 +598,7 @@
             set('dash-sanidade', dados.sanidade || 100);
             set('dash-chakra', dados.chakra || 100);
             set('dash-stamina', dados.stamina || 100);
+            set('dash-controle', dados.controle_chakra || "Baixo");
             set('dash-forca', dados.forca || 10);
             set('dash-defesa', dados.defesa || 10);
             set('dash-constituicao', dados.constituicao || 10);
@@ -756,8 +757,7 @@
             for(const id of lista) { const s = await getDoc(doc(db, "itens", id)); if(s.exists()) criarCard('meus-itens-grid', s.data(), id, 'item', (id, i) => verDetalhesItem(id, i)); }
         }
 
-        // --- COMPRAS ESPECÍFICAS (PARA GERAR MAESTRIA) ---
-        
+        // --- COMPRA GENÉRICA ---
         window.comprarJutsu = async (id, p, n) => {
             if(!confirm(`Comprar ${n}?`)) return;
             if(currentUserData.ryos < p) return alert("Sem Ryos suficientes!");
@@ -765,7 +765,7 @@
             await updateDoc(doc(db, "users", auth.currentUser.uid), {
                 ryos: increment(-p),
                 meusJutsus: arrayUnion(id),
-                [`maestrias.${id}`]: 0 // INICIALIZA MAESTRIA EM 0
+                [`maestrias.${id}`]: 0 
             });
             alert("Comprado!");
             const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
@@ -936,6 +936,7 @@
                 // Novos Atributos
                 set('prof-vida', u.vida || 100); set('prof-sanidade', u.sanidade || 100);
                 set('prof-chakra', u.chakra || 100); set('prof-stamina', u.stamina || 100);
+                set('prof-controle', u.controle_chakra || "Baixo");
                 set('prof-forca', u.forca || 10); set('prof-defesa', u.defesa || 10);
                 set('prof-constituicao', u.constituicao || 10); set('prof-destreza', u.destreza || 10);
                 set('prof-intelecto', u.intelecto || 10); set('prof-agilidade', u.agilidade || 10);
