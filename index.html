@@ -65,6 +65,13 @@
         .tab-content { display: none; animation: fadeIn 0.3s; }
         .tab-content.active { display: block; }
 
+        /* BARRA DE XP */
+        .level-container { background: var(--card-bg); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 20px; }
+        .level-info { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; color: var(--text-color); }
+        .xp-bar-bg { width: 100%; height: 20px; background: #eee; border-radius: 10px; overflow: hidden; position: relative; }
+        .xp-bar-fill { height: 100%; background: linear-gradient(90deg, #ff9100, #ff5e00); width: 0%; transition: width 0.5s ease-in-out; }
+        .xp-text { position: absolute; width: 100%; text-align: center; top: 0; left: 0; font-size: 0.75rem; color: #333; line-height: 20px; font-weight: bold; text-shadow: 0 0 2px white; }
+
         /* CARDS E GRIDS */
         .bucket-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; margin-top: 20px; }
         .card { background: var(--card-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); text-align: center; cursor: pointer; transition: 0.2s; overflow: hidden; }
@@ -75,14 +82,7 @@
         .buy-btn:hover { background-color: #e05200; }
         
         /* Maestria no Card */
-        .maestria-display { 
-            display: block; 
-            font-size: 0.85rem; 
-            color: var(--yellow-color); 
-            font-weight: bold; 
-            margin-top: 4px; 
-            text-shadow: 0 0 1px rgba(0,0,0,0.1);
-        }
+        .maestria-display { display: block; font-size: 0.85rem; color: var(--yellow-color); font-weight: bold; margin-top: 4px; text-shadow: 0 0 1px rgba(0,0,0,0.1); }
 
         /* MISSÕES */
         .mission-btn-start { background: var(--primary-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 5px; }
@@ -295,6 +295,16 @@
                 
                 <div id="dashboard" class="tab-content">
                     <h2>Estatísticas do Ninja</h2>
+                    <div class="level-container" style="background:var(--card-bg); padding:15px; border-radius:10px; border:1px solid var(--border-color); margin-bottom:20px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-weight:bold; color:var(--text-color);">
+                            <span id="level-display">Nível 1</span>
+                            <span id="xp-text-display">0 / 500 XP</span>
+                        </div>
+                        <div style="width:100%; height:20px; background:#eee; border-radius:10px; overflow:hidden; position:relative;">
+                            <div id="xp-bar" style="height:100%; background:linear-gradient(90deg, #ff9100, #ff5e00); width:0%; transition:width 0.5s;"></div>
+                        </div>
+                    </div>
+
                     <div class="profile-stats-grid">
                         <div class="stats-divider">Geral</div>
                         <div class="stat-card"><div class="stat-value" id="dash-nivel">1</div><div class="stat-label">Nível</div></div>
@@ -316,7 +326,7 @@
                         <div class="stat-card"><div class="stat-value" id="dash-sanidade">100</div><div class="stat-label">Sanidade</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-chakra">100</div><div class="stat-label">Chakra</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-stamina">100</div><div class="stat-label">Stamina</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-controle">Baixo</div><div class="stat-label">Controle de Chakra</div></div>
+                        <div class="stat-card"><div class="stat-value" id="dash-controle">Baixo</div><div class="stat-label">Controle Chakra</div></div>
 
                         <div class="stats-divider">Atributos</div>
                         <div class="stat-card"><div class="stat-value" id="dash-forca">10</div><div class="stat-label">Força</div></div>
@@ -432,7 +442,7 @@
                     <div class="stat-card"><div class="stat-value" id="prof-sanidade"></div><div class="stat-label">Sanidade</div></div>
                     <div class="stat-card"><div class="stat-value" id="prof-chakra"></div><div class="stat-label">Chakra</div></div>
                     <div class="stat-card"><div class="stat-value" id="prof-stamina"></div><div class="stat-label">Stamina</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-controle"></div><div class="stat-label">Controle de Chakra</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-controle"></div><div class="stat-label">Controle Chakra</div></div>
 
                     <div class="stats-divider">Atributos</div>
                     <div class="stat-card"><div class="stat-value" id="prof-forca"></div><div class="stat-label">Força</div></div>
@@ -503,6 +513,7 @@
         let currentImageBase64 = null;
         let currentOpenPostId = null;
         let newAvatarBase64 = null;
+        let globalXpTable = []; // Tabela de XP
 
         const IMG_PADRAO = "https://img.freepik.com/vetores-gratis/ilustracao-de-pergaminho-ninja-desenhada-a-mao_23-2151159846.jpg";
 
@@ -543,6 +554,8 @@
                 document.getElementById('app-container').style.display = 'flex';
                 if(user.email === "admin@rpgnaruto.com") document.getElementById('btn-admin-panel').style.display = 'flex';
 
+                await carregarConfiguracoes(); // Carrega tabela XP
+
                 const docRef = doc(db, "users", user.uid);
                 const docSnap = await getDoc(docRef);
 
@@ -551,7 +564,7 @@
                     atualizarInterface(currentUserData);
                     carregarTudo();
                 } else {
-                    const dadosPadrao = { nome: "Novo Ninja", ryos: 100, email: user.email, meusJutsus: [], ferramentas: [], itens: [], statusMissoes: {} };
+                    const dadosPadrao = { nome: "Novo Ninja", ryos: 100, xp: 0, nivel: 1, email: user.email, meusJutsus: [], ferramentas: [], itens: [], statusMissoes: {} };
                     await setDoc(docRef, dadosPadrao);
                     currentUserData = dadosPadrao;
                     atualizarInterface(dadosPadrao);
@@ -563,6 +576,16 @@
                 document.getElementById('app-container').style.display = 'none';
             }
         });
+
+        // NOVO: Carregar Configuração de XP do Firebase
+        async function carregarConfiguracoes() {
+            try {
+                const configSnap = await getDoc(doc(db, "game_config", "sistema_nivel"));
+                if(configSnap.exists()) {
+                    globalXpTable = configSnap.data().tabela_xp || [];
+                }
+            } catch(e) { console.log("Usando XP padrão."); }
+        }
 
         function carregarTudo() {
             carregarLoja(); carregarMeusJutsus(currentUserData.meusJutsus);
@@ -581,6 +604,18 @@
             if(dados.historiaTexto) document.getElementById('historia-display-text').innerText = dados.historiaTexto;
             if(dados.historiaImagem) document.getElementById('historia-display-img').src = dados.historiaImagem;
 
+            // SISTEMA DE NIVEL INTELIGENTE
+            const nivel = dados.nivel || 1;
+            const xpAtual = dados.xp || 0;
+            // Se tiver na tabela usa, se não usa formula padrão
+            const xpNecessario = globalXpTable[nivel] ? globalXpTable[nivel] : (nivel * 500); 
+            
+            const porcentagem = Math.min((xpAtual / xpNecessario) * 100, 100);
+
+            document.getElementById('level-display').innerText = "Nível " + nivel;
+            document.getElementById('xp-text-display').innerText = `${xpAtual} / ${xpNecessario} XP`;
+            document.getElementById('xp-bar').style.width = porcentagem + "%";
+
             // Atualiza Dashboard com NOVOS ATRIBUTOS
             const set = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
             set('dash-nivel', dados.nivel || 1);
@@ -593,7 +628,6 @@
             set('dash-loses', dados.derrotas || 0);
             set('dash-draws', dados.empates || 0);
             
-            // Novos Atributos
             set('dash-vida', dados.vida || 100);
             set('dash-sanidade', dados.sanidade || 100);
             set('dash-chakra', dados.chakra || 100);
@@ -680,16 +714,16 @@
             const div = document.createElement('div');
             div.className = 'card';
             div.onclick = () => clickFn(id, dados);
-            
-            // Lógica de Maestria para cards de Jutsus comprados
-            let maestriaHtml = "";
-            if(tipo === 'jutsu' && currentUserData.maestrias) {
-                const nivel = currentUserData.maestrias[id] || 0;
-                maestriaHtml = `<span class="maestria-display">Maestria: ${nivel}</span>`;
-            }
-
             let sub = "";
-            if(tipo === 'jutsu') sub = "Rank " + dados.rank;
+            let maestriaHtml = "";
+            
+            if(tipo === 'jutsu') {
+                sub = "Rank " + dados.rank;
+                if(currentUserData.maestrias) {
+                    const nivel = currentUserData.maestrias[id] || 0;
+                    maestriaHtml = `<span class="maestria-display">Maestria: ${nivel}</span>`;
+                }
+            }
             else if(tipo === 'ferramenta') sub = dados.dano || "Ferramenta";
             else if(tipo === 'item') sub = dados.efeito || "Item";
             
@@ -761,7 +795,6 @@
         window.comprarJutsu = async (id, p, n) => {
             if(!confirm(`Comprar ${n}?`)) return;
             if(currentUserData.ryos < p) return alert("Sem Ryos suficientes!");
-            
             await updateDoc(doc(db, "users", auth.currentUser.uid), {
                 ryos: increment(-p),
                 meusJutsus: arrayUnion(id),
@@ -947,6 +980,7 @@
         }
         window.fecharProfileModal = () => document.getElementById('profileModal').style.display = 'none';
         
+        // --- MISSÕES COM LEVEL UP ---
         async function carregarMissoes() { 
             const c = document.getElementById('missoes-grid'); if(!c) return;
             const map = currentUserData.statusMissoes || {}; 
@@ -979,14 +1013,49 @@
                 document.getElementById('missao-img-modal').src = m.imagem || IMG_PADRAO; 
                 const actionDiv = document.getElementById('missao-actions-modal'); 
                 actionDiv.innerHTML = ''; 
+                // Botão de ação inteligente com XP e Nível
                 if(status === 'neutro') { actionDiv.innerHTML = `<button class="mission-btn-start" onclick="iniciarMissao('${id}')">Aceitar Missão</button>`; } 
                 else if(status === 'em_andamento') { actionDiv.innerHTML = `<button class="mission-btn-wait">Aguardando Aprovação...</button>`; } 
-                else if(status === 'aprovado') { actionDiv.innerHTML = `<button class="mission-btn-collect" onclick="coletarRecompensa('${id}', ${m.recompensa})">Receber Recompensa</button>`; } 
+                else if(status === 'aprovado') { actionDiv.innerHTML = `<button class="mission-btn-collect" onclick="coletarRecompensa('${id}', ${m.recompensa}, ${m.xp || 0})">Receber Recompensa</button>`; } 
                 else if(status === 'concluido') { actionDiv.innerHTML = `<button class="mission-btn-done">Missão Concluída</button>`; } 
                 document.getElementById('missaoModal').style.display = 'flex'; 
             } 
         };
         window.fecharMissaoModal = () => { document.getElementById('missaoModal').style.display = 'none'; };
+
+        window.iniciarMissao = async (id) => { await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusMissoes.${id}`]: 'em_andamento' }); alert("Iniciada!"); location.reload(); };
+        
+        window.coletarRecompensa = async (id, ryoReward, xpReward) => {
+            const userRef = doc(db, "users", auth.currentUser.uid);
+            const userSnap = await getDoc(userRef);
+            let u = userSnap.data();
+
+            let novoRyo = u.ryos + ryoReward;
+            let novoXp = (u.xp || 0) + xpReward;
+            let novoNivel = u.nivel || 1;
+            
+            // Lógica de Level Up (Tabela ou Fórmula)
+            let xpNecessario = globalXpTable[novoNivel] ? globalXpTable[novoNivel] : (novoNivel * 500);
+            let upou = false;
+
+            while(novoXp >= xpNecessario) {
+                novoXp -= xpNecessario;
+                novoNivel++;
+                xpNecessario = globalXpTable[novoNivel] ? globalXpTable[novoNivel] : (novoNivel * 500);
+                upou = true;
+            }
+
+            await updateDoc(userRef, {
+                ryos: novoRyo,
+                xp: novoXp,
+                nivel: novoNivel,
+                [`statusMissoes.${id}`]: 'concluido'
+            });
+
+            if(upou) alert(`PARABÉNS! Você subiu para o Nível ${novoNivel}!`);
+            else alert(`Recebido: ${formatarNum(ryoReward)} Ryos e ${xpReward} XP!`);
+            location.reload();
+        };
 
         window.carregarRankings = async () => { 
             const c = document.getElementById('ranking-container'); if(!c) return; 
@@ -1003,9 +1072,6 @@
             } catch(e) { c.innerHTML = 'Erro nos rankings.'; }
         };
         function renderRank(c,t,l,f) { const s=[...l].sort((a,b)=>(b[f]||0)-(a[f]||0)).slice(0,5); let h=`<div class="ranking-col"><h3>${t}</h3><table class="ranking-table">`; s.forEach((u,i)=>h+=`<tr><td>${i+1}. ${u.nome}</td><td>${formatarNum(u[f])}</td></tr>`); h+='</table></div>'; c.innerHTML+=h; }
-
-        window.iniciarMissao = async (id) => { await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusMissoes.${id}`]: 'em_andamento' }); alert("Iniciada!"); location.reload(); };
-        window.coletarRecompensa = async (id, val) => { await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(val), [`statusMissoes.${id}`]: 'concluido' }); alert(`Recebido ${val} Ryos!`); location.reload(); };
 
         // HISTORIA (Botão Exposto)
         window.editarHistoria = async () => {
