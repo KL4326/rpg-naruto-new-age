@@ -42,7 +42,8 @@
         .sidebar { width: 250px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; padding: 20px; overflow-y: auto; flex-shrink: 0; z-index: 999; transition: transform 0.3s ease; }
         .logo { font-size: 24px; font-weight: bold; color: var(--primary-color); margin-bottom: 40px; font-family: 'Segoe UI', sans-serif; letter-spacing: 1px; }
         .sidebar button { background: none; border: none; color: var(--text-color); width: 100%; text-align: left; padding: 12px 15px; cursor: pointer; border-radius: 8px; transition: 0.2s; display: flex; align-items: center; gap: 15px; margin-bottom: 5px; font-size: 1rem; }
-        .sidebar button:hover, .sidebar button.active { background-color: rgba(0,0,0,0.05); font-weight: bold; color: var(--primary-color); }
+        .sidebar button:hover { background-color: rgba(0,0,0,0.05); }
+        .sidebar button.active { background-color: rgba(255, 94, 0, 0.1); font-weight: bold; color: var(--primary-color); border-left: 4px solid var(--primary-color); }
         #btn-admin-panel { display: none; color: #ed4956; font-weight: bold; }
 
         .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; width: 100%; }
@@ -64,13 +65,6 @@
         #content-area { padding: 20px; overflow-y: auto; background-color: var(--bg-color); flex: 1; }
         .tab-content { display: none; animation: fadeIn 0.3s; }
         .tab-content.active { display: block; }
-
-        /* BARRA DE XP */
-        .level-container { background: var(--card-bg); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 20px; }
-        .level-info { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; color: var(--text-color); }
-        .xp-bar-bg { width: 100%; height: 20px; background: #eee; border-radius: 10px; overflow: hidden; position: relative; }
-        .xp-bar-fill { height: 100%; background: linear-gradient(90deg, #ff9100, #ff5e00); width: 0%; transition: width 0.5s ease-in-out; }
-        .xp-text { position: absolute; width: 100%; text-align: center; top: 0; left: 0; font-size: 0.75rem; color: #333; line-height: 20px; font-weight: bold; text-shadow: 0 0 2px white; }
 
         /* CARDS E GRIDS */
         .bucket-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; margin-top: 20px; }
@@ -193,6 +187,9 @@
         .options-item { padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-color); }
         .options-item.danger { color: var(--danger-color); }
 
+        /* BARRA DE XP */
+        .level-container { background: var(--card-bg); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 20px; }
+
         /* MOBILE */
         @media (max-width: 768px) {
             #mobile-menu-btn { display: block; }
@@ -231,11 +228,11 @@
         <aside class="sidebar">
             <div class="logo"><i class="fa-solid fa-scroll"></i> RPG NARUTO</div>
             <nav>
-                <button onclick="showTab('dashboard')" class="active"><i class="fa-solid fa-chart-line"></i> Dashboard</button>
-                <button onclick="showTab('missoes')"><i class="fa-solid fa-scroll"></i> Missões</button>
-                <button onclick="showTab('personagens')"><i class="fa-solid fa-users"></i> Personagens</button>
-                <button onclick="showTab('loja')"><i class="fa-solid fa-store"></i> Loja</button>
-                <button onclick="showTab('rankings')"><i class="fa-solid fa-trophy"></i> Rankings</button>
+                <button id="side-btn-dashboard" onclick="showTab('dashboard')" class="active"><i class="fa-solid fa-chart-line"></i> Dashboard</button>
+                <button id="side-btn-missoes" onclick="showTab('missoes')"><i class="fa-solid fa-scroll"></i> Missões</button>
+                <button id="side-btn-personagens" onclick="showTab('personagens')"><i class="fa-solid fa-users"></i> Personagens</button>
+                <button id="side-btn-loja" onclick="showTab('loja')"><i class="fa-solid fa-store"></i> Loja</button>
+                <button id="side-btn-rankings" onclick="showTab('rankings')"><i class="fa-solid fa-trophy"></i> Rankings</button>
                 <button id="btn-admin-panel" onclick="showTab('admin-panel')"><i class="fa-solid fa-user-shield"></i> Painel Kage</button>
             </nav>
         </aside>
@@ -295,8 +292,8 @@
                 
                 <div id="dashboard" class="tab-content">
                     <h2>Estatísticas do Ninja</h2>
-                    <div class="level-container" style="background:var(--card-bg); padding:15px; border-radius:10px; border:1px solid var(--border-color); margin-bottom:20px;">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-weight:bold; color:var(--text-color);">
+                    <div class="level-container">
+                        <div class="level-info">
                             <span id="level-display">Nível 1</span>
                             <span id="xp-text-display">0 / 500 XP</span>
                         </div>
@@ -403,9 +400,11 @@
             <span class="close-modal" onclick="fecharMissaoModal()" style="color: #333; top: 10px; right: 15px;">&times;</span>
             <img id="missao-img-modal" src="" class="jutsu-modal-img" style="border-color:#e6b800; height: 150px;">
             <h2 id="missao-name-modal" style="color: #e6b800;"></h2>
-            <p id="missao-desc-modal" style="margin-top:10px; max-height: 200px; overflow-y: auto;"></p>
-            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e6b800; padding-top: 15px; margin-top: 15px;">
-                <div style="font-weight: bold; color: #2ecc71;">Recompensa: <span id="missao-reward-modal"></span> Ryos</div>
+            <div style="text-align: left; margin-bottom: 20px; max-height: 200px; overflow-y: auto; padding-right: 5px;">
+                <p id="missao-desc-modal" style="color: #555; line-height: 1.6;"></p>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e6b800; padding-top: 15px;">
+                <div style="font-weight: bold; color: #2ecc71;">XP: <span id="missao-xp-modal">0</span> | Ryos: <span id="missao-reward-modal"></span></div>
                 <div id="missao-actions-modal"></div>
             </div>
         </div>
@@ -513,11 +512,10 @@
         let currentImageBase64 = null;
         let currentOpenPostId = null;
         let newAvatarBase64 = null;
-        let globalXpTable = []; // Tabela de XP
+        let globalXpTable = [];
 
         const IMG_PADRAO = "https://img.freepik.com/vetores-gratis/ilustracao-de-pergaminho-ninja-desenhada-a-mao_23-2151159846.jpg";
 
-        // --- CALCULADORA DE TEMPO ---
         function calcularTempo(timestamp) {
             if (!timestamp) return "Agora";
             const date = timestamp.toDate();
@@ -530,13 +528,11 @@
             return date.toLocaleDateString('pt-BR');
         }
 
-        // --- UI MOBILE ---
         window.toggleMobileMenu = () => {
             document.querySelector('.sidebar').classList.toggle('mobile-active');
             document.querySelector('.sidebar-overlay').classList.toggle('active');
         };
 
-        // --- AUTH ---
         const btnLogin = document.getElementById('btnLogin');
         if(btnLogin) {
             btnLogin.addEventListener('click', () => {
@@ -554,7 +550,7 @@
                 document.getElementById('app-container').style.display = 'flex';
                 if(user.email === "admin@rpgnaruto.com") document.getElementById('btn-admin-panel').style.display = 'flex';
 
-                await carregarConfiguracoes(); // Carrega tabela XP
+                await carregarConfiguracoes();
 
                 const docRef = doc(db, "users", user.uid);
                 const docSnap = await getDoc(docRef);
@@ -577,14 +573,8 @@
             }
         });
 
-        // NOVO: Carregar Configuração de XP do Firebase
         async function carregarConfiguracoes() {
-            try {
-                const configSnap = await getDoc(doc(db, "game_config", "sistema_nivel"));
-                if(configSnap.exists()) {
-                    globalXpTable = configSnap.data().tabela_xp || [];
-                }
-            } catch(e) { console.log("Usando XP padrão."); }
+            try { const configSnap = await getDoc(doc(db, "game_config", "sistema_nivel")); if(configSnap.exists()) globalXpTable = configSnap.data().tabela_xp || []; } catch(e) {}
         }
 
         function carregarTudo() {
@@ -604,21 +594,17 @@
             if(dados.historiaTexto) document.getElementById('historia-display-text').innerText = dados.historiaTexto;
             if(dados.historiaImagem) document.getElementById('historia-display-img').src = dados.historiaImagem;
 
-            // SISTEMA DE NIVEL INTELIGENTE
             const nivel = dados.nivel || 1;
             const xpAtual = dados.xp || 0;
-            // Se tiver na tabela usa, se não usa formula padrão
             const xpNecessario = globalXpTable[nivel] ? globalXpTable[nivel] : (nivel * 500); 
-            
             const porcentagem = Math.min((xpAtual / xpNecessario) * 100, 100);
-
+            
             document.getElementById('level-display').innerText = "Nível " + nivel;
             document.getElementById('xp-text-display').innerText = `${xpAtual} / ${xpNecessario} XP`;
             document.getElementById('xp-bar').style.width = porcentagem + "%";
 
-            // Atualiza Dashboard com NOVOS ATRIBUTOS
             const set = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
-            set('dash-nivel', dados.nivel || 1);
+            set('dash-nivel', nivel);
             set('dash-cargo', dados.cargo || "Genin");
             set('dash-ryos', formatarNum(dados.ryos));
             set('dash-jutsus', dados.meusJutsus?.length || 0);
@@ -628,17 +614,12 @@
             set('dash-loses', dados.derrotas || 0);
             set('dash-draws', dados.empates || 0);
             
-            set('dash-vida', dados.vida || 100);
-            set('dash-sanidade', dados.sanidade || 100);
-            set('dash-chakra', dados.chakra || 100);
-            set('dash-stamina', dados.stamina || 100);
+            set('dash-vida', dados.vida || 100); set('dash-sanidade', dados.sanidade || 100);
+            set('dash-chakra', dados.chakra || 100); set('dash-stamina', dados.stamina || 100);
             set('dash-controle', dados.controle_chakra || "Baixo");
-            set('dash-forca', dados.forca || 10);
-            set('dash-defesa', dados.defesa || 10);
-            set('dash-constituicao', dados.constituicao || 10);
-            set('dash-destreza', dados.destreza || 10);
-            set('dash-intelecto', dados.intelecto || 10);
-            set('dash-agilidade', dados.agilidade || 10);
+            set('dash-forca', dados.forca || 10); set('dash-defesa', dados.defesa || 10);
+            set('dash-constituicao', dados.constituicao || 10); set('dash-destreza', dados.destreza || 10);
+            set('dash-intelecto', dados.intelecto || 10); set('dash-agilidade', dados.agilidade || 10);
             set('dash-velocidade', dados.velocidade || 10);
         }
 
@@ -664,21 +645,26 @@
             });
         }
 
-        // --- TAB SYSTEM ---
         window.showTab = (t) => {
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.getElementById(t).classList.add('active');
             document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
-            const btn = document.getElementById('nav-btn-'+t);
-            if(btn) btn.classList.add('active');
+            document.querySelectorAll('.sidebar button').forEach(b => b.classList.remove('active'));
+
+            const btnTop = document.getElementById('nav-btn-'+t);
+            const btnSide = document.getElementById('side-btn-'+t); // Correção do menu lateral
+            
+            if(btnTop) btnTop.classList.add('active');
+            if(btnSide) btnSide.classList.add('active');
+            
             if(t==='personagens') carregarPersonagens();
+            if(t==='frases') carregarFrases();
             if(window.innerWidth <= 768) window.toggleMobileMenu(); 
         };
 
         window.toggleMenu = () => document.getElementById('user-menu').classList.toggle('show');
         window.fazerLogout = () => signOut(auth).then(() => location.reload());
 
-        // --- PERFIL & SENHA ---
         window.openEditProfileModal = () => {
             document.getElementById('editProfileModal').style.display = 'flex';
             document.getElementById('edit-name-input').value = currentUserData.nome || "";
@@ -704,10 +690,9 @@
             const pass = document.getElementById('new-password').value;
             if(!pass || pass.length < 6) return alert("Senha deve ter 6+ caracteres");
             try { await updatePassword(auth.currentUser, pass); alert("Senha atualizada!"); closeChangePasswordModal(); }
-            catch(e) { if(e.code === 'auth/requires-recent-login') alert("Por segurança, faça login novamente antes de mudar a senha."); else alert("Erro: " + e.message); }
+            catch(e) { if(e.code === 'auth/requires-recent-login') alert("Por segurança, faça login novamente."); else alert("Erro: " + e.message); }
         };
         
-        // --- CARREGAMENTO DE CARDS ---
         function criarCard(containerId, dados, id, tipo, clickFn) {
             const c = document.getElementById(containerId); if(!c) return;
             const img = dados.imagem || IMG_PADRAO;
@@ -716,7 +701,6 @@
             div.onclick = () => clickFn(id, dados);
             let sub = "";
             let maestriaHtml = "";
-            
             if(tipo === 'jutsu') {
                 sub = "Rank " + dados.rank;
                 if(currentUserData.maestrias) {
@@ -726,7 +710,6 @@
             }
             else if(tipo === 'ferramenta') sub = dados.dano || "Ferramenta";
             else if(tipo === 'item') sub = dados.efeito || "Item";
-            
             div.innerHTML = `<img src="${img}" class="card-img-top" onerror="this.src='${IMG_PADRAO}'"><h4>${dados.nome}</h4><small>${sub}</small>${maestriaHtml}`;
             c.appendChild(div);
         }
@@ -746,7 +729,6 @@
             c.appendChild(div);
         }
 
-        // --- LOJAS ---
         async function carregarLoja() {
             const c = document.getElementById('loja-jutsus-grid'); if(!c) return; c.innerHTML = '';
             const m = currentUserData.meusJutsus || [];
@@ -768,9 +750,7 @@
             const c = document.getElementById('loja-ferramentas-grid'); if(!c) return; c.innerHTML = '';
             const m = currentUserData.ferramentas || [];
             const snap = await getDocs(collection(db, "ferramentas"));
-            snap.forEach(d => {
-                if(!m.includes(d.id)) criarCardLoja('loja-ferramentas-grid', d.data(), d.id, 'ferramenta', (id, p, n) => comprarFerramenta(id, p, n), (id, i) => verDetalhesFerramenta(id, i));
-            });
+            snap.forEach(d => { if(!m.includes(d.id)) criarCardLoja('loja-ferramentas-grid', d.data(), d.id, 'ferramenta', (id, p, n) => comprarFerramenta(id, p, n), (id, i) => verDetalhesFerramenta(id, i)); });
         }
         async function carregarMinhasFerramentas(lista) {
             const c = document.getElementById('minhas-ferramentas-grid'); if(!c) return; c.innerHTML = '';
@@ -781,9 +761,7 @@
         async function carregarLojaItens() {
             const c = document.getElementById('loja-itens-grid'); if(!c) return; c.innerHTML = '';
             const snap = await getDocs(collection(db, "itens"));
-            snap.forEach(d => {
-                criarCardLoja('loja-itens-grid', d.data(), d.id, 'item', (id, p, n) => comprarItem(id, p, n), (id, i) => verDetalhesItem(id, i));
-            });
+            snap.forEach(d => { criarCardLoja('loja-itens-grid', d.data(), d.id, 'item', (id, p, n) => comprarItem(id, p, n), (id, i) => verDetalhesItem(id, i)); });
         }
         async function carregarMeusItens(lista) {
             const c = document.getElementById('meus-itens-grid'); if(!c) return; c.innerHTML = '';
@@ -791,22 +769,16 @@
             for(const id of lista) { const s = await getDoc(doc(db, "itens", id)); if(s.exists()) criarCard('meus-itens-grid', s.data(), id, 'item', (id, i) => verDetalhesItem(id, i)); }
         }
 
-        // --- COMPRA GENÉRICA ---
         window.comprarJutsu = async (id, p, n) => {
             if(!confirm(`Comprar ${n}?`)) return;
             if(currentUserData.ryos < p) return alert("Sem Ryos suficientes!");
-            await updateDoc(doc(db, "users", auth.currentUser.uid), {
-                ryos: increment(-p),
-                meusJutsus: arrayUnion(id),
-                [`maestrias.${id}`]: 0 
-            });
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(-p), meusJutsus: arrayUnion(id), [`maestrias.${id}`]: 0 });
             alert("Comprado!");
             const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
             currentUserData = snap.data();
             atualizarInterface(currentUserData);
             carregarLoja(); carregarMeusJutsus(currentUserData.meusJutsus);
         };
-
         window.comprarFerramenta = async (id, p, n) => {
             if(!confirm(`Comprar ${n}?`)) return;
             if(currentUserData.ryos < p) return alert("Sem Ryos suficientes!");
@@ -817,7 +789,6 @@
             atualizarInterface(currentUserData);
             carregarLojaFerramentas(); carregarMinhasFerramentas(currentUserData.ferramentas);
         };
-
         window.comprarItem = async (id, p, n) => {
             if(!confirm(`Comprar ${n}?`)) return;
             if(currentUserData.ryos < p) return alert("Sem Ryos suficientes!");
@@ -829,9 +800,8 @@
             carregarLojaItens(); carregarMeusItens(currentUserData.itens);
         };
 
-        // --- MODAIS DE DETALHES ---
         function abrirModal(tipo, dados) {
-            let prefix = tipo; // jutsu, tool, item
+            let prefix = tipo; 
             document.getElementById(prefix + '-name-modal').innerText = dados.nome;
             document.getElementById(prefix + '-desc-modal').innerText = dados.descricao || "Sem descrição.";
             document.getElementById(prefix + '-price-modal').innerText = "Valor: " + formatarNum(dados.preco) + " Ryos";
@@ -850,19 +820,16 @@
             }
             if(tipo === 'tool') document.getElementById(prefix + '-rank-modal').innerText = dados.dano || "Ferramenta";
             if(tipo === 'item') document.getElementById(prefix + '-rank-modal').innerText = dados.efeito || "Item";
-            
             document.getElementById(tipo + 'Modal').style.display = 'flex';
         }
 
         window.verDetalhesJutsu = (id, dados) => abrirModal('jutsu', dados);
         window.verDetalhesFerramenta = (id, dados) => abrirModal('tool', dados);
         window.verDetalhesItem = (id, dados) => abrirModal('item', dados);
-        
         window.fecharJutsuModal = () => document.getElementById('jutsuModal').style.display = 'none';
         window.fecharToolModal = () => document.getElementById('toolModal').style.display = 'none';
         window.fecharItemModal = () => document.getElementById('itemModal').style.display = 'none';
 
-        // --- FEED POST ---
         window.handleImageUpload = async (e) => { if(e.target.files[0]) { try { currentImageBase64 = await comprimirImagem(e.target.files[0]); document.getElementById('preview-image').src = currentImageBase64; document.getElementById('preview-container').style.display='block'; } catch(e){alert("Erro imagem");} } };
         window.removeImage = () => { document.getElementById('imageInput').value=''; currentImageBase64=null; document.getElementById('preview-container').style.display='none'; };
         
@@ -887,33 +854,11 @@
                 snap.forEach(d => {
                     const p = d.data(); const id = d.id;
                     if(filter === 'saved' && !p.savedBy.includes(auth.currentUser.uid)) return;
-                    
                     const isOwner = p.uid === auth.currentUser.uid;
-                    const menuHTML = isOwner ? `
-                        <div class="post-menu-container">
-                            <div class="post-options-btn" onclick="this.nextElementSibling.classList.toggle('active')">...</div>
-                            <div class="post-dropdown">
-                                <div class="dropdown-item danger" onclick="deletarPost('${id}')">Excluir</div>
-                            </div>
-                        </div>` : '';
-                    
+                    const menuHTML = isOwner ? `<div class="post-menu-container"><div class="post-options-btn" onclick="this.nextElementSibling.classList.toggle('active')">...</div><div class="post-dropdown"><div class="dropdown-item danger" onclick="deletarPost('${id}')">Excluir</div></div></div>` : '';
                     const tempoFormatado = calcularTempo(p.data);
-
                     const div = document.createElement('div'); div.className = 'post';
-                    div.innerHTML = `
-                        <div class="post-header">
-                            <div class="user-avatar-post"><img src="${p.autorAvatar || IMG_PADRAO}"></div>
-                            <div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">${tempoFormatado}</span></div>
-                            ${menuHTML}
-                        </div>
-                        <div class="post-content">${p.conteudo}</div>
-                        ${p.imagem ? `<img src="${p.imagem}" class="post-image" onclick="verPost('${id}')">` : ''}
-                        <div class="post-actions">
-                            <button class="action-btn ${p.likes.includes(auth.currentUser.uid)?'liked':''}" onclick="toggleLike('${id}')"><i class="${p.likes.includes(auth.currentUser.uid)?'fa-solid':'fa-regular'} fa-heart"></i> ${p.likes.length}</button>
-                            <button class="action-btn" onclick="verPost('${id}')"><i class="fa-regular fa-comment"></i> ${p.comments.length}</button>
-                            <button class="action-btn ${p.savedBy.includes(auth.currentUser.uid)?'saved':''}" onclick="toggleSave('${id}')" style="margin-left:auto;"><i class="${p.savedBy.includes(auth.currentUser.uid)?'fa-solid':'fa-regular'} fa-bookmark"></i></button>
-                        </div>
-                    `;
+                    div.innerHTML = `<div class="post-header"><div class="user-avatar-post"><img src="${p.autorAvatar || IMG_PADRAO}"></div><div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">${tempoFormatado}</span></div>${menuHTML}</div><div class="post-content">${p.conteudo}</div>${p.imagem ? `<img src="${p.imagem}" class="post-image" onclick="verPost('${id}')">` : ''}<div class="post-actions"><button class="action-btn ${p.likes.includes(auth.currentUser.uid)?'liked':''}" onclick="toggleLike('${id}')"><i class="${p.likes.includes(auth.currentUser.uid)?'fa-solid':'fa-regular'} fa-heart"></i> ${p.likes.length}</button><button class="action-btn" onclick="verPost('${id}')"><i class="fa-regular fa-comment"></i> ${p.comments.length}</button><button class="action-btn ${p.savedBy.includes(auth.currentUser.uid)?'saved':''}" onclick="toggleSave('${id}')" style="margin-left:auto;"><i class="${p.savedBy.includes(auth.currentUser.uid)?'fa-solid':'fa-regular'} fa-bookmark"></i></button></div>`;
                     c.appendChild(div);
                 });
             }, (error) => { c.innerHTML = `<p style='text-align:center; color:red;'>Erro ao carregar feed.</p>`; });
@@ -935,7 +880,7 @@
         window.submitComment = async () => { const t = document.getElementById('newCommentText').value; if(!t) return; await updateDoc(doc(db, "posts", currentOpenPostId), { comments: arrayUnion({ autor: currentUserData.nome, texto: t }) }); document.getElementById('newCommentText').value = ""; verPost(currentOpenPostId); };
         window.closeModal = () => document.getElementById('commentModal').style.display = 'none';
 
-        // --- PERSONAGENS & RANKING & ADMIN (RESTAURADOS) ---
+        // --- PERSONAGENS & RANKING ---
         async function carregarPersonagens() {
             const c = document.getElementById('directory-grid'); if(!c) return; c.innerHTML = 'Carregando...';
             try {
@@ -959,14 +904,10 @@
                 document.getElementById('profile-modal-name').innerText = u.nome || "Ninja";
                 document.getElementById('profile-modal-char').innerText = u.apelido || "";
                 document.getElementById('profile-modal-img').src = u.avatar || IMG_PADRAO;
-                
                 const set = (id, v) => document.getElementById(id).innerText = v;
-                // Stats Gerais
                 set('prof-nivel', u.nivel || 1); set('prof-cargo', u.cargo || "Genin"); set('prof-ryos', formatarNum(u.ryos));
                 set('prof-jutsus', u.meusJutsus?.length||0); set('prof-tools', u.ferramentas?.length||0); set('prof-items', u.itens?.length||0);
                 set('prof-wins', u.vitorias||0); set('prof-loses', u.derrotas||0); set('prof-draws', u.empates||0);
-                
-                // Novos Atributos
                 set('prof-vida', u.vida || 100); set('prof-sanidade', u.sanidade || 100);
                 set('prof-chakra', u.chakra || 100); set('prof-stamina', u.stamina || 100);
                 set('prof-controle', u.controle_chakra || "Baixo");
@@ -974,23 +915,20 @@
                 set('prof-constituicao', u.constituicao || 10); set('prof-destreza', u.destreza || 10);
                 set('prof-intelecto', u.intelecto || 10); set('prof-agilidade', u.agilidade || 10);
                 set('prof-velocidade', u.velocidade || 10);
-
                 document.getElementById('profileModal').style.display = 'flex';
             }
         }
         window.fecharProfileModal = () => document.getElementById('profileModal').style.display = 'none';
         
-        // --- MISSÕES COM LEVEL UP ---
         async function carregarMissoes() { 
             const c = document.getElementById('missoes-grid'); if(!c) return;
             const map = currentUserData.statusMissoes || {}; 
             try {
-                const s = await getDocs(collection(db, "missoes")); 
-                c.innerHTML = ''; 
+                const s = await getDocs(collection(db, "missoes")); c.innerHTML = ''; 
                 if(s.empty) { c.innerHTML = '<p>Sem missões.</p>'; return; }
                 s.forEach((d) => { 
                     const m = d.data(); const id = d.id; const st = map[id] || 'neutro'; 
-                    const k = document.createElement('div'); k.className = 'card jutsu-card-click'; 
+                    const k = document.createElement('div'); k.className = 'card'; 
                     let statusText="Disponível", statusColor="#777"; 
                     if(st==='em_andamento'){statusText="Em Andamento";statusColor="orange";}
                     else if(st==='aprovado'){statusText="Coletar!";statusColor="green";}
@@ -1011,9 +949,7 @@
                 document.getElementById('missao-desc-modal').innerText = m.descricao; 
                 document.getElementById('missao-reward-modal').innerText = formatarNum(m.recompensa); 
                 document.getElementById('missao-img-modal').src = m.imagem || IMG_PADRAO; 
-                const actionDiv = document.getElementById('missao-actions-modal'); 
-                actionDiv.innerHTML = ''; 
-                // Botão de ação inteligente com XP e Nível
+                const actionDiv = document.getElementById('missao-actions-modal'); actionDiv.innerHTML = ''; 
                 if(status === 'neutro') { actionDiv.innerHTML = `<button class="mission-btn-start" onclick="iniciarMissao('${id}')">Aceitar Missão</button>`; } 
                 else if(status === 'em_andamento') { actionDiv.innerHTML = `<button class="mission-btn-wait">Aguardando Aprovação...</button>`; } 
                 else if(status === 'aprovado') { actionDiv.innerHTML = `<button class="mission-btn-collect" onclick="coletarRecompensa('${id}', ${m.recompensa}, ${m.xp || 0})">Receber Recompensa</button>`; } 
@@ -1023,45 +959,10 @@
         };
         window.fecharMissaoModal = () => { document.getElementById('missaoModal').style.display = 'none'; };
 
-        window.iniciarMissao = async (id) => { await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusMissoes.${id}`]: 'em_andamento' }); alert("Iniciada!"); location.reload(); };
-        
-        window.coletarRecompensa = async (id, ryoReward, xpReward) => {
-            const userRef = doc(db, "users", auth.currentUser.uid);
-            const userSnap = await getDoc(userRef);
-            let u = userSnap.data();
-
-            let novoRyo = u.ryos + ryoReward;
-            let novoXp = (u.xp || 0) + xpReward;
-            let novoNivel = u.nivel || 1;
-            
-            // Lógica de Level Up (Tabela ou Fórmula)
-            let xpNecessario = globalXpTable[novoNivel] ? globalXpTable[novoNivel] : (novoNivel * 500);
-            let upou = false;
-
-            while(novoXp >= xpNecessario) {
-                novoXp -= xpNecessario;
-                novoNivel++;
-                xpNecessario = globalXpTable[novoNivel] ? globalXpTable[novoNivel] : (novoNivel * 500);
-                upou = true;
-            }
-
-            await updateDoc(userRef, {
-                ryos: novoRyo,
-                xp: novoXp,
-                nivel: novoNivel,
-                [`statusMissoes.${id}`]: 'concluido'
-            });
-
-            if(upou) alert(`PARABÉNS! Você subiu para o Nível ${novoNivel}!`);
-            else alert(`Recebido: ${formatarNum(ryoReward)} Ryos e ${xpReward} XP!`);
-            location.reload();
-        };
-
         window.carregarRankings = async () => { 
             const c = document.getElementById('ranking-container'); if(!c) return; 
             try {
-                const s = await getDocs(collection(db, "users")); 
-                let l = []; s.forEach(d=>l.push(d.data())); 
+                const s = await getDocs(collection(db, "users")); let l = []; s.forEach(d=>l.push(d.data())); 
                 c.innerHTML = ''; 
                 renderRank(c,"Ranking Financeiro",l,'ryos'); 
                 renderRank(c,"Missões Rankeadas",l,'pontos_rankeada');
@@ -1073,81 +974,32 @@
         };
         function renderRank(c,t,l,f) { const s=[...l].sort((a,b)=>(b[f]||0)-(a[f]||0)).slice(0,5); let h=`<div class="ranking-col"><h3>${t}</h3><table class="ranking-table">`; s.forEach((u,i)=>h+=`<tr><td>${i+1}. ${u.nome}</td><td>${formatarNum(u[f])}</td></tr>`); h+='</table></div>'; c.innerHTML+=h; }
 
-        // HISTORIA (Botão Exposto)
-        window.editarHistoria = async () => {
-            const n=prompt("História:",currentUserData.historiaTexto||""); 
-            if(n){ 
-                const i=prompt("Imagem URL:",currentUserData.historiaImagem||""); 
-                const updates={historiaTexto:n}; if(i) updates.historiaImagem=i;
-                await updateDoc(doc(db,"users",auth.currentUser.uid),updates);
-                location.reload(); 
-            } 
-        };
-        
-        async function carregarFrases() { 
-            const c = document.getElementById('frases-list-container'); if(!c) return;
-            const q = query(collection(db, "frases"), orderBy("data", "desc"));
-            onSnapshot(q, (snapshot) => {
-                c.innerHTML = ''; if(snapshot.empty) { c.innerHTML = '<p style="text-align:center; color:#777;">Nenhuma frase.</p>'; return; }
-                snapshot.forEach((doc) => { 
-                    const f = doc.data(); 
-                    const div = document.createElement('div'); 
-                    div.className = 'frase-item'; 
-                    
-                    const isOwner = f.uid === auth.currentUser.uid;
-                    const menuHTML = isOwner ? `
-                        <div class="options-menu-container">
-                            <div class="options-btn" onclick="toggleFraseMenu(this); event.stopPropagation();"><i class="fa-solid fa-ellipsis"></i></div>
-                            <div class="options-dropdown">
-                                <div class="options-item" onclick="editarFrase('${doc.id}', '${f.texto}'); event.stopPropagation();">Editar</div>
-                                <div class="options-item danger" onclick="deletarFrase('${doc.id}'); event.stopPropagation();">Excluir</div>
-                            </div>
-                        </div>
-                    ` : '';
-
-                    div.onclick = () => copiarFrase(f.texto); 
-                    div.innerHTML = `<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor || "Desconhecido"}</div>${menuHTML}`; 
-                    c.appendChild(div); 
-                });
-            });
-        }
-
-        window.toggleFraseMenu = (el) => {
-            const dropdown = el.nextElementSibling;
-            document.querySelectorAll('.options-dropdown').forEach(d => { if(d !== dropdown) d.classList.remove('active'); });
-            dropdown.classList.toggle('active');
+        window.iniciarMissao = async (id) => { await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusMissoes.${id}`]: 'em_andamento' }); alert("Iniciada!"); location.reload(); };
+        window.coletarRecompensa = async (id, ryoReward, xpReward) => {
+            const userRef = doc(db, "users", auth.currentUser.uid);
+            const userSnap = await getDoc(userRef);
+            let u = userSnap.data();
+            let novoRyo = u.ryos + ryoReward;
+            let novoXp = (u.xp || 0) + xpReward;
+            let novoNivel = u.nivel || 1;
+            let xpNecessario = globalXpTable[novoNivel] ? globalXpTable[novoNivel] : (novoNivel * 500);
+            let upou = false;
+            while(novoXp >= xpNecessario) { novoXp -= xpNecessario; novoNivel++; xpNecessario = globalXpTable[novoNivel] ? globalXpTable[novoNivel] : (novoNivel * 500); upou = true; }
+            await updateDoc(userRef, { ryos: novoRyo, xp: novoXp, nivel: novoNivel, [`statusMissoes.${id}`]: 'concluido' });
+            if(upou) alert(`PARABÉNS! Você subiu para o Nível ${novoNivel}!`); else alert(`Recebido: ${formatarNum(ryoReward)} Ryos e ${xpReward} XP!`);
+            location.reload();
         };
 
+        window.editarHistoria = async () => { const n=prompt("História:",currentUserData.historiaTexto||""); if(n){ const i=prompt("Imagem URL:",currentUserData.historiaImagem||""); updateDoc(doc(db,"users",auth.currentUser.uid),{historiaTexto:n,historiaImagem:i}).then(()=>location.reload()); } }
+        async function carregarFrases() { const c = document.getElementById('frases-list-container'); if(!c) return; onSnapshot(query(collection(db, "frases"), orderBy("data", "desc")), (snap) => { c.innerHTML = ''; if(snap.empty) { c.innerHTML = '<p style="text-align:center; color:#777;">Nenhuma frase.</p>'; return; } snap.forEach((doc) => { const f = doc.data(); const div = document.createElement('div'); div.className = 'frase-item'; const isOwner = f.uid === auth.currentUser.uid; const menuHTML = isOwner ? `<div class="options-menu-container"><div class="options-btn" onclick="toggleFraseMenu(this); event.stopPropagation();"><i class="fa-solid fa-ellipsis"></i></div><div class="options-dropdown"><div class="options-item" onclick="editarFrase('${doc.id}', '${f.texto}'); event.stopPropagation();">Editar</div><div class="options-item danger" onclick="deletarFrase('${doc.id}'); event.stopPropagation();">Excluir</div></div></div>` : ''; div.onclick = () => copiarFrase(f.texto); div.innerHTML = `<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor || "Desconhecido"}</div>${menuHTML}`; c.appendChild(div); }); }); }
+        window.toggleFraseMenu = (el) => { const dropdown = el.nextElementSibling; document.querySelectorAll('.options-dropdown').forEach(d => { if(d !== dropdown) d.classList.remove('active'); }); dropdown.classList.toggle('active'); };
         window.adicionarFrase = async () => { const t=document.getElementById('novaFraseInput').value; if(t){ await addDoc(collection(db,"frases"),{texto:t,autor:currentUserData.nome,uid:auth.currentUser.uid,data:serverTimestamp()}); document.getElementById('novaFraseInput').value=''; } }
         window.editarFrase = async (id, oldText) => { const n = prompt("Editar:", oldText); if(n) await updateDoc(doc(db, "frases", id), { texto: n }); };
         window.deletarFrase = async (id) => { if(confirm("Excluir?")) await deleteDoc(doc(db, "frases", id)); };
         window.copiarFrase = (texto) => { navigator.clipboard.writeText(texto).then(() => { const f = document.getElementById('copyFeedback'); f.style.display = 'block'; setTimeout(() => { f.style.display = 'none'; }, 2000); }); };
 
-        // ADMIN
-        async function carregarPainelAdmin() {
-            const c = document.getElementById('admin-missoes-grid'); if(!c) return;
-            c.innerHTML = 'Carregando pendências...';
-            try {
-                const s = await getDocs(collection(db, "users"));
-                c.innerHTML = '';
-                let found = false;
-                s.forEach(u => {
-                    const d = u.data();
-                    const m = d.statusMissoes || {};
-                    for (const [mid, st] of Object.entries(m)) {
-                        if(st === 'em_andamento') {
-                            found = true;
-                            const k = document.createElement('div'); k.className = 'card';
-                            k.innerHTML = `<h4>${d.nome}</h4><p>Missão ID: ${mid}</p><button class="mission-btn-collect" onclick="aprovarMissao('${u.id}','${mid}')">Aprovar</button>`;
-                            c.appendChild(k);
-                        }
-                    }
-                });
-                if(!found) c.innerHTML = '<p>Nenhuma missão pendente.</p>';
-            } catch(e) { c.innerHTML = 'Erro no painel.'; }
-        }
+        async function carregarPainelAdmin() { const c = document.getElementById('admin-missoes-grid'); if(!c) return; c.innerHTML = 'Carregando...'; try { const s = await getDocs(collection(db, "users")); c.innerHTML = ''; let found = false; s.forEach(u => { const d = u.data(); const m = d.statusMissoes || {}; for (const [mid, st] of Object.entries(m)) { if(st === 'em_andamento') { found = true; const k = document.createElement('div'); k.className = 'card'; k.innerHTML = `<h4>${d.nome}</h4><p>Missão ID: ${mid}</p><button class="mission-btn-collect" onclick="aprovarMissao('${u.id}','${mid}')">Aprovar</button>`; c.appendChild(k); } } }); if(!found) c.innerHTML = '<p>Nenhuma missão pendente.</p>'; } catch(e) { c.innerHTML = 'Erro.'; } }
         window.aprovarMissao = async (uid, mid) => { if(confirm("Aprovar?")) { await updateDoc(doc(db, "users", uid), { [`statusMissoes.${mid}`]: 'aprovado' }); alert("Aprovado!"); location.reload(); } };
-
     </script>
 </body>
 </html>
