@@ -405,10 +405,8 @@
             <span class="close-modal" onclick="fecharMissaoModal()" style="color: #333; top: 10px; right: 15px;">&times;</span>
             <img id="missao-img-modal" src="" class="jutsu-modal-img" style="border-color:#e6b800; height: 150px;">
             <h2 id="missao-name-modal" style="color: #e6b800;"></h2>
-            <div style="text-align: left; margin-bottom: 20px; max-height: 200px; overflow-y: auto; padding-right: 5px;">
-                <p id="missao-desc-modal" style="color: #555; line-height: 1.6;"></p>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e6b800; padding-top: 15px;">
+            <p id="missao-desc-modal" style="margin-top:10px; max-height: 200px; overflow-y: auto;"></p>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e6b800; padding-top: 15px; margin-top: 15px;">
                 <div style="font-weight: bold; color: #2ecc71;">XP: <span id="missao-xp-modal">0</span> | Ryos: <span id="missao-reward-modal"></span></div>
                 <div id="missao-actions-modal"></div>
             </div>
@@ -998,7 +996,7 @@
                     else if(st==='aprovado'){statusText="Coletar!";statusColor="green";}
                     else if(st==='concluido'){statusText="Concluída";statusColor="blue";} 
                     k.onclick = () => verDetalhesMissao(id, m, st); 
-                    k.innerHTML=`<h4>${m.titulo}</h4><p style="font-size:0.9rem; color:${statusColor}; font-weight:bold;">${statusText}</p><small style="color:var(--primary-color)">${m.xp || 0} XP</small>`; 
+                    k.innerHTML=`<h4>${m.titulo}</h4><p style="font-size:0.9rem; color:${statusColor}; font-weight:bold;">${statusText}</p><small style="color:var(--primary-color)">${m.xp || 0} XP | ${formatarNum(m.recompensa || 0)} Ryos</small>`; 
                     c.appendChild(k); 
                 }); 
             } catch(e) { c.innerHTML = 'Erro ao carregar missões.'; }
@@ -1111,7 +1109,13 @@
                 });
             });
         }
-        window.toggleFraseMenu = (el) => { const dropdown = el.nextElementSibling; document.querySelectorAll('.options-dropdown').forEach(d => { if(d !== dropdown) d.classList.remove('active'); }); dropdown.classList.toggle('active'); };
+
+        window.toggleFraseMenu = (el) => {
+            const dropdown = el.nextElementSibling;
+            document.querySelectorAll('.options-dropdown').forEach(d => { if(d !== dropdown) d.classList.remove('active'); });
+            dropdown.classList.toggle('active');
+        };
+
         window.adicionarFrase = async () => { const t=document.getElementById('novaFraseInput').value; if(t){ await addDoc(collection(db,"frases"),{texto:t,autor:currentUserData.nome,uid:auth.currentUser.uid,data:serverTimestamp()}); document.getElementById('novaFraseInput').value=''; } }
         window.editarFrase = async (id, oldText) => { const n = prompt("Editar:", oldText); if(n) await updateDoc(doc(db, "frases", id), { texto: n }); };
         window.deletarFrase = async (id) => { if(confirm("Excluir?")) await deleteDoc(doc(db, "frases", id)); };
