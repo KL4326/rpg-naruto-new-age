@@ -78,6 +78,14 @@
         /* Maestria no Card */
         .maestria-display { display: block; font-size: 0.85rem; color: var(--yellow-color); font-weight: bold; margin-top: 4px; text-shadow: 0 0 1px rgba(0,0,0,0.1); }
 
+        /* NOVO: FILTROS DA LOJA */
+        .shop-header { margin-bottom: 20px; background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); }
+        .shop-location-select { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; font-size: 1rem; margin-bottom: 10px; background: var(--bg-color); color: var(--text-color); }
+        .shop-categories { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
+        .shop-cat-btn { padding: 8px 15px; border: 1px solid var(--border-color); background: var(--bg-color); border-radius: 20px; cursor: pointer; white-space: nowrap; font-weight: 500; color: var(--text-color); transition: 0.2s; }
+        .shop-cat-btn.active { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+        .shop-cat-btn:hover { opacity: 0.8; }
+
         /* MISSÕES */
         .mission-btn-start { background: var(--primary-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 5px; }
         .mission-btn-collect { background: var(--green-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 5px; animation: pulse 1.5s infinite; }
@@ -288,7 +296,42 @@
 
                 <div id="jutsus" class="tab-content"><h3>Meus Jutsus</h3><div class="bucket-grid" id="meus-jutsus-grid"><p>Carregando...</p></div><hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;"><h3>Loja de Jutsus</h3><div class="bucket-grid" id="loja-jutsus-grid"><p>Carregando...</p></div></div>
                 <div id="ferramentas" class="tab-content"><h3>Minhas Ferramentas</h3><div class="bucket-grid" id="minhas-ferramentas-grid"><p>Carregando...</p></div><hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;"><h3>Loja de Ferramentas</h3><div class="bucket-grid" id="loja-ferramentas-grid"><p>Carregando...</p></div></div>
-                <div id="loja" class="tab-content"><h3>Meus Itens</h3><div class="bucket-grid" id="meus-itens-grid"><p>Carregando...</p></div><hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;"><h3>Mercado Geral</h3><div class="bucket-grid" id="loja-itens-grid"><p>Carregando...</p></div></div>
+                
+                <div id="loja" class="tab-content">
+                    
+                    <div class="shop-header">
+                        <h3 style="margin-bottom:10px;">Localização Atual</h3>
+                        <select id="shop-location" class="shop-location-select" onchange="atualizarFiltroVila()">
+                            <option value="Konoha">Vila da Folha (Konoha)</option>
+                            <option value="Suna">Vila da Areia (Suna)</option>
+                            <option value="Kiri">Vila da Névoa (Kiri)</option>
+                            <option value="Kumo">Vila da Nuvem (Kumo)</option>
+                            <option value="Iwa">Vila da Pedra (Iwa)</option>
+                            <option value="Ame">Vila da Chuva (Ame)</option>
+                            <option value="Oto">Vila do Som (Oto)</option>
+                            <option value="Akatsuki">Esconderijo (Akatsuki)</option>
+                        </select>
+
+                        <h3 style="margin:15px 0 10px;">Estabelecimentos</h3>
+                        <div class="shop-categories">
+                            <button class="shop-cat-btn active" onclick="filtrarLojaPorTipo('geral', this)">Mercado Geral</button>
+                            <button class="shop-cat-btn" onclick="filtrarLojaPorTipo('comida', this)">Restaurantes</button>
+                            <button class="shop-cat-btn" onclick="filtrarLojaPorTipo('remedio', this)">Hospital/Farmácia</button>
+                            <button class="shop-cat-btn" onclick="filtrarLojaPorTipo('roupa', this)">Roupas</button>
+                            <button class="shop-cat-btn" onclick="filtrarLojaPorTipo('acessorio', this)">Acessórios</button>
+                            <button class="shop-cat-btn" onclick="filtrarLojaPorTipo('pergaminho', this)">Pergaminhos</button>
+                        </div>
+                    </div>
+
+                    <h3>Itens à Venda</h3>
+                    <div class="bucket-grid" id="loja-itens-grid"><p>Carregando...</p></div>
+                    
+                    <hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;">
+                    
+                    <h3>Meus Itens</h3>
+                    <div class="bucket-grid" id="meus-itens-grid"><p>Carregando...</p></div>
+                </div>
+
                 <div id="personagens" class="tab-content"><h2>Diretório de Ninjas</h2><div class="bucket-grid" id="directory-grid"><p>Carregando...</p></div></div>
                 <div id="missoes" class="tab-content"><h2>Quadro de Missões</h2><div class="bucket-grid" id="missoes-grid"><p>Carregando...</p></div></div>
                 <div id="rankings" class="tab-content"><h2>Rankings Globais</h2><div class="rankings-wrapper" id="ranking-container"><p>Carregando Rankings...</p></div></div>
@@ -370,9 +413,7 @@
             <img id="jutsu-img-modal" src="" class="jutsu-modal-img">
             <h2 id="jutsu-name-modal" style="color:var(--primary-color);"></h2>
             <div id="jutsu-rank-modal" class="jutsu-modal-rank"></div>
-            
             <div id="jutsu-stats-row" class="jutsu-stats-row"></div>
-
             <p id="jutsu-desc-modal" style="margin-top:10px;"></p>
             <div id="jutsu-price-modal" class="jutsu-modal-price"></div>
         </div>
@@ -516,10 +557,13 @@
         let currentOpenPostId = null;
         let newAvatarBase64 = null;
         let globalXpTable = [];
+        
+        // VARIAVEIS DA LOJA
+        let vilaAtual = "Konoha";
+        let lojaAtual = "geral";
 
         const IMG_PADRAO = "https://img.freepik.com/vetores-gratis/ilustracao-de-pergaminho-ninja-desenhada-a-mao_23-2151159846.jpg";
 
-        // --- CALCULADORA DE TEMPO ---
         function calcularTempo(timestamp) {
             if (!timestamp) return "Agora";
             const date = timestamp.toDate();
@@ -532,13 +576,11 @@
             return date.toLocaleDateString('pt-BR');
         }
 
-        // --- UI MOBILE ---
         window.toggleMobileMenu = () => {
             document.querySelector('.sidebar').classList.toggle('mobile-active');
             document.querySelector('.sidebar-overlay').classList.toggle('active');
         };
 
-        // --- AUTH ---
         const btnLogin = document.getElementById('btnLogin');
         if(btnLogin) {
             btnLogin.addEventListener('click', () => {
@@ -707,6 +749,20 @@
             catch(e) { if(e.code === 'auth/requires-recent-login') alert("Por segurança, faça login novamente."); else alert("Erro: " + e.message); }
         };
         
+        // --- FUNÇÕES DA LOJA COM FILTRO ---
+        window.atualizarFiltroVila = () => {
+            vilaAtual = document.getElementById('shop-location').value;
+            carregarLojaItens(); // Recarrega com o novo filtro
+        };
+
+        window.filtrarLojaPorTipo = (tipo, btn) => {
+            lojaAtual = tipo;
+            // Atualiza classe active nos botões
+            document.querySelectorAll('.shop-cat-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            carregarLojaItens();
+        };
+
         // --- CARREGAMENTO DE CARDS ---
         function criarCard(containerId, dados, id, tipo, clickFn) {
             const c = document.getElementById(containerId); if(!c) return;
@@ -778,11 +834,21 @@
             for(const id of lista) { const s = await getDoc(doc(db, "ferramentas", id)); if(s.exists()) criarCard('minhas-ferramentas-grid', s.data(), id, 'ferramenta', (id, i) => verDetalhesFerramenta(id, i)); }
         }
 
+        // CARREGAR ITENS COM FILTRO
         async function carregarLojaItens() {
             const c = document.getElementById('loja-itens-grid'); if(!c) return; c.innerHTML = '';
             const snap = await getDocs(collection(db, "itens"));
+            
             snap.forEach(d => {
-                criarCardLoja('loja-itens-grid', d.data(), d.id, 'item', (id, p, n) => comprarItem(id, p, n), (id, i) => verDetalhesItem(id, i));
+                const item = d.data();
+                // LÓGICA DE FILTRO
+                // 1. Filtra por TIPO (Geral mostra tudo, senão só o tipo selecionado)
+                if (lojaAtual !== 'geral' && item.tipo !== lojaAtual) return;
+                
+                // 2. Filtra por VILA (Se item for Global aparece sempre, senão só se bater com a vila selecionada)
+                if (item.vila && item.vila !== 'Global' && item.vila !== vilaAtual) return;
+
+                criarCardLoja('loja-itens-grid', item, d.id, 'item', (id, p, n) => comprarItem(id, p, n), (id, i) => verDetalhesItem(id, i));
             });
         }
         async function carregarMeusItens(lista) {
