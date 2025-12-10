@@ -312,7 +312,7 @@
                 <div id="jutsus" class="tab-content"><h3>Meus Jutsus</h3><div class="bucket-grid" id="meus-jutsus-grid"><p>Carregando...</p></div><hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;"><h3>Loja de Jutsus</h3><div class="bucket-grid" id="loja-jutsus-grid"><p>Carregando...</p></div></div>
                 <div id="ferramentas" class="tab-content"><h3>Loja de Ferramentas</h3><div class="bucket-grid" id="loja-ferramentas-grid"><p>Carregando...</p></div></div>
                 
-                <div id="loja" class="tab-content">
+                 <div id="loja" class="tab-content">
                       <div class="shop-header">
                         <h3 style="margin-bottom:10px;">Localização Atual</h3>
                         <select id="shop-location" class="shop-location-select" onchange="atualizarFiltroVila()">
@@ -325,7 +325,7 @@
                             <option value="Oto">Vila do Som (Oto)</option>
                             <option value="Kori">Vila do Gelo (Kori)</option>
                         </select>
-                         <h3 style="margin:15px 0 10px;">Estabelecimentos</h3>
+                          <h3 style="margin:15px 0 10px;">Estabelecimentos</h3>
                         <div class="shop-categories">
                             <button class="shop-cat-btn active" onclick="filtrarLojaPorTipo('mercado', this)">Mercado</button>
                             <button class="shop-cat-btn" onclick="filtrarLojaPorTipo('comida', this)">Restaurantes</button>
@@ -664,8 +664,15 @@
             const snap = await getDocs(collection(db, "itens"));
             snap.forEach(d => {
                 const i = d.data();
+                // Lógica para Array ou String na vila
+                let vilaOk = false;
+                if(!i.vila || i.vila === 'Global') vilaOk = true;
+                else if(Array.isArray(i.vila)) { if(i.vila.includes(vilaAtual) || i.vila.includes('Global')) vilaOk = true; }
+                else if(i.vila === vilaAtual) vilaOk = true;
+
                 if (lojaAtual !== 'geral' && i.tipo !== lojaAtual) return;
-                if (i.vila && i.vila !== 'Global' && i.vila !== vilaAtual) return;
+                if (!vilaOk) return;
+
                 criarCardLoja('loja-itens-grid', i, d.id, 'item', (id, p, n) => comprarItem(id, p, n), (id, i) => verDetalhesItem(id, i));
             });
         }
@@ -758,15 +765,47 @@
 
         // --- CARREGADORES SECUNDÁRIOS ---
         async function carregarPersonagens() { const c = document.getElementById('directory-grid'); if(!c) return; const s = await getDocs(collection(db, "users")); c.innerHTML = ''; s.forEach(d => { const u = d.data(); const k = document.createElement('div'); k.className = 'card'; k.onclick = () => window.verPerfil(d.id); k.innerHTML = `<div style="width:60px; height:60px; border-radius:50%; overflow:hidden; margin:0 auto 10px;"><img src="${u.avatar||IMG_PADRAO}" style="width:100%; height:100%; object-fit:cover;"></div><h4>${u.nome}</h4><p>${u.apelido||""}</p>`; c.appendChild(k); }); }
-        window.verPerfil = async (uid) => { const s = await getDoc(doc(db, "users", uid)); if(s.exists()) { const u = s.data(); document.getElementById('profile-modal-name').innerText = u.nome; document.getElementById('profile-modal-img').src = u.avatar||IMG_PADRAO; const items = document.getElementById('other-profile-stats'); items.innerHTML = `<div>Nível: ${u.nivel||1}</div><div>Cargo: ${u.cargo||'Genin'}</div>`; document.getElementById('profileModal').style.display = 'flex'; } };
+        window.verPerfil = async (uid) => {
+            const s = await getDoc(doc(db, "users", uid));
+            if(s.exists()) {
+                const u = s.data();
+                document.getElementById('profile-modal-name').innerText = u.nome;
+                document.getElementById('profile-modal-char').innerText = u.apelido || "";
+                document.getElementById('profile-modal-img').src = u.avatar||IMG_PADRAO;
+                
+                const set = (id, v) => { if(document.getElementById(id)) document.getElementById(id).innerText = v; };
+                // Stats
+                set('prof-nivel', u.nivel||1); set('prof-cargo', u.cargo||"Genin"); set('prof-ryos', formatarNum(u.ryos));
+                set('prof-jutsus', u.meusJutsus?.length||0); set('prof-wins', u.vitorias||0); set('prof-loses', u.derrotas||0); set('prof-draws', u.empates||0);
+                
+                // Atributos
+                set('prof-vida', u.vida||100); set('prof-sanidade', u.sanidade||100); set('prof-chakra', u.chakra||100); set('prof-stamina', u.stamina||100); set('prof-controle', u.controle_chakra||"Baixo");
+                set('prof-forca', u.forca||10); set('prof-defesa', u.defesa||10); set('prof-constituicao', u.constituicao||10); set('prof-destreza', u.destreza||10);
+                set('prof-intelecto', u.intelecto||10); set('prof-agilidade', u.agilidade||10); set('prof-velocidade', u.velocidade||10);
+                
+                // Contar itens (apenas quantidade total para perfil alheio)
+                let tTools = 0, tItems = 0;
+                if(u.inventario) {
+                    for(let k in u.inventario) {
+                        if(globalItensMap[k]) {
+                            if(globalItensMap[k].type === 'tool') tTools += u.inventario[k];
+                            else tItems += u.inventario[k];
+                        }
+                    }
+                }
+                set('prof-tools', tTools); set('prof-items', tItems);
+
+                document.getElementById('profileModal').style.display = 'flex';
+            }
+        };
         window.fecharProfileModal = () => document.getElementById('profileModal').style.display = 'none';
         
-        async function carregarMissoes() { const c = document.getElementById('missoes-grid'); if(!c) return; const m = currentUserData.statusMissoes || {}; const s = await getDocs(collection(db, "missoes")); c.innerHTML = ''; s.forEach(d => { const i = d.data(), st = m[d.id] || 'neutro'; const k = document.createElement('div'); k.className = 'card jutsu-card-click'; k.onclick = () => verDetalhesMissao(d.id, i, st); k.innerHTML=`<h4>${i.titulo}</h4><p>${st==='neutro'?'Disponível':st}</p><small>${formatarNum(i.recompensa)} Ryos</small>`; c.appendChild(k); }); }
+        async function carregarMissoes() { const c = document.getElementById('missoes-grid'); if(!c) return; const m = currentUserData.statusMissoes || {}; const s = await getDocs(collection(db, "missoes")); c.innerHTML = ''; s.forEach(d => { const i = d.data(), st = m[d.id] || 'neutro'; const k = document.createElement('div'); k.className = 'card jutsu-card-click'; k.onclick = () => verDetalhesMissao(d.id, i, st); k.innerHTML=`<h4>${i.titulo}</h4><p style="font-size:0.9rem; color:${st==='em_andamento'?'orange':st==='aprovado'?'green':'#777'}; font-weight:bold;">${st==='neutro'?'Disponível':st}</p><small style="color:var(--primary-color)">${i.xp||0} XP | ${formatarNum(i.recompensa)} Ryos</small>`; c.appendChild(k); }); }
         window.verDetalhesMissao = (id, d, st) => { document.getElementById('missao-name-modal').innerText = d.titulo; document.getElementById('missao-desc-modal').innerText = d.descricao; document.getElementById('missao-reward-modal').innerText = formatarNum(d.recompensa); document.getElementById('missao-xp-modal').innerText = d.xp||0; document.getElementById('missao-img-modal').src = d.imagem||IMG_PADRAO; const a = document.getElementById('missao-actions-modal'); a.innerHTML = ''; if(st==='neutro') a.innerHTML = `<button class="mission-btn-start" onclick="iniciarMissao('${id}')">Aceitar</button>`; else if(st==='aprovado') a.innerHTML = `<button class="mission-btn-collect" onclick="coletarRecompensa('${id}',${d.recompensa},${d.xp||0})">Receber</button>`; document.getElementById('missaoModal').style.display='flex'; };
         window.fecharMissaoModal = () => document.getElementById('missaoModal').style.display='none';
         
         window.iniciarMissao = async (id) => { await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusMissoes.${id}`]: 'em_andamento' }); alert("Iniciada!"); reloadData(); };
-        window.coletarRecompensa = async (id, r, x) => { const u = currentUserData, nr = (u.ryos||0)+r, nx = (u.xp||0)+x; let lvl = u.nivel||1, req = globalXpTable[lvl] || (lvl*500); while(nx >= req) { nx -= req; lvl++; req = globalXpTable[lvl] || (lvl*500); } await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: nr, xp: nx, nivel: lvl, [`statusMissoes.${id}`]: 'concluido' }); alert("Coletado!"); reloadData(); };
+        window.coletarRecompensa = async (id, r, x) => { const u = currentUserData, nr = (u.ryos||0)+r, nx = (u.xp||0)+x; let lvl = u.nivel||1, req = globalXpTable[lvl] || (lvl*500); let upou = false; while(nx >= req) { nx -= req; lvl++; req = globalXpTable[lvl] || (lvl*500); upou = true; } await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: nr, xp: nx, nivel: lvl, [`statusMissoes.${id}`]: 'concluido' }); if(upou) alert("Level Up!"); else alert("Coletado!"); reloadData(); };
 
         window.carregarRankings = async () => { const c = document.getElementById('ranking-container'); if(!c) return; const s = await getDocs(collection(db, "users")); let l=[]; s.forEach(d=>l.push(d.data())); c.innerHTML=''; renderRank(c,"Ryos",l,'ryos'); renderRank(c,"Nível",l,'nivel'); };
         function renderRank(c,t,l,f) { const s=[...l].sort((a,b)=>(b[f]||0)-(a[f]||0)).slice(0,5); let h=`<div class="ranking-col"><h3>${t}</h3><table class="ranking-table">`; s.forEach((u,i)=>h+=`<tr><td>${i+1}. ${u.nome}</td><td>${formatarNum(u[f])}</td></tr>`); h+='</table></div>'; c.innerHTML+=h; }
