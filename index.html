@@ -75,19 +75,38 @@
         .buy-btn { background-color: var(--primary-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; margin-top: 8px; font-size: 1rem; cursor: pointer; }
         .buy-btn:hover { background-color: #e05200; }
         
-        /* TAG DE QUANTIDADE (INVENTÁRIO) */
-        .qtd-badge {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(0,0,0,0.7);
-            color: white;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            border: 1px solid rgba(255,255,255,0.3);
+        /* CONTROLES DE INVENTARIO (QTD E BOTAO MENOS) */
+        .inventory-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 8px;
+            background: rgba(0,0,0,0.03);
+            padding: 5px;
+            border-radius: 20px;
         }
+        .qtd-badge {
+            font-weight: bold;
+            font-size: 0.9rem;
+            color: var(--text-color);
+        }
+        .btn-minus {
+            background: var(--danger-color);
+            color: white;
+            border: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+        }
+        .btn-minus:hover { transform: scale(1.1); }
+        .btn-minus:active { transform: scale(0.9); }
 
         /* Maestria no Card */
         .maestria-display { display: block; font-size: 0.85rem; color: var(--yellow-color); font-weight: bold; margin-top: 4px; text-shadow: 0 0 1px rgba(0,0,0,0.1); }
@@ -325,7 +344,7 @@
                             <option value="Oto">Vila do Som (Oto)</option>
                             <option value="Kori">Vila do Gelo (Kori)</option>
                         </select>
-                          <h3 style="margin:15px 0 10px;">Estabelecimentos</h3>
+                       <h3 style="margin:15px 0 10px;">Estabelecimentos</h3>
                         <div class="shop-categories">
                             <button class="shop-cat-btn active" onclick="filtrarLojaPorTipo('mercado', this)">Mercado</button>
                             <button class="shop-cat-btn" onclick="filtrarLojaPorTipo('comida', this)">Restaurantes</button>
@@ -627,7 +646,10 @@
             } else if(tipo === 'ferramenta') sub = dados.dano || "Ferramenta";
             else sub = dados.efeito || "Item";
             
-            if(qtd !== null) extra += `<span class="qtd-badge">x${qtd}</span>`;
+            if(qtd !== null) {
+                // Se for inventário, adiciona o botão de MENOS
+                extra += `<div class="inventory-controls"><span class="qtd-badge">x${qtd}</span><button class="btn-minus" onclick="consumirItem('${id}', '${dados.nome}'); event.stopPropagation();">-</button></div>`;
+            }
 
             div.innerHTML = `<img src="${dados.imagem||IMG_PADRAO}" class="card-img-top"><h4>${dados.nome}</h4><small>${sub}</small>${extra}`;
             c.appendChild(div);
@@ -664,7 +686,6 @@
             const snap = await getDocs(collection(db, "itens"));
             snap.forEach(d => {
                 const i = d.data();
-                // Lógica para Array ou String na vila
                 let vilaOk = false;
                 if(!i.vila || i.vila === 'Global') vilaOk = true;
                 else if(Array.isArray(i.vila)) { if(i.vila.includes(vilaAtual) || i.vila.includes('Global')) vilaOk = true; }
@@ -682,9 +703,13 @@
             const c = document.getElementById('inventario-grid'); if(!c) return; c.innerHTML = '';
             const inv = currentUserData.inventario || {};
             const keys = Object.keys(inv);
-            if(keys.length === 0) { c.innerHTML = '<p>Mochila vazia.</p>'; return; }
             
-            keys.forEach(id => {
+            // FILTRA APENAS ITENS COM QTD > 0
+            const validKeys = keys.filter(k => inv[k] > 0);
+            
+            if(validKeys.length === 0) { c.innerHTML = '<p>Mochila vazia.</p>'; return; }
+            
+            validKeys.forEach(id => {
                 const qtd = inv[id];
                 const info = globalItensMap[id];
                 if(info) {
@@ -695,6 +720,16 @@
                 }
             });
         }
+
+        // --- CONSUMO ---
+        window.consumirItem = async (id, nome) => {
+             if(!confirm(`Usar/Descartar 1x ${nome}?`)) return;
+             // Decrementa 1
+             await updateDoc(doc(db, "users", auth.currentUser.uid), {
+                 [`inventario.${id}`]: increment(-1)
+             });
+             reloadData();
+        };
 
         // --- COMPRA LOGIC (UPDATED FOR INVENTORY) ---
         window.comprarJutsu = async (id, p, n) => {
