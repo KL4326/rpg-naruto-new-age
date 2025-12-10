@@ -68,13 +68,27 @@
 
         /* CARDS E GRIDS */
         .bucket-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; margin-top: 20px; }
-        .card { background: var(--card-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); text-align: center; cursor: pointer; transition: 0.2s; overflow: hidden; }
+        .card { background: var(--card-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); text-align: center; cursor: pointer; transition: 0.2s; overflow: hidden; position: relative; }
         .card:hover { transform: translateY(-2px); border-color: var(--primary-color); }
         .card-img-top { width: 100%; height: 120px; object-fit: cover; border-radius: 4px; margin-bottom: 8px; border: 1px solid #eee; }
         
         .buy-btn { background-color: var(--primary-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; margin-top: 8px; font-size: 1rem; cursor: pointer; }
         .buy-btn:hover { background-color: #e05200; }
         
+        /* TAG DE QUANTIDADE (INVENTÁRIO) */
+        .qtd-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
         /* Maestria no Card */
         .maestria-display { display: block; font-size: 0.85rem; color: var(--yellow-color); font-weight: bold; margin-top: 4px; text-shadow: 0 0 1px rgba(0,0,0,0.1); }
 
@@ -241,6 +255,7 @@
             <div class="logo"><i class="fa-solid fa-scroll"></i> RPG NARUTO</div>
             <nav>
                 <button id="side-btn-dashboard" onclick="showTab('dashboard')" class="active"><i class="fa-solid fa-chart-line"></i> Dashboard</button>
+                <button id="side-btn-inventario" onclick="showTab('inventario')"><i class="fa-solid fa-box-open"></i> Inventário</button>
                 <button id="side-btn-missoes" onclick="showTab('missoes')"><i class="fa-solid fa-scroll"></i> Missões</button>
                 <button id="side-btn-personagens" onclick="showTab('personagens')"><i class="fa-solid fa-users"></i> Personagens</button>
                 <button id="side-btn-loja" onclick="showTab('loja')"><i class="fa-solid fa-store"></i> Loja</button>
@@ -295,11 +310,10 @@
                 </div>
 
                 <div id="jutsus" class="tab-content"><h3>Meus Jutsus</h3><div class="bucket-grid" id="meus-jutsus-grid"><p>Carregando...</p></div><hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;"><h3>Loja de Jutsus</h3><div class="bucket-grid" id="loja-jutsus-grid"><p>Carregando...</p></div></div>
-                <div id="ferramentas" class="tab-content"><h3>Minhas Ferramentas</h3><div class="bucket-grid" id="minhas-ferramentas-grid"><p>Carregando...</p></div><hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;"><h3>Loja de Ferramentas</h3><div class="bucket-grid" id="loja-ferramentas-grid"><p>Carregando...</p></div></div>
+                <div id="ferramentas" class="tab-content"><h3>Loja de Ferramentas</h3><div class="bucket-grid" id="loja-ferramentas-grid"><p>Carregando...</p></div></div>
                 
                 <div id="loja" class="tab-content">
-                    
-                    <div class="shop-header">
+                      <div class="shop-header">
                         <h3 style="margin-bottom:10px;">Localização Atual</h3>
                         <select id="shop-location" class="shop-location-select" onchange="atualizarFiltroVila()">
                             <option value="Konoha">Vila da Folha (Konoha)</option>
@@ -311,8 +325,7 @@
                             <option value="Oto">Vila do Som (Oto)</option>
                             <option value="Kori">Vila do Gelo (Kori)</option>
                         </select>
-
-                        <h3 style="margin:15px 0 10px;">Estabelecimentos</h3>
+                         <h3 style="margin:15px 0 10px;">Estabelecimentos</h3>
                         <div class="shop-categories">
                             <button class="shop-cat-btn active" onclick="filtrarLojaPorTipo('mercado', this)">Mercado</button>
                             <button class="shop-cat-btn" onclick="filtrarLojaPorTipo('comida', this)">Restaurantes</button>
@@ -325,14 +338,13 @@
                             <button class="shop-cat-btn" onclick="filtrarLojaPorTipo('biblioteca', this)">Biblioteca</button>
                         </div>
                     </div>
-
                     <h3>Itens à Venda</h3>
                     <div class="bucket-grid" id="loja-itens-grid"><p>Carregando...</p></div>
-                    
-                    <hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;">
-                    
-                    <h3>Meus Itens</h3>
-                    <div class="bucket-grid" id="meus-itens-grid"><p>Carregando...</p></div>
+                </div>
+
+                <div id="inventario" class="tab-content">
+                    <h2>Meu Inventário</h2>
+                    <div class="bucket-grid" id="inventario-grid"><p>Carregando itens...</p></div>
                 </div>
 
                 <div id="personagens" class="tab-content"><h2>Diretório de Ninjas</h2><div class="bucket-grid" id="directory-grid"><p>Carregando...</p></div></div>
@@ -343,39 +355,28 @@
                 <div id="dashboard" class="tab-content">
                     <h2>Estatísticas do Ninja</h2>
                     <div class="level-container">
-                        <div class="level-info">
-                            <span id="level-display">Nível 1</span>
-                            <span id="xp-text-display">0 / 500 XP</span>
-                        </div>
-                        <div class="xp-bar-bg">
-                            <div class="xp-bar-fill" id="xp-bar"></div>
-                            <div class="xp-text">Progresso</div>
-                        </div>
+                        <div class="level-info"><span id="level-display">Nível 1</span><span id="xp-text-display">0 / 500 XP</span></div>
+                        <div class="xp-bar-bg"><div class="xp-bar-fill" id="xp-bar"></div><div class="xp-text">Progresso</div></div>
                     </div>
-
                     <div class="profile-stats-grid">
                         <div class="stats-divider">Geral</div>
                         <div class="stat-card"><div class="stat-value" id="dash-nivel">1</div><div class="stat-label">Nível</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-cargo">Genin</div><div class="stat-label">Cargo</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-ryos">0</div><div class="stat-label">Ryos</div></div>
-                        
                         <div class="stats-divider">Batalha</div>
                         <div class="stat-card"><div class="stat-value" id="dash-wins">0</div><div class="stat-label">Vitórias</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-draws">0</div><div class="stat-label">Empates</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-loses">0</div><div class="stat-label">Derrotas</div></div>
-
                         <div class="stats-divider">Inventário</div>
                         <div class="stat-card"><div class="stat-value" id="dash-jutsus">0</div><div class="stat-label">Jutsus</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-tools">0</div><div class="stat-label">Ferramentas</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-items">0</div><div class="stat-label">Itens</div></div>
-
                         <div class="stats-divider">Vitalidade</div>
                         <div class="stat-card"><div class="stat-value" id="dash-vida">100</div><div class="stat-label">Vida</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-sanidade">100</div><div class="stat-label">Sanidade</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-chakra">100</div><div class="stat-label">Chakra</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-stamina">100</div><div class="stat-label">Stamina</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-controle">Baixo</div><div class="stat-label">Controle Chakra</div></div>
-
                         <div class="stats-divider">Atributos</div>
                         <div class="stat-card"><div class="stat-value" id="dash-forca">10</div><div class="stat-label">Força</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-defesa">10</div><div class="stat-label">Defesa</div></div>
@@ -390,7 +391,7 @@
                 <div id="historia" class="tab-content">
                     <div class="historia-container">
                         <div class="historia-img-container">
-                            <img id="historia-display-img" src="https://img.freepik.com/vetores-gratis/fundo-de-paisagem-de-anime-de-design-plano_23-2149275367.jpg" alt="Capa da História">
+                            <img id="historia-display-img" src="https://img.freepik.com/vetores-gratis/fundo-de-paisagem-de-anime-de-design-plano_23-2149275367.jpg">
                             <button class="btn-edit-historia" onclick="window.editarHistoria()"><i class="fa-solid fa-pen"></i> Editar História</button>
                         </div>
                         <hr class="historia-divider">
@@ -449,8 +450,10 @@
             <span class="close-modal" onclick="fecharMissaoModal()" style="color: #333; top: 10px; right: 15px;">&times;</span>
             <img id="missao-img-modal" src="" class="jutsu-modal-img" style="border-color:#e6b800; height: 150px;">
             <h2 id="missao-name-modal" style="color: #e6b800;"></h2>
-            <p id="missao-desc-modal" style="margin-top:10px; max-height: 200px; overflow-y: auto;"></p>
-            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e6b800; padding-top: 15px; margin-top: 15px;">
+            <div style="text-align: left; margin-bottom: 20px; max-height: 200px; overflow-y: auto; padding-right: 5px;">
+                <p id="missao-desc-modal" style="color: #555; line-height: 1.6;"></p>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e6b800; padding-top: 15px;">
                 <div style="font-weight: bold; color: #2ecc71;">XP: <span id="missao-xp-modal">0</span> | Ryos: <span id="missao-reward-modal"></span></div>
                 <div id="missao-actions-modal"></div>
             </div>
@@ -460,97 +463,24 @@
     <div class="modal-overlay-comment" id="profileModal" style="z-index: 2002;">
         <div class="modal-content-profile">
             <span class="close-modal" onclick="fecharProfileModal()" style="color: white; top: 15px; right: 15px;">&times;</span>
-            <div class="profile-header">
-                <div class="profile-avatar-large"><img src="" id="profile-modal-img"></div>
-                <h2 id="profile-modal-name" style="color:white;"></h2>
-                <p id="profile-modal-char" style="opacity:0.9;"></p>
-            </div>
+            <div class="profile-header"><div class="profile-avatar-large"><img src="" id="profile-modal-img"></div><h2 id="profile-modal-name" style="color:white;"></h2><p id="profile-modal-char" style="opacity:0.9;"></p></div>
             <div class="profile-body">
                 <div class="profile-section-title">Estatísticas</div>
-                <div class="profile-stats-grid">
-                    <div class="stats-divider">Geral</div>
-                    <div class="stat-card"><div class="stat-value" id="prof-nivel"></div><div class="stat-label">Nível</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-cargo"></div><div class="stat-label">Cargo</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-ryos"></div><div class="stat-label">Ryos</div></div>
-                    
-                    <div class="stats-divider">Batalha</div>
-                    <div class="stat-card"><div class="stat-value" id="prof-wins"></div><div class="stat-label">Vitórias</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-draws"></div><div class="stat-label">Empates</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-loses"></div><div class="stat-label">Derrotas</div></div>
-
-                    <div class="stats-divider">Inventário</div>
-                    <div class="stat-card"><div class="stat-value" id="prof-jutsus"></div><div class="stat-label">Jutsus</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-tools"></div><div class="stat-label">Ferramentas</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-items"></div><div class="stat-label">Itens</div></div>
-
-                    <div class="stats-divider">Vitalidade</div>
-                    <div class="stat-card"><div class="stat-value" id="prof-vida"></div><div class="stat-label">Vida</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-sanidade"></div><div class="stat-label">Sanidade</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-chakra"></div><div class="stat-label">Chakra</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-stamina"></div><div class="stat-label">Stamina</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-controle"></div><div class="stat-label">Controle Chakra</div></div>
-
-                    <div class="stats-divider">Atributos</div>
-                    <div class="stat-card"><div class="stat-value" id="prof-forca"></div><div class="stat-label">Força</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-defesa"></div><div class="stat-label">Defesa</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-constituicao"></div><div class="stat-label">Constituição</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-destreza"></div><div class="stat-label">Destreza</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-intelecto"></div><div class="stat-label">Intelecto</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-agilidade"></div><div class="stat-label">Agilidade</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-velocidade"></div><div class="stat-label">Velocidade</div></div>
-                </div>
+                <div class="profile-stats-grid" id="other-profile-stats"></div>
             </div>
         </div>
     </div>
 
-    <div class="modal-overlay-comment" id="commentModal">
-        <span class="close-modal" onclick="closeModal()">&times;</span>
-        <div class="modal-content-comment">
-            <div class="modal-left" id="modalPostContent"></div>
-            <div class="modal-right">
-                <div style="padding: 15px; border-bottom: 1px solid #eee;">Comentários</div>
-                <div class="comments-list" id="commentsList"></div>
-                <div class="comment-input-area"><input type="text" id="newCommentText" placeholder="Comentar..."><button onclick="submitComment()" style="border:none; background:none; color:var(--primary-color); font-weight:bold;">Enviar</button></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal-overlay-comment" id="editProfileModal" style="z-index: 2003;">
-        <div class="modal-content-card">
-            <span class="close-modal" onclick="closeEditProfileModal()" style="color: #333; top: 10px; right: 15px;">&times;</span>
-            <h3>Editar Perfil</h3>
-            <img id="edit-avatar-preview" src="" style="width:80px; height:80px; border-radius:50%; margin:10px auto; display:block;">
-            <label for="edit-avatar-input" class="btn-post" style="display:block; width: fit-content; margin: 10px auto;">Escolher Foto</label>
-            <input type="file" id="edit-avatar-input" hidden accept="image/*" onchange="handleAvatarPreview(event)">
-            <input type="text" id="edit-name-input" class="edit-input" placeholder="Nome do Personagem">
-            <input type="text" id="edit-nick-input" class="edit-input" placeholder="Apelido">
-            <button class="btn-post" onclick="salvarPerfil()" style="width: 100%;">Salvar</button>
-        </div>
-    </div>
-
-    <div class="modal-overlay-comment" id="changePasswordModal" style="z-index: 2004;">
-        <div class="modal-content-card">
-            <span class="close-modal" onclick="closeChangePasswordModal()" style="color: #333; top: 10px; right: 15px;">&times;</span>
-            <h3>Alterar Senha</h3>
-            <input type="password" id="new-password" class="edit-input" placeholder="Nova Senha" style="margin-top:20px;">
-            <button class="btn-post" onclick="salvarNovaSenha()" style="width: 100%;">Atualizar Senha</button>
-        </div>
-    </div>
+    <div class="modal-overlay-comment" id="commentModal"><span class="close-modal" onclick="closeModal()">&times;</span><div class="modal-content-comment"><div class="modal-left" id="modalPostContent"></div><div class="modal-right"><div style="padding: 15px; border-bottom: 1px solid #eee;">Comentários</div><div class="comments-list" id="commentsList"></div><div class="comment-input-area"><input type="text" id="newCommentText" placeholder="Comentar..."><button onclick="submitComment()" style="border:none; background:none; color:var(--primary-color); font-weight:bold;">Enviar</button></div></div></div></div>
+    <div class="modal-overlay-comment" id="editProfileModal" style="z-index: 2003;"><div class="modal-content-card"><span class="close-modal" onclick="closeEditProfileModal()" style="color: #333; top: 10px; right: 15px;">&times;</span><h3>Editar Perfil</h3><img id="edit-avatar-preview" src="" style="width:80px; height:80px; border-radius:50%; margin:10px auto; display:block;"><label for="edit-avatar-input" class="btn-post" style="display:block; width: fit-content; margin: 10px auto;">Escolher Foto</label><input type="file" id="edit-avatar-input" hidden accept="image/*" onchange="handleAvatarPreview(event)"><input type="text" id="edit-name-input" class="edit-input" placeholder="Nome do Personagem"><input type="text" id="edit-nick-input" class="edit-input" placeholder="Apelido"><button class="btn-post" onclick="salvarPerfil()" style="width: 100%;">Salvar</button></div></div>
+    <div class="modal-overlay-comment" id="changePasswordModal" style="z-index: 2004;"><div class="modal-content-card"><span class="close-modal" onclick="closeChangePasswordModal()" style="color: #333; top: 10px; right: 15px;">&times;</span><h3>Alterar Senha</h3><input type="password" id="new-password" class="edit-input" placeholder="Nova Senha" style="margin-top:20px;"><button class="btn-post" onclick="salvarNovaSenha()" style="width: 100%;">Atualizar Senha</button></div></div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, addDoc, serverTimestamp, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyC3HOor32_p5Z-iADm0VgZ279rt1kj8ICg",
-            authDomain: "rpg-naruto-5150a.firebaseapp.com",
-            projectId: "rpg-naruto-5150a",
-            storageBucket: "rpg-naruto-5150a.firebasestorage.app",
-            messagingSenderId: "1007094335306",
-            appId: "1:1007094335306:web:ac96fa96f9494f90fd63b3"
-        };
-
+        const firebaseConfig = { apiKey: "AIzaSyC3HOor32_p5Z-iADm0VgZ279rt1kj8ICg", authDomain: "rpg-naruto-5150a.firebaseapp.com", projectId: "rpg-naruto-5150a", storageBucket: "rpg-naruto-5150a.firebasestorage.app", messagingSenderId: "1007094335306", appId: "1:1007094335306:web:ac96fa96f9494f90fd63b3" };
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -560,58 +490,35 @@
         let currentOpenPostId = null;
         let newAvatarBase64 = null;
         let globalXpTable = [];
-        
-        // VARIAVEIS DA LOJA
         let vilaAtual = "Konoha";
         let lojaAtual = "geral";
+        let globalItensMap = {}; // Cache para itens e ferramentas para o inventário
 
         const IMG_PADRAO = "https://img.freepik.com/vetores-gratis/ilustracao-de-pergaminho-ninja-desenhada-a-mao_23-2151159846.jpg";
 
-        function calcularTempo(timestamp) {
-            if (!timestamp) return "Agora";
-            const date = timestamp.toDate();
-            const now = new Date();
-            const diff = Math.floor((now - date) / 1000);
-            if (diff < 60) return "Agora";
-            if (diff < 3600) return `Há ${Math.floor(diff / 60)} min`;
-            if (diff < 86400) return `Há ${Math.floor(diff / 3600)} h`;
-            if (diff < 604800) return `Há ${Math.floor(diff / 86400)} dias`;
-            return date.toLocaleDateString('pt-BR');
-        }
-
-        window.toggleMobileMenu = () => {
-            document.querySelector('.sidebar').classList.toggle('mobile-active');
-            document.querySelector('.sidebar-overlay').classList.toggle('active');
-        };
-
+        function calcularTempo(t) { if (!t) return "Agora"; const d = t.toDate(), n = new Date(), df = Math.floor((n - d) / 1000); if (df < 60) return "Agora"; if (df < 3600) return `Há ${Math.floor(df / 60)} min`; if (df < 86400) return `Há ${Math.floor(df / 3600)} h`; return d.toLocaleDateString('pt-BR'); }
+        window.toggleMobileMenu = () => { document.querySelector('.sidebar').classList.toggle('mobile-active'); document.querySelector('.sidebar-overlay').classList.toggle('active'); };
         const btnLogin = document.getElementById('btnLogin');
-        if(btnLogin) {
-            btnLogin.addEventListener('click', () => {
-                const email = document.getElementById('emailInput').value;
-                const senha = document.getElementById('passwordInput').value;
-                if(!email || !senha) return alert("Preencha tudo!");
-                btnLogin.innerText = "Carregando...";
-                signInWithEmailAndPassword(auth, email, senha).catch((e) => { btnLogin.innerText = "Entrar"; alert(e.message); });
-            });
-        }
+        if(btnLogin) btnLogin.addEventListener('click', () => { const e = document.getElementById('emailInput').value, s = document.getElementById('passwordInput').value; if(!e || !s) return alert("Preencha tudo!"); btnLogin.innerText = "Carregando..."; signInWithEmailAndPassword(auth, e, s).catch((err) => { btnLogin.innerText = "Entrar"; alert(err.message); }); });
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('app-container').style.display = 'flex';
                 if(user.email === "admin@rpgnaruto.com") document.getElementById('btn-admin-panel').style.display = 'flex';
-
                 await carregarConfiguracoes();
-
+                // Carregar cache de itens/ferramentas para inventário rápido
+                await carregarCacheItens();
+                
                 const docRef = doc(db, "users", user.uid);
                 const docSnap = await getDoc(docRef);
-
                 if (docSnap.exists()) {
                     currentUserData = docSnap.data();
+                    if(!currentUserData.inventario) currentUserData.inventario = {}; // Garantir que existe
                     atualizarInterface(currentUserData);
                     carregarTudo();
                 } else {
-                    const dadosPadrao = { nome: "Novo Ninja", ryos: 100, xp: 0, nivel: 1, email: user.email, meusJutsus: [], ferramentas: [], itens: [], statusMissoes: {} };
+                    const dadosPadrao = { nome: "Novo Ninja", ryos: 100, xp: 0, nivel: 1, email: user.email, meusJutsus: [], inventario: {}, statusMissoes: {} };
                     await setDoc(docRef, dadosPadrao);
                     currentUserData = dadosPadrao;
                     atualizarInterface(dadosPadrao);
@@ -624,14 +531,17 @@
             }
         });
 
-        async function carregarConfiguracoes() {
-            try { const configSnap = await getDoc(doc(db, "game_config", "sistema_nivel")); if(configSnap.exists()) globalXpTable = configSnap.data().tabela_xp || []; } catch(e) {}
+        async function carregarConfiguracoes() { try { const s = await getDoc(doc(db, "game_config", "sistema_nivel")); if(s.exists()) globalXpTable = s.data().tabela_xp || []; } catch(e) {} }
+        async function carregarCacheItens() {
+            const s1 = await getDocs(collection(db, "itens")); s1.forEach(d => globalItensMap[d.id] = { ...d.data(), type: 'item' });
+            const s2 = await getDocs(collection(db, "ferramentas")); s2.forEach(d => globalItensMap[d.id] = { ...d.data(), type: 'tool' });
         }
 
         function carregarTudo() {
             carregarLoja(); carregarMeusJutsus(currentUserData.meusJutsus);
-            carregarLojaFerramentas(); carregarMinhasFerramentas(currentUserData.ferramentas);
-            carregarLojaItens(); carregarMeusItens(currentUserData.itens);
+            carregarLojaFerramentas(); 
+            carregarLojaItens(); 
+            carregarInventario(); // Novo
             carregarMissoes(); carregarRankings(); carregarFrases(); 
             if(auth.currentUser.email === "admin@rpgnaruto.com") carregarPainelAdmin();
         }
@@ -642,580 +552,233 @@
             document.querySelector('.user-info').innerText = dados.apelido || dados.nome || "Ninja";
             document.getElementById('ryos-text').innerText = formatarNum(dados.ryos);
             if(dados.avatar) document.getElementById('header-avatar').src = dados.avatar;
-            if(dados.historiaTexto) document.getElementById('historia-display-text').innerText = dados.historiaTexto;
-            if(dados.historiaImagem) document.getElementById('historia-display-img').src = dados.historiaImagem;
-
-            const nivel = dados.nivel || 1;
-            const xpAtual = dados.xp || 0;
+            const nivel = dados.nivel || 1, xpAtual = dados.xp || 0;
             const xpNecessario = globalXpTable[nivel] ? globalXpTable[nivel] : (nivel * 500); 
             const porcentagem = Math.min((xpAtual / xpNecessario) * 100, 100);
-            
             document.getElementById('level-display').innerText = "Nível " + nivel;
             document.getElementById('xp-text-display').innerText = `${xpAtual} / ${xpNecessario} XP`;
             document.getElementById('xp-bar').style.width = porcentagem + "%";
 
-            // Atualiza Dashboard com NOVOS ATRIBUTOS
+            // Stats
             const set = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
-            set('dash-nivel', nivel);
-            set('dash-cargo', dados.cargo || "Genin");
-            set('dash-ryos', formatarNum(dados.ryos));
-            set('dash-jutsus', dados.meusJutsus?.length || 0);
-            set('dash-tools', dados.ferramentas?.length || 0);
-            set('dash-items', dados.itens?.length || 0);
-            set('dash-wins', dados.vitorias || 0);
-            set('dash-loses', dados.derrotas || 0);
-            set('dash-draws', dados.empates || 0);
+            set('dash-nivel', nivel); set('dash-cargo', dados.cargo||"Genin"); set('dash-ryos', formatarNum(dados.ryos));
+            set('dash-jutsus', dados.meusJutsus?.length||0); 
             
-            set('dash-vida', dados.vida || 100);
-            set('dash-sanidade', dados.sanidade || 100);
-            set('dash-chakra', dados.chakra || 100);
-            set('dash-stamina', dados.stamina || 100);
-            set('dash-controle', dados.controle_chakra || "Baixo");
-            set('dash-forca', dados.forca || 10);
-            set('dash-defesa', dados.defesa || 10);
-            set('dash-constituicao', dados.constituicao || 10);
-            set('dash-destreza', dados.destreza || 10);
-            set('dash-intelecto', dados.intelecto || 10);
-            set('dash-agilidade', dados.agilidade || 10);
-            set('dash-velocidade', dados.velocidade || 10);
+            // Contagem Inventário
+            let totalItems = 0, totalTools = 0;
+            if(dados.inventario) {
+                for(let id in dados.inventario) {
+                   if(globalItensMap[id]) {
+                       if(globalItensMap[id].type === 'tool') totalTools += dados.inventario[id];
+                       else totalItems += dados.inventario[id];
+                   }
+                }
+            }
+            set('dash-tools', totalTools); set('dash-items', totalItems);
+
+            set('dash-wins', dados.vitorias||0); set('dash-loses', dados.derrotas||0); set('dash-draws', dados.empates||0);
+            set('dash-vida', dados.vida||100); set('dash-sanidade', dados.sanidade||100);
+            set('dash-chakra', dados.chakra||100); set('dash-stamina', dados.stamina||100); set('dash-controle', dados.controle_chakra||"Baixo");
+            set('dash-forca', dados.forca||10); set('dash-defesa', dados.defesa||10); set('dash-constituicao', dados.constituicao||10);
+            set('dash-destreza', dados.destreza||10); set('dash-intelecto', dados.intelecto||10); set('dash-agilidade', dados.agilidade||10); set('dash-velocidade', dados.velocidade||10);
         }
 
-        function comprimirImagem(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.src = e.target.result;
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 600;
-                        let w = img.width, h = img.height;
-                        if (w > MAX_WIDTH) { h *= MAX_WIDTH / w; w = MAX_WIDTH; }
-                        canvas.width = w; canvas.height = h;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, w, h);
-                        resolve(canvas.toDataURL('image/jpeg', 0.7));
-                    };
-                };
-                reader.onerror = reject;
-            });
-        }
+        function comprimirImagem(file) { return new Promise((resolve, reject) => { const r = new FileReader(); r.readAsDataURL(file); r.onload = (e) => { const i = new Image(); i.src = e.target.result; i.onload = () => { const c = document.createElement('canvas'), MAX = 600; let w = i.width, h = i.height; if (w > MAX) { h *= MAX / w; w = MAX; } c.width = w; c.height = h; c.getContext('2d').drawImage(i, 0, 0, w, h); resolve(c.toDataURL('image/jpeg', 0.7)); }; }; r.onerror = reject; }); }
 
-        // --- TAB SYSTEM ---
         window.showTab = (t) => {
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.getElementById(t).classList.add('active');
             document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.sidebar button').forEach(b => b.classList.remove('active'));
-
             const btnTop = document.getElementById('nav-btn-'+t);
-            const btnSide = document.getElementById('side-btn-'+t); // Correção do menu lateral
-            
+            const btnSide = document.getElementById('side-btn-'+t);
             if(btnTop) btnTop.classList.add('active');
             if(btnSide) btnSide.classList.add('active');
-            
             if(t==='personagens') carregarPersonagens();
             if(t==='frases') carregarFrases();
-            if(window.innerWidth <= 768) window.toggleMobileMenu(); 
+            if(t==='inventario') carregarInventario();
+            if(window.innerWidth <= 768) window.toggleMobileMenu();
         };
 
         window.toggleMenu = () => document.getElementById('user-menu').classList.toggle('show');
         window.fazerLogout = () => signOut(auth).then(() => location.reload());
-
-        // --- PERFIL & SENHA ---
-        window.openEditProfileModal = () => {
-            document.getElementById('editProfileModal').style.display = 'flex';
-            document.getElementById('edit-name-input').value = currentUserData.nome || "";
-            document.getElementById('edit-nick-input').value = currentUserData.apelido || "";
-            document.getElementById('user-menu').classList.remove('show');
-        };
+        
+        // --- FUNÇÕES DE PERFIL E SENHA ---
+        window.openEditProfileModal = () => { document.getElementById('editProfileModal').style.display = 'flex'; document.getElementById('edit-name-input').value = currentUserData.nome || ""; document.getElementById('edit-nick-input').value = currentUserData.apelido || ""; document.getElementById('user-menu').classList.remove('show'); };
         window.closeEditProfileModal = () => document.getElementById('editProfileModal').style.display = 'none';
-        window.handleAvatarPreview = async (e) => {
-            if(e.target.files[0]) { newAvatarBase64 = await comprimirImagem(e.target.files[0]); document.getElementById('edit-avatar-preview').src = newAvatarBase64; }
-        };
-        window.salvarPerfil = async () => {
-            const nome = document.getElementById('edit-name-input').value;
-            const apelido = document.getElementById('edit-nick-input').value;
-            const updates = { nome: nome, apelido: apelido, personagem: nome };
-            if(newAvatarBase64) updates.avatar = newAvatarBase64;
-            await updateDoc(doc(db, "users", auth.currentUser.uid), updates);
-            location.reload();
-        };
-
+        window.handleAvatarPreview = async (e) => { if(e.target.files[0]) { newAvatarBase64 = await comprimirImagem(e.target.files[0]); document.getElementById('edit-avatar-preview').src = newAvatarBase64; } };
+        window.salvarPerfil = async () => { const nome = document.getElementById('edit-name-input').value; const apelido = document.getElementById('edit-nick-input').value; const updates = { nome: nome, apelido: apelido, personagem: nome }; if(newAvatarBase64) updates.avatar = newAvatarBase64; await updateDoc(doc(db, "users", auth.currentUser.uid), updates); location.reload(); };
         window.openChangePasswordModal = () => { document.getElementById('changePasswordModal').style.display='flex'; document.getElementById('user-menu').classList.remove('show'); };
         window.closeChangePasswordModal = () => document.getElementById('changePasswordModal').style.display='none';
-        window.salvarNovaSenha = async () => {
-            const pass = document.getElementById('new-password').value;
-            if(!pass || pass.length < 6) return alert("Senha deve ter 6+ caracteres");
-            try { await updatePassword(auth.currentUser, pass); alert("Senha atualizada!"); closeChangePasswordModal(); }
-            catch(e) { if(e.code === 'auth/requires-recent-login') alert("Por segurança, faça login novamente."); else alert("Erro: " + e.message); }
-        };
-        
-        // --- FUNÇÕES DA LOJA COM FILTRO ---
-        window.atualizarFiltroVila = () => {
-            vilaAtual = document.getElementById('shop-location').value;
-            carregarLojaItens(); // Recarrega com o novo filtro
-        };
+        window.salvarNovaSenha = async () => { const p = document.getElementById('new-password').value; if(!p || p.length < 6) return alert("Mínimo 6 caracteres"); try { await updatePassword(auth.currentUser, p); alert("Sucesso!"); closeChangePasswordModal(); } catch(e) { alert("Erro: " + e.message); } };
 
-        window.filtrarLojaPorTipo = (tipo, btn) => {
-            lojaAtual = tipo;
-            // Atualiza classe active nos botões
-            document.querySelectorAll('.shop-cat-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            carregarLojaItens();
-        };
+        // --- FILTROS LOJA ---
+        window.atualizarFiltroVila = () => { vilaAtual = document.getElementById('shop-location').value; carregarLojaItens(); };
+        window.filtrarLojaPorTipo = (t, b) => { lojaAtual = t; document.querySelectorAll('.shop-cat-btn').forEach(x => x.classList.remove('active')); b.classList.add('active'); carregarLojaItens(); };
 
-        // --- CARREGAMENTO DE CARDS ---
-        function criarCard(containerId, dados, id, tipo, clickFn) {
+        // --- RENDERIZADORES DE CARD ---
+        function criarCard(containerId, dados, id, tipo, clickFn, qtd = null) {
             const c = document.getElementById(containerId); if(!c) return;
-            const img = dados.imagem || IMG_PADRAO;
-            const div = document.createElement('div');
-            div.className = 'card';
-            div.onclick = () => clickFn(id, dados);
-            let sub = "";
-            let maestriaHtml = "";
-            
+            const div = document.createElement('div'); div.className = 'card'; div.onclick = () => clickFn(id, dados);
+            let sub = "", extra = "";
             if(tipo === 'jutsu') {
                 sub = "Rank " + dados.rank;
-                if(currentUserData.maestrias) {
-                    const nivel = currentUserData.maestrias[id] || 0;
-                    maestriaHtml = `<span class="maestria-display">Maestria: ${nivel}</span>`;
-                }
-            }
-            else if(tipo === 'ferramenta') sub = dados.dano || "Ferramenta";
-            else if(tipo === 'item') sub = dados.efeito || "Item";
+                if(currentUserData.maestrias) extra = `<span class="maestria-display">Maestria: ${currentUserData.maestrias[id]||0}</span>`;
+            } else if(tipo === 'ferramenta') sub = dados.dano || "Ferramenta";
+            else sub = dados.efeito || "Item";
             
-            div.innerHTML = `<img src="${img}" class="card-img-top" onerror="this.src='${IMG_PADRAO}'"><h4>${dados.nome}</h4><small>${sub}</small>${maestriaHtml}`;
+            if(qtd !== null) extra += `<span class="qtd-badge">x${qtd}</span>`;
+
+            div.innerHTML = `<img src="${dados.imagem||IMG_PADRAO}" class="card-img-top"><h4>${dados.nome}</h4><small>${sub}</small>${extra}`;
             c.appendChild(div);
         }
-
         function criarCardLoja(containerId, dados, id, tipo, buyFn, clickFn) {
             const c = document.getElementById(containerId); if(!c) return;
-            const img = dados.imagem || IMG_PADRAO;
-            const div = document.createElement('div');
-            div.className = 'card';
-            div.onclick = (e) => { if(!e.target.classList.contains('buy-btn')) clickFn(id, dados); };
+            const div = document.createElement('div'); div.className = 'card'; div.onclick = (e) => { if(!e.target.classList.contains('buy-btn')) clickFn(id, dados); };
             let sub = "";
-            if(tipo === 'jutsu') sub = "Rank " + dados.rank;
-            else if(tipo === 'ferramenta') sub = dados.dano || "Ferramenta";
-            else if(tipo === 'item') sub = dados.efeito || "Item";
-            div.innerHTML = `<img src="${img}" class="card-img-top" onerror="this.src='${IMG_PADRAO}'"><h4>${dados.nome}</h4><small>${sub}</small><p style="color:var(--primary-color); font-weight:bold;">${formatarNum(dados.preco)} Ryos</p><button class="buy-btn">Comprar</button>`;
+            if(tipo === 'jutsu') sub = "Rank " + dados.rank; else if(tipo === 'ferramenta') sub = dados.dano || "Ferramenta"; else sub = dados.efeito || "Item";
+            div.innerHTML = `<img src="${dados.imagem||IMG_PADRAO}" class="card-img-top"><h4>${dados.nome}</h4><small>${sub}</small><p style="color:var(--primary-color); font-weight:bold;">${formatarNum(dados.preco)} Ryos</p><button class="buy-btn">Comprar</button>`;
             div.querySelector('.buy-btn').onclick = (e) => { e.stopPropagation(); buyFn(id, dados.preco, dados.nome); };
             c.appendChild(div);
         }
 
-        // --- LOJAS ---
+        // --- LOADERS ---
         async function carregarLoja() {
             const c = document.getElementById('loja-jutsus-grid'); if(!c) return; c.innerHTML = '';
             const m = currentUserData.meusJutsus || [];
             const snap = await getDocs(collection(db, "jutsus"));
-            snap.forEach(d => {
-                const i = d.data();
-                const permitidos = i.restrito_a || [];
-                if(permitidos.length > 0 && !permitidos.includes(currentUserData.nome)) return;
-                if(!m.includes(d.id)) criarCardLoja('loja-jutsus-grid', i, d.id, 'jutsu', (id, p, n) => comprarJutsu(id, p, n), (id, i) => verDetalhesJutsu(id, i));
-            });
+            snap.forEach(d => { const i = d.data(); const p = i.restrito_a || []; if(p.length > 0 && !p.includes(currentUserData.nome)) return; if(!m.includes(d.id)) criarCardLoja('loja-jutsus-grid', i, d.id, 'jutsu', (id, p, n) => comprarJutsu(id, p, n), (id, i) => verDetalhesJutsu(id, i)); });
         }
-        async function carregarMeusJutsus(lista) {
+        async function carregarMeusJutsus(l) {
             const c = document.getElementById('meus-jutsus-grid'); if(!c) return; c.innerHTML = '';
-            if(!lista || lista.length === 0) { c.innerHTML = '<p>Vazio.</p>'; return; }
-            for(const id of lista) { const s = await getDoc(doc(db, "jutsus", id)); if(s.exists()) criarCard('meus-jutsus-grid', s.data(), id, 'jutsu', (id, i) => verDetalhesJutsu(id, i)); }
+            if(!l || l.length === 0) { c.innerHTML = '<p>Vazio.</p>'; return; }
+            for(const id of l) { const s = await getDoc(doc(db, "jutsus", id)); if(s.exists()) criarCard('meus-jutsus-grid', s.data(), id, 'jutsu', (id, i) => verDetalhesJutsu(id, i)); }
         }
-        
         async function carregarLojaFerramentas() {
             const c = document.getElementById('loja-ferramentas-grid'); if(!c) return; c.innerHTML = '';
-            const m = currentUserData.ferramentas || [];
             const snap = await getDocs(collection(db, "ferramentas"));
-            snap.forEach(d => {
-                if(!m.includes(d.id)) criarCardLoja('loja-ferramentas-grid', d.data(), d.id, 'ferramenta', (id, p, n) => comprarFerramenta(id, p, n), (id, i) => verDetalhesFerramenta(id, i));
-            });
+            snap.forEach(d => { criarCardLoja('loja-ferramentas-grid', d.data(), d.id, 'ferramenta', (id, p, n) => comprarFerramenta(id, p, n), (id, i) => verDetalhesFerramenta(id, i)); });
         }
-        async function carregarMinhasFerramentas(lista) {
-            const c = document.getElementById('minhas-ferramentas-grid'); if(!c) return; c.innerHTML = '';
-            if(!lista || lista.length === 0) { c.innerHTML = '<p>Vazio.</p>'; return; }
-            for(const id of lista) { const s = await getDoc(doc(db, "ferramentas", id)); if(s.exists()) criarCard('minhas-ferramentas-grid', s.data(), id, 'ferramenta', (id, i) => verDetalhesFerramenta(id, i)); }
-        }
-
-        // CARREGAR ITENS COM FILTRO
         async function carregarLojaItens() {
             const c = document.getElementById('loja-itens-grid'); if(!c) return; c.innerHTML = '';
             const snap = await getDocs(collection(db, "itens"));
-            
             snap.forEach(d => {
-                const item = d.data();
-                // LÓGICA DE FILTRO
-                // 1. Filtra por TIPO (Geral mostra tudo, senão só o tipo selecionado)
-                if (lojaAtual !== 'geral' && item.tipo !== lojaAtual) return;
-                
-                // 2. Filtra por VILA (Se item for Global aparece sempre, senão só se bater com a vila selecionada)
-                if (item.vila && item.vila !== 'Global' && item.vila !== vilaAtual) return;
-
-                criarCardLoja('loja-itens-grid', item, d.id, 'item', (id, p, n) => comprarItem(id, p, n), (id, i) => verDetalhesItem(id, i));
+                const i = d.data();
+                if (lojaAtual !== 'geral' && i.tipo !== lojaAtual) return;
+                if (i.vila && i.vila !== 'Global' && i.vila !== vilaAtual) return;
+                criarCardLoja('loja-itens-grid', i, d.id, 'item', (id, p, n) => comprarItem(id, p, n), (id, i) => verDetalhesItem(id, i));
             });
         }
-        async function carregarMeusItens(lista) {
-            const c = document.getElementById('meus-itens-grid'); if(!c) return; c.innerHTML = '';
-            if(!lista || lista.length === 0) { c.innerHTML = '<p>Vazio.</p>'; return; }
-            for(const id of lista) { const s = await getDoc(doc(db, "itens", id)); if(s.exists()) criarCard('meus-itens-grid', s.data(), id, 'item', (id, i) => verDetalhesItem(id, i)); }
+
+        // --- INVENTÁRIO (NOVO) ---
+        async function carregarInventario() {
+            const c = document.getElementById('inventario-grid'); if(!c) return; c.innerHTML = '';
+            const inv = currentUserData.inventario || {};
+            const keys = Object.keys(inv);
+            if(keys.length === 0) { c.innerHTML = '<p>Mochila vazia.</p>'; return; }
+            
+            keys.forEach(id => {
+                const qtd = inv[id];
+                const info = globalItensMap[id];
+                if(info) {
+                    criarCard('inventario-grid', info, id, info.type, (id, d) => {
+                       if(info.type === 'tool') verDetalhesFerramenta(id, d);
+                       else verDetalhesItem(id, d);
+                    }, qtd);
+                }
+            });
         }
 
-        // --- COMPRA GENÉRICA ---
+        // --- COMPRA LOGIC (UPDATED FOR INVENTORY) ---
         window.comprarJutsu = async (id, p, n) => {
-            if(!confirm(`Comprar ${n}?`)) return;
-            if(currentUserData.ryos < p) return alert("Sem Ryos suficientes!");
-            await updateDoc(doc(db, "users", auth.currentUser.uid), {
-                ryos: increment(-p),
-                meusJutsus: arrayUnion(id),
-                [`maestrias.${id}`]: 0 
-            });
-            alert("Comprado!");
-            const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
-            currentUserData = snap.data();
-            atualizarInterface(currentUserData);
-            carregarLoja(); carregarMeusJutsus(currentUserData.meusJutsus);
+            if(!confirm(`Comprar ${n}?`)) return; if(currentUserData.ryos < p) return alert("Sem Ryos!");
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(-p), meusJutsus: arrayUnion(id), [`maestrias.${id}`]: 0 });
+            alert("Comprado!"); reloadData();
         };
-
         window.comprarFerramenta = async (id, p, n) => {
-            if(!confirm(`Comprar ${n}?`)) return;
-            if(currentUserData.ryos < p) return alert("Sem Ryos suficientes!");
-            await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(-p), ferramentas: arrayUnion(id) });
-            alert("Comprado!");
-            const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
-            currentUserData = snap.data();
-            atualizarInterface(currentUserData);
-            carregarLojaFerramentas(); carregarMinhasFerramentas(currentUserData.ferramentas);
+            if(!confirm(`Comprar ${n}?`)) return; if(currentUserData.ryos < p) return alert("Sem Ryos!");
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(-p), [`inventario.${id}`]: increment(1) });
+            alert("Comprado!"); reloadData();
         };
-
         window.comprarItem = async (id, p, n) => {
-            if(!confirm(`Comprar ${n}?`)) return;
-            if(currentUserData.ryos < p) return alert("Sem Ryos suficientes!");
-            await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(-p), itens: arrayUnion(id) });
-            alert("Comprado!");
-            const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
-            currentUserData = snap.data();
-            atualizarInterface(currentUserData);
-            carregarLojaItens(); carregarMeusItens(currentUserData.itens);
+            if(!confirm(`Comprar ${n}?`)) return; if(currentUserData.ryos < p) return alert("Sem Ryos!");
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(-p), [`inventario.${id}`]: increment(1) });
+            alert("Comprado!"); reloadData();
         };
-
-        // --- MODAIS DE DETALHES ---
-        function abrirModal(tipo, dados) {
-            let prefix = tipo; // jutsu, tool, item
-            document.getElementById(prefix + '-name-modal').innerText = dados.nome;
-            document.getElementById(prefix + '-desc-modal').innerText = dados.descricao || "Sem descrição.";
-            document.getElementById(prefix + '-price-modal').innerText = "Valor: " + formatarNum(dados.preco) + " Ryos";
-            const img = document.getElementById(prefix + '-img-modal');
-            img.src = dados.imagem || IMG_PADRAO;
-            img.onerror = () => img.src = IMG_PADRAO;
-            
-            if(tipo === 'jutsu') {
-                document.getElementById(prefix + '-rank-modal').innerText = "Rank " + dados.rank;
-                let statsHtml = "";
-                if(dados.dano) statsHtml += `<span class="jutsu-stat-tag tag-dano">${dados.dano}</span>`;
-                if(dados.chakra) statsHtml += `<span class="jutsu-stat-tag tag-chakra">Chakra: ${dados.chakra}</span>`;
-                if(dados.stamina) statsHtml += `<span class="jutsu-stat-tag tag-stamina">Stamina: ${dados.stamina}</span>`;
-                if(dados.bonus) statsHtml += `<span class="jutsu-stat-tag tag-buff">${dados.bonus}</span>`;
-                document.getElementById('jutsu-stats-row').innerHTML = statsHtml;
-            }
-            if(tipo === 'tool') document.getElementById(prefix + '-rank-modal').innerText = dados.dano || "Ferramenta";
-            if(tipo === 'item') document.getElementById(prefix + '-rank-modal').innerText = dados.efeito || "Item";
-            
-            document.getElementById(tipo + 'Modal').style.display = 'flex';
+        async function reloadData() {
+            const s = await getDoc(doc(db, "users", auth.currentUser.uid)); currentUserData = s.data(); atualizarInterface(currentUserData); carregarTudo();
         }
 
-        window.verDetalhesJutsu = (id, dados) => abrirModal('jutsu', dados);
-        window.verDetalhesFerramenta = (id, dados) => abrirModal('tool', dados);
-        window.verDetalhesItem = (id, dados) => abrirModal('item', dados);
-        
-        window.fecharJutsuModal = () => document.getElementById('jutsuModal').style.display = 'none';
-        window.fecharToolModal = () => document.getElementById('toolModal').style.display = 'none';
-        window.fecharItemModal = () => document.getElementById('itemModal').style.display = 'none';
+        // --- MODAL DETAILS ---
+        function abrirModal(t, d) {
+            let p = t; document.getElementById(p+'-name-modal').innerText = d.nome; document.getElementById(p+'-desc-modal').innerText = d.descricao||""; document.getElementById(p+'-price-modal').innerText = "Valor: "+formatarNum(d.preco)+" Ryos";
+            const i = document.getElementById(p+'-img-modal'); i.src = d.imagem||IMG_PADRAO;
+            if(t==='jutsu'){
+                document.getElementById(p+'-rank-modal').innerText = "Rank "+d.rank;
+                let h=""; if(d.dano) h+=`<span class="jutsu-stat-tag tag-dano">${d.dano}</span>`; if(d.chakra) h+=`<span class="jutsu-stat-tag tag-chakra">Chakra: ${d.chakra}</span>`; if(d.stamina) h+=`<span class="jutsu-stat-tag tag-stamina">Stamina: ${d.stamina}</span>`; if(d.bonus) h+=`<span class="jutsu-stat-tag tag-buff">${d.bonus}</span>`;
+                document.getElementById('jutsu-stats-row').innerHTML = h;
+            }
+            if(t==='tool') document.getElementById(p+'-rank-modal').innerText = d.dano||"Ferramenta";
+            if(t==='item') document.getElementById(p+'-rank-modal').innerText = d.efeito||"Item";
+            document.getElementById(t+'Modal').style.display='flex';
+        }
+        window.verDetalhesJutsu = (i,d) => abrirModal('jutsu',d); window.verDetalhesFerramenta = (i,d) => abrirModal('tool',d); window.verDetalhesItem = (i,d) => abrirModal('item',d);
+        window.fecharJutsuModal = () => document.getElementById('jutsuModal').style.display='none';
+        window.fecharToolModal = () => document.getElementById('toolModal').style.display='none';
+        window.fecharItemModal = () => document.getElementById('itemModal').style.display='none';
 
-        // --- FEED POST ---
+        // --- FEED ---
         window.handleImageUpload = async (e) => { if(e.target.files[0]) { try { currentImageBase64 = await comprimirImagem(e.target.files[0]); document.getElementById('preview-image').src = currentImageBase64; document.getElementById('preview-container').style.display='block'; } catch(e){alert("Erro imagem");} } };
         window.removeImage = () => { document.getElementById('imageInput').value=''; currentImageBase64=null; document.getElementById('preview-container').style.display='none'; };
-        
         window.publicarPost = async () => {
-            const txt = document.getElementById('postInput').value;
-            if(!txt.trim() && !currentImageBase64) return alert("Escreva algo!");
+            const t = document.getElementById('postInput').value; if(!t.trim() && !currentImageBase64) return alert("Escreva algo!");
             const btn = document.querySelector('.btn-post'); btn.innerText="..."; btn.disabled=true;
-            try {
-                const autor = currentUserData.apelido || currentUserData.nome || "Ninja";
-                await addDoc(collection(db, "posts"), {
-                    uid: auth.currentUser.uid, autor: autor, autorAvatar: currentUserData.avatar,
-                    conteudo: txt, imagem: currentImageBase64, data: serverTimestamp(), likes: [], savedBy: [], comments: []
-                });
-                document.getElementById('postInput').value=''; removeImage();
-            } catch(e) { alert("Erro ao postar."); } finally { btn.innerText="Publicar"; btn.disabled=false; }
+            try { await addDoc(collection(db, "posts"), { uid: auth.currentUser.uid, autor: currentUserData.apelido || "Ninja", autorAvatar: currentUserData.avatar, conteudo: t, imagem: currentImageBase64, data: serverTimestamp(), likes: [], savedBy: [], comments: [] }); document.getElementById('postInput').value=''; removeImage(); } catch(e) { alert("Erro."); } finally { btn.innerText="Publicar"; btn.disabled=false; }
         };
-
-        window.renderFeed = (filter) => {
+        window.renderFeed = (f) => {
             const c = document.getElementById('feed-container'); if(!c) return;
-            onSnapshot(query(collection(db, "posts"), orderBy("data", "desc")), (snap) => {
-                c.innerHTML = ''; if(snap.empty) { c.innerHTML = '<p style="text-align:center; padding:20px;">Nenhuma publicação.</p>'; return; }
-                snap.forEach(d => {
-                    const p = d.data(); const id = d.id;
-                    if(filter === 'saved' && !p.savedBy.includes(auth.currentUser.uid)) return;
-                    
+            onSnapshot(query(collection(db, "posts"), orderBy("data", "desc")), (s) => {
+                c.innerHTML = ''; if(s.empty) { c.innerHTML = '<p style="text-align:center;">Nada aqui.</p>'; return; }
+                s.forEach(d => {
+                    const p = d.data(); if(f==='saved' && !p.savedBy.includes(auth.currentUser.uid)) return;
                     const isOwner = p.uid === auth.currentUser.uid;
-                    const menuHTML = isOwner ? `
-                        <div class="post-menu-container">
-                            <div class="post-options-btn" onclick="this.nextElementSibling.classList.toggle('active')">...</div>
-                            <div class="post-dropdown">
-                                <div class="dropdown-item danger" onclick="deletarPost('${id}')">Excluir</div>
-                            </div>
-                        </div>` : '';
-                    
-                    const tempoFormatado = calcularTempo(p.data);
-
-                    const div = document.createElement('div'); div.className = 'post';
-                    div.innerHTML = `
-                        <div class="post-header">
-                            <div class="user-avatar-post"><img src="${p.autorAvatar || IMG_PADRAO}"></div>
-                            <div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">${tempoFormatado}</span></div>
-                            ${menuHTML}
-                        </div>
-                        <div class="post-content">${p.conteudo}</div>
-                        ${p.imagem ? `<img src="${p.imagem}" class="post-image" onclick="verPost('${id}')">` : ''}
-                        <div class="post-actions">
-                            <button class="action-btn ${p.likes.includes(auth.currentUser.uid)?'liked':''}" onclick="toggleLike('${id}')"><i class="${p.likes.includes(auth.currentUser.uid)?'fa-solid':'fa-regular'} fa-heart"></i> ${p.likes.length}</button>
-                            <button class="action-btn" onclick="verPost('${id}')"><i class="fa-regular fa-comment"></i> ${p.comments.length}</button>
-                            <button class="action-btn ${p.savedBy.includes(auth.currentUser.uid)?'saved':''}" onclick="toggleSave('${id}')" style="margin-left:auto;"><i class="${p.savedBy.includes(auth.currentUser.uid)?'fa-solid':'fa-regular'} fa-bookmark"></i></button>
-                        </div>
-                    `;
+                    const menu = isOwner ? `<div class="post-menu-container"><div class="post-options-btn" onclick="this.nextElementSibling.classList.toggle('active')">...</div><div class="post-dropdown"><div class="dropdown-item danger" onclick="deletarPost('${d.id}')">Excluir</div></div></div>` : '';
+                    const div = document.createElement('div'); div.className='post';
+                    div.innerHTML = `<div class="post-header"><div class="user-avatar-post"><img src="${p.autorAvatar||IMG_PADRAO}"></div><div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">${calcularTempo(p.data)}</span></div>${menu}</div><div class="post-content">${p.conteudo}</div>${p.imagem ? `<img src="${p.imagem}" class="post-image" onclick="verPost('${d.id}')">` : ''}<div class="post-actions"><button class="action-btn ${p.likes.includes(auth.currentUser.uid)?'liked':''}" onclick="toggleLike('${d.id}')"><i class="${p.likes.includes(auth.currentUser.uid)?'fa-solid':'fa-regular'} fa-heart"></i> ${p.likes.length}</button><button class="action-btn" onclick="verPost('${d.id}')"><i class="fa-regular fa-comment"></i> ${p.comments.length}</button><button class="action-btn ${p.savedBy.includes(auth.currentUser.uid)?'saved':''}" onclick="toggleSave('${d.id}')" style="margin-left:auto;"><i class="${p.savedBy.includes(auth.currentUser.uid)?'fa-solid':'fa-regular'} fa-bookmark"></i></button></div>`;
                     c.appendChild(div);
                 });
-            }, (error) => { c.innerHTML = `<p style='text-align:center; color:red;'>Erro ao carregar feed.</p>`; });
+            });
         };
-        
         window.deletarPost = async (id) => { if(confirm("Apagar?")) await deleteDoc(doc(db, "posts", id)); };
-        window.toggleLike = async (id) => { const ref=doc(db,"posts",id); const s=await getDoc(ref); const l=s.data().likes||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(ref,{likes:arrayRemove(auth.currentUser.uid)}); else await updateDoc(ref,{likes:arrayUnion(auth.currentUser.uid)}); };
-        window.toggleSave = async (id) => { const ref=doc(db,"posts",id); const s=await getDoc(ref); const l=s.data().savedBy||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(ref,{savedBy:arrayRemove(auth.currentUser.uid)}); else await updateDoc(ref,{savedBy:arrayUnion(auth.currentUser.uid)}); };
-        
-        window.verPost = async (id) => {
-            currentOpenPostId = id;
-            const s = await getDoc(doc(db, "posts", id));
-            const p = s.data();
-            document.getElementById('modalPostContent').innerHTML = p.imagem ? `<img src="${p.imagem}" style="width:100%; height:100%; object-fit:contain;">` : `<div style="padding:20px;">${p.conteudo}</div>`;
-            renderComentarios(p.comments);
-            document.getElementById('commentModal').style.display = 'flex';
-        };
-        function renderComentarios(l) { document.getElementById('commentsList').innerHTML = l.map(c => `<div><b>${c.autor}</b>: ${c.texto}</div>`).join(''); }
+        window.toggleLike = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().likes; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{likes:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{likes:arrayUnion(auth.currentUser.uid)}); };
+        window.toggleSave = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().savedBy; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{savedBy:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{savedBy:arrayUnion(auth.currentUser.uid)}); };
+        window.verPost = async (id) => { currentOpenPostId = id; const s = await getDoc(doc(db, "posts", id)), p = s.data(); document.getElementById('modalPostContent').innerHTML = p.imagem ? `<img src="${p.imagem}" style="width:100%;height:100%;object-fit:contain;">` : `<div style="padding:20px;">${p.conteudo}</div>`; document.getElementById('commentsList').innerHTML = p.comments.map(c=>`<div><b>${c.autor}</b>: ${c.texto}</div>`).join(''); document.getElementById('commentModal').style.display='flex'; };
         window.submitComment = async () => { const t = document.getElementById('newCommentText').value; if(!t) return; await updateDoc(doc(db, "posts", currentOpenPostId), { comments: arrayUnion({ autor: currentUserData.nome, texto: t }) }); document.getElementById('newCommentText').value = ""; verPost(currentOpenPostId); };
         window.closeModal = () => document.getElementById('commentModal').style.display = 'none';
 
-        // --- PERSONAGENS & RANKING & ADMIN (RESTAURADOS) ---
-        async function carregarPersonagens() {
-            const c = document.getElementById('directory-grid'); if(!c) return; c.innerHTML = 'Carregando...';
-            try {
-                const s = await getDocs(collection(db, "users"));
-                c.innerHTML = '';
-                if(s.empty) { c.innerHTML = '<p>Nenhum ninja encontrado.</p>'; return; }
-                s.forEach(d => {
-                    const u = d.data();
-                    const k = document.createElement('div'); k.className = 'card';
-                    k.onclick = () => window.verPerfil(d.id);
-                    k.innerHTML = `<div style="width:60px; height:60px; border-radius:50%; overflow:hidden; margin:0 auto 10px;"><img src="${u.avatar || IMG_PADRAO}" style="width:100%; height:100%; object-fit:cover;"></div><h4>${u.nome}</h4><p>${u.apelido||"Desconhecido"}</p>`;
-                    c.appendChild(k);
-                });
-            } catch(e) { c.innerHTML = 'Erro ao carregar.'; }
-        }
-
-        window.verPerfil = async (uid) => {
-            const s = await getDoc(doc(db, "users", uid));
-            if(s.exists()) {
-                const u = s.data();
-                document.getElementById('profile-modal-name').innerText = u.nome || "Ninja";
-                document.getElementById('profile-modal-char').innerText = u.apelido || "";
-                document.getElementById('profile-modal-img').src = u.avatar || IMG_PADRAO;
-                
-                const set = (id, v) => document.getElementById(id).innerText = v;
-                // Stats Gerais
-                set('prof-nivel', u.nivel || 1); set('prof-cargo', u.cargo || "Genin"); set('prof-ryos', formatarNum(u.ryos));
-                set('prof-jutsus', u.meusJutsus?.length||0); set('prof-tools', u.ferramentas?.length||0); set('prof-items', u.itens?.length||0);
-                set('prof-wins', u.vitorias||0); set('prof-loses', u.derrotas||0); set('prof-draws', u.empates||0);
-                
-                // Novos Atributos
-                set('prof-vida', u.vida || 100); set('prof-sanidade', u.sanidade || 100);
-                set('prof-chakra', u.chakra || 100); set('prof-stamina', u.stamina || 100);
-                set('prof-controle', u.controle_chakra || "Baixo");
-                set('prof-forca', u.forca || 10); set('prof-defesa', u.defesa || 10);
-                set('prof-constituicao', u.constituicao || 10); set('prof-destreza', u.destreza || 10);
-                set('prof-intelecto', u.intelecto || 10); set('prof-agilidade', u.agilidade || 10);
-                set('prof-velocidade', u.velocidade || 10);
-
-                document.getElementById('profileModal').style.display = 'flex';
-            }
-        }
+        // --- CARREGADORES SECUNDÁRIOS ---
+        async function carregarPersonagens() { const c = document.getElementById('directory-grid'); if(!c) return; const s = await getDocs(collection(db, "users")); c.innerHTML = ''; s.forEach(d => { const u = d.data(); const k = document.createElement('div'); k.className = 'card'; k.onclick = () => window.verPerfil(d.id); k.innerHTML = `<div style="width:60px; height:60px; border-radius:50%; overflow:hidden; margin:0 auto 10px;"><img src="${u.avatar||IMG_PADRAO}" style="width:100%; height:100%; object-fit:cover;"></div><h4>${u.nome}</h4><p>${u.apelido||""}</p>`; c.appendChild(k); }); }
+        window.verPerfil = async (uid) => { const s = await getDoc(doc(db, "users", uid)); if(s.exists()) { const u = s.data(); document.getElementById('profile-modal-name').innerText = u.nome; document.getElementById('profile-modal-img').src = u.avatar||IMG_PADRAO; const items = document.getElementById('other-profile-stats'); items.innerHTML = `<div>Nível: ${u.nivel||1}</div><div>Cargo: ${u.cargo||'Genin'}</div>`; document.getElementById('profileModal').style.display = 'flex'; } };
         window.fecharProfileModal = () => document.getElementById('profileModal').style.display = 'none';
         
-        // --- MISSÕES COM LEVEL UP ---
-        async function carregarMissoes() { 
-            const c = document.getElementById('missoes-grid'); if(!c) return;
-            const map = currentUserData.statusMissoes || {}; 
-            try {
-                const s = await getDocs(collection(db, "missoes")); 
-                c.innerHTML = ''; 
-                if(s.empty) { c.innerHTML = '<p>Sem missões.</p>'; return; }
-                s.forEach((d) => { 
-                    const m = d.data(); const id = d.id; const st = map[id] || 'neutro'; 
-                    const k = document.createElement('div'); k.className = 'card jutsu-card-click'; 
-                    let statusText="Disponível", statusColor="#777"; 
-                    if(st==='em_andamento'){statusText="Em Andamento";statusColor="orange";}
-                    else if(st==='aprovado'){statusText="Coletar!";statusColor="green";}
-                    else if(st==='concluido'){statusText="Concluída";statusColor="blue";} 
-                    k.onclick = () => verDetalhesMissao(id, m, st); 
-                    k.innerHTML=`<h4>${m.titulo}</h4><p style="font-size:0.9rem; color:${statusColor}; font-weight:bold;">${statusText}</p><small style="color:var(--primary-color)">${m.xp || 0} XP | ${formatarNum(m.recompensa || 0)} Ryos</small>`; 
-                    c.appendChild(k); 
-                }); 
-            } catch(e) { c.innerHTML = 'Erro ao carregar missões.'; }
-        }
+        async function carregarMissoes() { const c = document.getElementById('missoes-grid'); if(!c) return; const m = currentUserData.statusMissoes || {}; const s = await getDocs(collection(db, "missoes")); c.innerHTML = ''; s.forEach(d => { const i = d.data(), st = m[d.id] || 'neutro'; const k = document.createElement('div'); k.className = 'card jutsu-card-click'; k.onclick = () => verDetalhesMissao(d.id, i, st); k.innerHTML=`<h4>${i.titulo}</h4><p>${st==='neutro'?'Disponível':st}</p><small>${formatarNum(i.recompensa)} Ryos</small>`; c.appendChild(k); }); }
+        window.verDetalhesMissao = (id, d, st) => { document.getElementById('missao-name-modal').innerText = d.titulo; document.getElementById('missao-desc-modal').innerText = d.descricao; document.getElementById('missao-reward-modal').innerText = formatarNum(d.recompensa); document.getElementById('missao-xp-modal').innerText = d.xp||0; document.getElementById('missao-img-modal').src = d.imagem||IMG_PADRAO; const a = document.getElementById('missao-actions-modal'); a.innerHTML = ''; if(st==='neutro') a.innerHTML = `<button class="mission-btn-start" onclick="iniciarMissao('${id}')">Aceitar</button>`; else if(st==='aprovado') a.innerHTML = `<button class="mission-btn-collect" onclick="coletarRecompensa('${id}',${d.recompensa},${d.xp||0})">Receber</button>`; document.getElementById('missaoModal').style.display='flex'; };
+        window.fecharMissaoModal = () => document.getElementById('missaoModal').style.display='none';
         
-        window.verDetalhesMissao = (id, dadosMissao, status) => { 
-            document.getElementById('missao-name-modal').innerText = dadosMissao.titulo; 
-            document.getElementById('missao-desc-modal').innerText = dadosMissao.descricao; 
-            document.getElementById('missao-reward-modal').innerText = formatarNum(dadosMissao.recompensa || 0); 
-            const xpEl = document.getElementById('missao-xp-modal'); if(xpEl) xpEl.innerText = dadosMissao.xp || 0;
-            const imgEl = document.getElementById('missao-img-modal');
-            imgEl.src = dadosMissao.imagem || IMG_PADRAO; 
-            imgEl.onerror = () => { imgEl.src = IMG_PADRAO; };
+        window.iniciarMissao = async (id) => { await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusMissoes.${id}`]: 'em_andamento' }); alert("Iniciada!"); reloadData(); };
+        window.coletarRecompensa = async (id, r, x) => { const u = currentUserData, nr = (u.ryos||0)+r, nx = (u.xp||0)+x; let lvl = u.nivel||1, req = globalXpTable[lvl] || (lvl*500); while(nx >= req) { nx -= req; lvl++; req = globalXpTable[lvl] || (lvl*500); } await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: nr, xp: nx, nivel: lvl, [`statusMissoes.${id}`]: 'concluido' }); alert("Coletado!"); reloadData(); };
 
-            const actionDiv = document.getElementById('missao-actions-modal'); 
-            actionDiv.innerHTML = ''; 
-            
-            if(status === 'neutro') { actionDiv.innerHTML = `<button class="mission-btn-start" onclick="iniciarMissao('${id}')">Aceitar Missão</button>`; } 
-            else if(status === 'em_andamento') { actionDiv.innerHTML = `<button class="mission-btn-wait">Aguardando Aprovação...</button>`; } 
-            else if(status === 'aprovado') { actionDiv.innerHTML = `<button class="mission-btn-collect" onclick="coletarRecompensa('${id}', ${dadosMissao.recompensa || 0}, ${dadosMissao.xp || 0})">Receber Recompensa</button>`; } 
-            else if(status === 'concluido') { actionDiv.innerHTML = `<button class="mission-btn-done">Missão Concluída</button>`; } 
-            document.getElementById('missaoModal').style.display = 'flex'; 
-        };
-        window.fecharMissaoModal = () => { document.getElementById('missaoModal').style.display = 'none'; };
-
-        window.iniciarMissao = async (id) => { await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusMissoes.${id}`]: 'em_andamento' }); alert("Iniciada!"); location.reload(); };
-        
-        window.coletarRecompensa = async (id, ryoReward, xpReward) => {
-            const userRef = doc(db, "users", auth.currentUser.uid);
-            const userSnap = await getDoc(userRef);
-            let u = userSnap.data();
-
-            let novoRyo = (u.ryos || 0) + ryoReward;
-            let novoXp = (u.xp || 0) + xpReward;
-            let novoNivel = u.nivel || 1;
-            
-            let xpNecessario = globalXpTable[novoNivel] ? globalXpTable[novoNivel] : (novoNivel * 500);
-            let upou = false;
-
-            while(novoXp >= xpNecessario) {
-                novoXp -= xpNecessario;
-                novoNivel++;
-                xpNecessario = globalXpTable[novoNivel] ? globalXpTable[novoNivel] : (novoNivel * 500);
-                upou = true;
-            }
-
-            await updateDoc(userRef, {
-                ryos: novoRyo,
-                xp: novoXp,
-                nivel: novoNivel,
-                [`statusMissoes.${id}`]: 'concluido'
-            });
-
-            if(upou) alert(`PARABÉNS! Você subiu para o Nível ${novoNivel}!`);
-            else alert(`Recebido: ${formatarNum(ryoReward)} Ryos e ${xpReward} XP!`);
-            location.reload();
-        };
-
-        window.carregarRankings = async () => { 
-            const c = document.getElementById('ranking-container'); if(!c) return; 
-            try {
-                const s = await getDocs(collection(db, "users")); 
-                let l = []; s.forEach(d=>l.push(d.data())); 
-                c.innerHTML = ''; 
-                renderRank(c,"Ranking Financeiro",l,'ryos'); 
-                renderRank(c,"Missões Rankeadas",l,'pontos_rankeada');
-                renderRank(c,"Torneios",l,'vitorias_torneio');
-                renderRank(c,"Amistosos",l,'pontos_amistoso');
-                renderRank(c,"Em Dupla",l,'vitorias_dupla');
-                renderRank(c,"Guerra de Clãs",l,'vitorias_cla');
-            } catch(e) { c.innerHTML = 'Erro nos rankings.'; }
-        };
+        window.carregarRankings = async () => { const c = document.getElementById('ranking-container'); if(!c) return; const s = await getDocs(collection(db, "users")); let l=[]; s.forEach(d=>l.push(d.data())); c.innerHTML=''; renderRank(c,"Ryos",l,'ryos'); renderRank(c,"Nível",l,'nivel'); };
         function renderRank(c,t,l,f) { const s=[...l].sort((a,b)=>(b[f]||0)-(a[f]||0)).slice(0,5); let h=`<div class="ranking-col"><h3>${t}</h3><table class="ranking-table">`; s.forEach((u,i)=>h+=`<tr><td>${i+1}. ${u.nome}</td><td>${formatarNum(u[f])}</td></tr>`); h+='</table></div>'; c.innerHTML+=h; }
 
-        // HISTORIA (Botão Exposto)
-        window.editarHistoria = async () => {
-            const n=prompt("História:",currentUserData.historiaTexto||""); 
-            if(n){ 
-                const i=prompt("Imagem URL:",currentUserData.historiaImagem||""); 
-                const updates={historiaTexto:n}; if(i) updates.historiaImagem=i;
-                await updateDoc(doc(db,"users",auth.currentUser.uid),updates);
-                location.reload(); 
-            } 
-        };
-        
-        async function carregarFrases() { 
-            const c = document.getElementById('frases-list-container'); if(!c) return;
-            const q = query(collection(db, "frases"), orderBy("data", "desc"));
-            onSnapshot(q, (snapshot) => {
-                c.innerHTML = ''; if(snapshot.empty) { c.innerHTML = '<p style="text-align:center; color:#777;">Nenhuma frase.</p>'; return; }
-                snapshot.forEach((doc) => { 
-                    const f = doc.data(); 
-                    const div = document.createElement('div'); 
-                    div.className = 'frase-item'; 
-                    
-                    const isOwner = f.uid === auth.currentUser.uid;
-                    const menuHTML = isOwner ? `
-                        <div class="options-menu-container">
-                            <div class="options-btn" onclick="toggleFraseMenu(this); event.stopPropagation();"><i class="fa-solid fa-ellipsis"></i></div>
-                            <div class="options-dropdown">
-                                <div class="options-item" onclick="editarFrase('${doc.id}', '${f.texto}'); event.stopPropagation();">Editar</div>
-                                <div class="options-item danger" onclick="deletarFrase('${doc.id}'); event.stopPropagation();">Excluir</div>
-                            </div>
-                        </div>
-                    ` : '';
+        window.editarHistoria = async () => { const n=prompt("Texto:",currentUserData.historiaTexto||""); if(n){ const i=prompt("Imagem:",currentUserData.historiaImagem||""); updateDoc(doc(db,"users",auth.currentUser.uid),{historiaTexto:n,historiaImagem:i}).then(reloadData); } }
+        async function carregarFrases() { const c = document.getElementById('frases-list-container'); onSnapshot(query(collection(db, "frases"), orderBy("data", "desc")), (s) => { c.innerHTML=''; s.forEach(d=>{ const f=d.data(); const k=document.createElement('div'); k.className='frase-item'; k.onclick=()=>copiarFrase(f.texto); k.innerHTML=`<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor}</div>`; c.appendChild(k); }); }); }
+        window.adicionarFrase = async () => { const t=document.getElementById('novaFraseInput').value; if(t) await addDoc(collection(db,"frases"),{texto:t,autor:currentUserData.nome,uid:auth.currentUser.uid,data:serverTimestamp()}); document.getElementById('novaFraseInput').value=''; }
+        window.copiarFrase = (t) => { navigator.clipboard.writeText(t).then(() => { const f=document.getElementById('copyFeedback'); f.style.display='block'; setTimeout(()=>f.style.display='none',2000); }); };
 
-                    div.onclick = () => copiarFrase(f.texto); 
-                    div.innerHTML = `<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor || "Desconhecido"}</div>${menuHTML}`; 
-                    c.appendChild(div); 
-                });
-            });
-        }
-
-        window.toggleFraseMenu = (el) => {
-            const dropdown = el.nextElementSibling;
-            document.querySelectorAll('.options-dropdown').forEach(d => { if(d !== dropdown) d.classList.remove('active'); });
-            dropdown.classList.toggle('active');
-        };
-
-        window.adicionarFrase = async () => { const t=document.getElementById('novaFraseInput').value; if(t){ await addDoc(collection(db,"frases"),{texto:t,autor:currentUserData.nome,uid:auth.currentUser.uid,data:serverTimestamp()}); document.getElementById('novaFraseInput').value=''; } }
-        window.editarFrase = async (id, oldText) => { const n = prompt("Editar:", oldText); if(n) await updateDoc(doc(db, "frases", id), { texto: n }); };
-        window.deletarFrase = async (id) => { if(confirm("Excluir?")) await deleteDoc(doc(db, "frases", id)); };
-        window.copiarFrase = (texto) => { navigator.clipboard.writeText(texto).then(() => { const f = document.getElementById('copyFeedback'); f.style.display = 'block'; setTimeout(() => { f.style.display = 'none'; }, 2000); }); };
-
-        // ADMIN
-        async function carregarPainelAdmin() {
-            const c = document.getElementById('admin-missoes-grid'); if(!c) return;
-            c.innerHTML = 'Carregando pendências...';
-            try {
-                const s = await getDocs(collection(db, "users"));
-                c.innerHTML = '';
-                let found = false;
-                s.forEach(u => {
-                    const d = u.data();
-                    const m = d.statusMissoes || {};
-                    for (const [mid, st] of Object.entries(m)) {
-                        if(st === 'em_andamento') {
-                            found = true;
-                            const k = document.createElement('div'); k.className = 'card';
-                            k.innerHTML = `<h4>${d.nome}</h4><p>Missão ID: ${mid}</p><button class="mission-btn-collect" onclick="aprovarMissao('${u.id}','${mid}')">Aprovar</button>`;
-                            c.appendChild(k);
-                        }
-                    }
-                });
-                if(!found) c.innerHTML = '<p>Nenhuma missão pendente.</p>';
-            } catch(e) { c.innerHTML = 'Erro no painel.'; }
-        }
-        window.aprovarMissao = async (uid, mid) => { if(confirm("Aprovar?")) { await updateDoc(doc(db, "users", uid), { [`statusMissoes.${mid}`]: 'aprovado' }); alert("Aprovado!"); location.reload(); } };
+        async function carregarPainelAdmin() { const c = document.getElementById('admin-missoes-grid'); c.innerHTML='Carregando...'; const s = await getDocs(collection(db, "users")); c.innerHTML=''; s.forEach(u=>{ const d=u.data(), m=d.statusMissoes||{}; for(const [mid,st] of Object.entries(m)){ if(st==='em_andamento'){ const k=document.createElement('div'); k.className='card'; k.innerHTML=`<h4>${d.nome}</h4><p>${mid}</p><button class="mission-btn-collect" onclick="aprovarMissao('${u.id}','${mid}')">Aprovar</button>`; c.appendChild(k); } } }); }
+        window.aprovarMissao = async (uid, mid) => { if(confirm("Aprovar?")) await updateDoc(doc(db, "users", uid), { [`statusMissoes.${mid}`]: 'aprovado' }); alert("Feito!"); reloadData(); };
 
     </script>
 </body>
 </html>
-
