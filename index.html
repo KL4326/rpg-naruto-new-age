@@ -492,6 +492,10 @@
         window.toggleMobileMenu = () => { document.querySelector('.sidebar').classList.toggle('mobile-active'); document.querySelector('.sidebar-overlay').classList.toggle('active'); };
         const btnLogin = document.getElementById('btnLogin');
         if(btnLogin) btnLogin.addEventListener('click', () => { const e = document.getElementById('emailInput').value, s = document.getElementById('passwordInput').value; if(!e || !s) return alert("Preencha tudo!"); btnLogin.innerText = "Carregando..."; signInWithEmailAndPassword(auth, e, s).catch((err) => { btnLogin.innerText = "Entrar"; alert(err.message); }); });
+        // ENTER LOGIN
+        document.getElementById('passwordInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') document.getElementById('btnLogin').click();
+        });
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -520,7 +524,7 @@
                 // --- INICIALIZAÇÃO CORRIGIDA DO FEED ---
                 setTimeout(() => {
                     try { window.renderFeed('all'); } catch(e) { console.log("Erro ao iniciar feed:", e); }
-                }, 500); // Pequeno delay para garantir que o DOM existe
+                }, 500); 
                 
             } else {
                 document.getElementById('login-screen').style.display = 'flex';
@@ -763,20 +767,26 @@
                 onSnapshot(query(collection(db, "posts"), orderBy("data", "desc")), (s) => {
                     c.innerHTML = ''; if(s.empty) { c.innerHTML = '<p style="text-align:center;">Nada aqui.</p>'; return; }
                     s.forEach(d => {
-                        const p = d.data(); if(f==='saved' && !p.savedBy.includes(auth.currentUser.uid)) return;
+                        const p = d.data(); if(f==='saved' && !(p.savedBy||[]).includes(auth.currentUser.uid)) return;
                         const isOwner = p.uid === auth.currentUser.uid;
                         const menu = isOwner ? `<div class="post-menu-container"><div class="post-options-btn" onclick="this.nextElementSibling.classList.toggle('active')">...</div><div class="post-dropdown"><div class="dropdown-item danger" onclick="deletarPost('${d.id}')">Excluir</div></div></div>` : '';
+                        
+                        // PROTEÇÃO: Garante que likes/savedBy existam
+                        const likes = p.likes || [];
+                        const savedBy = p.savedBy || [];
+                        const comments = p.comments || [];
+
                         const div = document.createElement('div'); div.className='post';
-                        div.innerHTML = `<div class="post-header"><div class="user-avatar-post"><img src="${p.autorAvatar||IMG_PADRAO}"></div><div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">${calcularTempo(p.data)}</span></div>${menu}</div><div class="post-content">${p.conteudo}</div>${p.imagem ? `<img src="${p.imagem}" class="post-image" onclick="verPost('${d.id}')">` : ''}<div class="post-actions"><button class="action-btn ${p.likes.includes(auth.currentUser.uid)?'liked':''}" onclick="toggleLike('${d.id}')"><i class="${p.likes.includes(auth.currentUser.uid)?'fa-solid':'fa-regular'} fa-heart"></i> ${p.likes.length}</button><button class="action-btn" onclick="verPost('${d.id}')"><i class="fa-regular fa-comment"></i> ${p.comments.length}</button><button class="action-btn ${p.savedBy.includes(auth.currentUser.uid)?'saved':''}" onclick="toggleSave('${d.id}')" style="margin-left:auto;"><i class="${p.savedBy.includes(auth.currentUser.uid)?'fa-solid':'fa-regular'} fa-bookmark"></i></button></div>`;
+                        div.innerHTML = `<div class="post-header"><div class="user-avatar-post"><img src="${p.autorAvatar||IMG_PADRAO}"></div><div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">${calcularTempo(p.data)}</span></div>${menu}</div><div class="post-content">${p.conteudo}</div>${p.imagem ? `<img src="${p.imagem}" class="post-image" onclick="verPost('${d.id}')">` : ''}<div class="post-actions"><button class="action-btn ${likes.includes(auth.currentUser.uid)?'liked':''}" onclick="toggleLike('${d.id}')"><i class="${likes.includes(auth.currentUser.uid)?'fa-solid':'fa-regular'} fa-heart"></i> ${likes.length}</button><button class="action-btn" onclick="verPost('${d.id}')"><i class="fa-regular fa-comment"></i> ${comments.length}</button><button class="action-btn ${savedBy.includes(auth.currentUser.uid)?'saved':''}" onclick="toggleSave('${d.id}')" style="margin-left:auto;"><i class="${savedBy.includes(auth.currentUser.uid)?'fa-solid':'fa-regular'} fa-bookmark"></i></button></div>`;
                         c.appendChild(div);
                     });
                 }, (error) => { console.error("Erro Feed:", error); c.innerHTML = "<p>Erro ao carregar feed.</p>"; });
             } catch (err) { console.error(err); }
         };
         window.deletarPost = async (id) => { if(confirm("Apagar?")) await deleteDoc(doc(db, "posts", id)); };
-        window.toggleLike = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().likes; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{likes:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{likes:arrayUnion(auth.currentUser.uid)}); };
-        window.toggleSave = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().savedBy; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{savedBy:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{savedBy:arrayUnion(auth.currentUser.uid)}); };
-        window.verPost = async (id) => { currentOpenPostId = id; const s = await getDoc(doc(db, "posts", id)), p = s.data(); document.getElementById('modalPostContent').innerHTML = p.imagem ? `<img src="${p.imagem}" style="width:100%;height:100%;object-fit:contain;">` : `<div style="padding:20px;">${p.conteudo}</div>`; document.getElementById('commentsList').innerHTML = p.comments.map(c=>`<div><b>${c.autor}</b>: ${c.texto}</div>`).join(''); document.getElementById('commentModal').style.display='flex'; };
+        window.toggleLike = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().likes||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{likes:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{likes:arrayUnion(auth.currentUser.uid)}); };
+        window.toggleSave = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().savedBy||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{savedBy:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{savedBy:arrayUnion(auth.currentUser.uid)}); };
+        window.verPost = async (id) => { currentOpenPostId = id; const s = await getDoc(doc(db, "posts", id)), p = s.data(); document.getElementById('modalPostContent').innerHTML = p.imagem ? `<img src="${p.imagem}" style="width:100%;height:100%;object-fit:contain;">` : `<div style="padding:20px;">${p.conteudo}</div>`; document.getElementById('commentsList').innerHTML = (p.comments||[]).map(c=>`<div><b>${c.autor}</b>: ${c.texto}</div>`).join(''); document.getElementById('commentModal').style.display='flex'; };
         window.submitComment = async () => { const t = document.getElementById('newCommentText').value; if(!t) return; await updateDoc(doc(db, "posts", currentOpenPostId), { comments: arrayUnion({ autor: currentUserData.nome, texto: t }) }); document.getElementById('newCommentText').value = ""; verPost(currentOpenPostId); };
         window.closeModal = () => document.getElementById('commentModal').style.display = 'none';
 
