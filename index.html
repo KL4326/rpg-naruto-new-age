@@ -75,38 +75,11 @@
         .buy-btn { background-color: var(--primary-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; margin-top: 8px; font-size: 1rem; cursor: pointer; }
         .buy-btn:hover { background-color: #e05200; }
         
-        /* CONTROLES DE INVENTARIO (QTD E BOTAO MENOS) */
-        .inventory-controls {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 8px;
-            background: rgba(0,0,0,0.03);
-            padding: 5px;
-            border-radius: 20px;
-        }
-        .qtd-badge {
-            font-weight: bold;
-            font-size: 0.9rem;
-            color: var(--text-color);
-        }
-        .btn-minus {
-            background: var(--danger-color);
-            color: white;
-            border: none;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: 0.2s;
-        }
+        /* TAG DE QUANTIDADE (INVENTÁRIO) */
+        .qtd-badge { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.3); }
+        .inventory-controls { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 8px; background: rgba(0,0,0,0.03); padding: 5px; border-radius: 20px; }
+        .btn-minus { background: var(--danger-color); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
         .btn-minus:hover { transform: scale(1.1); }
-        .btn-minus:active { transform: scale(0.9); }
 
         /* Maestria no Card */
         .maestria-display { display: block; font-size: 0.85rem; color: var(--yellow-color); font-weight: bold; margin-top: 4px; text-shadow: 0 0 1px rgba(0,0,0,0.1); }
@@ -331,7 +304,7 @@
                 <div id="jutsus" class="tab-content"><h3>Meus Jutsus</h3><div class="bucket-grid" id="meus-jutsus-grid"><p>Carregando...</p></div><hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;"><h3>Loja de Jutsus</h3><div class="bucket-grid" id="loja-jutsus-grid"><p>Carregando...</p></div></div>
                 <div id="ferramentas" class="tab-content"><h3>Loja de Ferramentas</h3><div class="bucket-grid" id="loja-ferramentas-grid"><p>Carregando...</p></div></div>
                 
-                 <div id="loja" class="tab-content">
+                <div id="loja" class="tab-content">
                       <div class="shop-header">
                         <h3 style="margin-bottom:10px;">Localização Atual</h3>
                         <select id="shop-location" class="shop-location-select" onchange="atualizarFiltroVila()">
@@ -344,7 +317,7 @@
                             <option value="Oto">Vila do Som (Oto)</option>
                             <option value="Kori">Vila do Gelo (Kori)</option>
                         </select>
-                       <h3 style="margin:15px 0 10px;">Estabelecimentos</h3>
+                        <h3 style="margin:15px 0 10px;">Estabelecimentos</h3>
                         <div class="shop-categories">
                             <button class="shop-cat-btn active" onclick="filtrarLojaPorTipo('mercado', this)">Mercado</button>
                             <button class="shop-cat-btn" onclick="filtrarLojaPorTipo('comida', this)">Restaurantes</button>
@@ -515,7 +488,7 @@
 
         const IMG_PADRAO = "https://img.freepik.com/vetores-gratis/ilustracao-de-pergaminho-ninja-desenhada-a-mao_23-2151159846.jpg";
 
-        function calcularTempo(t) { if (!t) return "Agora"; const d = t.toDate(), n = new Date(), df = Math.floor((n - d) / 1000); if (df < 60) return "Agora"; if (df < 3600) return `Há ${Math.floor(df / 60)} min`; if (df < 86400) return `Há ${Math.floor(df / 3600)} h`; return d.toLocaleDateString('pt-BR'); }
+        function calcularTempo(t) { if (!t) return "Agora"; const d = t.toDate(), n = new Date(), df = Math.floor((n - d) / 1000); if (df < 60) return "Agora"; if (df < 3600) return `Há ${Math.floor(df / 60)} min`; if (df < 86400) return `Há ${Math.floor(diff / 3600)} h`; return d.toLocaleDateString('pt-BR'); }
         window.toggleMobileMenu = () => { document.querySelector('.sidebar').classList.toggle('mobile-active'); document.querySelector('.sidebar-overlay').classList.toggle('active'); };
         const btnLogin = document.getElementById('btnLogin');
         if(btnLogin) btnLogin.addEventListener('click', () => { const e = document.getElementById('emailInput').value, s = document.getElementById('passwordInput').value; if(!e || !s) return alert("Preencha tudo!"); btnLogin.innerText = "Carregando..."; signInWithEmailAndPassword(auth, e, s).catch((err) => { btnLogin.innerText = "Entrar"; alert(err.message); }); });
@@ -686,6 +659,7 @@
             const snap = await getDocs(collection(db, "itens"));
             snap.forEach(d => {
                 const i = d.data();
+                // Lógica para Array ou String na vila
                 let vilaOk = false;
                 if(!i.vila || i.vila === 'Global') vilaOk = true;
                 else if(Array.isArray(i.vila)) { if(i.vila.includes(vilaAtual) || i.vila.includes('Global')) vilaOk = true; }
