@@ -32,7 +32,7 @@
         /* LOGIN */
         .login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999; display: flex; justify-content: center; align-items: center; padding: 20px; }
         .login-box { background: white; padding: 30px; border-radius: 10px; width: 100%; max-width: 320px; text-align: center; }
-        .login-box input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
+        .login-box input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
         .login-box button { background: var(--primary-color); color: white; border: none; padding: 12px; width: 100%; cursor: pointer; border-radius: 5px; font-weight: bold; font-size: 16px; }
 
         /* LAYOUT */
@@ -93,33 +93,12 @@
         .shop-cat-btn:hover { opacity: 0.8; }
 
         /* ELEMENTOS E KEKKEI */
-        .powers-wrapper {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        .elementos-container {
-            flex: 1;
-            min-width: 120px;
-            background: var(--card-bg);
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
-            padding: 10px;
-            text-align: center;
-        }
+        .powers-wrapper { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; }
+        .elementos-container { flex: 1; min-width: 120px; background: var(--card-bg); border-radius: 10px; border: 1px solid var(--border-color); padding: 10px; text-align: center; }
         .elementos-title { font-size: 0.85rem; font-weight: bold; color: #777; margin-bottom: 8px; text-transform: uppercase; }
         .elementos-list { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
         
-        .element-icon {
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid var(--border-color);
-            padding: 2px;
-            background: #fff;
-        }
+        .element-icon { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color); padding: 2px; background: #fff; }
 
         /* MISSÕES */
         .mission-btn-start { background: var(--primary-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 5px; }
@@ -572,9 +551,15 @@
         if(btnLogin) btnLogin.addEventListener('click', () => { const e = document.getElementById('emailInput').value, s = document.getElementById('passwordInput').value; if(!e || !s) return alert("Preencha tudo!"); btnLogin.innerText = "Carregando..."; signInWithEmailAndPassword(auth, e, s).catch((err) => { btnLogin.innerText = "Entrar"; alert(err.message); }); });
         
         // ENTER LOGIN (CORRIGIDO)
-        document.getElementById('passwordInput').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') document.getElementById('btnLogin').click();
-        });
+        const passInput = document.getElementById('passwordInput');
+        if (passInput) {
+            passInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    const btn = document.getElementById('btnLogin');
+                    if (btn) btn.click();
+                }
+            });
+        }
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -1005,8 +990,11 @@
         function renderRank(c,t,l,f) { const s=[...l].sort((a,b)=>(b[f]||0)-(a[f]||0)).slice(0,5); let h=`<div class="ranking-col"><h3>${t}</h3><table class="ranking-table">`; s.forEach((u,i)=>h+=`<tr><td>${i+1}. ${u.nome}</td><td>${formatarNum(u[f])}</td></tr>`); h+='</table></div>'; c.innerHTML+=h; }
 
         window.editarHistoria = async () => { const n=prompt("Texto:",currentUserData.historiaTexto||""); if(n){ const i=prompt("Imagem:",currentUserData.historiaImagem||""); updateDoc(doc(db,"users",auth.currentUser.uid),{historiaTexto:n,historiaImagem:i}).then(reloadData); } }
-        async function carregarFrases() { const c = document.getElementById('frases-list-container'); onSnapshot(query(collection(db, "frases"), orderBy("data", "desc")), (s) => { c.innerHTML=''; s.forEach(d=>{ const f=d.data(); const k=document.createElement('div'); k.className='frase-item'; k.onclick=()=>copiarFrase(f.texto); k.innerHTML=`<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor}</div>`; c.appendChild(k); }); }); }
+        async function carregarFrases() { const c = document.getElementById('frases-list-container'); onSnapshot(query(collection(db, "frases"), orderBy("data", "desc")), (s) => { c.innerHTML=''; s.forEach(d=>{ const f=d.data(); const k=document.createElement('div'); k.className='frase-item'; const menu = f.uid === auth.currentUser.uid ? `<div class="options-menu-container"><div class="options-btn" onclick="toggleFraseMenu(this); event.stopPropagation();">...</div><div class="options-dropdown"><div class="options-item" onclick="editarFrase('${d.id}','${f.texto}');event.stopPropagation()">Editar</div><div class="options-item danger" onclick="deletarFrase('${d.id}');event.stopPropagation()">Excluir</div></div></div>` : ''; k.onclick=()=>copiarFrase(f.texto); k.innerHTML=`<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor}</div>${menu}`; c.appendChild(k); }); }); }
+        window.toggleFraseMenu = (el) => { const dropdown = el.nextElementSibling; document.querySelectorAll('.options-dropdown').forEach(d => { if(d !== dropdown) d.classList.remove('active'); }); dropdown.classList.toggle('active'); };
         window.adicionarFrase = async () => { const t=document.getElementById('novaFraseInput').value; if(t) await addDoc(collection(db,"frases"),{texto:t,autor:currentUserData.nome,uid:auth.currentUser.uid,data:serverTimestamp()}); document.getElementById('novaFraseInput').value=''; }
+        window.editarFrase = async (id, oldText) => { const n = prompt("Editar:", oldText); if(n) await updateDoc(doc(db, "frases", id), { texto: n }); };
+        window.deletarFrase = async (id) => { if(confirm("Excluir?")) await deleteDoc(doc(db, "frases", id)); };
         window.copiarFrase = (t) => { navigator.clipboard.writeText(t).then(() => { const f=document.getElementById('copyFeedback'); f.style.display='block'; setTimeout(()=>f.style.display='none',2000); }); };
 
         async function carregarPainelAdmin() { const c = document.getElementById('admin-missoes-grid'); c.innerHTML='Carregando...'; const s = await getDocs(collection(db, "users")); c.innerHTML=''; s.forEach(u=>{ const d=u.data(), m=d.statusMissoes||{}; for(const [mid,st] of Object.entries(m)){ if(st==='em_andamento'){ const k=document.createElement('div'); k.className='card'; k.innerHTML=`<h4>${d.nome}</h4><p>${mid}</p><button class="mission-btn-collect" onclick="aprovarMissao('${u.id}','${mid}')">Aprovar</button>`; c.appendChild(k); } } }); }
