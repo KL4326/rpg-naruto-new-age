@@ -92,6 +92,35 @@
         .shop-cat-btn.active { background: var(--primary-color); color: white; border-color: var(--primary-color); }
         .shop-cat-btn:hover { opacity: 0.8; }
 
+        /* ELEMENTOS E KEKKEI */
+        .powers-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .elementos-container {
+            flex: 1;
+            min-width: 120px;
+            background: var(--card-bg);
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            text-align: center;
+        }
+        .elementos-title { font-size: 0.85rem; font-weight: bold; color: #777; margin-bottom: 8px; text-transform: uppercase; }
+        .elementos-list { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+        
+        .element-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--border-color);
+            padding: 2px;
+            background: #fff;
+        }
+
         /* MISSÕES */
         .mission-btn-start { background: var(--primary-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 5px; }
         .mission-btn-collect { background: var(--green-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 5px; animation: pulse 1.5s infinite; }
@@ -350,6 +379,12 @@
                         <div class="level-info"><span id="level-display">Nível 1</span><span id="xp-text-display">0 / 500 XP</span></div>
                         <div class="xp-bar-bg"><div class="xp-bar-fill" id="xp-bar"></div><div class="xp-text">Progresso</div></div>
                     </div>
+                    
+                    <div class="powers-wrapper">
+                        <div class="elementos-container" id="dash-elementos" style="display:none;"></div>
+                        <div class="elementos-container" id="dash-kekkei" style="display:none;"></div>
+                    </div>
+
                     <div class="profile-stats-grid">
                         <div class="stats-divider">Geral</div>
                         <div class="stat-card"><div class="stat-value" id="dash-nivel">1</div><div class="stat-label">Nível</div></div>
@@ -457,6 +492,10 @@
             <span class="close-modal" onclick="fecharProfileModal()" style="color: white; top: 15px; right: 15px;">&times;</span>
             <div class="profile-header"><div class="profile-avatar-large"><img src="" id="profile-modal-img"></div><h2 id="profile-modal-name" style="color:white;"></h2><p id="profile-modal-char" style="opacity:0.9;"></p></div>
             <div class="profile-body">
+                <div class="powers-wrapper">
+                    <div class="elementos-container" id="profile-elementos-container" style="display:none;"></div>
+                    <div class="elementos-container" id="profile-kekkei-container" style="display:none;"></div>
+                </div>
                 <div class="profile-section-title">Estatísticas</div>
                 <div class="profile-stats-grid" id="other-profile-stats"></div>
             </div>
@@ -486,34 +525,53 @@
         let lojaAtual = "geral";
         let globalItensMap = {}; // Cache para itens e ferramentas para o inventário
 
+        // IMAGENS DOS ELEMENTOS
+        const ELEMENTOS_ICONS = {
+            "fogo": "https://pm1.aminoapps.com/6268/f93aa3930c07f92db411cc1e30bb510a3ceed1e6_hq.jpg",
+            "agua": "https://static.wikia.nocookie.net/narutofanon/images/e/ed/Elemento_Agua.png/revision/latest/scale-to-width-down/699?cb=20180925205748&path-prefix=es",
+            "vento": "https://nrpgshinobi-konohagakure.weebly.com/uploads/1/6/0/4/16044106/819689103.png?193",
+            "terra": "https://pm1.aminoapps.com/6532/d7006f61a97b53560516028523bf3f6e8e68ba69_hq.jpg",
+            "raio": "https://static.wikia.nocookie.net/naruto-road-to-ninja/images/f/f1/562680802.png/revision/latest?cb=20150405134254&path-prefix=es",
+            "yin": "https://static.wikia.nocookie.net/naruto/images/d/de/Nature_Icon_Yin.svg/revision/latest/scale-to-width-down/200?cb=20100916093714",
+            "yang": "https://static.wikia.nocookie.net/naruto/images/6/64/Nature_Icon_Yang.svg/revision/latest/scale-to-width-down/200?cb=20100916093715"// Placeholder
+        };
+        
+        // IMAGENS DAS KEKKEI GENKAI (Preencha com seus links)
+        const KEKKEI_ICONS = {
+            "sharingan": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQsaFL3vRwLEqONbFnsr_tskXDVuf9C7F03HQ&s",
+            "byakugan": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR8dibOxYWvh_iAG7J4BJ6u1ziT2vSb0PpWdg&s",
+            "mokuton": "https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/e8ddc4da-23dd-4502-b65b-378c9cfe5efa/dfgf9nz-2e0b4300-7506-42a7-8a0a-a51889a1765b.png/v1/fill/w_1280,h_1280/mokuton_icon_by_jormxdos_dfgf9nz-fullview.png?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7ImhlaWdodCI6Ijw9MTI4MCIsInBhdGgiOiIvZi9lOGRkYzRkYS0yM2RkLTQ1MDItYjY1Yi0zNzhjOWNmZTVlZmEvZGZnZjluei0yZTBiNDMwMC03NTA2LTQyYTctOGEwYS1hNTE4ODlhMTc2NWIucG5nIiwid2lkdGgiOiI8PTEyODAifV1dLCJhdWQiOlsidXJuOnNlcnZpY2U6aW1hZ2Uub3BlcmF0aW9ucyJdfQ.vjoEnWKes_DCAKclnfYppjrBjFn2sAFnzInsUdg2Fis"
+            "veia_ossea": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRsbqzRS3LkfOJ69ZZvImlM2938cP4HHL3EzQ&s"
+        };
+
         const IMG_PADRAO = "https://img.freepik.com/vetores-gratis/ilustracao-de-pergaminho-ninja-desenhada-a-mao_23-2151159846.jpg";
 
         function calcularTempo(timestamp) {
             if (!timestamp) return "Desconhecido";
             let date;
-            if (typeof timestamp.toDate === 'function') {
-                date = timestamp.toDate();
-            } else if (timestamp instanceof Date) {
-                date = timestamp;
-            } else {
-                date = new Date(timestamp);
-            }
-            if (isNaN(date.getTime())) return "Erro na data";
-            
-            const now = new Date();
-            const diff = Math.floor((now - date) / 1000);
-            if (diff < 60) return "Agora";
-            if (diff < 3600) return `Há ${Math.floor(diff / 60)} min`;
-            if (diff < 86400) return `Há ${Math.floor(diff / 3600)} h`;
-            if (diff < 604800) return `Há ${Math.floor(diff / 86400)} dias`;
-            return date.toLocaleDateString('pt-BR');
+            // BLINDAGEM DE DATA
+            try {
+                if (typeof timestamp.toDate === 'function') date = timestamp.toDate();
+                else if (timestamp instanceof Date) date = timestamp;
+                else date = new Date(timestamp);
+                
+                if (isNaN(date.getTime())) return "Data Inválida";
+
+                const now = new Date();
+                const diff = Math.floor((now - date) / 1000);
+                if (diff < 60) return "Agora";
+                if (diff < 3600) return `Há ${Math.floor(diff / 60)} min`;
+                if (diff < 86400) return `Há ${Math.floor(diff / 3600)} h`;
+                if (diff < 604800) return `Há ${Math.floor(diff / 86400)} dias`;
+                return date.toLocaleDateString('pt-BR');
+            } catch (e) { return "Erro Data"; }
         }
 
         window.toggleMobileMenu = () => { document.querySelector('.sidebar').classList.toggle('mobile-active'); document.querySelector('.sidebar-overlay').classList.toggle('active'); };
         const btnLogin = document.getElementById('btnLogin');
         if(btnLogin) btnLogin.addEventListener('click', () => { const e = document.getElementById('emailInput').value, s = document.getElementById('passwordInput').value; if(!e || !s) return alert("Preencha tudo!"); btnLogin.innerText = "Carregando..."; signInWithEmailAndPassword(auth, e, s).catch((err) => { btnLogin.innerText = "Entrar"; alert(err.message); }); });
         
-        // ENTER LOGIN (CORRIGIDO E ADICIONADO)
+        // ENTER LOGIN (CORRIGIDO)
         document.getElementById('passwordInput').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') document.getElementById('btnLogin').click();
         });
@@ -524,7 +582,6 @@
                 document.getElementById('app-container').style.display = 'flex';
                 if(user.email === "admin@rpgnaruto.com") document.getElementById('btn-admin-panel').style.display = 'flex';
                 await carregarConfiguracoes();
-                // Carregar cache de itens/ferramentas para inventário rápido
                 await carregarCacheItens();
                 
                 const docRef = doc(db, "users", user.uid);
@@ -535,17 +592,17 @@
                     atualizarInterface(currentUserData);
                     carregarTudo();
                 } else {
-                    const dadosPadrao = { nome: "Novo Ninja", ryos: 100, xp: 0, nivel: 1, email: user.email, meusJutsus: [], inventario: {}, statusMissoes: {} };
+                    const dadosPadrao = { nome: "Novo Ninja", ryos: 100, xp: 0, nivel: 1, email: user.email, meusJutsus: [], inventario: {}, statusMissoes: {}, elementos: [], kekkei_genkai: [] };
                     await setDoc(docRef, dadosPadrao);
                     currentUserData = dadosPadrao;
                     atualizarInterface(dadosPadrao);
                     carregarTudo();
                 }
                 
-                // --- INICIALIZAÇÃO CORRIGIDA DO FEED ---
+                // INICIALIZAÇÃO BLINDADA DO FEED
                 setTimeout(() => {
-                    try { window.renderFeed('all'); } catch(e) { console.log("Erro ao iniciar feed:", e); }
-                }, 500); 
+                    try { window.renderFeed('all'); } catch(e) { console.log("Erro inicializar feed:", e); }
+                }, 800); 
                 
             } else {
                 document.getElementById('login-screen').style.display = 'flex';
@@ -570,16 +627,48 @@
 
         function formatarNum(v) { return Number(v||0).toLocaleString('pt-BR'); }
 
+        function renderizarIcones(lista, containerId, mapaIcones, titulo) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = `<div class="elementos-title">${titulo}</div><div class="elementos-list"></div>`;
+            const listDiv = container.querySelector('.elementos-list');
+            
+            if (!lista || lista.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+            
+            container.style.display = 'block';
+            lista.forEach(elem => {
+                const cleanElem = elem.trim().toLowerCase();
+                const iconUrl = mapaIcones[cleanElem];
+                if (iconUrl) {
+                    const img = document.createElement('img');
+                    img.src = iconUrl;
+                    img.className = 'element-icon';
+                    img.title = elem; 
+                    listDiv.appendChild(img);
+                }
+            });
+        }
+
         function atualizarInterface(dados) {
             document.querySelector('.user-info').innerText = dados.apelido || dados.nome || "Ninja";
             document.getElementById('ryos-text').innerText = formatarNum(dados.ryos);
             if(dados.avatar) document.getElementById('header-avatar').src = dados.avatar;
+            if(dados.historiaTexto) document.getElementById('historia-display-text').innerText = dados.historiaTexto;
+            if(dados.historiaImagem) document.getElementById('historia-display-img').src = dados.historiaImagem;
+
             const nivel = dados.nivel || 1, xpAtual = dados.xp || 0;
             const xpNecessario = globalXpTable[nivel] ? globalXpTable[nivel] : (nivel * 500); 
             const porcentagem = Math.min((xpAtual / xpNecessario) * 100, 100);
             document.getElementById('level-display').innerText = "Nível " + nivel;
             document.getElementById('xp-text-display').innerText = `${xpAtual} / ${xpNecessario} XP`;
             document.getElementById('xp-bar').style.width = porcentagem + "%";
+
+            // RENDERIZAR ELEMENTOS E KEKKEI NO DASHBOARD
+            renderizarIcones(dados.elementos || [], 'dash-elementos', ELEMENTOS_ICONS, 'Naturezas de Chakra');
+            renderizarIcones(dados.kekkei_genkai || [], 'dash-kekkei', KEKKEI_ICONS, 'Kekkei Genkai');
 
             // Stats
             const set = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
@@ -778,13 +867,11 @@
         // --- FEED (BLINDADO) ---
         window.handleImageUpload = async (e) => { if(e.target.files[0]) { try { currentImageBase64 = await comprimirImagem(e.target.files[0]); document.getElementById('preview-image').src = currentImageBase64; document.getElementById('preview-container').style.display='block'; } catch(e){alert("Erro imagem");} } };
         window.removeImage = () => { document.getElementById('imageInput').value=''; currentImageBase64=null; document.getElementById('preview-container').style.display='none'; };
-        
         window.publicarPost = async () => {
             const t = document.getElementById('postInput').value; if(!t.trim() && !currentImageBase64) return alert("Escreva algo!");
             const btn = document.querySelector('.btn-post'); btn.innerText="..."; btn.disabled=true;
             try { await addDoc(collection(db, "posts"), { uid: auth.currentUser.uid, autor: currentUserData.apelido || "Ninja", autorAvatar: currentUserData.avatar, conteudo: t, imagem: currentImageBase64, data: serverTimestamp(), likes: [], savedBy: [], comments: [] }); document.getElementById('postInput').value=''; removeImage(); } catch(e) { alert("Erro."); } finally { btn.innerText="Publicar"; btn.disabled=false; }
         };
-
         window.renderFeed = (f) => {
             const c = document.getElementById('feed-container'); if(!c) return;
             
@@ -869,6 +956,10 @@
                 document.getElementById('profile-modal-char').innerText = u.apelido || "";
                 document.getElementById('profile-modal-img').src = u.avatar||IMG_PADRAO;
                 
+                // RENDERIZAR ELEMENTOS NO PERFIL
+                renderizarIcones(u.elementos || [], 'profile-elementos-container', ELEMENTOS_ICONS, 'Naturezas de Chakra');
+                renderizarIcones(u.kekkei_genkai || [], 'profile-kekkei-container', KEKKEI_ICONS, 'Kekkei Genkai');
+                
                 // Injetar HTML de stats no modal
                 const statsContainer = document.getElementById('other-profile-stats');
                 statsContainer.innerHTML = `
@@ -914,11 +1005,8 @@
         function renderRank(c,t,l,f) { const s=[...l].sort((a,b)=>(b[f]||0)-(a[f]||0)).slice(0,5); let h=`<div class="ranking-col"><h3>${t}</h3><table class="ranking-table">`; s.forEach((u,i)=>h+=`<tr><td>${i+1}. ${u.nome}</td><td>${formatarNum(u[f])}</td></tr>`); h+='</table></div>'; c.innerHTML+=h; }
 
         window.editarHistoria = async () => { const n=prompt("Texto:",currentUserData.historiaTexto||""); if(n){ const i=prompt("Imagem:",currentUserData.historiaImagem||""); updateDoc(doc(db,"users",auth.currentUser.uid),{historiaTexto:n,historiaImagem:i}).then(reloadData); } }
-        async function carregarFrases() { const c = document.getElementById('frases-list-container'); onSnapshot(query(collection(db, "frases"), orderBy("data", "desc")), (s) => { c.innerHTML=''; s.forEach(d=>{ const f=d.data(); const k=document.createElement('div'); k.className='frase-item'; const menu = f.uid === auth.currentUser.uid ? `<div class="options-menu-container"><div class="options-btn" onclick="toggleFraseMenu(this); event.stopPropagation();">...</div><div class="options-dropdown"><div class="options-item" onclick="editarFrase('${d.id}','${f.texto}');event.stopPropagation()">Editar</div><div class="options-item danger" onclick="deletarFrase('${d.id}');event.stopPropagation()">Excluir</div></div></div>` : ''; k.onclick=()=>copiarFrase(f.texto); k.innerHTML=`<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor}</div>${menu}`; c.appendChild(k); }); }); }
-        window.toggleFraseMenu = (el) => { const dropdown = el.nextElementSibling; document.querySelectorAll('.options-dropdown').forEach(d => { if(d !== dropdown) d.classList.remove('active'); }); dropdown.classList.toggle('active'); };
+        async function carregarFrases() { const c = document.getElementById('frases-list-container'); onSnapshot(query(collection(db, "frases"), orderBy("data", "desc")), (s) => { c.innerHTML=''; s.forEach(d=>{ const f=d.data(); const k=document.createElement('div'); k.className='frase-item'; k.onclick=()=>copiarFrase(f.texto); k.innerHTML=`<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor}</div>`; c.appendChild(k); }); }); }
         window.adicionarFrase = async () => { const t=document.getElementById('novaFraseInput').value; if(t) await addDoc(collection(db,"frases"),{texto:t,autor:currentUserData.nome,uid:auth.currentUser.uid,data:serverTimestamp()}); document.getElementById('novaFraseInput').value=''; }
-        window.editarFrase = async (id, oldText) => { const n = prompt("Editar:", oldText); if(n) await updateDoc(doc(db, "frases", id), { texto: n }); };
-        window.deletarFrase = async (id) => { if(confirm("Excluir?")) await deleteDoc(doc(db, "frases", id)); };
         window.copiarFrase = (t) => { navigator.clipboard.writeText(t).then(() => { const f=document.getElementById('copyFeedback'); f.style.display='block'; setTimeout(()=>f.style.display='none',2000); }); };
 
         async function carregarPainelAdmin() { const c = document.getElementById('admin-missoes-grid'); c.innerHTML='Carregando...'; const s = await getDocs(collection(db, "users")); c.innerHTML=''; s.forEach(u=>{ const d=u.data(), m=d.statusMissoes||{}; for(const [mid,st] of Object.entries(m)){ if(st==='em_andamento'){ const k=document.createElement('div'); k.className='card'; k.innerHTML=`<h4>${d.nome}</h4><p>${mid}</p><button class="mission-btn-collect" onclick="aprovarMissao('${u.id}','${mid}')">Aprovar</button>`; c.appendChild(k); } } }); }
