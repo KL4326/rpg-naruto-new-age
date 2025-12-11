@@ -317,7 +317,7 @@
                             <option value="Oto">Vila do Som (Oto)</option>
                             <option value="Kori">Vila do Gelo (Kori)</option>
                         </select>
-                        <h3 style="margin:15px 0 10px;">Estabelecimentos</h3>
+                         <h3 style="margin:15px 0 10px;">Estabelecimentos</h3>
                         <div class="shop-categories">
                             <button class="shop-cat-btn active" onclick="filtrarLojaPorTipo('mercado', this)">Mercado</button>
                             <button class="shop-cat-btn" onclick="filtrarLojaPorTipo('comida', this)">Restaurantes</button>
@@ -458,38 +458,7 @@
             <div class="profile-header"><div class="profile-avatar-large"><img src="" id="profile-modal-img"></div><h2 id="profile-modal-name" style="color:white;"></h2><p id="profile-modal-char" style="opacity:0.9;"></p></div>
             <div class="profile-body">
                 <div class="profile-section-title">Estatísticas</div>
-                <div class="profile-stats-grid">
-                    <div class="stats-divider">Geral</div>
-                    <div class="stat-card"><div class="stat-value" id="prof-nivel"></div><div class="stat-label">Nível</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-cargo"></div><div class="stat-label">Cargo</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-ryos"></div><div class="stat-label">Ryos</div></div>
-                    
-                    <div class="stats-divider">Batalha</div>
-                    <div class="stat-card"><div class="stat-value" id="prof-wins"></div><div class="stat-label">Vitórias</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-draws"></div><div class="stat-label">Empates</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-loses"></div><div class="stat-label">Derrotas</div></div>
-
-                    <div class="stats-divider">Inventário</div>
-                    <div class="stat-card"><div class="stat-value" id="prof-jutsus"></div><div class="stat-label">Jutsus</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-tools"></div><div class="stat-label">Ferramentas</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-items"></div><div class="stat-label">Itens</div></div>
-
-                    <div class="stats-divider">Vitalidade</div>
-                    <div class="stat-card"><div class="stat-value" id="prof-vida"></div><div class="stat-label">Vida</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-sanidade"></div><div class="stat-label">Sanidade</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-chakra"></div><div class="stat-label">Chakra</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-stamina"></div><div class="stat-label">Stamina</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-controle"></div><div class="stat-label">Controle Chakra</div></div>
-
-                    <div class="stats-divider">Atributos</div>
-                    <div class="stat-card"><div class="stat-value" id="prof-forca"></div><div class="stat-label">Força</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-defesa"></div><div class="stat-label">Defesa</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-constituicao"></div><div class="stat-label">Constituição</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-destreza"></div><div class="stat-label">Destreza</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-intelecto"></div><div class="stat-label">Intelecto</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-agilidade"></div><div class="stat-label">Agilidade</div></div>
-                    <div class="stat-card"><div class="stat-value" id="prof-velocidade"></div><div class="stat-label">Velocidade</div></div>
-                </div>
+                <div class="profile-stats-grid" id="other-profile-stats"></div>
             </div>
         </div>
     </div>
@@ -836,7 +805,7 @@
                     <div class="stat-card"><div class="stat-value">${u.loses||0}</div><div class="stat-label">Derrotas</div></div>
 
                     <div class="stats-divider">Inventário</div>
-                    <div class="stat-card"><div class="stat-value">${u.meusJutsus?.length||0}</div><div class="stat-label">Jutsus</div></div>
+                    <div class="stat-card"><div class="stat-value">${(u.meusJutsus||[]).length}</div><div class="stat-label">Jutsus</div></div>
                     
                     <div class="stats-divider">Vitalidade</div>
                     <div class="stat-card"><div class="stat-value">${u.vida||100}</div><div class="stat-label">Vida</div></div>
