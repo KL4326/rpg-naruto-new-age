@@ -317,7 +317,7 @@
                             <option value="Oto">Vila do Som (Oto)</option>
                             <option value="Kori">Vila do Gelo (Kori)</option>
                         </select>
-                         <h3 style="margin:15px 0 10px;">Estabelecimentos</h3>
+                        <h3 style="margin:15px 0 10px;">Estabelecimentos</h3>
                         <div class="shop-categories">
                             <button class="shop-cat-btn active" onclick="filtrarLojaPorTipo('mercado', this)">Mercado</button>
                             <button class="shop-cat-btn" onclick="filtrarLojaPorTipo('comida', this)">Restaurantes</button>
@@ -563,7 +563,7 @@
             // Stats
             const set = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
             set('dash-nivel', nivel); set('dash-cargo', dados.cargo||"Genin"); set('dash-ryos', formatarNum(dados.ryos));
-            set('dash-jutsus', dados.meusJutsus?.length||0); 
+            set('dash-jutsus', (dados.meusJutsus || []).length); 
             
             // Contagem Inventário
             let totalItems = 0, totalTools = 0;
