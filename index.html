@@ -488,11 +488,32 @@
 
         const IMG_PADRAO = "https://img.freepik.com/vetores-gratis/ilustracao-de-pergaminho-ninja-desenhada-a-mao_23-2151159846.jpg";
 
-        function calcularTempo(t) { if (!t) return "Agora"; const d = t.toDate(), n = new Date(), df = Math.floor((n - d) / 1000); if (df < 60) return "Agora"; if (df < 3600) return `Há ${Math.floor(df / 60)} min`; if (df < 86400) return `Há ${Math.floor(diff / 3600)} h`; return d.toLocaleDateString('pt-BR'); }
+        function calcularTempo(timestamp) {
+            if (!timestamp) return "Desconhecido";
+            let date;
+            if (typeof timestamp.toDate === 'function') {
+                date = timestamp.toDate();
+            } else if (timestamp instanceof Date) {
+                date = timestamp;
+            } else {
+                date = new Date(timestamp);
+            }
+            if (isNaN(date.getTime())) return "Erro na data";
+            
+            const now = new Date();
+            const diff = Math.floor((now - date) / 1000);
+            if (diff < 60) return "Agora";
+            if (diff < 3600) return `Há ${Math.floor(diff / 60)} min`;
+            if (diff < 86400) return `Há ${Math.floor(diff / 3600)} h`;
+            if (diff < 604800) return `Há ${Math.floor(diff / 86400)} dias`;
+            return date.toLocaleDateString('pt-BR');
+        }
+
         window.toggleMobileMenu = () => { document.querySelector('.sidebar').classList.toggle('mobile-active'); document.querySelector('.sidebar-overlay').classList.toggle('active'); };
         const btnLogin = document.getElementById('btnLogin');
         if(btnLogin) btnLogin.addEventListener('click', () => { const e = document.getElementById('emailInput').value, s = document.getElementById('passwordInput').value; if(!e || !s) return alert("Preencha tudo!"); btnLogin.innerText = "Carregando..."; signInWithEmailAndPassword(auth, e, s).catch((err) => { btnLogin.innerText = "Entrar"; alert(err.message); }); });
-        // ENTER LOGIN
+        
+        // ENTER LOGIN (CORRIGIDO E ADICIONADO)
         document.getElementById('passwordInput').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') document.getElementById('btnLogin').click();
         });
@@ -510,7 +531,7 @@
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     currentUserData = docSnap.data();
-                    if(!currentUserData.inventario) currentUserData.inventario = {}; // Garantir que existe
+                    if(!currentUserData.inventario) currentUserData.inventario = {}; 
                     atualizarInterface(currentUserData);
                     carregarTudo();
                 } else {
@@ -674,7 +695,9 @@
                 else if(Array.isArray(i.vila)) { if(i.vila.includes(vilaAtual) || i.vila.includes('Global')) vilaOk = true; }
                 else if(i.vila === vilaAtual) vilaOk = true;
 
-                if (lojaAtual !== 'geral' && i.tipo !== lojaAtual) return;
+                // CORREÇÃO: Filtro estrito para 'geral'
+                if (i.tipo !== lojaAtual) return;
+                
                 if (!vilaOk) return;
 
                 criarCardLoja('loja-itens-grid', i, d.id, 'item', (id, p, n) => comprarItem(id, p, n), (id, i) => verDetalhesItem(id, i));
@@ -752,41 +775,85 @@
         window.fecharToolModal = () => document.getElementById('toolModal').style.display='none';
         window.fecharItemModal = () => document.getElementById('itemModal').style.display='none';
 
-        // --- FEED ---
+        // --- FEED (BLINDADO) ---
         window.handleImageUpload = async (e) => { if(e.target.files[0]) { try { currentImageBase64 = await comprimirImagem(e.target.files[0]); document.getElementById('preview-image').src = currentImageBase64; document.getElementById('preview-container').style.display='block'; } catch(e){alert("Erro imagem");} } };
         window.removeImage = () => { document.getElementById('imageInput').value=''; currentImageBase64=null; document.getElementById('preview-container').style.display='none'; };
+        
         window.publicarPost = async () => {
             const t = document.getElementById('postInput').value; if(!t.trim() && !currentImageBase64) return alert("Escreva algo!");
             const btn = document.querySelector('.btn-post'); btn.innerText="..."; btn.disabled=true;
             try { await addDoc(collection(db, "posts"), { uid: auth.currentUser.uid, autor: currentUserData.apelido || "Ninja", autorAvatar: currentUserData.avatar, conteudo: t, imagem: currentImageBase64, data: serverTimestamp(), likes: [], savedBy: [], comments: [] }); document.getElementById('postInput').value=''; removeImage(); } catch(e) { alert("Erro."); } finally { btn.innerText="Publicar"; btn.disabled=false; }
         };
+
         window.renderFeed = (f) => {
             const c = document.getElementById('feed-container'); if(!c) return;
-            // TRY CATCH NA QUERY DO FEED
+            
             try {
                 onSnapshot(query(collection(db, "posts"), orderBy("data", "desc")), (s) => {
-                    c.innerHTML = ''; if(s.empty) { c.innerHTML = '<p style="text-align:center;">Nada aqui.</p>'; return; }
+                    c.innerHTML = ''; 
+                    if(s.empty) { c.innerHTML = '<p style="text-align:center;">Nada aqui.</p>'; return; }
+                    
                     s.forEach(d => {
-                        const p = d.data(); if(f==='saved' && !(p.savedBy||[]).includes(auth.currentUser.uid)) return;
-                        const isOwner = p.uid === auth.currentUser.uid;
-                        const menu = isOwner ? `<div class="post-menu-container"><div class="post-options-btn" onclick="this.nextElementSibling.classList.toggle('active')">...</div><div class="post-dropdown"><div class="dropdown-item danger" onclick="deletarPost('${d.id}')">Excluir</div></div></div>` : '';
-                        
-                        // PROTEÇÃO: Garante que likes/savedBy existam
-                        const likes = p.likes || [];
-                        const savedBy = p.savedBy || [];
-                        const comments = p.comments || [];
+                        // BLINDAGEM DE ERROS
+                        try {
+                            const p = d.data(); 
+                            const id = d.id;
+                            
+                            // Garante que as listas existam
+                            const likes = p.likes || [];
+                            const savedBy = p.savedBy || [];
+                            const comments = p.comments || [];
+                            
+                            if(f==='saved' && !savedBy.includes(auth.currentUser.uid)) return;
+                            
+                            const isOwner = p.uid === auth.currentUser.uid;
+                            const isLiked = likes.includes(auth.currentUser.uid);
+                            const isSaved = savedBy.includes(auth.currentUser.uid);
 
-                        const div = document.createElement('div'); div.className='post';
-                        div.innerHTML = `<div class="post-header"><div class="user-avatar-post"><img src="${p.autorAvatar||IMG_PADRAO}"></div><div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">${calcularTempo(p.data)}</span></div>${menu}</div><div class="post-content">${p.conteudo}</div>${p.imagem ? `<img src="${p.imagem}" class="post-image" onclick="verPost('${d.id}')">` : ''}<div class="post-actions"><button class="action-btn ${likes.includes(auth.currentUser.uid)?'liked':''}" onclick="toggleLike('${d.id}')"><i class="${likes.includes(auth.currentUser.uid)?'fa-solid':'fa-regular'} fa-heart"></i> ${likes.length}</button><button class="action-btn" onclick="verPost('${d.id}')"><i class="fa-regular fa-comment"></i> ${comments.length}</button><button class="action-btn ${savedBy.includes(auth.currentUser.uid)?'saved':''}" onclick="toggleSave('${d.id}')" style="margin-left:auto;"><i class="${savedBy.includes(auth.currentUser.uid)?'fa-solid':'fa-regular'} fa-bookmark"></i></button></div>`;
-                        c.appendChild(div);
+                            const menu = isOwner ? `<div class="post-menu-container"><div class="post-options-btn" onclick="this.nextElementSibling.classList.toggle('active')">...</div><div class="post-dropdown"><div class="dropdown-item danger" onclick="deletarPost('${id}')">Excluir</div></div></div>` : '';
+                            
+                            const div = document.createElement('div'); div.className='post';
+                            div.innerHTML = `
+                                <div class="post-header">
+                                    <div class="user-avatar-post"><img src="${p.autorAvatar||IMG_PADRAO}"></div>
+                                    <div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">${calcularTempo(p.data)}</span></div>
+                                    ${menu}
+                                </div>
+                                <div class="post-content">${p.conteudo}</div>
+                                ${p.imagem ? `<img src="${p.imagem}" class="post-image" onclick="verPost('${id}')">` : ''}
+                                <div class="post-actions">
+                                    <button class="action-btn ${isLiked?'liked':''}" onclick="toggleLike('${id}')">
+                                        <i class="${isLiked?'fa-solid':'fa-regular'} fa-heart"></i> ${likes.length}
+                                    </button>
+                                    <button class="action-btn" onclick="verPost('${id}')">
+                                        <i class="fa-regular fa-comment"></i> ${comments.length}
+                                    </button>
+                                    <button class="action-btn ${isSaved?'saved':''}" onclick="toggleSave('${id}')" style="margin-left:auto;">
+                                        <i class="${isSaved?'fa-solid':'fa-regular'} fa-bookmark"></i>
+                                    </button>
+                                </div>`;
+                            c.appendChild(div);
+                        } catch (innerError) {
+                            console.warn("Erro ao renderizar post específico:", innerError);
+                        }
                     });
-                }, (error) => { console.error("Erro Feed:", error); c.innerHTML = "<p>Erro ao carregar feed.</p>"; });
-            } catch (err) { console.error(err); }
+                }, (error) => { console.error("Erro Feed Snapshot:", error); c.innerHTML = "<p>Erro de conexão com o feed.</p>"; });
+            } catch (err) { console.error("Erro geral Feed:", err); }
         };
+
         window.deletarPost = async (id) => { if(confirm("Apagar?")) await deleteDoc(doc(db, "posts", id)); };
-        window.toggleLike = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().likes||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{likes:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{likes:arrayUnion(auth.currentUser.uid)}); };
-        window.toggleSave = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().savedBy||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{savedBy:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{savedBy:arrayUnion(auth.currentUser.uid)}); };
-        window.verPost = async (id) => { currentOpenPostId = id; const s = await getDoc(doc(db, "posts", id)), p = s.data(); document.getElementById('modalPostContent').innerHTML = p.imagem ? `<img src="${p.imagem}" style="width:100%;height:100%;object-fit:contain;">` : `<div style="padding:20px;">${p.conteudo}</div>`; document.getElementById('commentsList').innerHTML = (p.comments||[]).map(c=>`<div><b>${c.autor}</b>: ${c.texto}</div>`).join(''); document.getElementById('commentModal').style.display='flex'; };
+        window.toggleLike = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().likes || []; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{likes:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{likes:arrayUnion(auth.currentUser.uid)}); };
+        window.toggleSave = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().savedBy || []; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{savedBy:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{savedBy:arrayUnion(auth.currentUser.uid)}); };
+        
+        window.verPost = async (id) => { 
+            currentOpenPostId = id; 
+            const s = await getDoc(doc(db, "posts", id));
+            const p = s.data(); 
+            document.getElementById('modalPostContent').innerHTML = p.imagem ? `<img src="${p.imagem}" style="width:100%;height:100%;object-fit:contain;">` : `<div style="padding:20px;">${p.conteudo}</div>`; 
+            document.getElementById('commentsList').innerHTML = (p.comments || []).map(c=>`<div><b>${c.autor}</b>: ${c.texto}</div>`).join(''); 
+            document.getElementById('commentModal').style.display='flex'; 
+        };
+        
         window.submitComment = async () => { const t = document.getElementById('newCommentText').value; if(!t) return; await updateDoc(doc(db, "posts", currentOpenPostId), { comments: arrayUnion({ autor: currentUserData.nome, texto: t }) }); document.getElementById('newCommentText').value = ""; verPost(currentOpenPostId); };
         window.closeModal = () => document.getElementById('commentModal').style.display = 'none';
 
@@ -847,8 +914,11 @@
         function renderRank(c,t,l,f) { const s=[...l].sort((a,b)=>(b[f]||0)-(a[f]||0)).slice(0,5); let h=`<div class="ranking-col"><h3>${t}</h3><table class="ranking-table">`; s.forEach((u,i)=>h+=`<tr><td>${i+1}. ${u.nome}</td><td>${formatarNum(u[f])}</td></tr>`); h+='</table></div>'; c.innerHTML+=h; }
 
         window.editarHistoria = async () => { const n=prompt("Texto:",currentUserData.historiaTexto||""); if(n){ const i=prompt("Imagem:",currentUserData.historiaImagem||""); updateDoc(doc(db,"users",auth.currentUser.uid),{historiaTexto:n,historiaImagem:i}).then(reloadData); } }
-        async function carregarFrases() { const c = document.getElementById('frases-list-container'); onSnapshot(query(collection(db, "frases"), orderBy("data", "desc")), (s) => { c.innerHTML=''; s.forEach(d=>{ const f=d.data(); const k=document.createElement('div'); k.className='frase-item'; k.onclick=()=>copiarFrase(f.texto); k.innerHTML=`<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor}</div>`; c.appendChild(k); }); }); }
+        async function carregarFrases() { const c = document.getElementById('frases-list-container'); onSnapshot(query(collection(db, "frases"), orderBy("data", "desc")), (s) => { c.innerHTML=''; s.forEach(d=>{ const f=d.data(); const k=document.createElement('div'); k.className='frase-item'; const menu = f.uid === auth.currentUser.uid ? `<div class="options-menu-container"><div class="options-btn" onclick="toggleFraseMenu(this); event.stopPropagation();">...</div><div class="options-dropdown"><div class="options-item" onclick="editarFrase('${d.id}','${f.texto}');event.stopPropagation()">Editar</div><div class="options-item danger" onclick="deletarFrase('${d.id}');event.stopPropagation()">Excluir</div></div></div>` : ''; k.onclick=()=>copiarFrase(f.texto); k.innerHTML=`<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor}</div>${menu}`; c.appendChild(k); }); }); }
+        window.toggleFraseMenu = (el) => { const dropdown = el.nextElementSibling; document.querySelectorAll('.options-dropdown').forEach(d => { if(d !== dropdown) d.classList.remove('active'); }); dropdown.classList.toggle('active'); };
         window.adicionarFrase = async () => { const t=document.getElementById('novaFraseInput').value; if(t) await addDoc(collection(db,"frases"),{texto:t,autor:currentUserData.nome,uid:auth.currentUser.uid,data:serverTimestamp()}); document.getElementById('novaFraseInput').value=''; }
+        window.editarFrase = async (id, oldText) => { const n = prompt("Editar:", oldText); if(n) await updateDoc(doc(db, "frases", id), { texto: n }); };
+        window.deletarFrase = async (id) => { if(confirm("Excluir?")) await deleteDoc(doc(db, "frases", id)); };
         window.copiarFrase = (t) => { navigator.clipboard.writeText(t).then(() => { const f=document.getElementById('copyFeedback'); f.style.display='block'; setTimeout(()=>f.style.display='none',2000); }); };
 
         async function carregarPainelAdmin() { const c = document.getElementById('admin-missoes-grid'); c.innerHTML='Carregando...'; const s = await getDocs(collection(db, "users")); c.innerHTML=''; s.forEach(u=>{ const d=u.data(), m=d.statusMissoes||{}; for(const [mid,st] of Object.entries(m)){ if(st==='em_andamento'){ const k=document.createElement('div'); k.className='card'; k.innerHTML=`<h4>${d.nome}</h4><p>${mid}</p><button class="mission-btn-collect" onclick="aprovarMissao('${u.id}','${mid}')">Aprovar</button>`; c.appendChild(k); } } }); }
