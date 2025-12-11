@@ -458,7 +458,38 @@
             <div class="profile-header"><div class="profile-avatar-large"><img src="" id="profile-modal-img"></div><h2 id="profile-modal-name" style="color:white;"></h2><p id="profile-modal-char" style="opacity:0.9;"></p></div>
             <div class="profile-body">
                 <div class="profile-section-title">Estatísticas</div>
-                <div class="profile-stats-grid" id="other-profile-stats"></div>
+                <div class="profile-stats-grid">
+                    <div class="stats-divider">Geral</div>
+                    <div class="stat-card"><div class="stat-value" id="prof-nivel"></div><div class="stat-label">Nível</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-cargo"></div><div class="stat-label">Cargo</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-ryos"></div><div class="stat-label">Ryos</div></div>
+                    
+                    <div class="stats-divider">Batalha</div>
+                    <div class="stat-card"><div class="stat-value" id="prof-wins"></div><div class="stat-label">Vitórias</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-draws"></div><div class="stat-label">Empates</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-loses"></div><div class="stat-label">Derrotas</div></div>
+
+                    <div class="stats-divider">Inventário</div>
+                    <div class="stat-card"><div class="stat-value" id="prof-jutsus"></div><div class="stat-label">Jutsus</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-tools"></div><div class="stat-label">Ferramentas</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-items"></div><div class="stat-label">Itens</div></div>
+
+                    <div class="stats-divider">Vitalidade</div>
+                    <div class="stat-card"><div class="stat-value" id="prof-vida"></div><div class="stat-label">Vida</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-sanidade"></div><div class="stat-label">Sanidade</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-chakra"></div><div class="stat-label">Chakra</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-stamina"></div><div class="stat-label">Stamina</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-controle"></div><div class="stat-label">Controle Chakra</div></div>
+
+                    <div class="stats-divider">Atributos</div>
+                    <div class="stat-card"><div class="stat-value" id="prof-forca"></div><div class="stat-label">Força</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-defesa"></div><div class="stat-label">Defesa</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-constituicao"></div><div class="stat-label">Constituição</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-destreza"></div><div class="stat-label">Destreza</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-intelecto"></div><div class="stat-label">Intelecto</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-agilidade"></div><div class="stat-label">Agilidade</div></div>
+                    <div class="stat-card"><div class="stat-value" id="prof-velocidade"></div><div class="stat-label">Velocidade</div></div>
+                </div>
             </div>
         </div>
     </div>
@@ -516,7 +547,12 @@
                     atualizarInterface(dadosPadrao);
                     carregarTudo();
                 }
-                try { window.renderFeed('all'); } catch(e) {}
+                
+                // --- INICIALIZAÇÃO CORRIGIDA DO FEED ---
+                setTimeout(() => {
+                    try { window.renderFeed('all'); } catch(e) { console.log("Erro ao iniciar feed:", e); }
+                }, 500); // Pequeno delay para garantir que o DOM existe
+                
             } else {
                 document.getElementById('login-screen').style.display = 'flex';
                 document.getElementById('app-container').style.display = 'none';
@@ -533,7 +569,7 @@
             carregarLoja(); carregarMeusJutsus(currentUserData.meusJutsus);
             carregarLojaFerramentas(); 
             carregarLojaItens(); 
-            carregarInventario(); // Novo
+            carregarInventario(); 
             carregarMissoes(); carregarRankings(); carregarFrases(); 
             if(auth.currentUser.email === "admin@rpgnaruto.com") carregarPainelAdmin();
         }
@@ -753,17 +789,20 @@
         };
         window.renderFeed = (f) => {
             const c = document.getElementById('feed-container'); if(!c) return;
-            onSnapshot(query(collection(db, "posts"), orderBy("data", "desc")), (s) => {
-                c.innerHTML = ''; if(s.empty) { c.innerHTML = '<p style="text-align:center;">Nada aqui.</p>'; return; }
-                s.forEach(d => {
-                    const p = d.data(); if(f==='saved' && !p.savedBy.includes(auth.currentUser.uid)) return;
-                    const isOwner = p.uid === auth.currentUser.uid;
-                    const menu = isOwner ? `<div class="post-menu-container"><div class="post-options-btn" onclick="this.nextElementSibling.classList.toggle('active')">...</div><div class="post-dropdown"><div class="dropdown-item danger" onclick="deletarPost('${d.id}')">Excluir</div></div></div>` : '';
-                    const div = document.createElement('div'); div.className='post';
-                    div.innerHTML = `<div class="post-header"><div class="user-avatar-post"><img src="${p.autorAvatar||IMG_PADRAO}"></div><div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">${calcularTempo(p.data)}</span></div>${menu}</div><div class="post-content">${p.conteudo}</div>${p.imagem ? `<img src="${p.imagem}" class="post-image" onclick="verPost('${d.id}')">` : ''}<div class="post-actions"><button class="action-btn ${p.likes.includes(auth.currentUser.uid)?'liked':''}" onclick="toggleLike('${d.id}')"><i class="${p.likes.includes(auth.currentUser.uid)?'fa-solid':'fa-regular'} fa-heart"></i> ${p.likes.length}</button><button class="action-btn" onclick="verPost('${d.id}')"><i class="fa-regular fa-comment"></i> ${p.comments.length}</button><button class="action-btn ${p.savedBy.includes(auth.currentUser.uid)?'saved':''}" onclick="toggleSave('${d.id}')" style="margin-left:auto;"><i class="${p.savedBy.includes(auth.currentUser.uid)?'fa-solid':'fa-regular'} fa-bookmark"></i></button></div>`;
-                    c.appendChild(div);
-                });
-            });
+            // TRY CATCH NA QUERY DO FEED
+            try {
+                onSnapshot(query(collection(db, "posts"), orderBy("data", "desc")), (s) => {
+                    c.innerHTML = ''; if(s.empty) { c.innerHTML = '<p style="text-align:center;">Nada aqui.</p>'; return; }
+                    s.forEach(d => {
+                        const p = d.data(); if(f==='saved' && !p.savedBy.includes(auth.currentUser.uid)) return;
+                        const isOwner = p.uid === auth.currentUser.uid;
+                        const menu = isOwner ? `<div class="post-menu-container"><div class="post-options-btn" onclick="this.nextElementSibling.classList.toggle('active')">...</div><div class="post-dropdown"><div class="dropdown-item danger" onclick="deletarPost('${d.id}')">Excluir</div></div></div>` : '';
+                        const div = document.createElement('div'); div.className='post';
+                        div.innerHTML = `<div class="post-header"><div class="user-avatar-post"><img src="${p.autorAvatar||IMG_PADRAO}"></div><div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">${calcularTempo(p.data)}</span></div>${menu}</div><div class="post-content">${p.conteudo}</div>${p.imagem ? `<img src="${p.imagem}" class="post-image" onclick="verPost('${d.id}')">` : ''}<div class="post-actions"><button class="action-btn ${p.likes.includes(auth.currentUser.uid)?'liked':''}" onclick="toggleLike('${d.id}')"><i class="${p.likes.includes(auth.currentUser.uid)?'fa-solid':'fa-regular'} fa-heart"></i> ${p.likes.length}</button><button class="action-btn" onclick="verPost('${d.id}')"><i class="fa-regular fa-comment"></i> ${p.comments.length}</button><button class="action-btn ${p.savedBy.includes(auth.currentUser.uid)?'saved':''}" onclick="toggleSave('${d.id}')" style="margin-left:auto;"><i class="${p.savedBy.includes(auth.currentUser.uid)?'fa-solid':'fa-regular'} fa-bookmark"></i></button></div>`;
+                        c.appendChild(div);
+                    });
+                }, (error) => { console.error("Erro Feed:", error); c.innerHTML = "<p>Erro ao carregar feed.</p>"; });
+            } catch (err) { console.error(err); }
         };
         window.deletarPost = async (id) => { if(confirm("Apagar?")) await deleteDoc(doc(db, "posts", id)); };
         window.toggleLike = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().likes; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{likes:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{likes:arrayUnion(auth.currentUser.uid)}); };
@@ -774,6 +813,8 @@
 
         // --- CARREGADORES SECUNDÁRIOS ---
         async function carregarPersonagens() { const c = document.getElementById('directory-grid'); if(!c) return; const s = await getDocs(collection(db, "users")); c.innerHTML = ''; s.forEach(d => { const u = d.data(); const k = document.createElement('div'); k.className = 'card'; k.onclick = () => window.verPerfil(d.id); k.innerHTML = `<div style="width:60px; height:60px; border-radius:50%; overflow:hidden; margin:0 auto 10px;"><img src="${u.avatar||IMG_PADRAO}" style="width:100%; height:100%; object-fit:cover;"></div><h4>${u.nome}</h4><p>${u.apelido||""}</p>`; c.appendChild(k); }); }
+        
+        // --- FUNÇÃO VER PERFIL DE OUTROS CORRIGIDA ---
         window.verPerfil = async (uid) => {
             const s = await getDoc(doc(db, "users", uid));
             if(s.exists()) {
@@ -782,27 +823,34 @@
                 document.getElementById('profile-modal-char').innerText = u.apelido || "";
                 document.getElementById('profile-modal-img').src = u.avatar||IMG_PADRAO;
                 
-                const set = (id, v) => { if(document.getElementById(id)) document.getElementById(id).innerText = v; };
-                // Stats
-                set('prof-nivel', u.nivel||1); set('prof-cargo', u.cargo||"Genin"); set('prof-ryos', formatarNum(u.ryos));
-                set('prof-jutsus', u.meusJutsus?.length||0); set('prof-wins', u.vitorias||0); set('prof-loses', u.derrotas||0); set('prof-draws', u.empates||0);
-                
-                // Atributos
-                set('prof-vida', u.vida||100); set('prof-sanidade', u.sanidade||100); set('prof-chakra', u.chakra||100); set('prof-stamina', u.stamina||100); set('prof-controle', u.controle_chakra||"Baixo");
-                set('prof-forca', u.forca||10); set('prof-defesa', u.defesa||10); set('prof-constituicao', u.constituicao||10); set('prof-destreza', u.destreza||10);
-                set('prof-intelecto', u.intelecto||10); set('prof-agilidade', u.agilidade||10); set('prof-velocidade', u.velocidade||10);
-                
-                // Contar itens (apenas quantidade total para perfil alheio)
-                let tTools = 0, tItems = 0;
-                if(u.inventario) {
-                    for(let k in u.inventario) {
-                        if(globalItensMap[k]) {
-                            if(globalItensMap[k].type === 'tool') tTools += u.inventario[k];
-                            else tItems += u.inventario[k];
-                        }
-                    }
-                }
-                set('prof-tools', tTools); set('prof-items', tItems);
+                // Injetar HTML de stats no modal
+                const statsContainer = document.getElementById('other-profile-stats');
+                statsContainer.innerHTML = `
+                    <div class="stats-divider">Geral</div>
+                    <div class="stat-card"><div class="stat-value">${u.nivel||1}</div><div class="stat-label">Nível</div></div>
+                    <div class="stat-card"><div class="stat-value">${u.cargo||'Genin'}</div><div class="stat-label">Cargo</div></div>
+                    <div class="stat-card"><div class="stat-value">${formatarNum(u.ryos)}</div><div class="stat-label">Ryos</div></div>
+                    
+                    <div class="stats-divider">Batalha</div>
+                    <div class="stat-card"><div class="stat-value">${u.vitorias||0}</div><div class="stat-label">Vitórias</div></div>
+                    <div class="stat-card"><div class="stat-value">${u.loses||0}</div><div class="stat-label">Derrotas</div></div>
+
+                    <div class="stats-divider">Inventário</div>
+                    <div class="stat-card"><div class="stat-value">${u.meusJutsus?.length||0}</div><div class="stat-label">Jutsus</div></div>
+                    
+                    <div class="stats-divider">Vitalidade</div>
+                    <div class="stat-card"><div class="stat-value">${u.vida||100}</div><div class="stat-label">Vida</div></div>
+                    <div class="stat-card"><div class="stat-value">${u.chakra||100}</div><div class="stat-label">Chakra</div></div>
+                    <div class="stat-card"><div class="stat-value">${u.stamina||100}</div><div class="stat-label">Stamina</div></div>
+                    <div class="stat-card"><div class="stat-value">${u.controle_chakra||"Baixo"}</div><div class="stat-label">Controle</div></div>
+
+                    <div class="stats-divider">Atributos</div>
+                    <div class="stat-card"><div class="stat-value">${u.forca||10}</div><div class="stat-label">Força</div></div>
+                    <div class="stat-card"><div class="stat-value">${u.defesa||10}</div><div class="stat-label">Defesa</div></div>
+                    <div class="stat-card"><div class="stat-value">${u.agilidade||10}</div><div class="stat-label">Agilidade</div></div>
+                    <div class="stat-card"><div class="stat-value">${u.velocidade||10}</div><div class="stat-label">Velocidade</div></div>
+                    <div class="stat-card"><div class="stat-value">${u.intelecto||10}</div><div class="stat-label">Intelecto</div></div>
+                `;
 
                 document.getElementById('profileModal').style.display = 'flex';
             }
