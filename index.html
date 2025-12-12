@@ -68,13 +68,53 @@
 
         /* CARDS E GRIDS */
         .bucket-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; margin-top: 20px; }
-        .card { background: var(--card-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); text-align: center; cursor: pointer; transition: 0.2s; overflow: hidden; position: relative; }
+        .card { background: var(--card-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); text-align: center; cursor: pointer; transition: 0.2s; overflow: hidden; position: relative; display: flex; flex-direction: column; }
         .card:hover { transform: translateY(-2px); border-color: var(--primary-color); }
         .card-img-top { width: 100%; height: 120px; object-fit: cover; border-radius: 4px; margin-bottom: 8px; border: 1px solid #eee; }
+        .card h4 { margin-bottom: 5px; font-size: 1rem; }
+        .card small { display: block; margin-bottom: 8px; color: #777; }
         
-        .buy-btn { background-color: var(--primary-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; margin-top: 8px; font-size: 1rem; cursor: pointer; }
+        .buy-btn { background-color: var(--primary-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; margin-top: auto; font-size: 1rem; cursor: pointer; transition: background 0.2s; }
         .buy-btn:hover { background-color: #e05200; }
         
+        /* NOVO: CAIXA QUADRADA DE QUANTIDADE */
+        .qtd-container-square {
+            display: flex;
+            justify-content: center;
+            margin: 10px 0 8px 0;
+            width: 100%;
+        }
+        .qtd-input-square {
+            width: 45px;
+            height: 45px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-color);
+            color: var(--text-color);
+            padding: 0;
+            -moz-appearance: textfield; /* Remove setas no Firefox */
+        }
+         /* Remove setas no Chrome/Safari/Edge */
+        .qtd-input-square::-webkit-outer-spin-button,
+        .qtd-input-square::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .qtd-input-square:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+        .price-tag {
+            color: var(--primary-color);
+            font-weight: bold;
+            font-size: 1.05rem;
+            margin-bottom: 5px;
+        }
+
+
         /* TAG DE QUANTIDADE (INVENTÁRIO) */
         .qtd-badge { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.3); }
         .inventory-controls { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 8px; background: rgba(0,0,0,0.03); padding: 5px; border-radius: 20px; }
@@ -733,24 +773,47 @@
         }
         function criarCardLoja(containerId, dados, id, tipo, buyFn, clickFn) {
             const c = document.getElementById(containerId); if(!c) return;
-            const div = document.createElement('div'); div.className = 'card'; div.onclick = (e) => { if(!e.target.classList.contains('buy-btn')) clickFn(id, dados); };
+            const div = document.createElement('div'); div.className = 'card'; 
+            div.onclick = (e) => { 
+                // Evita abrir modal se clicar no input ou no botão de compra
+                if(!e.target.classList.contains('buy-btn') && !e.target.classList.contains('qtd-input-square')) {
+                    clickFn(id, dados);
+                }
+            };
+            
             let sub = "";
             if(tipo === 'jutsu') sub = "Rank " + dados.rank; else if(tipo === 'ferramenta') sub = dados.dano || "Ferramenta"; else sub = dados.efeito || "Item";
             
-            // CONTROLE DE QUANTIDADE NA LOJA (EXCETO JUTSU)
             let buyControlHTML = "";
+            let priceHTML = `<p id="price-${id}" class="price-tag">${formatarNum(dados.preco)} Ryos</p>`;
+
             if(tipo !== 'jutsu') {
+                // LAYOUT NOVO: Preço -> Caixa Quadrada -> Botão Largo embaixo
                 buyControlHTML = `
-                    <div class="buy-controls">
-                        <input type="number" id="qtd-${id}" class="qtd-input" value="1" min="1" onclick="event.stopPropagation()">
-                        <button class="buy-btn" onclick="event.stopPropagation(); comprarMultiplos('${id}', ${dados.preco}, '${dados.nome}', '${tipo}', 'qtd-${id}')">Comprar</button>
-                    </div>`;
+                    <div class="qtd-container-square">
+                        <input type="number" id="qtd-${id}" class="qtd-input-square" value="1" min="1" onclick="event.stopPropagation()">
+                    </div>
+                    <button id="btn-buy-${id}" class="buy-btn" onclick="event.stopPropagation(); comprarMultiplos('${id}', ${dados.preco}, '${dados.nome}', '${tipo}', 'qtd-${id}')">Comprar x1</button>`;
             } else {
                 buyControlHTML = `<button class="buy-btn" onclick="event.stopPropagation(); comprarJutsu('${id}', ${dados.preco}, '${dados.nome}')">Comprar</button>`;
             }
 
-            div.innerHTML = `<img src="${dados.imagem||IMG_PADRAO}" class="card-img-top"><h4>${dados.nome}</h4><small>${sub}</small><p style="color:var(--primary-color); font-weight:bold;">${formatarNum(dados.preco)} Ryos</p>${buyControlHTML}`;
+            div.innerHTML = `<img src="${dados.imagem||IMG_PADRAO}" class="card-img-top"><h4>${dados.nome}</h4><small>${sub}</small>${priceHTML}${buyControlHTML}`;
             c.appendChild(div);
+
+            // Adiciona listener para atualizar o botão e o preço dinamicamente
+            if(tipo !== 'jutsu') {
+                const inputQtd = document.getElementById(`qtd-${id}`);
+                const btnBuy = document.getElementById(`btn-buy-${id}`);
+                const priceTag = document.getElementById(`price-${id}`);
+                inputQtd.addEventListener('input', (e) => {
+                    let qtd = parseInt(e.target.value);
+                    if(isNaN(qtd) || qtd < 1) { qtd = 1; }
+                    const total = dados.preco * qtd;
+                    btnBuy.innerText = `Comprar x${qtd}`;
+                    priceTag.innerText = `${formatarNum(total)} Ryos`;
+                });
+            }
         }
 
         // --- LOADERS ---
@@ -768,7 +831,7 @@
         async function carregarLojaFerramentas() {
             const c = document.getElementById('loja-ferramentas-grid'); if(!c) return; c.innerHTML = '';
             const snap = await getDocs(collection(db, "ferramentas"));
-            snap.forEach(d => { criarCardLoja('loja-ferramentas-grid', d.data(), d.id, 'ferramenta'); });
+            snap.forEach(d => { criarCardLoja('loja-ferramentas-grid', d.data(), d.id, 'ferramenta', null, (id, i) => verDetalhesFerramenta(id, i)); });
         }
         async function carregarLojaItens() {
             const c = document.getElementById('loja-itens-grid'); if(!c) return; c.innerHTML = '';
@@ -786,7 +849,7 @@
                 
                 if (!vilaOk) return;
 
-                criarCardLoja('loja-itens-grid', i, d.id, 'item');
+                criarCardLoja('loja-itens-grid', i, d.id, 'item', null, (id, i) => verDetalhesItem(id, i));
             });
         }
 
@@ -837,6 +900,7 @@
             if(isNaN(qtd) || qtd < 1) return alert("Quantidade inválida!");
             const precoTotal = precoUnit * qtd;
             
+            // Confirmação com o preço total atualizado
             if(!confirm(`Comprar ${qtd}x ${nome} por ${formatarNum(precoTotal)} Ryos?`)) return;
             
             if(currentUserData.ryos < precoTotal) return alert("Sem Ryos suficientes!");
