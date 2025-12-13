@@ -77,43 +77,12 @@
         .buy-btn { background-color: var(--primary-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; margin-top: auto; font-size: 1rem; cursor: pointer; transition: background 0.2s; }
         .buy-btn:hover { background-color: #e05200; }
         
-        /* NOVO: CAIXA QUADRADA DE QUANTIDADE */
-        .qtd-container-square {
-            display: flex;
-            justify-content: center;
-            margin: 10px 0 8px 0;
-            width: 100%;
-        }
-        .qtd-input-square {
-            width: 45px;
-            height: 45px;
-            text-align: center;
-            font-size: 1.2rem;
-            font-weight: bold;
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            background: var(--bg-color);
-            color: var(--text-color);
-            padding: 0;
-            -moz-appearance: textfield; /* Remove setas no Firefox */
-        }
-         /* Remove setas no Chrome/Safari/Edge */
-        .qtd-input-square::-webkit-outer-spin-button,
-        .qtd-input-square::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        .qtd-input-square:focus {
-            border-color: var(--primary-color);
-            outline: none;
-        }
-        .price-tag {
-            color: var(--primary-color);
-            font-weight: bold;
-            font-size: 1.05rem;
-            margin-bottom: 5px;
-        }
-
+        /* CAIXA QUADRADA DE QUANTIDADE */
+        .qtd-container-square { display: flex; justify-content: center; margin: 10px 0 8px 0; width: 100%; }
+        .qtd-input-square { width: 45px; height: 45px; text-align: center; font-size: 1.2rem; font-weight: bold; border: 2px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-color); padding: 0; -moz-appearance: textfield; }
+        .qtd-input-square::-webkit-outer-spin-button, .qtd-input-square::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .qtd-input-square:focus { border-color: var(--primary-color); outline: none; }
+        .price-tag { color: var(--primary-color); font-weight: bold; font-size: 1.05rem; margin-bottom: 5px; }
 
         /* TAG DE QUANTIDADE (INVENTÁRIO) */
         .qtd-badge { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.3); }
@@ -879,7 +848,6 @@
         // --- CONSUMO ---
         window.consumirItem = async (id, nome) => {
              if(!confirm(`Usar/Descartar 1x ${nome}?`)) return;
-             // Decrementa 1
              await updateDoc(doc(db, "users", auth.currentUser.uid), {
                  [`inventario.${id}`]: increment(-1)
              });
@@ -900,7 +868,6 @@
             if(isNaN(qtd) || qtd < 1) return alert("Quantidade inválida!");
             const precoTotal = precoUnit * qtd;
             
-            // Confirmação com o preço total atualizado
             if(!confirm(`Comprar ${qtd}x ${nome} por ${formatarNum(precoTotal)} Ryos?`)) return;
             
             if(currentUserData.ryos < precoTotal) return alert("Sem Ryos suficientes!");
@@ -943,7 +910,7 @@
         window.fecharToolModal = () => document.getElementById('toolModal').style.display='none';
         window.fecharItemModal = () => document.getElementById('itemModal').style.display='none';
 
-        // --- FEED (BLINDADO) ---
+        // --- FEED ---
         window.handleImageUpload = async (e) => { if(e.target.files[0]) { try { currentImageBase64 = await comprimirImagem(e.target.files[0]); document.getElementById('preview-image').src = currentImageBase64; document.getElementById('preview-container').style.display='block'; } catch(e){alert("Erro imagem");} } };
         window.removeImage = () => { document.getElementById('imageInput').value=''; currentImageBase64=null; document.getElementById('preview-container').style.display='none'; };
         window.publicarPost = async () => {
@@ -953,73 +920,30 @@
         };
         window.renderFeed = (f) => {
             const c = document.getElementById('feed-container'); if(!c) return;
-            
             try {
                 onSnapshot(query(collection(db, "posts"), orderBy("data", "desc")), (s) => {
-                    c.innerHTML = ''; 
-                    if(s.empty) { c.innerHTML = '<p style="text-align:center;">Nada aqui.</p>'; return; }
-                    
+                    c.innerHTML = ''; if(s.empty) { c.innerHTML = '<p style="text-align:center;">Nada aqui.</p>'; return; }
                     s.forEach(d => {
-                        // BLINDAGEM DE ERROS
-                        try {
-                            const p = d.data(); 
-                            const id = d.id;
-                            
-                            // Garante que as listas existam
-                            const likes = p.likes || [];
-                            const savedBy = p.savedBy || [];
-                            const comments = p.comments || [];
-                            
-                            if(f==='saved' && !savedBy.includes(auth.currentUser.uid)) return;
-                            
-                            const isOwner = p.uid === auth.currentUser.uid;
-                            const isLiked = likes.includes(auth.currentUser.uid);
-                            const isSaved = savedBy.includes(auth.currentUser.uid);
+                        const p = d.data(); if(f==='saved' && !(p.savedBy||[]).includes(auth.currentUser.uid)) return;
+                        const isOwner = p.uid === auth.currentUser.uid;
+                        const likes = p.likes || [];
+                        const savedBy = p.savedBy || [];
+                        const comments = p.comments || [];
+                        const isLiked = likes.includes(auth.currentUser.uid);
+                        const isSaved = savedBy.includes(auth.currentUser.uid);
 
-                            const menu = isOwner ? `<div class="post-menu-container"><div class="post-options-btn" onclick="this.nextElementSibling.classList.toggle('active')">...</div><div class="post-dropdown"><div class="dropdown-item danger" onclick="deletarPost('${id}')">Excluir</div></div></div>` : '';
-                            
-                            const div = document.createElement('div'); div.className='post';
-                            div.innerHTML = `
-                                <div class="post-header">
-                                    <div class="user-avatar-post"><img src="${p.autorAvatar||IMG_PADRAO}"></div>
-                                    <div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">${calcularTempo(p.data)}</span></div>
-                                    ${menu}
-                                </div>
-                                <div class="post-content">${p.conteudo}</div>
-                                ${p.imagem ? `<img src="${p.imagem}" class="post-image" onclick="verPost('${id}')">` : ''}
-                                <div class="post-actions">
-                                    <button class="action-btn ${isLiked?'liked':''}" onclick="toggleLike('${id}')">
-                                        <i class="${isLiked?'fa-solid':'fa-regular'} fa-heart"></i> ${likes.length}
-                                    </button>
-                                    <button class="action-btn" onclick="verPost('${id}')">
-                                        <i class="fa-regular fa-comment"></i> ${comments.length}
-                                    </button>
-                                    <button class="action-btn ${isSaved?'saved':''}" onclick="toggleSave('${id}')" style="margin-left:auto;">
-                                        <i class="${isSaved?'fa-solid':'fa-regular'} fa-bookmark"></i>
-                                    </button>
-                                </div>`;
-                            c.appendChild(div);
-                        } catch (innerError) {
-                            console.warn("Erro ao renderizar post específico:", innerError);
-                        }
+                        const menu = isOwner ? `<div class="post-menu-container"><div class="post-options-btn" onclick="this.nextElementSibling.classList.toggle('active')">...</div><div class="post-dropdown"><div class="dropdown-item danger" onclick="deletarPost('${d.id}')">Excluir</div></div></div>` : '';
+                        const div = document.createElement('div'); div.className='post';
+                        div.innerHTML = `<div class="post-header"><div class="user-avatar-post"><img src="${p.autorAvatar||IMG_PADRAO}"></div><div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">${calcularTempo(p.data)}</span></div>${menu}</div><div class="post-content">${p.conteudo}</div>${p.imagem ? `<img src="${p.imagem}" class="post-image" onclick="verPost('${d.id}')">` : ''}<div class="post-actions"><button class="action-btn ${isLiked?'liked':''}" onclick="toggleLike('${d.id}')"><i class="${isLiked?'fa-solid':'fa-regular'} fa-heart"></i> ${likes.length}</button><button class="action-btn" onclick="verPost('${d.id}')"><i class="fa-regular fa-comment"></i> ${comments.length}</button><button class="action-btn ${isSaved?'saved':''}" onclick="toggleSave('${d.id}')" style="margin-left:auto;"><i class="${isSaved?'fa-solid':'fa-regular'} fa-bookmark"></i></button></div>`;
+                        c.appendChild(div);
                     });
                 }, (error) => { console.error("Erro Feed Snapshot:", error); c.innerHTML = "<p>Erro de conexão com o feed.</p>"; });
             } catch (err) { console.error("Erro geral Feed:", err); }
         };
-
         window.deletarPost = async (id) => { if(confirm("Apagar?")) await deleteDoc(doc(db, "posts", id)); };
-        window.toggleLike = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().likes || []; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{likes:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{likes:arrayUnion(auth.currentUser.uid)}); };
-        window.toggleSave = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().savedBy || []; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{savedBy:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{savedBy:arrayUnion(auth.currentUser.uid)}); };
-        
-        window.verPost = async (id) => { 
-            currentOpenPostId = id; 
-            const s = await getDoc(doc(db, "posts", id));
-            const p = s.data(); 
-            document.getElementById('modalPostContent').innerHTML = p.imagem ? `<img src="${p.imagem}" style="width:100%;height:100%;object-fit:contain;">` : `<div style="padding:20px;">${p.conteudo}</div>`; 
-            document.getElementById('commentsList').innerHTML = (p.comments || []).map(c=>`<div><b>${c.autor}</b>: ${c.texto}</div>`).join(''); 
-            document.getElementById('commentModal').style.display='flex'; 
-        };
-        
+        window.toggleLike = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().likes||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{likes:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{likes:arrayUnion(auth.currentUser.uid)}); };
+        window.toggleSave = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().savedBy||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{savedBy:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{savedBy:arrayUnion(auth.currentUser.uid)}); };
+        window.verPost = async (id) => { currentOpenPostId = id; const s = await getDoc(doc(db, "posts", id)), p = s.data(); document.getElementById('modalPostContent').innerHTML = p.imagem ? `<img src="${p.imagem}" style="width:100%;height:100%;object-fit:contain;">` : `<div style="padding:20px;">${p.conteudo}</div>`; document.getElementById('commentsList').innerHTML = (p.comments||[]).map(c=>`<div><b>${c.autor}</b>: ${c.texto}</div>`).join(''); document.getElementById('commentModal').style.display='flex'; };
         window.submitComment = async () => { const t = document.getElementById('newCommentText').value; if(!t) return; await updateDoc(doc(db, "posts", currentOpenPostId), { comments: arrayUnion({ autor: currentUserData.nome, texto: t }) }); document.getElementById('newCommentText').value = ""; verPost(currentOpenPostId); };
         window.closeModal = () => document.getElementById('commentModal').style.display = 'none';
 
@@ -1035,11 +959,9 @@
                 document.getElementById('profile-modal-char').innerText = u.apelido || "";
                 document.getElementById('profile-modal-img').src = u.avatar||IMG_PADRAO;
                 
-                // RENDERIZAR ELEMENTOS NO PERFIL
                 renderizarIcones(u.elementos || [], 'profile-elementos-container', ELEMENTOS_ICONS, 'Naturezas de Chakra');
                 renderizarIcones(u.kekkei_genkai || [], 'profile-kekkei-container', KEKKEI_ICONS, 'Kekkei Genkai');
                 
-                // Injetar HTML de stats no modal
                 const statsContainer = document.getElementById('other-profile-stats');
                 statsContainer.innerHTML = `
                     <div class="stats-divider">Geral</div>
@@ -1080,7 +1002,32 @@
         window.iniciarMissao = async (id) => { await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusMissoes.${id}`]: 'em_andamento' }); alert("Iniciada!"); reloadData(); };
         window.coletarRecompensa = async (id, r, x) => { const u = currentUserData, nr = (u.ryos||0)+r, nx = (u.xp||0)+x; let lvl = u.nivel||1, req = globalXpTable[lvl] || (lvl*500); let upou = false; while(nx >= req) { nx -= req; lvl++; req = globalXpTable[lvl] || (lvl*500); upou = true; } await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: nr, xp: nx, nivel: lvl, [`statusMissoes.${id}`]: 'concluido' }); if(upou) alert("Level Up!"); else alert("Coletado!"); reloadData(); };
 
-        window.carregarRankings = async () => { const c = document.getElementById('ranking-container'); if(!c) return; const s = await getDocs(collection(db, "users")); let l=[]; s.forEach(d=>l.push(d.data())); c.innerHTML=''; renderRank(c,"Ryos",l,'ryos'); renderRank(c,"Nível",l,'nivel'); };
+        window.carregarRankings = async () => {
+            const c = document.getElementById('ranking-container');
+            if(!c) return;
+
+            try {
+                const s = await getDocs(collection(db, "users"));
+                let l = [];
+                s.forEach(d => l.push(d.data()));
+
+                c.innerHTML = ''; // Limpa o conteúdo
+
+                // Ranks Básicos
+                renderRank(c, "Nível", l, 'nivel');
+                renderRank(c, "Ryos (Dinheiro)", l, 'ryos');
+
+                // Ranks de Batalha (Os que sumiram)
+                renderRank(c, "Missões Rankeadas", l, 'pontos_rankeada');
+                renderRank(c, "Torneios Vencidos", l, 'vitorias_torneio');
+                renderRank(c, "Amistosos", l, 'pontos_amistoso');
+                renderRank(c, "Vitórias em Dupla", l, 'vitorias_dupla');
+                renderRank(c, "Guerra de Clãs", l, 'vitorias_cla');
+            } catch (e) {
+                c.innerHTML = '<p>Erro ao carregar rankings.</p>';
+                console.error(e);
+            }
+        };
         function renderRank(c,t,l,f) { const s=[...l].sort((a,b)=>(b[f]||0)-(a[f]||0)).slice(0,5); let h=`<div class="ranking-col"><h3>${t}</h3><table class="ranking-table">`; s.forEach((u,i)=>h+=`<tr><td>${i+1}. ${u.nome}</td><td>${formatarNum(u[f])}</td></tr>`); h+='</table></div>'; c.innerHTML+=h; }
 
         window.editarHistoria = async () => { const n=prompt("Texto:",currentUserData.historiaTexto||""); if(n){ const i=prompt("Imagem:",currentUserData.historiaImagem||""); updateDoc(doc(db,"users",auth.currentUser.uid),{historiaTexto:n,historiaImagem:i}).then(reloadData); } }
