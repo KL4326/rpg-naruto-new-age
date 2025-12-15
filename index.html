@@ -24,6 +24,12 @@
             --stat-stamina: #27ae60; 
             --stat-dano: #e74c3c;   
             --stat-buff: #3498db;   
+            
+            /* CORES BATALHA */
+            --hp-color: #e74c3c;
+            --sanidade-color: #3498db;
+            --stamina-color: #f1c40f;
+            --chakra-color: #2980b9;
         }
         body.dark-mode { --bg-color: #000000; --sidebar-bg: #000000; --text-color: #f5f5f5; --card-bg: #121212; --border-color: #363636; }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -106,8 +112,31 @@
         .elementos-container { flex: 1; min-width: 120px; background: var(--card-bg); border-radius: 10px; border: 1px solid var(--border-color); padding: 10px; text-align: center; }
         .elementos-title { font-size: 0.85rem; font-weight: bold; color: #777; margin-bottom: 8px; text-transform: uppercase; }
         .elementos-list { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
-        
         .element-icon { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color); padding: 2px; background: #fff; }
+
+        /* --- ESTILOS DA ABA DE BATALHA --- */
+        .battle-card { background: #1a1a1a; color: white; border-radius: 15px; padding: 20px; max-width: 600px; margin: 0 auto; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .battle-header-info { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; }
+        .battle-avatar { width: 100px; height: 100px; border-radius: 50%; border: 4px solid #333; object-fit: cover; }
+        .battle-toggles { display: flex; flex-direction: column; gap: 10px; }
+        .toggle-badge { background: #333; padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; color: #aaa; cursor: pointer; border: 1px solid #444; transition: 0.2s; text-align: center; }
+        .toggle-badge.active { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+        
+        .battle-stats-wrapper { display: flex; flex-direction: column; gap: 20px; }
+        .battle-row { display: flex; flex-direction: column; gap: 5px; }
+        .battle-row-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 1.1rem; }
+        .battle-controls { display: flex; justify-content: space-between; align-items: center; background: #252525; padding: 8px; border-radius: 8px; border: 1px solid #333; }
+        .battle-btn { background: #444; border: none; color: white; width: 35px; height: 35px; border-radius: 50%; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .battle-btn:hover { background: #666; }
+        .battle-val { font-size: 1.2rem; font-weight: bold; width: 80px; text-align: center; }
+        
+        .battle-bar-bg { width: 100%; height: 12px; background: #333; border-radius: 10px; overflow: hidden; margin-top: 5px; }
+        .battle-bar-fill { height: 100%; transition: width 0.3s ease; }
+        
+        .bar-life { background-color: var(--hp-color); }
+        .bar-sanidade { background-color: var(--sanidade-color); }
+        .bar-stamina { background-color: var(--stamina-color); }
+        .bar-chakra { background-color: var(--chakra-color); }
 
         /* MISSÕES */
         .mission-btn-start { background: var(--primary-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 5px; }
@@ -264,6 +293,7 @@
             <div class="logo"><i class="fa-solid fa-scroll"></i> RPG NARUTO</div>
             <nav>
                 <button id="side-btn-dashboard" onclick="showTab('dashboard')" class="active"><i class="fa-solid fa-chart-line"></i> Dashboard</button>
+                <button id="side-btn-batalha" onclick="showTab('batalha')"><i class="fa-solid fa-khanda"></i> Batalha</button>
                 <button id="side-btn-inventario" onclick="showTab('inventario')"><i class="fa-solid fa-box-open"></i> Inventário</button>
                 <button id="side-btn-missoes" onclick="showTab('missoes')"><i class="fa-solid fa-scroll"></i> Missões</button>
                 <button id="side-btn-personagens" onclick="showTab('personagens')"><i class="fa-solid fa-users"></i> Personagens</button>
@@ -316,6 +346,88 @@
                         </div>
                     </div>
                     <div id="feed-container"><p style="text-align:center; color:#777; padding:20px;">Carregando feed...</p></div>
+                </div>
+
+                <div id="batalha" class="tab-content">
+                    <div class="battle-card">
+                        <div class="battle-header-info">
+                            <div class="battle-toggles">
+                                <span class="toggle-badge">Combate</span>
+                                <span class="toggle-badge" style="border-color:#ed4956; color:#ed4956;">Morto</span>
+                            </div>
+                            <img id="battle-avatar" src="" class="battle-avatar">
+                            <div class="battle-toggles" style="align-items: flex-end;">
+                                <span class="toggle-badge active">Vida</span>
+                                <span class="toggle-badge active">Sanidade</span>
+                                <span class="toggle-badge active">Stamina</span>
+                            </div>
+                        </div>
+
+                        <div class="battle-stats-wrapper">
+                            <div class="battle-row">
+                                <div class="battle-row-header">
+                                    <span>Vida</span>
+                                    <span style="font-size:0.9rem; color:#aaa;">HP</span>
+                                </div>
+                                <div class="battle-controls">
+                                    <div style="display:flex; gap:5px;">
+                                        <button class="battle-btn" onclick="alterarStatus('vida', -5)">&#171;</button>
+                                        <button class="battle-btn" onclick="alterarStatus('vida', -1)">&lt;</button>
+                                    </div>
+                                    <span class="battle-val" id="battle-val-vida">0 / 0</span>
+                                    <div style="display:flex; gap:5px;">
+                                        <button class="battle-btn" onclick="alterarStatus('vida', 1)">&gt;</button>
+                                        <button class="battle-btn" onclick="alterarStatus('vida', 5)">&#187;</button>
+                                    </div>
+                                </div>
+                                <div class="battle-bar-bg">
+                                    <div id="battle-bar-vida" class="battle-bar-fill bar-life" style="width: 50%;"></div>
+                                </div>
+                            </div>
+
+                            <div class="battle-row">
+                                <div class="battle-row-header">
+                                    <span>Sanidade</span>
+                                    <span style="font-size:0.9rem; color:#aaa;">SAN</span>
+                                </div>
+                                <div class="battle-controls">
+                                    <div style="display:flex; gap:5px;">
+                                        <button class="battle-btn" onclick="alterarStatus('sanidade', -5)">&#171;</button>
+                                        <button class="battle-btn" onclick="alterarStatus('sanidade', -1)">&lt;</button>
+                                    </div>
+                                    <span class="battle-val" id="battle-val-sanidade">0 / 0</span>
+                                    <div style="display:flex; gap:5px;">
+                                        <button class="battle-btn" onclick="alterarStatus('sanidade', 1)">&gt;</button>
+                                        <button class="battle-btn" onclick="alterarStatus('sanidade', 5)">&#187;</button>
+                                    </div>
+                                </div>
+                                <div class="battle-bar-bg">
+                                    <div id="battle-bar-sanidade" class="battle-bar-fill bar-sanidade" style="width: 50%;"></div>
+                                </div>
+                            </div>
+
+                            <div class="battle-row">
+                                <div class="battle-row-header">
+                                    <span>Stamina</span>
+                                    <span style="font-size:0.9rem; color:#aaa;">STA</span>
+                                </div>
+                                <div class="battle-controls">
+                                    <div style="display:flex; gap:5px;">
+                                        <button class="battle-btn" onclick="alterarStatus('stamina', -5)">&#171;</button>
+                                        <button class="battle-btn" onclick="alterarStatus('stamina', -1)">&lt;</button>
+                                    </div>
+                                    <span class="battle-val" id="battle-val-stamina">0 / 0</span>
+                                    <div style="display:flex; gap:5px;">
+                                        <button class="battle-btn" onclick="alterarStatus('stamina', 1)">&gt;</button>
+                                        <button class="battle-btn" onclick="alterarStatus('stamina', 5)">&#187;</button>
+                                    </div>
+                                </div>
+                                <div class="battle-bar-bg">
+                                    <div id="battle-bar-stamina" class="battle-bar-fill bar-stamina" style="width: 50%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="jutsus" class="tab-content"><h3>Meus Jutsus</h3><div class="bucket-grid" id="meus-jutsus-grid"><p>Carregando...</p></div><hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;"><h3>Loja de Jutsus</h3><div class="bucket-grid" id="loja-jutsus-grid"><p>Carregando...</p></div></div>
@@ -524,7 +636,7 @@
             "yang": "data:image/png;base64,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"// Placeholder
         };
         
-        // IMAGENS DAS KEKKEI GENKAI (Preencha com seus links - adicione vírgula se colocar mais)
+        // IMAGENS DAS KEKKEI GENKAI
         const KEKKEI_ICONS = {
             "sharingan": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQsaFL3vRwLEqONbFnsr_tskXDVuf9C7F03HQ&s",
             "byakugan": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR8dibOxYWvh_iAG7J4BJ6u1ziT2vSb0PpWdg&s",
@@ -537,7 +649,6 @@
         function calcularTempo(timestamp) {
             if (!timestamp) return "Desconhecido";
             let date;
-            // BLINDAGEM DE DATA
             try {
                 if (typeof timestamp.toDate === 'function') date = timestamp.toDate();
                 else if (timestamp instanceof Date) date = timestamp;
@@ -559,7 +670,6 @@
         const btnLogin = document.getElementById('btnLogin');
         if(btnLogin) btnLogin.addEventListener('click', () => { const e = document.getElementById('emailInput').value, s = document.getElementById('passwordInput').value; if(!e || !s) return alert("Preencha tudo!"); btnLogin.innerText = "Carregando..."; signInWithEmailAndPassword(auth, e, s).catch((err) => { btnLogin.innerText = "Entrar"; alert(err.message); }); });
         
-        // ENTER LOGIN (CORRIGIDO)
         const passInput = document.getElementById('passwordInput');
         if (passInput) {
             passInput.addEventListener('keypress', function (e) {
@@ -579,21 +689,19 @@
                 await carregarCacheItens();
                 
                 const docRef = doc(db, "users", user.uid);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    currentUserData = docSnap.data();
-                    if(!currentUserData.inventario) currentUserData.inventario = {}; 
-                    atualizarInterface(currentUserData);
-                    carregarTudo();
-                } else {
-                    const dadosPadrao = { nome: "Novo Ninja", ryos: 100, xp: 0, nivel: 1, email: user.email, meusJutsus: [], inventario: {}, statusMissoes: {}, elementos: [], kekkei_genkai: [] };
-                    await setDoc(docRef, dadosPadrao);
-                    currentUserData = dadosPadrao;
-                    atualizarInterface(dadosPadrao);
-                    carregarTudo();
-                }
+                onSnapshot(docRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        currentUserData = docSnap.data();
+                        if(!currentUserData.inventario) currentUserData.inventario = {}; 
+                        atualizarInterface(currentUserData);
+                        renderizarBatalha(); // ATUALIZAR A BATALHA EM TEMPO REAL
+                        // Só carrega o resto se for a primeira vez ou mudança grande (opcional)
+                    }
+                });
                 
-                // INICIALIZAÇÃO BLINDADA DO FEED
+                // Carregamento inicial pesado
+                carregarTudo();
+                
                 setTimeout(() => {
                     try { window.renderFeed('all'); } catch(e) { console.log("Erro inicializar feed:", e); }
                 }, 800); 
@@ -649,7 +757,10 @@
         function atualizarInterface(dados) {
             document.querySelector('.user-info').innerText = dados.apelido || dados.nome || "Ninja";
             document.getElementById('ryos-text').innerText = formatarNum(dados.ryos);
-            if(dados.avatar) document.getElementById('header-avatar').src = dados.avatar;
+            if(dados.avatar) {
+                document.getElementById('header-avatar').src = dados.avatar;
+                document.getElementById('battle-avatar').src = dados.avatar;
+            }
             if(dados.historiaTexto) document.getElementById('historia-display-text').innerText = dados.historiaTexto;
             if(dados.historiaImagem) document.getElementById('historia-display-img').src = dados.historiaImagem;
 
@@ -660,16 +771,13 @@
             document.getElementById('xp-text-display').innerText = `${xpAtual} / ${xpNecessario} XP`;
             document.getElementById('xp-bar').style.width = porcentagem + "%";
 
-            // RENDERIZAR ELEMENTOS E KEKKEI NO DASHBOARD
             renderizarIcones(dados.elementos || [], 'dash-elementos', ELEMENTOS_ICONS, 'Naturezas de Chakra');
             renderizarIcones(dados.kekkei_genkai || [], 'dash-kekkei', KEKKEI_ICONS, 'Kekkei Genkai');
 
-            // Stats
             const set = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
             set('dash-nivel', nivel); set('dash-cargo', dados.cargo||"Genin"); set('dash-ryos', formatarNum(dados.ryos));
             set('dash-jutsus', (dados.meusJutsus || []).length); 
             
-            // Contagem Inventário
             let totalItems = 0, totalTools = 0;
             if(dados.inventario) {
                 for(let id in dados.inventario) {
@@ -688,6 +796,45 @@
             set('dash-destreza', dados.destreza||10); set('dash-intelecto', dados.intelecto||10); set('dash-agilidade', dados.agilidade||10); set('dash-velocidade', dados.velocidade||10);
         }
 
+        // --- LÓGICA DE BATALHA ---
+        function renderizarBatalha() {
+            if(!currentUserData) return;
+            
+            // Valores atuais vs Máximos (Assumindo max 100 se não definido, ou usando lógica de RPG)
+            // Para simplificar, vou usar 100 como base visual, mas mostrar os números reais.
+            // Se você tiver campo "max_vida" no banco, troque o 100 por ele.
+            
+            const vida = currentUserData.vida || 0;
+            const maxVida = currentUserData.max_vida || 100; // Defina max_vida no banco se quiser
+            const sanidade = currentUserData.sanidade || 0;
+            const maxSanidade = currentUserData.max_sanidade || 100;
+            const stamina = currentUserData.stamina || 0;
+            const maxStamina = currentUserData.max_stamina || 100;
+
+            document.getElementById('battle-val-vida').innerText = `${vida} / ${maxVida}`;
+            document.getElementById('battle-bar-vida').style.width = Math.min((vida / maxVida) * 100, 100) + "%";
+
+            document.getElementById('battle-val-sanidade').innerText = `${sanidade} / ${maxSanidade}`;
+            document.getElementById('battle-bar-sanidade').style.width = Math.min((sanidade / maxSanidade) * 100, 100) + "%";
+
+            document.getElementById('battle-val-stamina').innerText = `${stamina} / ${maxStamina}`;
+            document.getElementById('battle-bar-stamina').style.width = Math.min((stamina / maxStamina) * 100, 100) + "%";
+        }
+
+        window.alterarStatus = async (stat, valor) => {
+            if(!currentUserData) return;
+            const atual = currentUserData[stat] || 0;
+            let novo = atual + valor;
+            if(novo < 0) novo = 0;
+            
+            // Opcional: Limitar ao máximo se tiver max definido
+            // const max = currentUserData['max_'+stat] || 100;
+            // if(novo > max) novo = max;
+
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { [stat]: novo });
+            // O onSnapshot vai atualizar a tela automaticamente
+        };
+
         function comprimirImagem(file) { return new Promise((resolve, reject) => { const r = new FileReader(); r.readAsDataURL(file); r.onload = (e) => { const i = new Image(); i.src = e.target.result; i.onload = () => { const c = document.createElement('canvas'), MAX = 600; let w = i.width, h = i.height; if (w > MAX) { h *= MAX / w; w = MAX; } c.width = w; c.height = h; c.getContext('2d').drawImage(i, 0, 0, w, h); resolve(c.toDataURL('image/jpeg', 0.7)); }; }; r.onerror = reject; }); }
 
         window.showTab = (t) => {
@@ -702,13 +849,13 @@
             if(t==='personagens') carregarPersonagens();
             if(t==='frases') carregarFrases();
             if(t==='inventario') carregarInventario();
+            if(t==='batalha') renderizarBatalha();
             if(window.innerWidth <= 768) window.toggleMobileMenu();
         };
 
         window.toggleMenu = () => document.getElementById('user-menu').classList.toggle('show');
         window.fazerLogout = () => signOut(auth).then(() => location.reload());
         
-        // --- FUNÇÕES DE PERFIL E SENHA ---
         window.openEditProfileModal = () => { document.getElementById('editProfileModal').style.display = 'flex'; document.getElementById('edit-name-input').value = currentUserData.nome || ""; document.getElementById('edit-nick-input').value = currentUserData.apelido || ""; document.getElementById('user-menu').classList.remove('show'); };
         window.closeEditProfileModal = () => document.getElementById('editProfileModal').style.display = 'none';
         window.handleAvatarPreview = async (e) => { if(e.target.files[0]) { newAvatarBase64 = await comprimirImagem(e.target.files[0]); document.getElementById('edit-avatar-preview').src = newAvatarBase64; } };
@@ -717,11 +864,9 @@
         window.closeChangePasswordModal = () => document.getElementById('changePasswordModal').style.display='none';
         window.salvarNovaSenha = async () => { const p = document.getElementById('new-password').value; if(!p || p.length < 6) return alert("Mínimo 6 caracteres"); try { await updatePassword(auth.currentUser, p); alert("Sucesso!"); closeChangePasswordModal(); } catch(e) { alert("Erro: " + e.message); } };
 
-        // --- FILTROS LOJA ---
         window.atualizarFiltroVila = () => { vilaAtual = document.getElementById('shop-location').value; carregarLojaItens(); };
         window.filtrarLojaPorTipo = (t, b) => { lojaAtual = t; document.querySelectorAll('.shop-cat-btn').forEach(x => x.classList.remove('active')); b.classList.add('active'); carregarLojaItens(); };
 
-        // --- RENDERIZADORES DE CARD ---
         function criarCard(containerId, dados, id, tipo, clickFn, qtd = null) {
             const c = document.getElementById(containerId); if(!c) return;
             const div = document.createElement('div'); div.className = 'card'; div.onclick = () => clickFn(id, dados);
@@ -733,7 +878,6 @@
             else sub = dados.efeito || "Item";
             
             if(qtd !== null) {
-                // Se for inventário, adiciona o botão de MENOS
                 extra += `<div class="inventory-controls"><span class="qtd-badge">x${qtd}</span><button class="btn-minus" onclick="consumirItem('${id}', '${dados.nome}'); event.stopPropagation();">-</button></div>`;
             }
 
@@ -744,7 +888,6 @@
             const c = document.getElementById(containerId); if(!c) return;
             const div = document.createElement('div'); div.className = 'card'; 
             div.onclick = (e) => { 
-                // Evita abrir modal se clicar no input ou no botão de compra
                 if(!e.target.classList.contains('buy-btn') && !e.target.classList.contains('qtd-input-square')) {
                     clickFn(id, dados);
                 }
@@ -757,7 +900,6 @@
             let priceHTML = `<p id="price-${id}" class="price-tag">${formatarNum(dados.preco)} Ryos</p>`;
 
             if(tipo !== 'jutsu') {
-                // LAYOUT NOVO: Preço -> Caixa Quadrada -> Botão Largo embaixo
                 buyControlHTML = `
                     <div class="qtd-container-square">
                         <input type="number" id="qtd-${id}" class="qtd-input-square" value="1" min="1" onclick="event.stopPropagation()">
@@ -770,7 +912,6 @@
             div.innerHTML = `<img src="${dados.imagem||IMG_PADRAO}" class="card-img-top"><h4>${dados.nome}</h4><small>${sub}</small>${priceHTML}${buyControlHTML}`;
             c.appendChild(div);
 
-            // Adiciona listener para atualizar o botão e o preço dinamicamente
             if(tipo !== 'jutsu') {
                 const inputQtd = document.getElementById(`qtd-${id}`);
                 const btnBuy = document.getElementById(`btn-buy-${id}`);
@@ -785,7 +926,6 @@
             }
         }
 
-        // --- LOADERS ---
         async function carregarLoja() {
             const c = document.getElementById('loja-jutsus-grid'); if(!c) return; c.innerHTML = '';
             const m = currentUserData.meusJutsus || [];
@@ -807,13 +947,11 @@
             const snap = await getDocs(collection(db, "itens"));
             snap.forEach(d => {
                 const i = d.data();
-                // Lógica para Array ou String na vila
                 let vilaOk = false;
                 if(!i.vila || i.vila === 'Global') vilaOk = true;
                 else if(Array.isArray(i.vila)) { if(i.vila.includes(vilaAtual) || i.vila.includes('Global')) vilaOk = true; }
                 else if(i.vila === vilaAtual) vilaOk = true;
 
-                // CORREÇÃO: Filtro estrito para 'geral'
                 if (i.tipo !== lojaAtual) return;
                 
                 if (!vilaOk) return;
@@ -822,13 +960,10 @@
             });
         }
 
-        // --- INVENTÁRIO (NOVO) ---
         async function carregarInventario() {
             const c = document.getElementById('inventario-grid'); if(!c) return; c.innerHTML = '';
             const inv = currentUserData.inventario || {};
             const keys = Object.keys(inv);
-            
-            // FILTRA APENAS ITENS COM QTD > 0
             const validKeys = keys.filter(k => inv[k] > 0);
             
             if(validKeys.length === 0) { c.innerHTML = '<p>Mochila vazia.</p>'; return; }
@@ -845,16 +980,12 @@
             });
         }
 
-        // --- CONSUMO ---
         window.consumirItem = async (id, nome) => {
              if(!confirm(`Usar/Descartar 1x ${nome}?`)) return;
-             await updateDoc(doc(db, "users", auth.currentUser.uid), {
-                 [`inventario.${id}`]: increment(-1)
-             });
+             await updateDoc(doc(db, "users", auth.currentUser.uid), { [`inventario.${id}`]: increment(-1) });
              reloadData();
         };
 
-        // --- COMPRA LOGIC (MULTI) ---
         window.comprarJutsu = async (id, p, n) => {
             if(!confirm(`Comprar ${n}?`)) return; if(currentUserData.ryos < p) return alert("Sem Ryos!");
             await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(-p), meusJutsus: arrayUnion(id), [`maestrias.${id}`]: 0 });
@@ -864,25 +995,12 @@
         window.comprarMultiplos = async (id, precoUnit, nome, tipo, inputId) => {
             const qtdInput = document.getElementById(inputId);
             const qtd = parseInt(qtdInput.value);
-            
             if(isNaN(qtd) || qtd < 1) return alert("Quantidade inválida!");
             const precoTotal = precoUnit * qtd;
-            
             if(!confirm(`Comprar ${qtd}x ${nome} por ${formatarNum(precoTotal)} Ryos?`)) return;
-            
             if(currentUserData.ryos < precoTotal) return alert("Sem Ryos suficientes!");
-            
             const updates = { ryos: increment(-precoTotal) };
-            
-            if(tipo === 'ferramenta') {
-                updates[`inventario.${id}`] = increment(qtd);
-                // Opcional: manter array ferramentas p/ compatibilidade
-                updates['ferramentas'] = arrayUnion(id); 
-            } else {
-                updates[`inventario.${id}`] = increment(qtd);
-                updates['itens'] = arrayUnion(id);
-            }
-
+            updates[`inventario.${id}`] = increment(qtd);
             await updateDoc(doc(db, "users", auth.currentUser.uid), updates);
             alert(`Comprado ${qtd}x ${nome}!`); 
             reloadData();
@@ -892,7 +1010,6 @@
             const s = await getDoc(doc(db, "users", auth.currentUser.uid)); currentUserData = s.data(); atualizarInterface(currentUserData); carregarTudo();
         }
 
-        // --- MODAL DETAILS ---
         function abrirModal(t, d) {
             let p = t; document.getElementById(p+'-name-modal').innerText = d.nome; document.getElementById(p+'-desc-modal').innerText = d.descricao||""; document.getElementById(p+'-price-modal').innerText = "Valor: "+formatarNum(d.preco)+" Ryos";
             const i = document.getElementById(p+'-img-modal'); i.src = d.imagem||IMG_PADRAO;
@@ -910,7 +1027,6 @@
         window.fecharToolModal = () => document.getElementById('toolModal').style.display='none';
         window.fecharItemModal = () => document.getElementById('itemModal').style.display='none';
 
-        // --- FEED ---
         window.handleImageUpload = async (e) => { if(e.target.files[0]) { try { currentImageBase64 = await comprimirImagem(e.target.files[0]); document.getElementById('preview-image').src = currentImageBase64; document.getElementById('preview-container').style.display='block'; } catch(e){alert("Erro imagem");} } };
         window.removeImage = () => { document.getElementById('imageInput').value=''; currentImageBase64=null; document.getElementById('preview-container').style.display='none'; };
         window.publicarPost = async () => {
@@ -924,33 +1040,32 @@
                 onSnapshot(query(collection(db, "posts"), orderBy("data", "desc")), (s) => {
                     c.innerHTML = ''; if(s.empty) { c.innerHTML = '<p style="text-align:center;">Nada aqui.</p>'; return; }
                     s.forEach(d => {
-                        const p = d.data(); if(f==='saved' && !(p.savedBy||[]).includes(auth.currentUser.uid)) return;
-                        const isOwner = p.uid === auth.currentUser.uid;
-                        const likes = p.likes || [];
-                        const savedBy = p.savedBy || [];
-                        const comments = p.comments || [];
-                        const isLiked = likes.includes(auth.currentUser.uid);
-                        const isSaved = savedBy.includes(auth.currentUser.uid);
-
-                        const menu = isOwner ? `<div class="post-menu-container"><div class="post-options-btn" onclick="this.nextElementSibling.classList.toggle('active')">...</div><div class="post-dropdown"><div class="dropdown-item danger" onclick="deletarPost('${d.id}')">Excluir</div></div></div>` : '';
-                        const div = document.createElement('div'); div.className='post';
-                        div.innerHTML = `<div class="post-header"><div class="user-avatar-post"><img src="${p.autorAvatar||IMG_PADRAO}"></div><div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">${calcularTempo(p.data)}</span></div>${menu}</div><div class="post-content">${p.conteudo}</div>${p.imagem ? `<img src="${p.imagem}" class="post-image" onclick="verPost('${d.id}')">` : ''}<div class="post-actions"><button class="action-btn ${isLiked?'liked':''}" onclick="toggleLike('${d.id}')"><i class="${isLiked?'fa-solid':'fa-regular'} fa-heart"></i> ${likes.length}</button><button class="action-btn" onclick="verPost('${d.id}')"><i class="fa-regular fa-comment"></i> ${comments.length}</button><button class="action-btn ${isSaved?'saved':''}" onclick="toggleSave('${d.id}')" style="margin-left:auto;"><i class="${isSaved?'fa-solid':'fa-regular'} fa-bookmark"></i></button></div>`;
-                        c.appendChild(div);
+                        try {
+                            const p = d.data(); const id = d.id;
+                            const likes = p.likes || []; const savedBy = p.savedBy || []; const comments = p.comments || [];
+                            if(f==='saved' && !savedBy.includes(auth.currentUser.uid)) return;
+                            const isOwner = p.uid === auth.currentUser.uid;
+                            const isLiked = likes.includes(auth.currentUser.uid);
+                            const isSaved = savedBy.includes(auth.currentUser.uid);
+                            const menu = isOwner ? `<div class="post-menu-container"><div class="post-options-btn" onclick="this.nextElementSibling.classList.toggle('active')">...</div><div class="post-dropdown"><div class="dropdown-item danger" onclick="deletarPost('${id}')">Excluir</div></div></div>` : '';
+                            const div = document.createElement('div'); div.className='post';
+                            div.innerHTML = `<div class="post-header"><div class="user-avatar-post"><img src="${p.autorAvatar||IMG_PADRAO}"></div><div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">${calcularTempo(p.data)}</span></div>${menu}</div><div class="post-content">${p.conteudo}</div>${p.imagem ? `<img src="${p.imagem}" class="post-image" onclick="verPost('${id}')">` : ''}<div class="post-actions"><button class="action-btn ${isLiked?'liked':''}" onclick="toggleLike('${id}')"><i class="${isLiked?'fa-solid':'fa-regular'} fa-heart"></i> ${likes.length}</button><button class="action-btn" onclick="verPost('${id}')"><i class="fa-regular fa-comment"></i> ${comments.length}</button><button class="action-btn ${isSaved?'saved':''}" onclick="toggleSave('${id}')" style="margin-left:auto;"><i class="${isSaved?'fa-solid':'fa-regular'} fa-bookmark"></i></button></div>`;
+                            c.appendChild(div);
+                        } catch (innerError) { console.warn("Erro post:", innerError); }
                     });
-                }, (error) => { console.error("Erro Feed Snapshot:", error); c.innerHTML = "<p>Erro de conexão com o feed.</p>"; });
+                }, (error) => { console.error("Erro Feed:", error); c.innerHTML = "<p>Erro ao carregar feed.</p>"; });
             } catch (err) { console.error("Erro geral Feed:", err); }
         };
         window.deletarPost = async (id) => { if(confirm("Apagar?")) await deleteDoc(doc(db, "posts", id)); };
-        window.toggleLike = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().likes||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{likes:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{likes:arrayUnion(auth.currentUser.uid)}); };
-        window.toggleSave = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().savedBy||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{savedBy:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{savedBy:arrayUnion(auth.currentUser.uid)}); };
-        window.verPost = async (id) => { currentOpenPostId = id; const s = await getDoc(doc(db, "posts", id)), p = s.data(); document.getElementById('modalPostContent').innerHTML = p.imagem ? `<img src="${p.imagem}" style="width:100%;height:100%;object-fit:contain;">` : `<div style="padding:20px;">${p.conteudo}</div>`; document.getElementById('commentsList').innerHTML = (p.comments||[]).map(c=>`<div><b>${c.autor}</b>: ${c.texto}</div>`).join(''); document.getElementById('commentModal').style.display='flex'; };
+        window.toggleLike = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().likes || []; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{likes:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{likes:arrayUnion(auth.currentUser.uid)}); };
+        window.toggleSave = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().savedBy || []; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{savedBy:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{savedBy:arrayUnion(auth.currentUser.uid)}); };
+        
+        window.verPost = async (id) => { currentOpenPostId = id; const s = await getDoc(doc(db, "posts", id)), p = s.data(); document.getElementById('modalPostContent').innerHTML = p.imagem ? `<img src="${p.imagem}" style="width:100%;height:100%;object-fit:contain;">` : `<div style="padding:20px;">${p.conteudo}</div>`; document.getElementById('commentsList').innerHTML = (p.comments || []).map(c=>`<div><b>${c.autor}</b>: ${c.texto}</div>`).join(''); document.getElementById('commentModal').style.display='flex'; };
         window.submitComment = async () => { const t = document.getElementById('newCommentText').value; if(!t) return; await updateDoc(doc(db, "posts", currentOpenPostId), { comments: arrayUnion({ autor: currentUserData.nome, texto: t }) }); document.getElementById('newCommentText').value = ""; verPost(currentOpenPostId); };
         window.closeModal = () => document.getElementById('commentModal').style.display = 'none';
 
-        // --- CARREGADORES SECUNDÁRIOS ---
         async function carregarPersonagens() { const c = document.getElementById('directory-grid'); if(!c) return; const s = await getDocs(collection(db, "users")); c.innerHTML = ''; s.forEach(d => { const u = d.data(); const k = document.createElement('div'); k.className = 'card'; k.onclick = () => window.verPerfil(d.id); k.innerHTML = `<div style="width:60px; height:60px; border-radius:50%; overflow:hidden; margin:0 auto 10px;"><img src="${u.avatar||IMG_PADRAO}" style="width:100%; height:100%; object-fit:cover;"></div><h4>${u.nome}</h4><p>${u.apelido||""}</p>`; c.appendChild(k); }); }
         
-        // --- FUNÇÃO VER PERFIL DE OUTROS CORRIGIDA ---
         window.verPerfil = async (uid) => {
             const s = await getDoc(doc(db, "users", uid));
             if(s.exists()) {
@@ -958,38 +1073,10 @@
                 document.getElementById('profile-modal-name').innerText = u.nome;
                 document.getElementById('profile-modal-char').innerText = u.apelido || "";
                 document.getElementById('profile-modal-img').src = u.avatar||IMG_PADRAO;
-                
                 renderizarIcones(u.elementos || [], 'profile-elementos-container', ELEMENTOS_ICONS, 'Naturezas de Chakra');
                 renderizarIcones(u.kekkei_genkai || [], 'profile-kekkei-container', KEKKEI_ICONS, 'Kekkei Genkai');
-                
                 const statsContainer = document.getElementById('other-profile-stats');
-                statsContainer.innerHTML = `
-                    <div class="stats-divider">Geral</div>
-                    <div class="stat-card"><div class="stat-value">${u.nivel||1}</div><div class="stat-label">Nível</div></div>
-                    <div class="stat-card"><div class="stat-value">${u.cargo||'Genin'}</div><div class="stat-label">Cargo</div></div>
-                    <div class="stat-card"><div class="stat-value">${formatarNum(u.ryos)}</div><div class="stat-label">Ryos</div></div>
-                    
-                    <div class="stats-divider">Batalha</div>
-                    <div class="stat-card"><div class="stat-value">${u.vitorias||0}</div><div class="stat-label">Vitórias</div></div>
-                    <div class="stat-card"><div class="stat-value">${u.loses||0}</div><div class="stat-label">Derrotas</div></div>
-
-                    <div class="stats-divider">Inventário</div>
-                    <div class="stat-card"><div class="stat-value">${(u.meusJutsus||[]).length}</div><div class="stat-label">Jutsus</div></div>
-                    
-                    <div class="stats-divider">Vitalidade</div>
-                    <div class="stat-card"><div class="stat-value">${u.vida||100}</div><div class="stat-label">Vida</div></div>
-                    <div class="stat-card"><div class="stat-value">${u.chakra||100}</div><div class="stat-label">Chakra</div></div>
-                    <div class="stat-card"><div class="stat-value">${u.stamina||100}</div><div class="stat-label">Stamina</div></div>
-                    <div class="stat-card"><div class="stat-value">${u.controle_chakra||"Baixo"}</div><div class="stat-label">Controle</div></div>
-
-                    <div class="stats-divider">Atributos</div>
-                    <div class="stat-card"><div class="stat-value">${u.forca||10}</div><div class="stat-label">Força</div></div>
-                    <div class="stat-card"><div class="stat-value">${u.defesa||10}</div><div class="stat-label">Defesa</div></div>
-                    <div class="stat-card"><div class="stat-value">${u.agilidade||10}</div><div class="stat-label">Agilidade</div></div>
-                    <div class="stat-card"><div class="stat-value">${u.velocidade||10}</div><div class="stat-label">Velocidade</div></div>
-                    <div class="stat-card"><div class="stat-value">${u.intelecto||10}</div><div class="stat-label">Intelecto</div></div>
-                `;
-
+                statsContainer.innerHTML = `<div class="stats-divider">Geral</div><div class="stat-card"><div class="stat-value">${u.nivel||1}</div><div class="stat-label">Nível</div></div><div class="stat-card"><div class="stat-value">${u.cargo||'Genin'}</div><div class="stat-label">Cargo</div></div><div class="stat-card"><div class="stat-value">${formatarNum(u.ryos)}</div><div class="stat-label">Ryos</div></div><div class="stats-divider">Batalha</div><div class="stat-card"><div class="stat-value">${u.vitorias||0}</div><div class="stat-label">Vitórias</div></div><div class="stat-card"><div class="stat-value">${u.loses||0}</div><div class="stat-label">Derrotas</div></div><div class="stats-divider">Inventário</div><div class="stat-card"><div class="stat-value">${(u.meusJutsus||[]).length}</div><div class="stat-label">Jutsus</div></div><div class="stats-divider">Vitalidade</div><div class="stat-card"><div class="stat-value">${u.vida||100}</div><div class="stat-label">Vida</div></div><div class="stat-card"><div class="stat-value">${u.chakra||100}</div><div class="stat-label">Chakra</div></div><div class="stat-card"><div class="stat-value">${u.stamina||100}</div><div class="stat-label">Stamina</div></div><div class="stat-card"><div class="stat-value">${u.controle_chakra||"Baixo"}</div><div class="stat-label">Controle</div></div><div class="stats-divider">Atributos</div><div class="stat-card"><div class="stat-value">${u.forca||10}</div><div class="stat-label">Força</div></div><div class="stat-card"><div class="stat-value">${u.defesa||10}</div><div class="stat-label">Defesa</div></div><div class="stat-card"><div class="stat-value">${u.agilidade||10}</div><div class="stat-label">Agilidade</div></div><div class="stat-card"><div class="stat-value">${u.velocidade||10}</div><div class="stat-label">Velocidade</div></div><div class="stat-card"><div class="stat-value">${u.intelecto||10}</div><div class="stat-label">Intelecto</div></div>`;
                 document.getElementById('profileModal').style.display = 'flex';
             }
         };
@@ -1011,13 +1098,10 @@
                 let l = [];
                 s.forEach(d => l.push(d.data()));
 
-                c.innerHTML = ''; // Limpa o conteúdo
+                c.innerHTML = ''; 
 
-                // Ranks Básicos
                 renderRank(c, "Nível", l, 'nivel');
                 renderRank(c, "Ryos (Dinheiro)", l, 'ryos');
-
-                // Ranks de Batalha (Os que sumiram)
                 renderRank(c, "Missões Rankeadas", l, 'pontos_rankeada');
                 renderRank(c, "Torneios Vencidos", l, 'vitorias_torneio');
                 renderRank(c, "Amistosos", l, 'pontos_amistoso');
