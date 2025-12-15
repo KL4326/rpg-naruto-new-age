@@ -20,16 +20,10 @@
             --danger-color: #ed4956;
             
             /* CORES DE STATUS */
-            --stat-chakra: #7f8c8d; 
-            --stat-stamina: #27ae60; 
-            --stat-dano: #e74c3c;   
-            --stat-buff: #3498db;   
-            
-            /* CORES BATALHA */
             --hp-color: #e74c3c;       /* Vermelho */
             --sanidade-color: #3498db; /* Azul Claro */
-            --stamina-color: #ff9f43;  /* LARANJA */
-            --chakra-color: #2980b9;   /* AZUL ESCURO */
+            --stamina-color: #ff9f43;  /* Laranja */
+            --chakra-color: #2980b9;   /* Azul Escuro */
         }
         body.dark-mode { --bg-color: #000000; --sidebar-bg: #000000; --text-color: #f5f5f5; --card-bg: #121212; --border-color: #363636; }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -96,9 +90,6 @@
         .btn-minus { background: var(--danger-color); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
         .btn-minus:hover { transform: scale(1.1); }
 
-        /* Maestria no Card */
-        .maestria-display { display: block; font-size: 0.85rem; color: var(--yellow-color); font-weight: bold; margin-top: 4px; text-shadow: 0 0 1px rgba(0,0,0,0.1); }
-
         /* NOVO: FILTROS DA LOJA */
         .shop-header { margin-bottom: 20px; background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); }
         .shop-location-select { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; font-size: 1rem; margin-bottom: 10px; background: var(--bg-color); color: var(--text-color); }
@@ -114,29 +105,30 @@
         .elementos-list { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
         .element-icon { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color); padding: 2px; background: #fff; }
 
-        /* --- ESTILOS DA ABA DE BATALHA --- */
-        .battle-card { background: #1a1a1a; color: white; border-radius: 15px; padding: 20px; max-width: 600px; margin: 0 auto; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        .battle-header-info { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; }
-        .battle-avatar { width: 100px; height: 100px; border-radius: 50%; border: 4px solid #333; object-fit: cover; }
-        .battle-toggles { display: flex; flex-direction: column; gap: 10px; }
-        .toggle-badge { background: #333; padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; color: #aaa; cursor: pointer; border: 1px solid #444; transition: 0.2s; text-align: center; }
-        .toggle-badge.active { background: var(--primary-color); color: white; border-color: var(--primary-color); }
+        /* --- ESTILOS DA ABA DE BATALHA (GLOBAL) --- */
+        .battle-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .battle-card { background: #1a1a1a; color: white; border-radius: 15px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); border: 1px solid #333; }
+        .battle-header-info { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .battle-avatar { width: 60px; height: 60px; border-radius: 50%; border: 2px solid #555; object-fit: cover; }
+        .battle-name { font-weight: bold; font-size: 1.1rem; }
+        .battle-char { font-size: 0.85rem; color: #aaa; }
         
-        .battle-stats-wrapper { display: flex; flex-direction: column; gap: 20px; }
-        .battle-row { display: flex; flex-direction: column; gap: 5px; }
-        .battle-row-header { display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 1.1rem; }
-        .battle-controls { display: flex; justify-content: space-between; align-items: center; background: #252525; padding: 8px; border-radius: 8px; border: 1px solid #333; }
-        .battle-btn { background: #444; border: none; color: white; width: 35px; height: 35px; border-radius: 50%; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .battle-btn:hover { background: #666; }
-        .battle-val { font-size: 1.2rem; font-weight: bold; width: 80px; text-align: center; }
+        .battle-stats-wrapper { display: flex; flex-direction: column; gap: 10px; }
+        .battle-row { display: flex; flex-direction: column; gap: 2px; }
+        .battle-row-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; font-weight: bold; color: #ccc; }
         
-        .battle-bar-bg { width: 100%; height: 12px; background: #333; border-radius: 10px; overflow: hidden; margin-top: 5px; }
-        .battle-bar-fill { height: 100%; transition: width 0.3s ease; }
+        .battle-bar-bg { width: 100%; height: 18px; background: #333; border-radius: 4px; overflow: hidden; position: relative; display: flex; align-items: center; }
+        .battle-bar-fill { height: 100%; transition: width 0.3s ease; position: absolute; top: 0; left: 0; z-index: 1; }
+        .battle-bar-text { position: relative; z-index: 2; width: 100%; text-align: center; font-size: 0.75rem; font-weight: bold; text-shadow: 0 0 3px black; }
         
         .bar-life { background-color: var(--hp-color); }
         .bar-sanidade { background-color: var(--sanidade-color); }
         .bar-stamina { background-color: var(--stamina-color); } 
         .bar-chakra { background-color: var(--chakra-color); } 
+        
+        .battle-actions-row { display: flex; justify-content: space-between; margin-top: 2px; }
+        .battle-mini-btn { background: #333; border: 1px solid #444; color: #ccc; width: 25px; height: 25px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; }
+        .battle-mini-btn:hover { background: #555; color: white; }
 
         /* MISSÕES */
         .mission-btn-start { background: var(--primary-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 5px; }
@@ -349,106 +341,9 @@
                 </div>
 
                 <div id="batalha" class="tab-content">
-                    <div class="battle-card">
-                        <div class="battle-header-info">
-                            <div class="battle-toggles">
-                                <span class="toggle-badge">Combate</span>
-                                <span class="toggle-badge" style="border-color:#ed4956; color:#ed4956;">Morto</span>
-                            </div>
-                            <img id="battle-avatar" src="" class="battle-avatar">
-                            <div class="battle-toggles" style="align-items: flex-end;">
-                                <span class="toggle-badge active">Vida</span>
-                                <span class="toggle-badge active">Sanidade</span>
-                                <span class="toggle-badge active">Stamina</span>
-                            </div>
-                        </div>
-
-                        <div class="battle-stats-wrapper">
-                            <div class="battle-row">
-                                <div class="battle-row-header">
-                                    <span>Vida</span>
-                                    <span style="font-size:0.9rem; color:#aaa;">HP</span>
-                                </div>
-                                <div class="battle-controls">
-                                    <div style="display:flex; gap:5px;">
-                                        <button class="battle-btn" onclick="alterarStatus('vida', -5)">&#171;</button>
-                                        <button class="battle-btn" onclick="alterarStatus('vida', -1)">&lt;</button>
-                                    </div>
-                                    <span class="battle-val" id="battle-val-vida">0 / 0</span>
-                                    <div style="display:flex; gap:5px;">
-                                        <button class="battle-btn" onclick="alterarStatus('vida', 1)">&gt;</button>
-                                        <button class="battle-btn" onclick="alterarStatus('vida', 5)">&#187;</button>
-                                    </div>
-                                </div>
-                                <div class="battle-bar-bg">
-                                    <div id="battle-bar-vida" class="battle-bar-fill bar-life" style="width: 50%;"></div>
-                                </div>
-                            </div>
-
-                            <div class="battle-row">
-                                <div class="battle-row-header">
-                                    <span>Sanidade</span>
-                                    <span style="font-size:0.9rem; color:#aaa;">SAN</span>
-                                </div>
-                                <div class="battle-controls">
-                                    <div style="display:flex; gap:5px;">
-                                        <button class="battle-btn" onclick="alterarStatus('sanidade', -5)">&#171;</button>
-                                        <button class="battle-btn" onclick="alterarStatus('sanidade', -1)">&lt;</button>
-                                    </div>
-                                    <span class="battle-val" id="battle-val-sanidade">0 / 0</span>
-                                    <div style="display:flex; gap:5px;">
-                                        <button class="battle-btn" onclick="alterarStatus('sanidade', 1)">&gt;</button>
-                                        <button class="battle-btn" onclick="alterarStatus('sanidade', 5)">&#187;</button>
-                                    </div>
-                                </div>
-                                <div class="battle-bar-bg">
-                                    <div id="battle-bar-sanidade" class="battle-bar-fill bar-sanidade" style="width: 50%;"></div>
-                                </div>
-                            </div>
-
-                            <div class="battle-row">
-                                <div class="battle-row-header">
-                                    <span>Stamina</span>
-                                    <span style="font-size:0.9rem; color:#aaa;">STA</span>
-                                </div>
-                                <div class="battle-controls">
-                                    <div style="display:flex; gap:5px;">
-                                        <button class="battle-btn" onclick="alterarStatus('stamina', -5)">&#171;</button>
-                                        <button class="battle-btn" onclick="alterarStatus('stamina', -1)">&lt;</button>
-                                    </div>
-                                    <span class="battle-val" id="battle-val-stamina">0 / 0</span>
-                                    <div style="display:flex; gap:5px;">
-                                        <button class="battle-btn" onclick="alterarStatus('stamina', 1)">&gt;</button>
-                                        <button class="battle-btn" onclick="alterarStatus('stamina', 5)">&#187;</button>
-                                    </div>
-                                </div>
-                                <div class="battle-bar-bg">
-                                    <div id="battle-bar-stamina" class="battle-bar-fill bar-stamina" style="width: 50%;"></div>
-                                </div>
-                            </div>
-
-                            <div class="battle-row">
-                                <div class="battle-row-header">
-                                    <span>Chakra</span>
-                                    <span style="font-size:0.9rem; color:#aaa;">CHK</span>
-                                </div>
-                                <div class="battle-controls">
-                                    <div style="display:flex; gap:5px;">
-                                        <button class="battle-btn" onclick="alterarStatus('chakra', -5)">&#171;</button>
-                                        <button class="battle-btn" onclick="alterarStatus('chakra', -1)">&lt;</button>
-                                    </div>
-                                    <span class="battle-val" id="battle-val-chakra">0 / 0</span>
-                                    <div style="display:flex; gap:5px;">
-                                        <button class="battle-btn" onclick="alterarStatus('chakra', 1)">&gt;</button>
-                                        <button class="battle-btn" onclick="alterarStatus('chakra', 5)">&#187;</button>
-                                    </div>
-                                </div>
-                                <div class="battle-bar-bg">
-                                    <div id="battle-bar-chakra" class="battle-bar-fill bar-chakra" style="width: 50%;"></div>
-                                </div>
-                            </div>
-
-                        </div>
+                    <h2 style="margin-bottom:15px;">Painel de Batalha</h2>
+                    <div class="battle-grid" id="battle-grid">
+                        <p style="color:#777;">Carregando lutadores...</p>
                     </div>
                 </div>
 
@@ -716,13 +611,11 @@
                         currentUserData = docSnap.data();
                         if(!currentUserData.inventario) currentUserData.inventario = {}; 
                         atualizarInterface(currentUserData);
-                        renderizarBatalha(); // ATUALIZAR A BATALHA EM TEMPO REAL
-                        // Só carrega o resto se for a primeira vez ou mudança grande (opcional)
                     }
                 });
                 
-                // Carregamento inicial pesado
-                carregarTudo();
+                // Carregamento inicial com proteção
+                try { carregarTudo(); } catch(e) { console.error("Erro no carregamento inicial:", e); }
                 
                 setTimeout(() => {
                     try { window.renderFeed('all'); } catch(e) { console.log("Erro inicializar feed:", e); }
@@ -736,16 +629,21 @@
 
         async function carregarConfiguracoes() { try { const s = await getDoc(doc(db, "game_config", "sistema_nivel")); if(s.exists()) globalXpTable = s.data().tabela_xp || []; } catch(e) {} }
         async function carregarCacheItens() {
-            const s1 = await getDocs(collection(db, "itens")); s1.forEach(d => globalItensMap[d.id] = { ...d.data(), type: 'item' });
-            const s2 = await getDocs(collection(db, "ferramentas")); s2.forEach(d => globalItensMap[d.id] = { ...d.data(), type: 'tool' });
+            try {
+                const s1 = await getDocs(collection(db, "itens")); s1.forEach(d => globalItensMap[d.id] = { ...d.data(), type: 'item' });
+                const s2 = await getDocs(collection(db, "ferramentas")); s2.forEach(d => globalItensMap[d.id] = { ...d.data(), type: 'tool' });
+            } catch(e) { console.error("Erro cache itens:", e); }
         }
 
         function carregarTudo() {
-            carregarLoja(); carregarMeusJutsus(currentUserData.meusJutsus);
-            carregarLojaFerramentas(); 
-            carregarLojaItens(); 
-            carregarInventario(); 
-            carregarMissoes(); carregarRankings(); carregarFrases(); 
+            try { carregarLoja(); } catch(e) { console.error("Loja Jutsus:", e); }
+            try { carregarMeusJutsus(currentUserData.meusJutsus); } catch(e) { console.error("Meus Jutsus:", e); }
+            try { carregarLojaFerramentas(); } catch(e) { console.error("Loja Ferr:", e); }
+            try { carregarLojaItens(); } catch(e) { console.error("Loja Itens:", e); }
+            try { carregarInventario(); } catch(e) { console.error("Inventario:", e); }
+            try { carregarMissoes(); } catch(e) { console.error("Missoes:", e); }
+            try { carregarRankings(); } catch(e) { console.error("Rankings:", e); }
+            try { carregarFrases(); } catch(e) { console.error("Frases:", e); }
             if(auth.currentUser.email === "admin@rpgnaruto.com") carregarPainelAdmin();
         }
 
@@ -781,7 +679,6 @@
             document.getElementById('ryos-text').innerText = formatarNum(dados.ryos);
             if(dados.avatar) {
                 document.getElementById('header-avatar').src = dados.avatar;
-                document.getElementById('battle-avatar').src = dados.avatar;
             }
             if(dados.historiaTexto) document.getElementById('historia-display-text').innerText = dados.historiaTexto;
             if(dados.historiaImagem) document.getElementById('historia-display-img').src = dados.historiaImagem;
@@ -818,48 +715,82 @@
             set('dash-destreza', dados.destreza||10); set('dash-intelecto', dados.intelecto||10); set('dash-agilidade', dados.agilidade||10); set('dash-velocidade', dados.velocidade||10);
         }
 
-        // --- LÓGICA DE BATALHA ---
+        // --- LÓGICA DE BATALHA GLOBAL (GM) ---
         function renderizarBatalha() {
-            if(!currentUserData) return;
+            const grid = document.getElementById('battle-grid');
+            if(!grid) return;
             
-            // Valores atuais vs Máximos (Assumindo max 100 se não definido, ou usando lógica de RPG)
-            // Para simplificar, vou usar 100 como base visual, mas mostrar os números reais.
-            // Se você tiver campo "max_vida" no banco, troque o 100 por ele.
-            
-            const vida = currentUserData.vida || 0;
-            const maxVida = currentUserData.max_vida || 100; // Defina max_vida no banco se quiser
-            const sanidade = currentUserData.sanidade || 0;
-            const maxSanidade = currentUserData.max_sanidade || 100;
-            const stamina = currentUserData.stamina || 0;
-            const maxStamina = currentUserData.max_stamina || 100;
-            const chakra = currentUserData.chakra || 0;
-            const maxChakra = currentUserData.max_chakra || 100;
+            // Ouvir TODOS os usuários em tempo real
+            onSnapshot(collection(db, "users"), (snapshot) => {
+                grid.innerHTML = '';
+                if(snapshot.empty) { grid.innerHTML = '<p>Sem ninjas.</p>'; return; }
+                
+                snapshot.forEach(docSnap => {
+                    const u = docSnap.data();
+                    const uid = docSnap.id;
+                    
+                    // Valores com fallback para evitar NaN/Undefined
+                    const vida = u.vida || 0;
+                    const maxVida = u.max_vida || 100;
+                    const sanidade = u.sanidade || 0;
+                    const maxSanidade = u.max_sanidade || 100;
+                    const stamina = u.stamina || 0;
+                    const maxStamina = u.max_stamina || 100;
+                    const chakra = u.chakra || 0;
+                    const maxChakra = u.max_chakra || 100;
 
-            document.getElementById('battle-val-vida').innerText = `${vida} / ${maxVida}`;
-            document.getElementById('battle-bar-vida').style.width = Math.min((vida / maxVida) * 100, 100) + "%";
-
-            document.getElementById('battle-val-sanidade').innerText = `${sanidade} / ${maxSanidade}`;
-            document.getElementById('battle-bar-sanidade').style.width = Math.min((sanidade / maxSanidade) * 100, 100) + "%";
-
-            document.getElementById('battle-val-stamina').innerText = `${stamina} / ${maxStamina}`;
-            document.getElementById('battle-bar-stamina').style.width = Math.min((stamina / maxStamina) * 100, 100) + "%";
-            
-            document.getElementById('battle-val-chakra').innerText = `${chakra} / ${maxChakra}`;
-            document.getElementById('battle-bar-chakra').style.width = Math.min((chakra / maxChakra) * 100, 100) + "%";
+                    // Cria o card de cada usuário
+                    const card = document.createElement('div');
+                    card.className = 'battle-card';
+                    card.innerHTML = `
+                        <div class="battle-header-info">
+                            <img src="${u.avatar || IMG_PADRAO}" class="battle-avatar">
+                            <div>
+                                <div class="battle-name">${u.nome || "Ninja"}</div>
+                                <div class="battle-char">${u.apelido || "Sem Apelido"} - Nvl ${u.nivel || 1}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="battle-stats-wrapper">
+                            ${criarLinhaStatus(uid, 'vida', 'Vida', 'HP', vida, maxVida, 'bar-life')}
+                            ${criarLinhaStatus(uid, 'sanidade', 'Sanidade', 'SAN', sanidade, maxSanidade, 'bar-sanidade')}
+                            ${criarLinhaStatus(uid, 'stamina', 'Stamina', 'STA', stamina, maxStamina, 'bar-stamina')}
+                            ${criarLinhaStatus(uid, 'chakra', 'Chakra', 'CHK', chakra, maxChakra, 'bar-chakra')}
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            });
         }
 
-        window.alterarStatus = async (stat, valor) => {
-            if(!currentUserData) return;
-            const atual = currentUserData[stat] || 0;
-            let novo = atual + valor;
-            if(novo < 0) novo = 0;
-            
-            // Opcional: Limitar ao máximo se tiver max definido
-            // const max = currentUserData['max_'+stat] || 100;
-            // if(novo > max) novo = max;
+        function criarLinhaStatus(uid, field, label, abbr, val, max, colorClass) {
+            const pct = Math.min((val / max) * 100, 100);
+            return `
+                <div class="battle-row">
+                    <div class="battle-row-header"><span>${label}</span><span>${abbr}</span></div>
+                    <div class="battle-controls">
+                        <div class="battle-actions-row">
+                            <div class="battle-mini-btn" onclick="alterarStatus('${uid}', '${field}', -5)">-5</div>
+                            <div class="battle-mini-btn" onclick="alterarStatus('${uid}', '${field}', -1)">-1</div>
+                        </div>
+                        <span class="battle-val">${val} / ${max}</span>
+                        <div class="battle-actions-row">
+                            <div class="battle-mini-btn" onclick="alterarStatus('${uid}', '${field}', 1)">+1</div>
+                            <div class="battle-mini-btn" onclick="alterarStatus('${uid}', '${field}', 5)">+5</div>
+                        </div>
+                    </div>
+                    <div class="battle-bar-bg">
+                        <div class="battle-bar-fill ${colorClass}" style="width: ${pct}%;"></div>
+                        <div class="battle-bar-text">${pct.toFixed(0)}%</div>
+                    </div>
+                </div>
+            `;
+        }
 
-            await updateDoc(doc(db, "users", auth.currentUser.uid), { [stat]: novo });
-            // O onSnapshot vai atualizar a tela automaticamente
+        window.alterarStatus = async (targetUid, stat, valor) => {
+            const docRef = doc(db, "users", targetUid);
+            // Pequena otimização: update direto com increment
+            await updateDoc(docRef, { [stat]: increment(valor) });
         };
 
         function comprimirImagem(file) { return new Promise((resolve, reject) => { const r = new FileReader(); r.readAsDataURL(file); r.onload = (e) => { const i = new Image(); i.src = e.target.result; i.onload = () => { const c = document.createElement('canvas'), MAX = 600; let w = i.width, h = i.height; if (w > MAX) { h *= MAX / w; w = MAX; } c.width = w; c.height = h; c.getContext('2d').drawImage(i, 0, 0, w, h); resolve(c.toDataURL('image/jpeg', 0.7)); }; }; r.onerror = reject; }); }
@@ -873,10 +804,12 @@
             const btnSide = document.getElementById('side-btn-'+t);
             if(btnTop) btnTop.classList.add('active');
             if(btnSide) btnSide.classList.add('active');
+            
             if(t==='personagens') carregarPersonagens();
             if(t==='frases') carregarFrases();
             if(t==='inventario') carregarInventario();
-            if(t==='batalha') renderizarBatalha();
+            if(t==='batalha') renderizarBatalha(); // Agora chama o renderizador global
+            
             if(window.innerWidth <= 768) window.toggleMobileMenu();
         };
 
@@ -954,37 +887,40 @@
         }
 
         async function carregarLoja() {
-            const c = document.getElementById('loja-jutsus-grid'); if(!c) return; c.innerHTML = '';
-            const m = currentUserData.meusJutsus || [];
-            const snap = await getDocs(collection(db, "jutsus"));
-            snap.forEach(d => { const i = d.data(); const p = i.restrito_a || []; if(p.length > 0 && !p.includes(currentUserData.nome)) return; if(!m.includes(d.id)) criarCardLoja('loja-jutsus-grid', i, d.id, 'jutsu', (id, p, n) => comprarJutsu(id, p, n), (id, i) => verDetalhesJutsu(id, i)); });
+            try {
+                const c = document.getElementById('loja-jutsus-grid'); if(!c) return; c.innerHTML = '';
+                const m = currentUserData.meusJutsus || [];
+                const snap = await getDocs(collection(db, "jutsus"));
+                snap.forEach(d => { const i = d.data(); const p = i.restrito_a || []; if(p.length > 0 && !p.includes(currentUserData.nome)) return; if(!m.includes(d.id)) criarCardLoja('loja-jutsus-grid', i, d.id, 'jutsu', (id, p, n) => comprarJutsu(id, p, n), (id, i) => verDetalhesJutsu(id, i)); });
+            } catch(e) { console.warn("Loja Jutsu Vazia/Erro", e); }
         }
         async function carregarMeusJutsus(l) {
             const c = document.getElementById('meus-jutsus-grid'); if(!c) return; c.innerHTML = '';
             if(!l || l.length === 0) { c.innerHTML = '<p>Vazio.</p>'; return; }
-            for(const id of l) { const s = await getDoc(doc(db, "jutsus", id)); if(s.exists()) criarCard('meus-jutsus-grid', s.data(), id, 'jutsu', (id, i) => verDetalhesJutsu(id, i)); }
+            for(const id of l) { try { const s = await getDoc(doc(db, "jutsus", id)); if(s.exists()) criarCard('meus-jutsus-grid', s.data(), id, 'jutsu', (id, i) => verDetalhesJutsu(id, i)); } catch(e){} }
         }
         async function carregarLojaFerramentas() {
-            const c = document.getElementById('loja-ferramentas-grid'); if(!c) return; c.innerHTML = '';
-            const snap = await getDocs(collection(db, "ferramentas"));
-            snap.forEach(d => { criarCardLoja('loja-ferramentas-grid', d.data(), d.id, 'ferramenta', null, (id, i) => verDetalhesFerramenta(id, i)); });
+            try {
+                const c = document.getElementById('loja-ferramentas-grid'); if(!c) return; c.innerHTML = '';
+                const snap = await getDocs(collection(db, "ferramentas"));
+                snap.forEach(d => { criarCardLoja('loja-ferramentas-grid', d.data(), d.id, 'ferramenta', null, (id, i) => verDetalhesFerramenta(id, i)); });
+            } catch(e) { console.warn("Loja Ferramenta Vazia", e); }
         }
         async function carregarLojaItens() {
-            const c = document.getElementById('loja-itens-grid'); if(!c) return; c.innerHTML = '';
-            const snap = await getDocs(collection(db, "itens"));
-            snap.forEach(d => {
-                const i = d.data();
-                let vilaOk = false;
-                if(!i.vila || i.vila === 'Global') vilaOk = true;
-                else if(Array.isArray(i.vila)) { if(i.vila.includes(vilaAtual) || i.vila.includes('Global')) vilaOk = true; }
-                else if(i.vila === vilaAtual) vilaOk = true;
-
-                if (i.tipo !== lojaAtual) return;
-                
-                if (!vilaOk) return;
-
-                criarCardLoja('loja-itens-grid', i, d.id, 'item', null, (id, i) => verDetalhesItem(id, i));
-            });
+            try {
+                const c = document.getElementById('loja-itens-grid'); if(!c) return; c.innerHTML = '';
+                const snap = await getDocs(collection(db, "itens"));
+                snap.forEach(d => {
+                    const i = d.data();
+                    let vilaOk = false;
+                    if(!i.vila || i.vila === 'Global') vilaOk = true;
+                    else if(Array.isArray(i.vila)) { if(i.vila.includes(vilaAtual) || i.vila.includes('Global')) vilaOk = true; }
+                    else if(i.vila === vilaAtual) vilaOk = true;
+                    if (i.tipo !== lojaAtual) return;
+                    if (!vilaOk) return;
+                    criarCardLoja('loja-itens-grid', i, d.id, 'item', null, (id, i) => verDetalhesItem(id, i));
+                });
+            } catch(e) { console.warn("Loja Item Vazia", e); }
         }
 
         async function carregarInventario() {
