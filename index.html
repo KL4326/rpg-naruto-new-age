@@ -26,10 +26,10 @@
             --stat-buff: #3498db;   
             
             /* CORES BATALHA */
-            --hp-color: #e74c3c;
-            --sanidade-color: #3498db;
-            --stamina-color: #f1c40f;
-            --chakra-color: #2980b9;
+            --hp-color: #e74c3c;       /* Vermelho */
+            --sanidade-color: #3498db; /* Azul Claro */
+            --stamina-color: #ff9f43;  /* LARANJA */
+            --chakra-color: #2980b9;   /* AZUL ESCURO */
         }
         body.dark-mode { --bg-color: #000000; --sidebar-bg: #000000; --text-color: #f5f5f5; --card-bg: #121212; --border-color: #363636; }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -135,8 +135,8 @@
         
         .bar-life { background-color: var(--hp-color); }
         .bar-sanidade { background-color: var(--sanidade-color); }
-        .bar-stamina { background-color: var(--stamina-color); }
-        .bar-chakra { background-color: var(--chakra-color); }
+        .bar-stamina { background-color: var(--stamina-color); } 
+        .bar-chakra { background-color: var(--chakra-color); } 
 
         /* MISSÕES */
         .mission-btn-start { background: var(--primary-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 5px; }
@@ -426,6 +426,28 @@
                                     <div id="battle-bar-stamina" class="battle-bar-fill bar-stamina" style="width: 50%;"></div>
                                 </div>
                             </div>
+
+                            <div class="battle-row">
+                                <div class="battle-row-header">
+                                    <span>Chakra</span>
+                                    <span style="font-size:0.9rem; color:#aaa;">CHK</span>
+                                </div>
+                                <div class="battle-controls">
+                                    <div style="display:flex; gap:5px;">
+                                        <button class="battle-btn" onclick="alterarStatus('chakra', -5)">&#171;</button>
+                                        <button class="battle-btn" onclick="alterarStatus('chakra', -1)">&lt;</button>
+                                    </div>
+                                    <span class="battle-val" id="battle-val-chakra">0 / 0</span>
+                                    <div style="display:flex; gap:5px;">
+                                        <button class="battle-btn" onclick="alterarStatus('chakra', 1)">&gt;</button>
+                                        <button class="battle-btn" onclick="alterarStatus('chakra', 5)">&#187;</button>
+                                    </div>
+                                </div>
+                                <div class="battle-bar-bg">
+                                    <div id="battle-bar-chakra" class="battle-bar-fill bar-chakra" style="width: 50%;"></div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -810,6 +832,8 @@
             const maxSanidade = currentUserData.max_sanidade || 100;
             const stamina = currentUserData.stamina || 0;
             const maxStamina = currentUserData.max_stamina || 100;
+            const chakra = currentUserData.chakra || 0;
+            const maxChakra = currentUserData.max_chakra || 100;
 
             document.getElementById('battle-val-vida').innerText = `${vida} / ${maxVida}`;
             document.getElementById('battle-bar-vida').style.width = Math.min((vida / maxVida) * 100, 100) + "%";
@@ -819,6 +843,9 @@
 
             document.getElementById('battle-val-stamina').innerText = `${stamina} / ${maxStamina}`;
             document.getElementById('battle-bar-stamina').style.width = Math.min((stamina / maxStamina) * 100, 100) + "%";
+            
+            document.getElementById('battle-val-chakra').innerText = `${chakra} / ${maxChakra}`;
+            document.getElementById('battle-bar-chakra').style.width = Math.min((chakra / maxChakra) * 100, 100) + "%";
         }
 
         window.alterarStatus = async (stat, valor) => {
@@ -1047,9 +1074,9 @@
                             const isOwner = p.uid === auth.currentUser.uid;
                             const isLiked = likes.includes(auth.currentUser.uid);
                             const isSaved = savedBy.includes(auth.currentUser.uid);
-                            const menu = isOwner ? `<div class="post-menu-container"><div class="post-options-btn" onclick="this.nextElementSibling.classList.toggle('active')">...</div><div class="post-dropdown"><div class="dropdown-item danger" onclick="deletarPost('${id}')">Excluir</div></div></div>` : '';
+                            const menu = isOwner ? `<div class="post-menu-container"><div class="post-options-btn" onclick="this.nextElementSibling.classList.toggle('active')">...</div><div class="post-dropdown"><div class="dropdown-item danger" onclick="deletarPost('${d.id}')">Excluir</div></div></div>` : '';
                             const div = document.createElement('div'); div.className='post';
-                            div.innerHTML = `<div class="post-header"><div class="user-avatar-post"><img src="${p.autorAvatar||IMG_PADRAO}"></div><div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">${calcularTempo(p.data)}</span></div>${menu}</div><div class="post-content">${p.conteudo}</div>${p.imagem ? `<img src="${p.imagem}" class="post-image" onclick="verPost('${id}')">` : ''}<div class="post-actions"><button class="action-btn ${isLiked?'liked':''}" onclick="toggleLike('${id}')"><i class="${isLiked?'fa-solid':'fa-regular'} fa-heart"></i> ${likes.length}</button><button class="action-btn" onclick="verPost('${id}')"><i class="fa-regular fa-comment"></i> ${comments.length}</button><button class="action-btn ${isSaved?'saved':''}" onclick="toggleSave('${id}')" style="margin-left:auto;"><i class="${isSaved?'fa-solid':'fa-regular'} fa-bookmark"></i></button></div>`;
+                            div.innerHTML = `<div class="post-header"><div class="user-avatar-post"><img src="${p.autorAvatar||IMG_PADRAO}"></div><div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">${calcularTempo(p.data)}</span></div>${menu}</div><div class="post-content">${p.conteudo}</div>${p.imagem ? `<img src="${p.imagem}" class="post-image" onclick="verPost('${d.id}')">` : ''}<div class="post-actions"><button class="action-btn ${isLiked?'liked':''}" onclick="toggleLike('${d.id}')"><i class="${isLiked?'fa-solid':'fa-regular'} fa-heart"></i> ${likes.length}</button><button class="action-btn" onclick="verPost('${d.id}')"><i class="fa-regular fa-comment"></i> ${comments.length}</button><button class="action-btn ${isSaved?'saved':''}" onclick="toggleSave('${d.id}')" style="margin-left:auto;"><i class="${isSaved?'fa-solid':'fa-regular'} fa-bookmark"></i></button></div>`;
                             c.appendChild(div);
                         } catch (innerError) { console.warn("Erro post:", innerError); }
                     });
