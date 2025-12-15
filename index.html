@@ -20,10 +20,16 @@
             --danger-color: #ed4956;
             
             /* CORES DE STATUS */
+            --stat-chakra: #7f8c8d; 
+            --stat-stamina: #27ae60; 
+            --stat-dano: #e74c3c;   
+            --stat-buff: #3498db;   
+            
+            /* CORES BATALHA */
             --hp-color: #e74c3c;       /* Vermelho */
             --sanidade-color: #3498db; /* Azul Claro */
-            --stamina-color: #ff9f43;  /* Laranja */
-            --chakra-color: #2980b9;   /* Azul Escuro */
+            --stamina-color: #ff9f43;  /* LARANJA */
+            --chakra-color: #2980b9;   /* AZUL ESCURO */
         }
         body.dark-mode { --bg-color: #000000; --sidebar-bg: #000000; --text-color: #f5f5f5; --card-bg: #121212; --border-color: #363636; }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -89,6 +95,9 @@
         .inventory-controls { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 8px; background: rgba(0,0,0,0.03); padding: 5px; border-radius: 20px; }
         .btn-minus { background: var(--danger-color); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
         .btn-minus:hover { transform: scale(1.1); }
+
+        /* Maestria no Card */
+        .maestria-display { display: block; font-size: 0.85rem; color: var(--yellow-color); font-weight: bold; margin-top: 4px; text-shadow: 0 0 1px rgba(0,0,0,0.1); }
 
         /* NOVO: FILTROS DA LOJA */
         .shop-header { margin-bottom: 20px; background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); }
@@ -553,7 +562,7 @@
             "yang": "data:image/png;base64,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"// Placeholder
         };
         
-        // IMAGENS DAS KEKKEI GENKAI
+        // IMAGENS DAS KEKKEI GENKAI (Preencha com seus links - adicione vírgula se colocar mais)
         const KEKKEI_ICONS = {
             "sharingan": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQsaFL3vRwLEqONbFnsr_tskXDVuf9C7F03HQ&s",
             "byakugan": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR8dibOxYWvh_iAG7J4BJ6u1ziT2vSb0PpWdg&s",
@@ -566,6 +575,7 @@
         function calcularTempo(timestamp) {
             if (!timestamp) return "Desconhecido";
             let date;
+            // BLINDAGEM DE DATA
             try {
                 if (typeof timestamp.toDate === 'function') date = timestamp.toDate();
                 else if (timestamp instanceof Date) date = timestamp;
@@ -587,6 +597,7 @@
         const btnLogin = document.getElementById('btnLogin');
         if(btnLogin) btnLogin.addEventListener('click', () => { const e = document.getElementById('emailInput').value, s = document.getElementById('passwordInput').value; if(!e || !s) return alert("Preencha tudo!"); btnLogin.innerText = "Carregando..."; signInWithEmailAndPassword(auth, e, s).catch((err) => { btnLogin.innerText = "Entrar"; alert(err.message); }); });
         
+        // ENTER LOGIN (CORRIGIDO)
         const passInput = document.getElementById('passwordInput');
         if (passInput) {
             passInput.addEventListener('keypress', function (e) {
@@ -606,17 +617,21 @@
                 await carregarCacheItens();
                 
                 const docRef = doc(db, "users", user.uid);
-                onSnapshot(docRef, (docSnap) => {
-                    if (docSnap.exists()) {
-                        currentUserData = docSnap.data();
-                        if(!currentUserData.inventario) currentUserData.inventario = {}; 
-                        atualizarInterface(currentUserData);
-                    }
-                });
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    currentUserData = docSnap.data();
+                    if(!currentUserData.inventario) currentUserData.inventario = {}; 
+                    atualizarInterface(currentUserData);
+                    carregarTudo();
+                } else {
+                    const dadosPadrao = { nome: "Novo Ninja", ryos: 100, xp: 0, nivel: 1, email: user.email, meusJutsus: [], inventario: {}, statusMissoes: {}, elementos: [], kekkei_genkai: [] };
+                    await setDoc(docRef, dadosPadrao);
+                    currentUserData = dadosPadrao;
+                    atualizarInterface(dadosPadrao);
+                    carregarTudo();
+                }
                 
-                // Carregamento inicial com proteção
-                try { carregarTudo(); } catch(e) { console.error("Erro no carregamento inicial:", e); }
-                
+                // INICIALIZAÇÃO BLINDADA DO FEED
                 setTimeout(() => {
                     try { window.renderFeed('all'); } catch(e) { console.log("Erro inicializar feed:", e); }
                 }, 800); 
@@ -629,21 +644,16 @@
 
         async function carregarConfiguracoes() { try { const s = await getDoc(doc(db, "game_config", "sistema_nivel")); if(s.exists()) globalXpTable = s.data().tabela_xp || []; } catch(e) {} }
         async function carregarCacheItens() {
-            try {
-                const s1 = await getDocs(collection(db, "itens")); s1.forEach(d => globalItensMap[d.id] = { ...d.data(), type: 'item' });
-                const s2 = await getDocs(collection(db, "ferramentas")); s2.forEach(d => globalItensMap[d.id] = { ...d.data(), type: 'tool' });
-            } catch(e) { console.error("Erro cache itens:", e); }
+            const s1 = await getDocs(collection(db, "itens")); s1.forEach(d => globalItensMap[d.id] = { ...d.data(), type: 'item' });
+            const s2 = await getDocs(collection(db, "ferramentas")); s2.forEach(d => globalItensMap[d.id] = { ...d.data(), type: 'tool' });
         }
 
         function carregarTudo() {
-            try { carregarLoja(); } catch(e) { console.error("Loja Jutsus:", e); }
-            try { carregarMeusJutsus(currentUserData.meusJutsus); } catch(e) { console.error("Meus Jutsus:", e); }
-            try { carregarLojaFerramentas(); } catch(e) { console.error("Loja Ferr:", e); }
-            try { carregarLojaItens(); } catch(e) { console.error("Loja Itens:", e); }
-            try { carregarInventario(); } catch(e) { console.error("Inventario:", e); }
-            try { carregarMissoes(); } catch(e) { console.error("Missoes:", e); }
-            try { carregarRankings(); } catch(e) { console.error("Rankings:", e); }
-            try { carregarFrases(); } catch(e) { console.error("Frases:", e); }
+            carregarLoja(); carregarMeusJutsus(currentUserData.meusJutsus);
+            carregarLojaFerramentas(); 
+            carregarLojaItens(); 
+            carregarInventario(); 
+            carregarMissoes(); carregarRankings(); carregarFrases(); 
             if(auth.currentUser.email === "admin@rpgnaruto.com") carregarPainelAdmin();
         }
 
@@ -677,9 +687,7 @@
         function atualizarInterface(dados) {
             document.querySelector('.user-info').innerText = dados.apelido || dados.nome || "Ninja";
             document.getElementById('ryos-text').innerText = formatarNum(dados.ryos);
-            if(dados.avatar) {
-                document.getElementById('header-avatar').src = dados.avatar;
-            }
+            if(dados.avatar) document.getElementById('header-avatar').src = dados.avatar;
             if(dados.historiaTexto) document.getElementById('historia-display-text').innerText = dados.historiaTexto;
             if(dados.historiaImagem) document.getElementById('historia-display-img').src = dados.historiaImagem;
 
@@ -690,13 +698,16 @@
             document.getElementById('xp-text-display').innerText = `${xpAtual} / ${xpNecessario} XP`;
             document.getElementById('xp-bar').style.width = porcentagem + "%";
 
+            // RENDERIZAR ELEMENTOS E KEKKEI NO DASHBOARD
             renderizarIcones(dados.elementos || [], 'dash-elementos', ELEMENTOS_ICONS, 'Naturezas de Chakra');
             renderizarIcones(dados.kekkei_genkai || [], 'dash-kekkei', KEKKEI_ICONS, 'Kekkei Genkai');
 
+            // Stats
             const set = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
             set('dash-nivel', nivel); set('dash-cargo', dados.cargo||"Genin"); set('dash-ryos', formatarNum(dados.ryos));
             set('dash-jutsus', (dados.meusJutsus || []).length); 
             
+            // Contagem Inventário
             let totalItems = 0, totalTools = 0;
             if(dados.inventario) {
                 for(let id in dados.inventario) {
@@ -714,84 +725,6 @@
             set('dash-forca', dados.forca||10); set('dash-defesa', dados.defesa||10); set('dash-constituicao', dados.constituicao||10);
             set('dash-destreza', dados.destreza||10); set('dash-intelecto', dados.intelecto||10); set('dash-agilidade', dados.agilidade||10); set('dash-velocidade', dados.velocidade||10);
         }
-
-        // --- LÓGICA DE BATALHA GLOBAL (GM) ---
-        function renderizarBatalha() {
-            const grid = document.getElementById('battle-grid');
-            if(!grid) return;
-            
-            // Ouvir TODOS os usuários em tempo real
-            onSnapshot(collection(db, "users"), (snapshot) => {
-                grid.innerHTML = '';
-                if(snapshot.empty) { grid.innerHTML = '<p>Sem ninjas.</p>'; return; }
-                
-                snapshot.forEach(docSnap => {
-                    const u = docSnap.data();
-                    const uid = docSnap.id;
-                    
-                    // Valores com fallback para evitar NaN/Undefined
-                    const vida = u.vida || 0;
-                    const maxVida = u.max_vida || 100;
-                    const sanidade = u.sanidade || 0;
-                    const maxSanidade = u.max_sanidade || 100;
-                    const stamina = u.stamina || 0;
-                    const maxStamina = u.max_stamina || 100;
-                    const chakra = u.chakra || 0;
-                    const maxChakra = u.max_chakra || 100;
-
-                    // Cria o card de cada usuário
-                    const card = document.createElement('div');
-                    card.className = 'battle-card';
-                    card.innerHTML = `
-                        <div class="battle-header-info">
-                            <img src="${u.avatar || IMG_PADRAO}" class="battle-avatar">
-                            <div>
-                                <div class="battle-name">${u.nome || "Ninja"}</div>
-                                <div class="battle-char">${u.apelido || "Sem Apelido"} - Nvl ${u.nivel || 1}</div>
-                            </div>
-                        </div>
-                        
-                        <div class="battle-stats-wrapper">
-                            ${criarLinhaStatus(uid, 'vida', 'Vida', 'HP', vida, maxVida, 'bar-life')}
-                            ${criarLinhaStatus(uid, 'sanidade', 'Sanidade', 'SAN', sanidade, maxSanidade, 'bar-sanidade')}
-                            ${criarLinhaStatus(uid, 'stamina', 'Stamina', 'STA', stamina, maxStamina, 'bar-stamina')}
-                            ${criarLinhaStatus(uid, 'chakra', 'Chakra', 'CHK', chakra, maxChakra, 'bar-chakra')}
-                        </div>
-                    `;
-                    grid.appendChild(card);
-                });
-            });
-        }
-
-        function criarLinhaStatus(uid, field, label, abbr, val, max, colorClass) {
-            const pct = Math.min((val / max) * 100, 100);
-            return `
-                <div class="battle-row">
-                    <div class="battle-row-header"><span>${label}</span><span>${abbr}</span></div>
-                    <div class="battle-controls">
-                        <div class="battle-actions-row">
-                            <div class="battle-mini-btn" onclick="alterarStatus('${uid}', '${field}', -5)">-5</div>
-                            <div class="battle-mini-btn" onclick="alterarStatus('${uid}', '${field}', -1)">-1</div>
-                        </div>
-                        <span class="battle-val">${val} / ${max}</span>
-                        <div class="battle-actions-row">
-                            <div class="battle-mini-btn" onclick="alterarStatus('${uid}', '${field}', 1)">+1</div>
-                            <div class="battle-mini-btn" onclick="alterarStatus('${uid}', '${field}', 5)">+5</div>
-                        </div>
-                    </div>
-                    <div class="battle-bar-bg">
-                        <div class="battle-bar-fill ${colorClass}" style="width: ${pct}%;"></div>
-                        <div class="battle-bar-text">${pct.toFixed(0)}%</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        window.alterarStatus = async (targetUid, stat, valor) => {
-            const docRef = doc(db, "users", targetUid);
-            // Pequena otimização: update direto com increment
-            await updateDoc(docRef, { [stat]: increment(valor) });
-        };
 
         function comprimirImagem(file) { return new Promise((resolve, reject) => { const r = new FileReader(); r.readAsDataURL(file); r.onload = (e) => { const i = new Image(); i.src = e.target.result; i.onload = () => { const c = document.createElement('canvas'), MAX = 600; let w = i.width, h = i.height; if (w > MAX) { h *= MAX / w; w = MAX; } c.width = w; c.height = h; c.getContext('2d').drawImage(i, 0, 0, w, h); resolve(c.toDataURL('image/jpeg', 0.7)); }; }; r.onerror = reject; }); }
 
@@ -833,7 +766,8 @@
             let sub = "", extra = "";
             if(tipo === 'jutsu') {
                 sub = "Rank " + dados.rank;
-                if(currentUserData.maestrias) extra = `<span class="maestria-display">Maestria: ${currentUserData.maestrias[id]||0}</span>`;
+                const mastery = (currentUserData.maestrias && currentUserData.maestrias[id]) ? currentUserData.maestrias[id] : 0;
+                extra = `<span class="maestria-display">Maestria: ${mastery}</span>`;
             } else if(tipo === 'ferramenta') sub = dados.dano || "Ferramenta";
             else sub = dados.efeito || "Item";
             
@@ -891,14 +825,33 @@
                 const c = document.getElementById('loja-jutsus-grid'); if(!c) return; c.innerHTML = '';
                 const m = currentUserData.meusJutsus || [];
                 const snap = await getDocs(collection(db, "jutsus"));
-                snap.forEach(d => { const i = d.data(); const p = i.restrito_a || []; if(p.length > 0 && !p.includes(currentUserData.nome)) return; if(!m.includes(d.id)) criarCardLoja('loja-jutsus-grid', i, d.id, 'jutsu', (id, p, n) => comprarJutsu(id, p, n), (id, i) => verDetalhesJutsu(id, i)); });
+                let count = 0;
+                snap.forEach(d => { 
+                    const i = d.data(); 
+                    const p = i.restrito_a || []; 
+                    if(p.length > 0 && !p.includes(currentUserData.nome || "")) return; 
+                    if(!m.includes(d.id)) {
+                        criarCardLoja('loja-jutsus-grid', i, d.id, 'jutsu', (id, p, n) => comprarJutsu(id, p, n), (id, i) => verDetalhesJutsu(id, i)); 
+                        count++;
+                    }
+                });
+                if(count === 0) c.innerHTML = '<p>Loja vazia ou todos comprados.</p>';
             } catch(e) { console.warn("Loja Jutsu Vazia/Erro", e); }
         }
+
         async function carregarMeusJutsus(l) {
             const c = document.getElementById('meus-jutsus-grid'); if(!c) return; c.innerHTML = '';
-            if(!l || l.length === 0) { c.innerHTML = '<p>Vazio.</p>'; return; }
-            for(const id of l) { try { const s = await getDoc(doc(db, "jutsus", id)); if(s.exists()) criarCard('meus-jutsus-grid', s.data(), id, 'jutsu', (id, i) => verDetalhesJutsu(id, i)); } catch(e){} }
+            l = l.filter(id => id); // Remove nulos
+            if(!l || l.length === 0) { c.innerHTML = '<p>Nenhum jutsu aprendido.</p>'; return; }
+            
+            for(const id of l) { 
+                try { 
+                    const s = await getDoc(doc(db, "jutsus", id)); 
+                    if(s.exists()) criarCard('meus-jutsus-grid', s.data(), id, 'jutsu', (id, i) => verDetalhesJutsu(id, i)); 
+                } catch(e){} 
+            }
         }
+
         async function carregarLojaFerramentas() {
             try {
                 const c = document.getElementById('loja-ferramentas-grid'); if(!c) return; c.innerHTML = '';
@@ -1045,6 +998,81 @@
         };
         window.fecharProfileModal = () => document.getElementById('profileModal').style.display = 'none';
         
+        // --- LÓGICA DE BATALHA GLOBAL (GM) ---
+        function renderizarBatalha() {
+            const grid = document.getElementById('battle-grid');
+            if(!grid) return;
+            
+            // Ouvir TODOS os usuários em tempo real
+            onSnapshot(collection(db, "users"), (snapshot) => {
+                grid.innerHTML = '';
+                if(snapshot.empty) { grid.innerHTML = '<p>Sem ninjas.</p>'; return; }
+                
+                snapshot.forEach(docSnap => {
+                    const u = docSnap.data();
+                    const uid = docSnap.id;
+                    
+                    const vida = u.vida || 0;
+                    const maxVida = u.max_vida || 100;
+                    const sanidade = u.sanidade || 0;
+                    const maxSanidade = u.max_sanidade || 100;
+                    const stamina = u.stamina || 0;
+                    const maxStamina = u.max_stamina || 100;
+                    const chakra = u.chakra || 0;
+                    const maxChakra = u.max_chakra || 100;
+
+                    const card = document.createElement('div');
+                    card.className = 'battle-card';
+                    card.innerHTML = `
+                        <div class="battle-header-info">
+                            <img src="${u.avatar || IMG_PADRAO}" class="battle-avatar">
+                            <div>
+                                <div class="battle-name">${u.nome || "Ninja"}</div>
+                                <div class="battle-char">${u.apelido || "Sem Apelido"} - Nvl ${u.nivel || 1}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="battle-stats-wrapper">
+                            ${criarLinhaStatus(uid, 'vida', 'Vida', 'HP', vida, maxVida, 'bar-life')}
+                            ${criarLinhaStatus(uid, 'sanidade', 'Sanidade', 'SAN', sanidade, maxSanidade, 'bar-sanidade')}
+                            ${criarLinhaStatus(uid, 'stamina', 'Stamina', 'STA', stamina, maxStamina, 'bar-stamina')}
+                            ${criarLinhaStatus(uid, 'chakra', 'Chakra', 'CHK', chakra, maxChakra, 'bar-chakra')}
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            });
+        }
+
+        function criarLinhaStatus(uid, field, label, abbr, val, max, colorClass) {
+            const pct = Math.min((val / max) * 100, 100);
+            return `
+                <div class="battle-row">
+                    <div class="battle-row-header"><span>${label}</span><span>${abbr}</span></div>
+                    <div class="battle-controls">
+                        <div class="battle-actions-row">
+                            <div class="battle-mini-btn" onclick="alterarStatus('${uid}', '${field}', -5)">-5</div>
+                            <div class="battle-mini-btn" onclick="alterarStatus('${uid}', '${field}', -1)">-1</div>
+                        </div>
+                        <span class="battle-val">${val} / ${max}</span>
+                        <div class="battle-actions-row">
+                            <div class="battle-mini-btn" onclick="alterarStatus('${uid}', '${field}', 1)">+1</div>
+                            <div class="battle-mini-btn" onclick="alterarStatus('${uid}', '${field}', 5)">+5</div>
+                        </div>
+                    </div>
+                    <div class="battle-bar-bg">
+                        <div class="battle-bar-fill ${colorClass}" style="width: ${pct}%;"></div>
+                        <div class="battle-bar-text">${pct.toFixed(0)}%</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.alterarStatus = async (targetUid, stat, valor) => {
+            const docRef = doc(db, "users", targetUid);
+            await updateDoc(docRef, { [stat]: increment(valor) });
+        };
+
         async function carregarMissoes() { const c = document.getElementById('missoes-grid'); if(!c) return; const m = currentUserData.statusMissoes || {}; const s = await getDocs(collection(db, "missoes")); c.innerHTML = ''; s.forEach(d => { const i = d.data(), st = m[d.id] || 'neutro'; const k = document.createElement('div'); k.className = 'card jutsu-card-click'; k.onclick = () => verDetalhesMissao(d.id, i, st); k.innerHTML=`<h4>${i.titulo}</h4><p style="font-size:0.9rem; color:${st==='em_andamento'?'orange':st==='aprovado'?'green':'#777'}; font-weight:bold;">${st==='neutro'?'Disponível':st}</p><small style="color:var(--primary-color)">${i.xp||0} XP | ${formatarNum(i.recompensa)} Ryos</small>`; c.appendChild(k); }); }
         window.verDetalhesMissao = (id, d, st) => { document.getElementById('missao-name-modal').innerText = d.titulo; document.getElementById('missao-desc-modal').innerText = d.descricao; document.getElementById('missao-reward-modal').innerText = formatarNum(d.recompensa); document.getElementById('missao-xp-modal').innerText = d.xp||0; document.getElementById('missao-img-modal').src = d.imagem||IMG_PADRAO; const a = document.getElementById('missao-actions-modal'); a.innerHTML = ''; if(st==='neutro') a.innerHTML = `<button class="mission-btn-start" onclick="iniciarMissao('${id}')">Aceitar</button>`; else if(st==='aprovado') a.innerHTML = `<button class="mission-btn-collect" onclick="coletarRecompensa('${id}',${d.recompensa},${d.xp||0})">Receber</button>`; document.getElementById('missaoModal').style.display='flex'; };
         window.fecharMissaoModal = () => document.getElementById('missaoModal').style.display='none';
