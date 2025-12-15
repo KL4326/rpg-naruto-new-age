@@ -25,11 +25,11 @@
             --stat-dano: #e74c3c;   
             --stat-buff: #3498db;   
             
-            /* CORES BATALHA (Corrigidas) */
-            --hp-color: #e74c3c;       /* Vermelho */
-            --sanidade-color: #3498db; /* Azul Claro */
-            --stamina-color: #ff9f43;  /* LARANJA */
-            --chakra-color: #2980b9;   /* AZUL ESCURO */
+            /* CORES BATALHA */
+            --hp-color: #e74c3c;       
+            --sanidade-color: #3498db; 
+            --stamina-color: #ff9f43;  
+            --chakra-color: #2980b9;   
         }
         body.dark-mode { --bg-color: #000000; --sidebar-bg: #000000; --text-color: #f5f5f5; --card-bg: #121212; --border-color: #363636; }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
@@ -575,7 +575,6 @@
         function calcularTempo(timestamp) {
             if (!timestamp) return "Desconhecido";
             let date;
-            // BLINDAGEM DE DATA
             try {
                 if (typeof timestamp.toDate === 'function') date = timestamp.toDate();
                 else if (timestamp instanceof Date) date = timestamp;
@@ -597,7 +596,6 @@
         const btnLogin = document.getElementById('btnLogin');
         if(btnLogin) btnLogin.addEventListener('click', () => { const e = document.getElementById('emailInput').value, s = document.getElementById('passwordInput').value; if(!e || !s) return alert("Preencha tudo!"); btnLogin.innerText = "Carregando..."; signInWithEmailAndPassword(auth, e, s).catch((err) => { btnLogin.innerText = "Entrar"; alert(err.message); }); });
         
-        // ENTER LOGIN
         const passInput = document.getElementById('passwordInput');
         if (passInput) {
             passInput.addEventListener('keypress', function (e) {
@@ -628,7 +626,6 @@
                 
                 carregarTudo();
                 
-                // INICIALIZAÇÃO BLINDADA DO FEED
                 setTimeout(() => {
                     try { window.renderFeed('all'); } catch(e) { console.log("Erro inicializar feed:", e); }
                 }, 800); 
@@ -922,12 +919,13 @@
                     if(!m.includes(d.id)) { criarCardLoja('loja-jutsus-grid', i, d.id, 'jutsu', (id, p, n) => comprarJutsu(id, p, n), (id, i) => verDetalhesJutsu(id, i)); count++; }
                 });
                 if(count === 0) c.innerHTML = '<p>Loja vazia ou todos comprados.</p>';
-            } catch(e) {}
+            } catch(e) { console.warn("Loja Jutsu Vazia", e); }
         }
 
         async function carregarMeusJutsus(l) {
             const c = document.getElementById('meus-jutsus-grid'); if(!c) return; c.innerHTML = '';
-            l = (l || []).filter(id => id); // Remove nulos
+            l = (l || []).filter(id => id); // Remove nulos e vazios
+            
             if(l.length === 0) { c.innerHTML = '<p>Nenhum jutsu aprendido.</p>'; return; }
             
             for(const id of l) { 
@@ -1057,7 +1055,7 @@
 
         window.carregarRankings = async () => {
             const c = document.getElementById('ranking-container'); if(!c) return;
-            try { const s = await getDocs(collection(db, "users")); let l = []; s.forEach(d => l.push(d.data())); c.innerHTML = ''; renderRank(c, "Nível", l, 'nivel'); renderRank(c, "Ryos", l, 'ryos'); renderRank(c, "Rankeadas", l, 'pontos_rankeada'); } catch (e) { console.error(e); }
+            try { const s = await getDocs(collection(db, "users")); let l = []; s.forEach(d => l.push(d.data())); c.innerHTML = ''; renderRank(c, "Nível", l, 'nivel'); renderRank(c, "Ryos", l, 'ryos'); renderRank(c, "Rankeadas", l, 'pontos_rankeada'); renderRank(c, "Torneios", l, 'vitorias_torneio'); } catch (e) { console.error(e); }
         };
         function renderRank(c,t,l,f) { const s=[...l].sort((a,b)=>(b[f]||0)-(a[f]||0)).slice(0,5); let h=`<div class="ranking-col"><h3>${t}</h3><table class="ranking-table">`; s.forEach((u,i)=>h+=`<tr><td>${i+1}. ${u.nome}</td><td>${formatarNum(u[f])}</td></tr>`); h+='</table></div>'; c.innerHTML+=h; }
 
