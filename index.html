@@ -20,8 +20,8 @@
             --danger-color: #ed4956;
             
             /* CORES DE STATUS */
-            --stat-chakra: #7f8c8d; 
-            --stat-stamina: #27ae60; 
+            --stat-chakra: #2980b9; 
+            --stat-stamina: #ff9f43; 
             --stat-dano: #e74c3c;   
             --stat-buff: #3498db;   
             
@@ -372,7 +372,7 @@
                             <option value="Oto">Vila do Som (Oto)</option>
                             <option value="Kori">Vila do Gelo (Kori)</option>
                         </select>
-                        <h3 style="margin:15px 0 10px;">Estabelecimentos</h3>
+                         <h3 style="margin:15px 0 10px;">Estabelecimentos</h3>
                         <div class="shop-categories">
                             <button class="shop-cat-btn active" onclick="filtrarLojaPorTipo('mercado', this)">Mercado</button>
                             <button class="shop-cat-btn" onclick="filtrarLojaPorTipo('comida', this)">Restaurantes</button>
@@ -615,17 +615,25 @@
                 await carregarConfiguracoes();
                 await carregarCacheItens();
                 
+                // Primeiro carregamento OBRIGATÓRIO dos dados do usuário
                 const docRef = doc(db, "users", user.uid);
-                onSnapshot(docRef, (docSnap) => {
-                    if (docSnap.exists()) {
-                        currentUserData = docSnap.data();
-                        if(!currentUserData.inventario) currentUserData.inventario = {}; 
-                        atualizarInterface(currentUserData);
-                        renderizarBatalha(); 
-                    }
-                });
+                const docSnap = await getDoc(docRef);
                 
-                carregarTudo();
+                if (docSnap.exists()) {
+                    currentUserData = docSnap.data();
+                    if(!currentUserData.inventario) currentUserData.inventario = {};
+                    atualizarInterface(currentUserData);
+                    
+                    // SÓ AGORA CARREGA O RESTO
+                    carregarTudo();
+                } else {
+                    // Novo usuário
+                    const dadosPadrao = { nome: "Novo Ninja", ryos: 100, xp: 0, nivel: 1, email: user.email, meusJutsus: [], inventario: {}, statusMissoes: {}, elementos: [], kekkei_genkai: [] };
+                    await setDoc(docRef, dadosPadrao);
+                    currentUserData = dadosPadrao;
+                    atualizarInterface(dadosPadrao);
+                    carregarTudo();
+                }
                 
                 setTimeout(() => {
                     try { window.renderFeed('all'); } catch(e) { console.log("Erro inicializar feed:", e); }
@@ -845,7 +853,7 @@
             if(t==='frases') carregarFrases();
             if(t==='inventario') carregarInventario();
             if(t==='batalha') renderizarBatalha();
-            if(t==='jutsus') carregarMeusJutsus(currentUserData.meusJutsus); // Recarrega ao clicar
+            if(t==='jutsus') carregarMeusJutsus(currentUserData.meusJutsus); 
             
             if(window.innerWidth <= 768) window.toggleMobileMenu();
         };
@@ -870,7 +878,8 @@
             let sub = "", extra = "";
             if(tipo === 'jutsu') {
                 sub = "Rank " + dados.rank;
-                if(currentUserData.maestrias) extra = `<span class="maestria-display">Maestria: ${currentUserData.maestrias[id]||0}</span>`;
+                const mastery = (currentUserData.maestrias && currentUserData.maestrias[id]) ? currentUserData.maestrias[id] : 0;
+                extra = `<span class="maestria-display">Maestria: ${mastery}</span>`;
             } else if(tipo === 'ferramenta') sub = dados.dano || "Ferramenta";
             else sub = dados.efeito || "Item";
             
@@ -896,6 +905,12 @@
             let buyControlHTML = "";
             let priceHTML = `<p id="price-${id}" class="price-tag">${formatarNum(dados.preco)} Ryos</p>`;
 
+            // NOVO: SE JÁ TEM O JUTSU, MOSTRA BOTÃO ADQUIRIDO EM VEZ DE COMPRAR
+            let isOwned = false;
+            if(tipo === 'jutsu' && currentUserData.meusJutsus && currentUserData.meusJutsus.includes(id)) {
+                isOwned = true;
+            }
+
             if(tipo !== 'jutsu') {
                 buyControlHTML = `
                     <div class="qtd-container-square">
@@ -903,7 +918,11 @@
                     </div>
                     <button id="btn-buy-${id}" class="buy-btn" onclick="event.stopPropagation(); comprarMultiplos('${id}', ${dados.preco}, '${dados.nome}', '${tipo}', 'qtd-${id}')">Comprar x1</button>`;
             } else {
-                buyControlHTML = `<button class="buy-btn" onclick="event.stopPropagation(); comprarJutsu('${id}', ${dados.preco}, '${dados.nome}')">Comprar</button>`;
+                if(isOwned) {
+                    buyControlHTML = `<button class="buy-btn" disabled style="background-color:#555; cursor:not-allowed;">Adquirido</button>`;
+                } else {
+                    buyControlHTML = `<button class="buy-btn" onclick="event.stopPropagation(); comprarJutsu('${id}', ${dados.preco}, '${dados.nome}')">Comprar</button>`;
+                }
             }
 
             div.innerHTML = `<img src="${dados.imagem||IMG_PADRAO}" class="card-img-top"><h4>${dados.nome}</h4><small>${sub}</small>${priceHTML}${buyControlHTML}`;
@@ -942,10 +961,10 @@
                         // SE NÃO FOR ADMIN E TIVER RESTRIÇÃO, FILTRA
                         if(!isAdmin && p.length > 0 && !p.includes(currentUserData.nome || "")) return; 
                         
-                        if(!m.includes(d.id)) { 
-                            criarCardLoja('loja-jutsus-grid', i, d.id, 'jutsu', (id, p, n) => comprarJutsu(id, p, n), (id, i) => verDetalhesJutsu(id, i)); 
-                            count++; 
-                        }
+                        // AGORA MOSTRA TODOS NA LOJA (COM BOTÃO ADQUIRIDO SE JÁ TIVER)
+                        criarCardLoja('loja-jutsus-grid', i, d.id, 'jutsu', (id, p, n) => comprarJutsu(id, p, n), (id, i) => verDetalhesJutsu(id, i)); 
+                        count++; 
+                        
                     } catch(e) {}
                 });
                 if(count === 0) c.innerHTML = '<p>Loja vazia.</p>';
@@ -965,25 +984,26 @@
                 return; 
             }
             
-            for(const id of l) { 
-                try { 
-                    const s = await getDoc(doc(db, "jutsus", id)); 
+            // CARREGAMENTO PARALELO (MAIS SEGURO)
+            const promises = l.map(async (id) => {
+                try {
+                    const s = await getDoc(doc(db, "jutsus", id));
                     if(s.exists()) {
                         let data = s.data();
-                        
-                        // TENTA APLICAR A ESCALA, MAS SE FALHAR, USA O PADRÃO
-                        try {
-                             data = aplicarEscalaPersonalizada(data);
-                        } catch(err) {
-                             console.warn("Erro ao aplicar escala no jutsu " + id, err);
-                        }
-
-                        criarCard('meus-jutsus-grid', data, id, 'jutsu', (id, i) => verDetalhesJutsu(id, i)); 
+                        // TENTA APLICAR ESCALA, SE FALHAR USA O ORIGINAL
+                        try { data = aplicarEscalaPersonalizada(data); } catch(e){}
+                        return { id, data };
                     }
-                } catch(e){
-                    console.warn(`Erro ao carregar jutsu ${id}`, e);
-                } 
-            }
+                } catch(e) { return null; }
+            });
+
+            const resultados = await Promise.allSettled(promises);
+            
+            resultados.forEach(res => {
+                if(res.status === 'fulfilled' && res.value) {
+                    criarCard('meus-jutsus-grid', res.value.data, res.value.id, 'jutsu', (id, i) => verDetalhesJutsu(id, i));
+                }
+            });
         }
 
         async function carregarLojaFerramentas() {
@@ -1103,7 +1123,7 @@
 
         window.carregarRankings = async () => {
             const c = document.getElementById('ranking-container'); if(!c) return;
-            try { const s = await getDocs(collection(db, "users")); let l = []; s.forEach(d => l.push(d.data())); c.innerHTML = ''; renderRank(c, "Nível", l, 'nivel'); renderRank(c, "Ryos", l, 'ryos'); renderRank(c, "Rankeadas", l, 'pontos_rankeada'); renderRank(c, "Torneios", l, 'vitorias_torneio'); } catch (e) { console.error(e); }
+            try { const s = await getDocs(collection(db, "users")); let l = []; s.forEach(d => l.push(d.data())); c.innerHTML = ''; renderRank(c, "Nível", l, 'nivel'); renderRank(c, "Ryos", l, 'ryos'); renderRank(c, "Rankeadas", l, 'pontos_rankeada'); renderRank(c, "Torneios", l, 'vitorias_torneio'); renderRank(c, "Amistosos", l, 'pontos_amistoso'); renderRank(c, "Duplas", l, 'vitorias_dupla'); renderRank(c, "Clãs", l, 'vitorias_cla'); } catch (e) { console.error(e); }
         };
         function renderRank(c,t,l,f) { const s=[...l].sort((a,b)=>(b[f]||0)-(a[f]||0)).slice(0,5); let h=`<div class="ranking-col"><h3>${t}</h3><table class="ranking-table">`; s.forEach((u,i)=>h+=`<tr><td>${i+1}. ${u.nome}</td><td>${formatarNum(u[f])}</td></tr>`); h+='</table></div>'; c.innerHTML+=h; }
 
