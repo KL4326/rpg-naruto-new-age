@@ -20,6 +20,12 @@
             --danger-color: #ed4956;
             
             /* CORES DE STATUS */
+            --stat-chakra: #7f8c8d; 
+            --stat-stamina: #27ae60; 
+            --stat-dano: #e74c3c;   
+            --stat-buff: #3498db;   
+            
+            /* CORES BATALHA */
             --hp-color: #e74c3c;       
             --sanidade-color: #3498db; 
             --stamina-color: #ff9f43;  
@@ -353,7 +359,7 @@
                 <div id="jutsus" class="tab-content"><h3>Meus Jutsus</h3><div class="bucket-grid" id="meus-jutsus-grid"><p>Carregando...</p></div><hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;"><h3>Loja de Jutsus</h3><div class="bucket-grid" id="loja-jutsus-grid"><p>Carregando...</p></div></div>
                 <div id="ferramentas" class="tab-content"><h3>Loja de Ferramentas</h3><div class="bucket-grid" id="loja-ferramentas-grid"><p>Carregando...</p></div></div>
                 
-                <div id="loja" class="tab-content">
+               <div id="loja" class="tab-content">
                       <div class="shop-header">
                         <h3 style="margin-bottom:10px;">Localização Atual</h3>
                         <select id="shop-location" class="shop-location-select" onchange="atualizarFiltroVila()">
@@ -366,7 +372,7 @@
                             <option value="Oto">Vila do Som (Oto)</option>
                             <option value="Kori">Vila do Gelo (Kori)</option>
                         </select>
-                         <h3 style="margin:15px 0 10px;">Estabelecimentos</h3>
+                        <h3 style="margin:15px 0 10px;">Estabelecimentos</h3>
                         <div class="shop-categories">
                             <button class="shop-cat-btn active" onclick="filtrarLojaPorTipo('mercado', this)">Mercado</button>
                             <button class="shop-cat-btn" onclick="filtrarLojaPorTipo('comida', this)">Restaurantes</button>
@@ -556,7 +562,7 @@
             "yang": "data:image/png;base64,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"// Placeholder
         };
         
-        // IMAGENS DAS KEKKEI GENKAI
+        // IMAGENS DAS KEKKEI GENKAI (Preencha com seus links - adicione vírgula se colocar mais)
         const KEKKEI_ICONS = {
             "sharingan": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQsaFL3vRwLEqONbFnsr_tskXDVuf9C7F03HQ&s",
             "byakugan": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR8dibOxYWvh_iAG7J4BJ6u1ziT2vSb0PpWdg&s",
@@ -569,6 +575,7 @@
         function calcularTempo(timestamp) {
             if (!timestamp) return "Desconhecido";
             let date;
+            // BLINDAGEM DE DATA
             try {
                 if (typeof timestamp.toDate === 'function') date = timestamp.toDate();
                 else if (timestamp instanceof Date) date = timestamp;
@@ -590,6 +597,7 @@
         const btnLogin = document.getElementById('btnLogin');
         if(btnLogin) btnLogin.addEventListener('click', () => { const e = document.getElementById('emailInput').value, s = document.getElementById('passwordInput').value; if(!e || !s) return alert("Preencha tudo!"); btnLogin.innerText = "Carregando..."; signInWithEmailAndPassword(auth, e, s).catch((err) => { btnLogin.innerText = "Entrar"; alert(err.message); }); });
         
+        // ENTER LOGIN (CORRIGIDO)
         const passInput = document.getElementById('passwordInput');
         if (passInput) {
             passInput.addEventListener('keypress', function (e) {
@@ -620,6 +628,7 @@
                 
                 carregarTudo();
                 
+                // INICIALIZAÇÃO BLINDADA DO FEED
                 setTimeout(() => {
                     try { window.renderFeed('all'); } catch(e) { console.log("Erro inicializar feed:", e); }
                 }, 800); 
@@ -654,17 +663,26 @@
 
         // --- NOVA FUNÇÃO: APLICA ESCALONAMENTO ---
         function aplicarEscalaPersonalizada(dadosJutsu) {
+            // Se os dados forem nulos, retorna objeto vazio pra não quebrar
+            if (!dadosJutsu) return {};
             let dadosFinais = { ...dadosJutsu };
-            const user = auth.currentUser;
-            if (!user) return dadosFinais; // Proteção se não estiver logado
+            
+            // Só tenta buscar ID se usuário estiver logado
+            if (!auth.currentUser) return dadosFinais;
 
-            const uid = user.uid;
-            if (dadosFinais.escalonamento && dadosFinais.escalonamento[uid]) {
+            const uid = auth.currentUser.uid;
+            
+            // Verifica se existe o campo "escalonamento" e se é um objeto válido
+            if (dadosFinais.escalonamento && typeof dadosFinais.escalonamento === 'object') {
                 const p = dadosFinais.escalonamento[uid];
-                if (p.chakra !== undefined) dadosFinais.chakra = p.chakra;
-                if (p.stamina !== undefined) dadosFinais.stamina = p.stamina;
-                if (p.dano !== undefined) dadosFinais.dano = p.dano;
-                if (p.descricao !== undefined) dadosFinais.descricao = p.descricao;
+                
+                // Se encontrou personalização para este ID
+                if (p) {
+                    if (p.chakra !== undefined) dadosFinais.chakra = p.chakra;
+                    if (p.stamina !== undefined) dadosFinais.stamina = p.stamina;
+                    if (p.dano !== undefined) dadosFinais.dano = p.dano;
+                    if (p.descricao !== undefined) dadosFinais.descricao = p.descricao;
+                }
             }
             return dadosFinais;
         }
@@ -909,11 +927,13 @@
                 const snap = await getDocs(collection(db, "jutsus"));
                 let count = 0;
                 snap.forEach(d => { 
-                    let i = d.data();
-                    i = aplicarEscalaPersonalizada(i); 
-                    const p = i.restrito_a || []; 
-                    if(p.length > 0 && !p.includes(currentUserData.nome || "")) return; 
-                    if(!m.includes(d.id)) { criarCardLoja('loja-jutsus-grid', i, d.id, 'jutsu', (id, p, n) => comprarJutsu(id, p, n), (id, i) => verDetalhesJutsu(id, i)); count++; }
+                    try {
+                        let i = d.data();
+                        i = aplicarEscalaPersonalizada(i); 
+                        const p = i.restrito_a || []; 
+                        if(p.length > 0 && !p.includes(currentUserData.nome || "")) return; 
+                        if(!m.includes(d.id)) { criarCardLoja('loja-jutsus-grid', i, d.id, 'jutsu', (id, p, n) => comprarJutsu(id, p, n), (id, i) => verDetalhesJutsu(id, i)); count++; }
+                    } catch(e) {}
                 });
                 if(count === 0) c.innerHTML = '<p>Loja vazia ou todos comprados.</p>';
             } catch(e) { console.warn("Loja Jutsu Vazia", e); }
@@ -937,7 +957,14 @@
                     const s = await getDoc(doc(db, "jutsus", id)); 
                     if(s.exists()) {
                         let data = s.data();
-                        data = aplicarEscalaPersonalizada(data);
+                        
+                        // TENTA APLICAR A ESCALA, MAS SE FALHAR, USA O PADRÃO
+                        try {
+                             data = aplicarEscalaPersonalizada(data);
+                        } catch(err) {
+                             console.warn("Erro ao aplicar escala no jutsu " + id, err);
+                        }
+
                         criarCard('meus-jutsus-grid', data, id, 'jutsu', (id, i) => verDetalhesJutsu(id, i)); 
                     }
                 } catch(e){
@@ -1009,7 +1036,15 @@
         // --- MODAIS ---
         function abrirModal(t, d) {
             let dados = d;
-            if(t === 'jutsu') dados = aplicarEscalaPersonalizada(d); // APLICA ESCALA NO MODAL
+            
+            // Tenta aplicar a escala. Se falhar, usa o original.
+            if(t === 'jutsu') {
+                try {
+                    dados = aplicarEscalaPersonalizada(d);
+                } catch(e) {
+                    console.warn("Erro ao calcular escala no modal", e);
+                }
+            }
 
             document.getElementById(t+'-name-modal').innerText = dados.nome; 
             document.getElementById(t+'-desc-modal').innerText = dados.descricao||""; 
