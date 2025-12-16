@@ -20,12 +20,6 @@
             --danger-color: #ed4956;
             
             /* CORES DE STATUS */
-            --stat-chakra: #7f8c8d; 
-            --stat-stamina: #27ae60; 
-            --stat-dano: #e74c3c;   
-            --stat-buff: #3498db;   
-            
-            /* CORES BATALHA */
             --hp-color: #e74c3c;       
             --sanidade-color: #3498db; 
             --stamina-color: #ff9f43;  
@@ -661,7 +655,10 @@
         // --- NOVA FUNÇÃO: APLICA ESCALONAMENTO ---
         function aplicarEscalaPersonalizada(dadosJutsu) {
             let dadosFinais = { ...dadosJutsu };
-            const uid = auth.currentUser.uid;
+            const user = auth.currentUser;
+            if (!user) return dadosFinais; // Proteção se não estiver logado
+
+            const uid = user.uid;
             if (dadosFinais.escalonamento && dadosFinais.escalonamento[uid]) {
                 const p = dadosFinais.escalonamento[uid];
                 if (p.chakra !== undefined) dadosFinais.chakra = p.chakra;
@@ -922,11 +919,18 @@
             } catch(e) { console.warn("Loja Jutsu Vazia", e); }
         }
 
+        // --- CORREÇÃO DO LOOP INFINITO NOS MEUS JUTSUS ---
         async function carregarMeusJutsus(l) {
-            const c = document.getElementById('meus-jutsus-grid'); if(!c) return; c.innerHTML = '';
-            l = (l || []).filter(id => id); // Remove nulos e vazios
+            const c = document.getElementById('meus-jutsus-grid'); 
+            if(!c) return; 
+            c.innerHTML = ''; // Limpa imediatamente
+
+            l = (l || []).filter(id => id); // Remove nulos
             
-            if(l.length === 0) { c.innerHTML = '<p>Nenhum jutsu aprendido.</p>'; return; }
+            if(l.length === 0) { 
+                c.innerHTML = '<p>Nenhum jutsu aprendido.</p>'; 
+                return; 
+            }
             
             for(const id of l) { 
                 try { 
@@ -936,7 +940,9 @@
                         data = aplicarEscalaPersonalizada(data);
                         criarCard('meus-jutsus-grid', data, id, 'jutsu', (id, i) => verDetalhesJutsu(id, i)); 
                     }
-                } catch(e){} 
+                } catch(e){
+                    console.warn(`Erro ao carregar jutsu ${id}`, e);
+                } 
             }
         }
 
