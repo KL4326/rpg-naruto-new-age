@@ -20,8 +20,8 @@
             --danger-color: #ed4956;
             
             /* CORES DE STATUS */
-            --stat-chakra: #7f8c8d; 
-            --stat-stamina: #27ae60; 
+            --stat-chakra: #2980b9; 
+            --stat-stamina: #ff9f43; 
             --stat-dano: #e74c3c;   
             --stat-buff: #3498db;   
             
@@ -993,6 +993,7 @@
             } catch(e) { console.warn("Loja Jutsu Vazia", e); }
         }
 
+        // --- CORREÇÃO DO LOOP INFINITO NOS MEUS JUTSUS ---
         async function carregarMeusJutsus(l) {
             const c = document.getElementById('meus-jutsus-grid'); 
             if(!c) return; 
@@ -1119,10 +1120,21 @@
             const c = document.getElementById('conquistas-grid'); if(!c) return;
             const m = currentUserData.statusConquistas || {};
             const s = await getDocs(collection(db, "conquistas"));
+            
+            // VERIFICA SE O USUÁRIO É ADMIN
+            const isAdmin = auth.currentUser.email === "admin@rpgnaruto.com";
+
             c.innerHTML = '';
             if(s.empty) { c.innerHTML = '<p>Nenhuma conquista disponível.</p>'; return; }
+            
             s.forEach(d => {
                 const i = d.data();
+                
+                // LÓGICA DE RESTRIÇÃO
+                const p = i.restrito_a || [];
+                // Se não for admin e tiver restrição e o nome não estiver na lista, PULA
+                if (!isAdmin && p.length > 0 && !p.includes(currentUserData.nome)) return;
+
                 const st = m[d.id];
                 const k = document.createElement('div');
                 k.className = 'card jutsu-card-click';
