@@ -481,6 +481,21 @@
             <div id="jutsu-price-modal" class="jutsu-modal-price"></div>
         </div>
     </div>
+
+    <div class="modal-overlay-comment" id="conquistaModal" style="z-index: 2001;">
+        <div class="modal-content-card" style="border-color: #e6b800; max-width: 500px;">
+            <span class="close-modal" onclick="fecharConquistaModal()" style="color: #333; top: 10px; right: 15px;">&times;</span>
+            <img id="conquista-img-modal" src="" class="jutsu-modal-img" style="border-color:#e6b800; height: 150px;">
+            <h2 id="conquista-name-modal" style="color: #e6b800;"></h2>
+            <div style="text-align: left; margin-bottom: 20px; max-height: 200px; overflow-y: auto; padding-right: 5px;">
+                <p id="conquista-desc-modal" style="color: #555; line-height: 1.6;"></p>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e6b800; padding-top: 15px;">
+                <div style="font-weight: bold; color: #2ecc71;">XP: <span id="conquista-xp-modal">0</span> | Ryos: <span id="conquista-reward-modal"></span></div>
+                <div id="conquista-actions-modal"></div>
+            </div>
+        </div>
+    </div>
     
     <div class="modal-overlay-comment" id="toolModal" style="z-index: 2001;">
         <div class="modal-content-card" style="border-color: #555;">
@@ -620,28 +635,30 @@
                 await carregarConfiguracoes();
                 await carregarCacheItens();
                 
+                // Primeiro carregamento OBRIGATÓRIO dos dados do usuário
                 const docRef = doc(db, "users", user.uid);
-                onSnapshot(docRef, (docSnap) => {
-                    if (docSnap.exists()) {
-                        currentUserData = docSnap.data();
-                        if(!currentUserData.inventario) currentUserData.inventario = {};
-                        if(!currentUserData.meusJutsus) currentUserData.meusJutsus = [];
-                        if(!currentUserData.statusMissoes) currentUserData.statusMissoes = {};
-                        if(!currentUserData.statusConquistas) currentUserData.statusConquistas = {};
-
-                        atualizarInterface(currentUserData);
-                        renderizarBatalha(); 
-                    }
-                });
+                const docSnap = await getDoc(docRef);
                 
-                // Carrega inicialmente, mas só depois de ter certeza que tem user
-                const initialSnap = await getDoc(docRef);
-                if(initialSnap.exists()){
-                     currentUserData = initialSnap.data();
-                     if(!currentUserData.meusJutsus) currentUserData.meusJutsus = [];
-                     carregarTudo();
-                }
+                if (docSnap.exists()) {
+                    currentUserData = docSnap.data();
+                    if(!currentUserData.inventario) currentUserData.inventario = {};
+                    if(!currentUserData.meusJutsus) currentUserData.meusJutsus = [];
+                    if(!currentUserData.statusMissoes) currentUserData.statusMissoes = {};
+                    if(!currentUserData.statusConquistas) currentUserData.statusConquistas = {};
 
+                    atualizarInterface(currentUserData);
+                    
+                    // SÓ AGORA CARREGA O RESTO
+                    carregarTudo();
+                } else {
+                    // Novo usuário
+                    const dadosPadrao = { nome: "Novo Ninja", ryos: 100, xp: 0, nivel: 1, email: user.email, meusJutsus: [], inventario: {}, statusMissoes: {}, elementos: [], kekkei_genkai: [] };
+                    await setDoc(docRef, dadosPadrao);
+                    currentUserData = dadosPadrao;
+                    atualizarInterface(dadosPadrao);
+                    carregarTudo();
+                }
+                
                 setTimeout(() => {
                     try { window.renderFeed('all'); } catch(e) { console.log("Erro inicializar feed:", e); }
                 }, 800); 
@@ -681,22 +698,25 @@
             let dadosFinais = { ...dadosJutsu };
             
             try {
-                const user = auth.currentUser;
-                if (!user || !dadosFinais.escalonamento || typeof dadosFinais.escalonamento !== 'object') {
-                    return dadosFinais;
-                }
+                // Verifica se o usuário está logado
+                if (!auth.currentUser) return dadosFinais;
 
-                const uid = user.uid;
-                const p = dadosFinais.escalonamento[uid];
+                const uid = auth.currentUser.uid;
                 
-                if (p) {
-                    if (p.chakra !== undefined) dadosFinais.chakra = p.chakra;
-                    if (p.stamina !== undefined) dadosFinais.stamina = p.stamina;
-                    if (p.dano !== undefined) dadosFinais.dano = p.dano;
-                    if (p.descricao !== undefined) dadosFinais.descricao = p.descricao;
+                // Verifica se existe o campo "escalonamento" e se é um objeto válido
+                if (dadosFinais.escalonamento && typeof dadosFinais.escalonamento === 'object') {
+                    const p = dadosFinais.escalonamento[uid];
+                    
+                    // Se encontrou personalização para este ID
+                    if (p) {
+                        if (p.chakra !== undefined) dadosFinais.chakra = p.chakra;
+                        if (p.stamina !== undefined) dadosFinais.stamina = p.stamina;
+                        if (p.dano !== undefined) dadosFinais.dano = p.dano;
+                        if (p.descricao !== undefined) dadosFinais.descricao = p.descricao;
+                    }
                 }
             } catch (err) {
-                console.warn("Erro ao processar escalonamento:", err);
+                // Em caso de qualquer erro, retorna o jutsu original e não trava
                 return dadosJutsu; 
             }
             return dadosFinais;
@@ -884,7 +904,8 @@
             let sub = "", extra = "";
             if(tipo === 'jutsu') {
                 sub = "Rank " + dados.rank;
-                if(currentUserData.maestrias) extra = `<span class="maestria-display">Maestria: ${currentUserData.maestrias[id]||0}</span>`;
+                const mastery = (currentUserData.maestrias && currentUserData.maestrias[id]) ? currentUserData.maestrias[id] : 0;
+                extra = `<span class="maestria-display">Maestria: ${mastery}</span>`;
             } else if(tipo === 'ferramenta') sub = dados.dano || "Ferramenta";
             else sub = dados.efeito || "Item";
             
@@ -910,7 +931,7 @@
             let buyControlHTML = "";
             let priceHTML = `<p id="price-${id}" class="price-tag">${formatarNum(dados.preco)} Ryos</p>`;
 
-            // VERIFICA SE JÁ TEM
+            // NOVO: SE JÁ TEM O JUTSU, MOSTRA BOTÃO ADQUIRIDO EM VEZ DE COMPRAR
             let isOwned = false;
             if(tipo === 'jutsu' && currentUserData.meusJutsus && currentUserData.meusJutsus.includes(id)) {
                 isOwned = true;
@@ -975,6 +996,7 @@
             } catch(e) { console.warn("Loja Jutsu Vazia", e); }
         }
 
+        // --- CORREÇÃO DO LOOP INFINITO NOS MEUS JUTSUS ---
         async function carregarMeusJutsus(l) {
             const c = document.getElementById('meus-jutsus-grid'); 
             if(!c) return; 
@@ -1109,16 +1131,45 @@
                 const k = document.createElement('div');
                 k.className = 'card jutsu-card-click';
                 
+                // CRIA BOTÃO DE AÇÃO
                 let btnHtml = "";
-                if(!st) btnHtml = `<button class="mission-btn-start" onclick="solicitarConquista('${d.id}')">Reivindicar</button>`;
-                else if(st === 'solicitado') btnHtml = `<button class="mission-btn-wait">Aguardando Kage</button>`;
-                else if(st === 'aprovado') btnHtml = `<button class="mission-btn-collect" onclick="coletarConquista('${d.id}', ${i.recompensa||0}, ${i.xp||0})">Coletar</button>`;
-                else if(st === 'concluido') btnHtml = `<button class="mission-btn-done">Concluído</button>`;
+                if(!st) btnHtml = `<button class="mission-btn-start" onclick="event.stopPropagation(); solicitarConquista('${d.id}')">Reivindicar</button>`;
+                else if(st === 'solicitado') btnHtml = `<button class="mission-btn-wait" onclick="event.stopPropagation();">Aguardando Kage</button>`;
+                else if(st === 'aprovado') btnHtml = `<button class="mission-btn-collect" onclick="event.stopPropagation(); coletarConquista('${d.id}', ${i.recompensa||0}, ${i.xp||0})">Coletar</button>`;
+                else if(st === 'concluido') btnHtml = `<button class="mission-btn-done" onclick="event.stopPropagation();">Concluído</button>`;
+                
+                // DEFINE STATUS TEXT
+                let statusText = "Disponível";
+                if(st === 'solicitado') statusText = "Pendente";
+                else if(st === 'aprovado') statusText = "Aprovado!";
+                else if(st === 'concluido') statusText = "Concluído";
 
-                k.innerHTML = `<h4>${i.titulo}</h4><p>${i.descricao}</p><small style="color:var(--primary-color)">${i.xp||0} XP | ${formatarNum(i.recompensa)} Ryos</small>${btnHtml}`;
+                // DEFINE CLIQUE DO CARD PARA ABRIR DETALHES
+                k.onclick = () => verDetalhesConquista(d.id, i, st);
+
+                k.innerHTML = `<img src="${i.imagem}" class="card-img-top"><h4>${i.titulo}</h4><p style="font-weight:bold; color:#777;">${statusText}</p>${btnHtml}`;
                 c.appendChild(k);
             });
         }
+
+        window.verDetalhesConquista = (id, d, st) => {
+            document.getElementById('conquista-name-modal').innerText = d.titulo;
+            document.getElementById('conquista-desc-modal').innerText = d.descricao;
+            document.getElementById('conquista-reward-modal').innerText = formatarNum(d.recompensa);
+            document.getElementById('conquista-xp-modal').innerText = d.xp||0;
+            document.getElementById('conquista-img-modal').src = d.imagem||IMG_PADRAO;
+            
+            const a = document.getElementById('conquista-actions-modal');
+            a.innerHTML = '';
+            
+            if(!st) a.innerHTML = `<button class="mission-btn-start" onclick="solicitarConquista('${id}')">Reivindicar</button>`;
+            else if(st === 'solicitado') a.innerHTML = `<button class="mission-btn-wait">Aguardando Aprovação</button>`;
+            else if(st === 'aprovado') a.innerHTML = `<button class="mission-btn-collect" onclick="coletarConquista('${id}',${d.recompensa},${d.xp||0})">Coletar Recompensa</button>`;
+            else if(st === 'concluido') a.innerHTML = `<button class="mission-btn-done">Já Coletado</button>`;
+            
+            document.getElementById('conquistaModal').style.display='flex';
+        };
+        window.fecharConquistaModal = () => document.getElementById('conquistaModal').style.display='none';
 
         window.solicitarConquista = async (id) => {
             await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusConquistas.${id}`]: 'solicitado' });
