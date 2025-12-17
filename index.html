@@ -20,8 +20,8 @@
             --danger-color: #ed4956;
             
             /* CORES DE STATUS */
-            --stat-chakra: #2980b9; 
-            --stat-stamina: #ff9f43; 
+            --stat-chakra: #7f8c8d; 
+            --stat-stamina: #27ae60; 
             --stat-dano: #e74c3c;   
             --stat-buff: #3498db;   
             
@@ -297,6 +297,7 @@
                 <button id="side-btn-batalha" onclick="showTab('batalha')"><i class="fa-solid fa-khanda"></i> Batalha</button>
                 <button id="side-btn-inventario" onclick="showTab('inventario')"><i class="fa-solid fa-box-open"></i> Inventário</button>
                 <button id="side-btn-missoes" onclick="showTab('missoes')"><i class="fa-solid fa-scroll"></i> Missões</button>
+                <button id="side-btn-conquistas" onclick="showTab('conquistas')"><i class="fa-solid fa-trophy"></i> Conquistas</button>
                 <button id="side-btn-personagens" onclick="showTab('personagens')"><i class="fa-solid fa-users"></i> Personagens</button>
                 <button id="side-btn-loja" onclick="showTab('loja')"><i class="fa-solid fa-store"></i> Loja</button>
                 <button id="side-btn-rankings" onclick="showTab('rankings')"><i class="fa-solid fa-trophy"></i> Rankings</button>
@@ -356,6 +357,11 @@
                     </div>
                 </div>
 
+                <div id="conquistas" class="tab-content">
+                    <h2>Conquistas</h2>
+                    <div class="bucket-grid" id="conquistas-grid"><p>Carregando...</p></div>
+                </div>
+
                 <div id="jutsus" class="tab-content"><h3>Meus Jutsus</h3><div class="bucket-grid" id="meus-jutsus-grid"><p>Carregando...</p></div><hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;"><h3>Loja de Jutsus</h3><div class="bucket-grid" id="loja-jutsus-grid"><p>Carregando...</p></div></div>
                 <div id="ferramentas" class="tab-content"><h3>Loja de Ferramentas</h3><div class="bucket-grid" id="loja-ferramentas-grid"><p>Carregando...</p></div></div>
                 
@@ -372,7 +378,7 @@
                             <option value="Oto">Vila do Som (Oto)</option>
                             <option value="Kori">Vila do Gelo (Kori)</option>
                         </select>
-                         <h3 style="margin:15px 0 10px;">Estabelecimentos</h3>
+                        <h3 style="margin:15px 0 10px;">Estabelecimentos</h3>
                         <div class="shop-categories">
                             <button class="shop-cat-btn active" onclick="filtrarLojaPorTipo('mercado', this)">Mercado</button>
                             <button class="shop-cat-btn" onclick="filtrarLojaPorTipo('comida', this)">Restaurantes</button>
@@ -553,7 +559,6 @@
 
         // IMAGENS DOS ELEMENTOS
         const ELEMENTOS_ICONS = {
-
             "fogo": "https://pm1.aminoapps.com/6268/f93aa3930c07f92db411cc1e30bb510a3ceed1e6_hq.jpg",
             "agua": "data:image/jpeg;base64,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",
             "vento": "https://nrpgshinobi-konohagakure.weebly.com/uploads/1/6/0/4/16044106/819689103.png?193",
@@ -615,26 +620,28 @@
                 await carregarConfiguracoes();
                 await carregarCacheItens();
                 
-                // Primeiro carregamento OBRIGATÓRIO dos dados do usuário
                 const docRef = doc(db, "users", user.uid);
-                const docSnap = await getDoc(docRef);
+                onSnapshot(docRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        currentUserData = docSnap.data();
+                        if(!currentUserData.inventario) currentUserData.inventario = {};
+                        if(!currentUserData.meusJutsus) currentUserData.meusJutsus = [];
+                        if(!currentUserData.statusMissoes) currentUserData.statusMissoes = {};
+                        if(!currentUserData.statusConquistas) currentUserData.statusConquistas = {};
+
+                        atualizarInterface(currentUserData);
+                        renderizarBatalha(); 
+                    }
+                });
                 
-                if (docSnap.exists()) {
-                    currentUserData = docSnap.data();
-                    if(!currentUserData.inventario) currentUserData.inventario = {};
-                    atualizarInterface(currentUserData);
-                    
-                    // SÓ AGORA CARREGA O RESTO
-                    carregarTudo();
-                } else {
-                    // Novo usuário
-                    const dadosPadrao = { nome: "Novo Ninja", ryos: 100, xp: 0, nivel: 1, email: user.email, meusJutsus: [], inventario: {}, statusMissoes: {}, elementos: [], kekkei_genkai: [] };
-                    await setDoc(docRef, dadosPadrao);
-                    currentUserData = dadosPadrao;
-                    atualizarInterface(dadosPadrao);
-                    carregarTudo();
+                // Carrega inicialmente, mas só depois de ter certeza que tem user
+                const initialSnap = await getDoc(docRef);
+                if(initialSnap.exists()){
+                     currentUserData = initialSnap.data();
+                     if(!currentUserData.meusJutsus) currentUserData.meusJutsus = [];
+                     carregarTudo();
                 }
-                
+
                 setTimeout(() => {
                     try { window.renderFeed('all'); } catch(e) { console.log("Erro inicializar feed:", e); }
                 }, 800); 
@@ -660,6 +667,7 @@
             try { carregarLojaItens(); } catch(e){}
             try { carregarInventario(); } catch(e){}
             try { carregarMissoes(); } catch(e){}
+            try { carregarConquistas(); } catch(e){}
             try { carregarRankings(); } catch(e){}
             try { carregarFrases(); } catch(e){}
             if(auth.currentUser.email === "admin@rpgnaruto.com") carregarPainelAdmin();
@@ -669,29 +677,26 @@
 
         // --- NOVA FUNÇÃO BLINDADA: APLICA ESCALONAMENTO ---
         function aplicarEscalaPersonalizada(dadosJutsu) {
-            if (!dadosJutsu) return {}; 
+            if (!dadosJutsu) return {}; // Proteção básica
             let dadosFinais = { ...dadosJutsu };
             
             try {
-                // Verifica se o usuário está logado
-                if (!auth.currentUser) return dadosFinais;
+                const user = auth.currentUser;
+                if (!user || !dadosFinais.escalonamento || typeof dadosFinais.escalonamento !== 'object') {
+                    return dadosFinais;
+                }
 
-                const uid = auth.currentUser.uid;
+                const uid = user.uid;
+                const p = dadosFinais.escalonamento[uid];
                 
-                // Verifica se existe o campo "escalonamento" e se é um objeto válido
-                if (dadosFinais.escalonamento && typeof dadosFinais.escalonamento === 'object') {
-                    const p = dadosFinais.escalonamento[uid];
-                    
-                    // Se encontrou personalização para este ID
-                    if (p) {
-                        if (p.chakra !== undefined) dadosFinais.chakra = p.chakra;
-                        if (p.stamina !== undefined) dadosFinais.stamina = p.stamina;
-                        if (p.dano !== undefined) dadosFinais.dano = p.dano;
-                        if (p.descricao !== undefined) dadosFinais.descricao = p.descricao;
-                    }
+                if (p) {
+                    if (p.chakra !== undefined) dadosFinais.chakra = p.chakra;
+                    if (p.stamina !== undefined) dadosFinais.stamina = p.stamina;
+                    if (p.dano !== undefined) dadosFinais.dano = p.dano;
+                    if (p.descricao !== undefined) dadosFinais.descricao = p.descricao;
                 }
             } catch (err) {
-                // Em caso de qualquer erro, retorna o jutsu original e não trava
+                console.warn("Erro ao processar escalonamento:", err);
                 return dadosJutsu; 
             }
             return dadosFinais;
@@ -854,7 +859,8 @@
             if(t==='inventario') carregarInventario();
             if(t==='batalha') renderizarBatalha();
             if(t==='jutsus') carregarMeusJutsus(currentUserData.meusJutsus); 
-            
+            if(t==='conquistas') carregarConquistas();
+
             if(window.innerWidth <= 768) window.toggleMobileMenu();
         };
 
@@ -878,8 +884,7 @@
             let sub = "", extra = "";
             if(tipo === 'jutsu') {
                 sub = "Rank " + dados.rank;
-                const mastery = (currentUserData.maestrias && currentUserData.maestrias[id]) ? currentUserData.maestrias[id] : 0;
-                extra = `<span class="maestria-display">Maestria: ${mastery}</span>`;
+                if(currentUserData.maestrias) extra = `<span class="maestria-display">Maestria: ${currentUserData.maestrias[id]||0}</span>`;
             } else if(tipo === 'ferramenta') sub = dados.dano || "Ferramenta";
             else sub = dados.efeito || "Item";
             
@@ -905,7 +910,7 @@
             let buyControlHTML = "";
             let priceHTML = `<p id="price-${id}" class="price-tag">${formatarNum(dados.preco)} Ryos</p>`;
 
-            // NOVO: SE JÁ TEM O JUTSU, MOSTRA BOTÃO ADQUIRIDO EM VEZ DE COMPRAR
+            // VERIFICA SE JÁ TEM
             let isOwned = false;
             if(tipo === 'jutsu' && currentUserData.meusJutsus && currentUserData.meusJutsus.includes(id)) {
                 isOwned = true;
@@ -949,7 +954,6 @@
                 const snap = await getDocs(collection(db, "jutsus"));
                 let count = 0;
                 
-                // MODO ADMIN: SE FOR ADMIN, MOSTRA TUDO, SENÃO APLICA RESTRIÇÃO
                 const isAdmin = auth.currentUser.email === "admin@rpgnaruto.com";
 
                 snap.forEach(d => { 
@@ -958,10 +962,10 @@
                         i = aplicarEscalaPersonalizada(i); 
                         const p = i.restrito_a || []; 
                         
-                        // SE NÃO FOR ADMIN E TIVER RESTRIÇÃO, FILTRA
+                        // Filtro de restrição
                         if(!isAdmin && p.length > 0 && !p.includes(currentUserData.nome || "")) return; 
                         
-                        // AGORA MOSTRA TODOS NA LOJA (COM BOTÃO ADQUIRIDO SE JÁ TIVER)
+                        // Mostra TODOS, mas com botão bloqueado se já tiver
                         criarCardLoja('loja-jutsus-grid', i, d.id, 'jutsu', (id, p, n) => comprarJutsu(id, p, n), (id, i) => verDetalhesJutsu(id, i)); 
                         count++; 
                         
@@ -971,26 +975,23 @@
             } catch(e) { console.warn("Loja Jutsu Vazia", e); }
         }
 
-        // --- CORREÇÃO DO LOOP INFINITO NOS MEUS JUTSUS ---
         async function carregarMeusJutsus(l) {
             const c = document.getElementById('meus-jutsus-grid'); 
             if(!c) return; 
-            c.innerHTML = ''; // Limpa imediatamente
+            c.innerHTML = ''; 
 
-            l = (l || []).filter(id => id); // Remove nulos
+            l = (l || []).filter(id => id); 
             
             if(l.length === 0) { 
                 c.innerHTML = '<p>Nenhum jutsu aprendido.</p>'; 
                 return; 
             }
             
-            // CARREGAMENTO PARALELO (MAIS SEGURO)
             const promises = l.map(async (id) => {
                 try {
                     const s = await getDoc(doc(db, "jutsus", id));
                     if(s.exists()) {
                         let data = s.data();
-                        // TENTA APLICAR ESCALA, SE FALHAR USA O ORIGINAL
                         try { data = aplicarEscalaPersonalizada(data); } catch(e){}
                         return { id, data };
                     }
@@ -1095,6 +1096,41 @@
         window.fecharToolModal = () => document.getElementById('toolModal').style.display='none';
         window.fecharItemModal = () => document.getElementById('itemModal').style.display='none';
 
+        // --- CONQUISTAS ---
+        async function carregarConquistas() {
+            const c = document.getElementById('conquistas-grid'); if(!c) return;
+            const m = currentUserData.statusConquistas || {};
+            const s = await getDocs(collection(db, "conquistas"));
+            c.innerHTML = '';
+            if(s.empty) { c.innerHTML = '<p>Nenhuma conquista disponível.</p>'; return; }
+            s.forEach(d => {
+                const i = d.data();
+                const st = m[d.id];
+                const k = document.createElement('div');
+                k.className = 'card jutsu-card-click';
+                
+                let btnHtml = "";
+                if(!st) btnHtml = `<button class="mission-btn-start" onclick="solicitarConquista('${d.id}')">Reivindicar</button>`;
+                else if(st === 'solicitado') btnHtml = `<button class="mission-btn-wait">Aguardando Kage</button>`;
+                else if(st === 'aprovado') btnHtml = `<button class="mission-btn-collect" onclick="coletarConquista('${d.id}', ${i.recompensa||0}, ${i.xp||0})">Coletar</button>`;
+                else if(st === 'concluido') btnHtml = `<button class="mission-btn-done">Concluído</button>`;
+
+                k.innerHTML = `<h4>${i.titulo}</h4><p>${i.descricao}</p><small style="color:var(--primary-color)">${i.xp||0} XP | ${formatarNum(i.recompensa)} Ryos</small>${btnHtml}`;
+                c.appendChild(k);
+            });
+        }
+
+        window.solicitarConquista = async (id) => {
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusConquistas.${id}`]: 'solicitado' });
+            alert("Solicitação enviada ao Kage!"); reloadData();
+        };
+
+        window.coletarConquista = async (id, r, x) => {
+            const u = currentUserData, nr = (u.ryos||0)+r, nx = (u.xp||0)+x;
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: nr, xp: nx, [`statusConquistas.${id}`]: 'concluido' });
+            alert("Conquista Coletada!"); reloadData();
+        };
+
         // --- OUTRAS ---
         window.handleImageUpload = async (e) => { if(e.target.files[0]) { try { currentImageBase64 = await comprimirImagem(e.target.files[0]); document.getElementById('preview-image').src = currentImageBase64; document.getElementById('preview-container').style.display='block'; } catch(e){} } };
         window.removeImage = () => { document.getElementById('imageInput').value=''; currentImageBase64=null; document.getElementById('preview-container').style.display='none'; };
@@ -1135,8 +1171,33 @@
         window.deletarFrase = async (id) => { if(confirm("Excluir?")) await deleteDoc(doc(db, "frases", id)); };
         window.copiarFrase = (t) => { navigator.clipboard.writeText(t).then(() => { const f=document.getElementById('copyFeedback'); f.style.display='block'; setTimeout(()=>f.style.display='none',2000); }); };
 
-        async function carregarPainelAdmin() { try { const c = document.getElementById('admin-missoes-grid'); c.innerHTML='Carregando...'; const s = await getDocs(collection(db, "users")); c.innerHTML=''; s.forEach(u=>{ const d=u.data(), m=d.statusMissoes||{}; for(const [mid,st] of Object.entries(m)){ if(st==='em_andamento'){ const k=document.createElement('div'); k.className='card'; k.innerHTML=`<h4>${d.nome}</h4><p>${mid}</p><button class="mission-btn-collect" onclick="aprovarMissao('${u.id}','${mid}')">Aprovar</button>`; c.appendChild(k); } } }); } catch(e){} }
+        async function carregarPainelAdmin() { try { const c = document.getElementById('admin-missoes-grid'); c.innerHTML='Carregando...'; 
+        const s = await getDocs(collection(db, "users")); c.innerHTML=''; 
+        
+        s.forEach(u=>{ 
+            const d=u.data();
+            const m = d.statusMissoes || {}; 
+            const conquests = d.statusConquistas || {};
+
+            // Missões
+            for(const [mid,st] of Object.entries(m)){ 
+                if(st==='em_andamento'){ 
+                    const k=document.createElement('div'); k.className='card'; k.innerHTML=`<h4>${d.nome} (Missão)</h4><p>${mid}</p><button class="mission-btn-collect" onclick="aprovarMissao('${u.id}','${mid}')">Aprovar Missão</button>`; c.appendChild(k); 
+                } 
+            }
+            
+            // Conquistas
+            for(const [cid,st] of Object.entries(conquests)){ 
+                if(st==='solicitado'){ 
+                    const k=document.createElement('div'); k.className='card'; k.innerHTML=`<h4>${d.nome} (Conquista)</h4><p>${cid}</p><button class="mission-btn-collect" onclick="aprovarConquista('${u.id}','${cid}')">Aprovar Conquista</button>`; c.appendChild(k); 
+                } 
+            }
+        }); 
+        
+        } catch(e){} }
+        
         window.aprovarMissao = async (uid, mid) => { if(confirm("Aprovar?")) await updateDoc(doc(db, "users", uid), { [`statusMissoes.${mid}`]: 'aprovado' }); alert("Feito!"); reloadData(); };
+        window.aprovarConquista = async (uid, cid) => { if(confirm("Aprovar Conquista?")) await updateDoc(doc(db, "users", uid), { [`statusConquistas.${cid}`]: 'aprovado' }); alert("Feito!"); reloadData(); };
 
     </script>
 </body>
