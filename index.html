@@ -576,9 +576,9 @@
         // CONFIGURAÇÃO DE LEVEL
         function getXpNecessario(nivel) {
             if(globalXpTable.length > 0 && nivel <= globalXpTable.length) {
-                return globalXpTable[nivel - 1]; // Array começa em 0
+                return globalXpTable[nivel - 1]; 
             }
-            return 300; // Padrão se não tiver tabela
+            return 300; 
         }
 
         const ELEMENTOS_ICONS = {
@@ -620,12 +620,10 @@
                         currentUserData = docSnap.data();
                         if(!currentUserData.inventario) currentUserData.inventario = {};
                         if(!currentUserData.meusJutsus) currentUserData.meusJutsus = [];
-                        if(!currentUserData.statusMissoes) currentUserData.statusMissoes = {};
                         if(!currentUserData.statusConquistas) currentUserData.statusConquistas = {};
-
+                        
                         verificarLevelUpAutomatico(currentUserData);
                         atualizarInterface(currentUserData);
-                        renderizarBatalha(); 
                     }
                 });
                 
@@ -642,7 +640,6 @@
                     carregarTudo();
                 }
                 setTimeout(() => { try { window.renderFeed('all'); } catch(e) {} }, 800); 
-                
                 renderizarBatalha();
 
             } else {
@@ -654,12 +651,10 @@
         // --- SISTEMA DE ABAS BLINDADO ---
         window.showTab = (t) => {
             try {
-                // 1. Troca Visual (Sempre funciona)
                 document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                 const target = document.getElementById(t);
                 if(target) target.classList.add('active');
 
-                // 2. Atualiza Botões
                 document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
                 document.querySelectorAll('.sidebar button').forEach(b => b.classList.remove('active'));
                 const btnTop = document.getElementById('nav-btn-'+t);
@@ -667,45 +662,35 @@
                 if(btnTop) btnTop.classList.add('active');
                 if(btnSide) btnSide.classList.add('active');
 
-                // 3. Carrega Dados (Protegido)
                 if(currentUserData) {
                     if(t==='personagens') carregarPersonagens();
                     if(t==='frases') carregarFrases();
                     if(t==='inventario') carregarInventario();
-                    // Batalha é em tempo real, não precisa recarregar aqui
                     if(t==='jutsus') carregarMeusJutsus(currentUserData.meusJutsus); 
                     if(t==='conquistas') carregarConquistas();
                     if(t==='missoes') carregarMissoes();
                 }
-                
                 if(window.innerWidth <= 768) window.toggleMobileMenu();
             } catch (e) {
                 console.error("Erro ao trocar aba:", e);
             }
         };
 
-        // --- LEVEL UP ---
+        // --- LEVEL UP CORRIGIDO (XP GASTO) ---
         async function verificarLevelUpAutomatico(dados) {
             let xpAtual = dados.xp || 0;
             let nivelAtual = dados.nivel || 1;
             let xpNecessario = getXpNecessario(nivelAtual);
             
-            // Loop para upar múltiplos níveis de uma vez se tiver muito XP
-            while (xpAtual >= xpNecessario) {
-                xpAtual -= xpNecessario; // SUBTRAI O CUSTO
-                nivelAtual++;            // SOBE O NÍVEL
+            if (xpAtual >= xpNecessario) {
+                let novoXp = xpAtual - xpNecessario; // SUBTRAI O CUSTO
+                let novoNivel = nivelAtual + 1;
                 
-                // Recalcula a meta para o próximo loop
-                xpNecessario = getXpNecessario(nivelAtual); 
-                
-                console.log(`Level UP! Agora Nível ${nivelAtual}. XP restante: ${xpAtual}`);
-                alert(`Parabéns! Você alcançou o Nível ${nivelAtual}!`);
-                
-                // Atualiza no banco a cada nível subido para garantir consistência
                 await updateDoc(doc(db, "users", auth.currentUser.uid), { 
-                    nivel: nivelAtual,
-                    xp: xpAtual 
+                    nivel: novoNivel,
+                    xp: novoXp 
                 });
+                alert(`Level Up! Nível ${novoNivel}!`);
             }
         }
 
@@ -814,7 +799,7 @@
         function criarLinhaStatus(uid, f, l, a, v, m, c) { const p=Math.min((v/m)*100,100); return `<div class="battle-row"><div class="battle-row-header"><span>${l}</span><span>${a}</span></div><div class="battle-controls"><div class="battle-actions-row"><div class="battle-mini-btn" onclick="alterarStatus('${uid}','${f}',-5)">-5</div><div class="battle-mini-btn" onclick="alterarStatus('${uid}','${f}',-1)">-1</div></div><span class="battle-val">${v} / ${m}</span><div class="battle-actions-row"><div class="battle-mini-btn" onclick="alterarStatus('${uid}','${f}',1)">+1</div><div class="battle-mini-btn" onclick="alterarStatus('${uid}','${f}',5)">+5</div></div></div><div class="battle-bar-bg"><div class="battle-bar-fill ${c}" style="width:${p}%;"></div><div class="battle-bar-text">${p.toFixed(0)}%</div></div></div>`; }
         window.alterarStatus = async (targetUid, stat, valor) => { await updateDoc(doc(db, "users", targetUid), { [stat]: increment(valor) }); };
 
-        // --- CORE FUNCTIONS (LOJA, INVENTARIO, ETC) ---
+        // --- CORE FUNCTIONS ---
         function criarCard(containerId, dados, id, tipo, clickFn, qtd = null) {
             const c = document.getElementById(containerId); if(!c) return;
             const div = document.createElement('div'); div.className = 'card'; div.onclick = () => clickFn(id, dados);
@@ -833,7 +818,7 @@
             
             let isOwned = (tipo === 'jutsu' && currentUserData.meusJutsus && currentUserData.meusJutsus.includes(id));
             if(tipo !== 'jutsu') { buyControlHTML = `<div class="qtd-container-square"><input type="number" id="qtd-${id}" class="qtd-input-square" value="1" min="1" onclick="event.stopPropagation()"></div><button id="btn-buy-${id}" class="buy-btn" onclick="event.stopPropagation(); comprarMultiplos('${id}', ${dados.preco}, '${dados.nome}', '${tipo}', 'qtd-${id}')">Comprar x1</button>`; } 
-            else { buyControlHTML = isOwned ? `<button class="buy-btn" disabled style="background-color:#555; cursor:not-allowed;">Adquirido</button>` : `<button class="buy-btn" onclick="event.stopPropagation(); comprarJutsu('${id}', ${dados.preco}, '${dados.nome}')">Comprar</button>`; }
+            else { buyControlHTML = isOwned ? `<button class="buy-btn" disabled>Adquirido</button>` : `<button class="buy-btn" onclick="event.stopPropagation(); comprarJutsu('${id}', ${dados.preco}, '${dados.nome}')">Comprar</button>`; }
             div.innerHTML = `<img src="${dados.imagem||IMG_PADRAO}" class="card-img-top"><h4>${dados.nome}</h4><small>${sub}</small>${priceHTML}${buyControlHTML}`;
             c.appendChild(div);
             if(tipo !== 'jutsu') { const inp = document.getElementById(`qtd-${id}`); inp.addEventListener('input', (e) => { let q = parseInt(e.target.value)||1; document.getElementById(`btn-buy-${id}`).innerText = `Comprar x${q}`; document.getElementById(`price-${id}`).innerText = `${formatarNum(dados.preco * q)} Ryos`; }); }
@@ -844,9 +829,7 @@
                 const c = document.getElementById('loja-jutsus-grid'); if(!c) return; c.innerHTML = '';
                 const m = currentUserData.meusJutsus || []; const isAdmin = auth.currentUser.email === "admin@rpgnaruto.com";
                 const snap = await getDocs(collection(db, "jutsus"));
-                let count = 0;
-                snap.forEach(d => { try { let i = d.data(); i = aplicarEscalaPersonalizada(i); const p = i.restrito_a || []; if(!isAdmin && p.length > 0 && !p.includes(currentUserData.nome || "")) return; criarCardLoja('loja-jutsus-grid', i, d.id, 'jutsu', null, (id, i) => verDetalhesJutsu(id, i)); count++; } catch(e){} });
-                if(count === 0) c.innerHTML = '<p>Loja vazia.</p>';
+                snap.forEach(d => { try { let i = d.data(); i = aplicarEscalaPersonalizada(i); const p = i.restrito_a || []; if(!isAdmin && p.length > 0 && !p.includes(currentUserData.nome || "")) return; criarCardLoja('loja-jutsus-grid', i, d.id, 'jutsu', null, (id, i) => verDetalhesJutsu(id, i)); } catch(e){} });
             } catch(e) {}
         }
         async function carregarMeusJutsus(l) {
@@ -866,58 +849,31 @@
             const c = document.getElementById('inventario-grid'); if(!c) return; c.innerHTML = '';
             const inv = currentUserData.inventario || {}; const keys = Object.keys(inv).filter(k => inv[k] > 0);
             if(keys.length === 0) { c.innerHTML = '<p>Mochila vazia.</p>'; return; }
-            
-            // PROTEÇÃO: Carregar do cache ou buscar
-            for (const id of keys) {
-                let info = globalItensMap[id];
-                if (!info) {
-                    try {
-                        const s1 = await getDoc(doc(db, "itens", id));
-                        if(s1.exists()) { info = {...s1.data(), type: 'item'}; globalItensMap[id] = info; }
-                        else {
-                            const s2 = await getDoc(doc(db, "ferramentas", id));
-                            if(s2.exists()) { info = {...s2.data(), type: 'tool'}; globalItensMap[id] = info; }
-                        }
-                    } catch(e){}
-                }
-                if(info) {
-                    criarCard('inventario-grid', info, id, info.type, (id, d) => {
-                       if(info.type === 'tool') verDetalhesFerramenta(id, d); else verDetalhesItem(id, d);
-                    }, inv[id]);
-                }
-            }
+            keys.forEach(id => { const i = globalItensMap[id]; if(i) criarCard('inventario-grid', i, id, i.type, (id, d) => { if(i.type === 'tool') verDetalhesFerramenta(id, d); else verDetalhesItem(id, d); }, inv[id]); });
         }
         
         async function carregarPersonagens() {
             const c = document.getElementById('directory-grid'); if(!c) return;
-            c.innerHTML = '<p style="color:#777;text-align:center;width:100%;">Carregando ninjas...</p>';
+            c.innerHTML = '<p>Carregando...</p>';
             try {
                 const s = await getDocs(collection(db, "users"));
                 c.innerHTML = '';
-                if(s.empty) { c.innerHTML = '<p>Nenhum ninja encontrado.</p>'; return; }
-                s.forEach(d => {
-                    const u = d.data();
-                    const k = document.createElement('div');
-                    k.className = 'card';
-                    k.onclick = () => { if(window.verPerfil) window.verPerfil(d.id); };
-                    k.innerHTML = `<div style="width:60px; height:60px; border-radius:50%; overflow:hidden; margin:0 auto 10px;"><img src="${u.avatar||IMG_PADRAO}" style="width:100%; height:100%; object-fit:cover;"></div><h4>${u.nome}</h4><p>${u.apelido||""}</p>`;
-                    c.appendChild(k);
-                });
-            } catch(e) {
-                console.error("Erro personagens:", e);
-                c.innerHTML = '<p>Erro ao carregar lista.</p>';
-            }
+                s.forEach(d => { const u = d.data(); const k = document.createElement('div'); k.className = 'card'; k.onclick = () => window.verPerfil(d.id); k.innerHTML = `<div style="width:60px; height:60px; border-radius:50%; overflow:hidden; margin:0 auto 10px;"><img src="${u.avatar||IMG_PADRAO}" style="width:100%; height:100%; object-fit:cover;"></div><h4>${u.nome}</h4><p>${u.apelido||""}</p>`; c.appendChild(k); });
+            } catch(e){ c.innerHTML='<p>Erro ao carregar.</p>'; }
         }
 
         window.consumirItem = async (id, nome) => { if(confirm(`Usar 1x ${nome}?`)) await updateDoc(doc(db, "users", auth.currentUser.uid), { [`inventario.${id}`]: increment(-1) }); };
         window.comprarJutsu = async (id, p, n) => { if(!confirm(`Comprar ${n}?`)) return; if(currentUserData.ryos < p) return alert("Sem Ryos!"); await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(-p), meusJutsus: arrayUnion(id), [`maestrias.${id}`]: 0 }); alert("Comprado!"); };
         window.comprarMultiplos = async (id, p, n, t, i) => { const q = parseInt(document.getElementById(i).value)||1; if(q<1) return; const tot=p*q; if(!confirm(`Comprar ${q}x ${n}?`)) return; if(currentUserData.ryos < tot) return alert("Sem Ryos!"); await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(-tot), [`inventario.${id}`]: increment(q) }); alert("Comprado!"); };
+        
+        // CORREÇÃO FILTRO LOJA: EXPOSTO AO WINDOW
         window.filtrarLojaPorTipo = (t, b) => { 
             lojaAtual = t; 
             document.querySelectorAll('.shop-cat-btn').forEach(x => x.classList.remove('active')); 
             if(b) b.classList.add('active'); 
             carregarLojaItens(); 
         };
+        window.atualizarFiltroVila = () => { vilaAtual = document.getElementById('shop-location').value; carregarLojaItens(); };
 
         // --- CONQUISTAS ---
         async function carregarConquistas() {
@@ -1009,6 +965,8 @@
         window.fecharJutsuModal = () => document.getElementById('jutsuModal').style.display='none';
         window.fecharToolModal = () => document.getElementById('toolModal').style.display='none';
         window.fecharItemModal = () => document.getElementById('itemModal').style.display='none';
+        window.verPerfil = async (uid) => { const s = await getDoc(doc(db, "users", uid)); if(s.exists()) { const u = s.data(); document.getElementById('profile-modal-name').innerText = u.nome; document.getElementById('profile-modal-char').innerText = u.apelido || ""; document.getElementById('profile-modal-img').src = u.avatar||IMG_PADRAO; renderizarIcones(u.elementos || [], 'profile-elementos-container', ELEMENTOS_ICONS, 'Naturezas de Chakra'); renderizarIcones(u.kekkei_genkai || [], 'profile-kekkei-container', KEKKEI_ICONS, 'Kekkei Genkai'); const statsContainer = document.getElementById('other-profile-stats'); statsContainer.innerHTML = `<div class="stats-divider">Geral</div><div class="stat-card"><div class="stat-value">${u.nivel||1}</div><div class="stat-label">Nível</div></div><div class="stat-card"><div class="stat-value">${u.cargo||'Genin'}</div><div class="stat-label">Cargo</div></div><div class="stat-card"><div class="stat-value">${formatarNum(u.ryos)}</div><div class="stat-label">Ryos</div></div><div class="stats-divider">Batalha</div><div class="stat-card"><div class="stat-value">${u.vitorias||0}</div><div class="stat-label">Vitórias</div></div><div class="stat-card"><div class="stat-value">${u.loses||0}</div><div class="stat-label">Derrotas</div></div><div class="stats-divider">Inventário</div><div class="stat-card"><div class="stat-value">${(u.meusJutsus||[]).length}</div><div class="stat-label">Jutsus</div></div><div class="stats-divider">Vitalidade</div><div class="stat-card"><div class="stat-value">${u.vida||100}</div><div class="stat-label">Vida</div></div><div class="stat-card"><div class="stat-value">${u.chakra||100}</div><div class="stat-label">Chakra</div></div><div class="stat-card"><div class="stat-value">${u.stamina||100}</div><div class="stat-label">Stamina</div></div><div class="stat-card"><div class="stat-value">${u.controle_chakra||"Baixo"}</div><div class="stat-label">Controle</div></div><div class="stats-divider">Atributos</div><div class="stat-card"><div class="stat-value">${u.forca||10}</div><div class="stat-label">Força</div></div><div class="stat-card"><div class="stat-value">${u.defesa||10}</div><div class="stat-label">Defesa</div></div><div class="stat-card"><div class="stat-value">${u.agilidade||10}</div><div class="stat-label">Agilidade</div></div><div class="stat-card"><div class="stat-value">${u.velocidade||10}</div><div class="stat-label">Velocidade</div></div><div class="stat-card"><div class="stat-value">${u.intelecto||10}</div><div class="stat-label">Intelecto</div></div>`; document.getElementById('profileModal').style.display = 'flex'; } };
+        window.fecharProfileModal = () => document.getElementById('profileModal').style.display = 'none';
 
         // --- PAINEL KAGE ---
         async function carregarPainelAdmin() { try { const c = document.getElementById('admin-missoes-grid'); c.innerHTML='Carregando...'; const s = await getDocs(collection(db, "users")); c.innerHTML=''; s.forEach(u=>{ const d=u.data(); const m=d.statusMissoes||{}; const cq=d.statusConquistas||{}; for(const [mid,st] of Object.entries(m)){ if(st==='em_andamento'){ const k=document.createElement('div'); k.className='card'; k.innerHTML=`<h4>${d.nome} (Missão)</h4><p>${mid}</p><button class="mission-btn-collect" onclick="aprovarMissao('${u.id}','${mid}')">Aprovar</button>`; c.appendChild(k); } } for(const [cid,st] of Object.entries(cq)){ if(st==='solicitado'){ const k=document.createElement('div'); k.className='card'; k.innerHTML=`<h4>${d.nome} (Conquista)</h4><p>${cid}</p><button class="mission-btn-collect" onclick="aprovarConquista('${u.id}','${cid}')">Aprovar</button>`; c.appendChild(k); } } }); } catch(e){} }
@@ -1029,8 +987,23 @@
 
         window.carregarRankings = async () => { const c = document.getElementById('ranking-container'); if(!c) return; try { const s = await getDocs(collection(db, "users")); let l = []; s.forEach(d => l.push(d.data())); c.innerHTML = ''; renderRank(c, "Nível", l, 'nivel'); renderRank(c, "Ryos", l, 'ryos'); renderRank(c, "Rankeadas", l, 'pontos_rankeada'); renderRank(c, "Torneios", l, 'vitorias_torneio'); renderRank(c, "Amistosos", l, 'pontos_amistoso'); renderRank(c, "Duplas", l, 'vitorias_dupla'); renderRank(c, "Clãs", l, 'vitorias_cla'); } catch (e) {} };
         function renderRank(c,t,l,f) { const s=[...l].sort((a,b)=>(b[f]||0)-(a[f]||0)).slice(0,5); let h=`<div class="ranking-col"><h3>${t}</h3><table class="ranking-table">`; s.forEach((u,i)=>h+=`<tr><td>${i+1}. ${u.nome}</td><td>${formatarNum(u[f])}</td></tr>`); h+='</table></div>'; c.innerHTML+=h; }
-        window.verPerfil = async (uid) => { const s = await getDoc(doc(db, "users", uid)); if(s.exists()) { const u = s.data(); document.getElementById('profile-modal-name').innerText = u.nome; document.getElementById('profile-modal-char').innerText = u.apelido || ""; document.getElementById('profile-modal-img').src = u.avatar||IMG_PADRAO; renderizarIcones(u.elementos || [], 'profile-elementos-container', ELEMENTOS_ICONS, 'Naturezas de Chakra'); renderizarIcones(u.kekkei_genkai || [], 'profile-kekkei-container', KEKKEI_ICONS, 'Kekkei Genkai'); const statsContainer = document.getElementById('other-profile-stats'); statsContainer.innerHTML = `<div class="stats-divider">Geral</div><div class="stat-card"><div class="stat-value">${u.nivel||1}</div><div class="stat-label">Nível</div></div><div class="stat-card"><div class="stat-value">${u.cargo||'Genin'}</div><div class="stat-label">Cargo</div></div><div class="stat-card"><div class="stat-value">${formatarNum(u.ryos)}</div><div class="stat-label">Ryos</div></div><div class="stats-divider">Batalha</div><div class="stat-card"><div class="stat-value">${u.vitorias||0}</div><div class="stat-label">Vitórias</div></div><div class="stat-card"><div class="stat-value">${u.loses||0}</div><div class="stat-label">Derrotas</div></div><div class="stats-divider">Inventário</div><div class="stat-card"><div class="stat-value">${(u.meusJutsus||[]).length}</div><div class="stat-label">Jutsus</div></div><div class="stats-divider">Vitalidade</div><div class="stat-card"><div class="stat-value">${u.vida||100}</div><div class="stat-label">Vida</div></div><div class="stat-card"><div class="stat-value">${u.chakra||100}</div><div class="stat-label">Chakra</div></div><div class="stat-card"><div class="stat-value">${u.stamina||100}</div><div class="stat-label">Stamina</div></div><div class="stat-card"><div class="stat-value">${u.controle_chakra||"Baixo"}</div><div class="stat-label">Controle</div></div><div class="stats-divider">Atributos</div><div class="stat-card"><div class="stat-value">${u.forca||10}</div><div class="stat-label">Força</div></div><div class="stat-card"><div class="stat-value">${u.defesa||10}</div><div class="stat-label">Defesa</div></div><div class="stat-card"><div class="stat-value">${u.agilidade||10}</div><div class="stat-label">Agilidade</div></div><div class="stat-card"><div class="stat-value">${u.velocidade||10}</div><div class="stat-label">Velocidade</div></div><div class="stat-card"><div class="stat-value">${u.intelecto||10}</div><div class="stat-label">Intelecto</div></div>`; document.getElementById('profileModal').style.display = 'flex'; } };
-        window.fecharProfileModal = () => document.getElementById('profileModal').style.display = 'none';
+        window.editarHistoria = async () => { const n=prompt("Texto:",currentUserData.historiaTexto||""); if(n){ const i=prompt("Imagem:",currentUserData.historiaImagem||""); updateDoc(doc(db,"users",auth.currentUser.uid),{historiaTexto:n,historiaImagem:i}).then(reloadData); } }
+        async function carregarFrases() { const c = document.getElementById('frases-list-container'); try { onSnapshot(query(collection(db, "frases"), orderBy("data", "desc")), (s) => { c.innerHTML=''; s.forEach(d=>{ const f=d.data(); const k=document.createElement('div'); k.className='frase-item'; const menu = f.uid === auth.currentUser.uid ? `<div class="options-menu-container"><div class="options-btn" onclick="toggleFraseMenu(this); event.stopPropagation();">...</div><div class="options-dropdown"><div class="options-item" onclick="editarFrase('${d.id}','${f.texto}');event.stopPropagation()">Editar</div><div class="options-item danger" onclick="deletarFrase('${d.id}');event.stopPropagation()">Excluir</div></div></div>` : ''; k.onclick=()=>copiarFrase(f.texto); k.innerHTML=`<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor}</div>${menu}`; c.appendChild(k); }); }); } catch(e){} }
+        window.toggleFraseMenu = (el) => { const dropdown = el.nextElementSibling; document.querySelectorAll('.options-dropdown').forEach(d => { if(d !== dropdown) d.classList.remove('active'); }); dropdown.classList.toggle('active'); };
+        window.adicionarFrase = async () => { const t=document.getElementById('novaFraseInput').value; if(t) await addDoc(collection(db,"frases"),{texto:t,autor:currentUserData.nome,uid:auth.currentUser.uid,data:serverTimestamp()}); document.getElementById('novaFraseInput').value=''; }
+        window.editarFrase = async (id, oldText) => { const n = prompt("Editar:", oldText); if(n) await updateDoc(doc(db, "frases", id), { texto: n }); };
+        window.deletarFrase = async (id) => { if(confirm("Excluir?")) await deleteDoc(doc(db, "frases", id)); };
+        window.copiarFrase = (t) => { navigator.clipboard.writeText(t).then(() => { const f=document.getElementById('copyFeedback'); f.style.display='block'; setTimeout(()=>f.style.display='none',2000); }); };
+        
+        window.toggleMenu = () => document.getElementById('user-menu').classList.toggle('show');
+        window.fazerLogout = () => signOut(auth).then(() => location.reload());
+        window.openEditProfileModal = () => { document.getElementById('editProfileModal').style.display = 'flex'; document.getElementById('edit-name-input').value = currentUserData.nome || ""; document.getElementById('edit-nick-input').value = currentUserData.apelido || ""; document.getElementById('user-menu').classList.remove('show'); };
+        window.closeEditProfileModal = () => document.getElementById('editProfileModal').style.display = 'none';
+        window.handleAvatarPreview = async (e) => { if(e.target.files[0]) { newAvatarBase64 = await comprimirImagem(e.target.files[0]); document.getElementById('edit-avatar-preview').src = newAvatarBase64; } };
+        window.salvarPerfil = async () => { const nome = document.getElementById('edit-name-input').value; const apelido = document.getElementById('edit-nick-input').value; const updates = { nome: nome, apelido: apelido, personagem: nome }; if(newAvatarBase64) updates.avatar = newAvatarBase64; await updateDoc(doc(db, "users", auth.currentUser.uid), updates); location.reload(); };
+        window.openChangePasswordModal = () => { document.getElementById('changePasswordModal').style.display='flex'; document.getElementById('user-menu').classList.remove('show'); };
+        window.closeChangePasswordModal = () => document.getElementById('changePasswordModal').style.display='none';
+        window.salvarNovaSenha = async () => { const p = document.getElementById('new-password').value; if(!p || p.length < 6) return alert("Mínimo 6 caracteres"); try { await updatePassword(auth.currentUser, p); alert("Sucesso!"); closeChangePasswordModal(); } catch(e) { alert("Erro: " + e.message); } };
 
     </script>
 </body>
