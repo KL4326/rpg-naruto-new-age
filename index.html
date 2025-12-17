@@ -379,7 +379,7 @@
                             <option value="Oto">Vila do Som (Oto)</option>
                             <option value="Kori">Vila do Gelo (Kori)</option>
                         </select>
-                         <h3 style="margin:15px 0 10px;">Estabelecimentos</h3>
+                        <h3 style="margin:15px 0 10px;">Estabelecimentos</h3>
                         <div class="shop-categories">
                             <button class="shop-cat-btn active" onclick="filtrarLojaPorTipo('mercado', this)">Mercado</button>
                             <button class="shop-cat-btn" onclick="filtrarLojaPorTipo('comida', this)">Restaurantes</button>
@@ -620,18 +620,18 @@
                         currentUserData = docSnap.data();
                         if(!currentUserData.inventario) currentUserData.inventario = {};
                         if(!currentUserData.meusJutsus) currentUserData.meusJutsus = [];
+                        if(!currentUserData.statusMissoes) currentUserData.statusMissoes = {};
                         if(!currentUserData.statusConquistas) currentUserData.statusConquistas = {};
-                        
+
                         verificarLevelUpAutomatico(currentUserData);
                         atualizarInterface(currentUserData);
-                        // NÃO CHAMA carregarTudo() AQUI PARA EVITAR LOOP, SÓ ATUALIZA INTERFACE
+                        renderizarBatalha(); 
                     }
                 });
                 
                 const initialSnap = await getDoc(docRef);
                 if(initialSnap.exists()){ 
                     currentUserData = initialSnap.data(); 
-                    // Carrega as abas apenas uma vez no login
                     carregarTudo(); 
                 }
                 else {
@@ -643,7 +643,6 @@
                 }
                 setTimeout(() => { try { window.renderFeed('all'); } catch(e) {} }, 800); 
                 
-                // INICIA BATALHA GLOBAL UMA VEZ
                 renderizarBatalha();
 
             } else {
@@ -655,7 +654,7 @@
         // --- SISTEMA DE ABAS BLINDADO ---
         window.showTab = (t) => {
             try {
-                // 1. Troca Visual (Sempre funciona)
+                // 1. Troca Visual
                 document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                 const target = document.getElementById(t);
                 if(target) target.classList.add('active');
@@ -668,12 +667,11 @@
                 if(btnTop) btnTop.classList.add('active');
                 if(btnSide) btnSide.classList.add('active');
 
-                // 3. Carrega Dados (Protegido)
+                // 3. Carrega Dados
                 if(currentUserData) {
                     if(t==='personagens') carregarPersonagens();
                     if(t==='frases') carregarFrases();
                     if(t==='inventario') carregarInventario();
-                    // Batalha é em tempo real, não precisa recarregar aqui
                     if(t==='jutsus') carregarMeusJutsus(currentUserData.meusJutsus); 
                     if(t==='conquistas') carregarConquistas();
                     if(t==='missoes') carregarMissoes();
@@ -692,7 +690,7 @@
             let xpNecessario = getXpNecessario(nivelAtual);
             
             if (xpAtual >= xpNecessario) {
-                let novoXp = xpAtual - xpNecessario;
+                let novoXp = xpAtual - xpNecessario; // SUBTRAI O CUSTO
                 let novoNivel = nivelAtual + 1;
                 
                 console.log(`Level UP! ${nivelAtual} -> ${novoNivel}. XP: ${novoXp}`);
@@ -868,6 +866,7 @@
         window.consumirItem = async (id, nome) => { if(confirm(`Usar 1x ${nome}?`)) await updateDoc(doc(db, "users", auth.currentUser.uid), { [`inventario.${id}`]: increment(-1) }); };
         window.comprarJutsu = async (id, p, n) => { if(!confirm(`Comprar ${n}?`)) return; if(currentUserData.ryos < p) return alert("Sem Ryos!"); await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(-p), meusJutsus: arrayUnion(id), [`maestrias.${id}`]: 0 }); alert("Comprado!"); };
         window.comprarMultiplos = async (id, p, n, t, i) => { const q = parseInt(document.getElementById(i).value)||1; if(q<1) return; const tot=p*q; if(!confirm(`Comprar ${q}x ${n}?`)) return; if(currentUserData.ryos < tot) return alert("Sem Ryos!"); await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(-tot), [`inventario.${id}`]: increment(q) }); alert("Comprado!"); };
+        window.filtrarLojaPorTipo = (t, b) => { lojaAtual = t; document.querySelectorAll('.shop-cat-btn').forEach(x => x.classList.remove('active')); b.classList.add('active'); carregarLojaItens(); };
 
         // --- CONQUISTAS ---
         async function carregarConquistas() {
@@ -912,7 +911,6 @@
             if(btn) { btn.disabled = true; btn.innerText = "Enviando..."; }
             await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusConquistas.${id}`]: 'solicitado' });
             alert("Solicitado!");
-            // Não precisa reloadData, o snapshot atualiza
         };
         
         window.coletarConquista = async (id, r, x, btn) => {
