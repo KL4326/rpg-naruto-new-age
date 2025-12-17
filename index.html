@@ -82,6 +82,7 @@
         
         .buy-btn { background-color: var(--primary-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; margin-top: auto; font-size: 1rem; cursor: pointer; transition: background 0.2s; }
         .buy-btn:hover { background-color: #e05200; }
+        .buy-btn:disabled { background-color: #ccc; cursor: not-allowed; }
         
         /* CAIXA QUADRADA DE QUANTIDADE */
         .qtd-container-square { display: flex; justify-content: center; margin: 10px 0 8px 0; width: 100%; }
@@ -378,7 +379,7 @@
                             <option value="Oto">Vila do Som (Oto)</option>
                             <option value="Kori">Vila do Gelo (Kori)</option>
                         </select>
-                        <h3 style="margin:15px 0 10px;">Estabelecimentos</h3>
+                         <h3 style="margin:15px 0 10px;">Estabelecimentos</h3>
                         <div class="shop-categories">
                             <button class="shop-cat-btn active" onclick="filtrarLojaPorTipo('mercado', this)">Mercado</button>
                             <button class="shop-cat-btn" onclick="filtrarLojaPorTipo('comida', this)">Restaurantes</button>
@@ -572,17 +573,8 @@
         let lojaAtual = "geral";
         let globalItensMap = {}; 
 
-        // CONFIGURAÇÃO DE LEVEL DINÂMICA
-        // Se a tabela não carregar, usa 500 como fallback
-        function xp_necessario(nivel) {
-            // Ajuste de índice: Nível 1 está no índice 0? Ou Nível 1 é base e o alvo é Nvl 2?
-            // Vamos assumir: globalXpTable[0] é o XP para virar Nível 2
-            // Ex: [300, 600, 1000]
-            if(globalXpTable.length > 0 && nivel <= globalXpTable.length) {
-                return globalXpTable[nivel-1];
-            }
-            return nivel * 500; 
-        }
+        // CONFIGURAÇÃO DE LEVEL (300 XP por nível)
+        const XP_POR_NIVEL = 300;
 
         const ELEMENTOS_ICONS = {
             "fogo": "https://pm1.aminoapps.com/6268/f93aa3930c07f92db411cc1e30bb510a3ceed1e6_hq.jpg",
@@ -623,9 +615,8 @@
                         currentUserData = docSnap.data();
                         if(!currentUserData.inventario) currentUserData.inventario = {};
                         if(!currentUserData.meusJutsus) currentUserData.meusJutsus = [];
-                        if(!currentUserData.statusMissoes) currentUserData.statusMissoes = {};
                         if(!currentUserData.statusConquistas) currentUserData.statusConquistas = {};
-
+                        
                         // VERIFICAÇÃO AUTOMÁTICA DE NÍVEL
                         verificarLevelUpAutomatico(currentUserData);
 
@@ -637,7 +628,7 @@
                 const initialSnap = await getDoc(docRef);
                 if(initialSnap.exists()){ currentUserData = initialSnap.data(); carregarTudo(); }
                 else {
-                    const dadosPadrao = { nome: "Novo Ninja", ryos: 100, xp: 0, nivel: 1, email: user.email, meusJutsus: [], inventario: {}, statusMissoes: {}, elementos: [], kekkei_genkai: [] };
+                    const dadosPadrao = { nome: "Novo Ninja", ryos: 100, xp: 0, nivel: 1, email: user.email, meusJutsus: [], inventario: {}, statusMissoes: {}, statusConquistas: {}, elementos: [], kekkei_genkai: [] };
                     await setDoc(docRef, dadosPadrao);
                     currentUserData = dadosPadrao;
                     atualizarInterface(dadosPadrao);
@@ -650,34 +641,35 @@
             }
         });
 
-        // --- SISTEMA DE LEVEL UP AUTOMÁTICO (CORRIGIDO PARA LER TABELA DO FIREBASE) ---
+        // --- SISTEMA DE LEVEL UP (XP ZERA A CADA NIVEL) ---
         async function verificarLevelUpAutomatico(dados) {
-            const xpAtual = dados.xp || 0;
-            const nivelAtual = dados.nivel || 1;
+            let xpAtual = dados.xp || 0;
+            let nivelAtual = dados.nivel || 1;
+            let xpNecessario = getXpNecessario(nivelAtual);
             
-            // Loop para encontrar o nível correto com base no XP atual
-            let nivelCorreto = 1;
-            
-            // Se a tabela estiver vazia, usa fallback de 500 por nível
-            if(globalXpTable.length === 0) {
-                 nivelCorreto = Math.floor(xpAtual / 500) + 1;
-            } else {
-                 // Itera pela tabela. Ex: [300, 600, 1000]
-                 // Se xpAtual >= 300, nivel vira 2. Se xpAtual >= 600, vira 3.
-                 for(let i = 0; i < globalXpTable.length; i++) {
-                     if(xpAtual >= globalXpTable[i]) {
-                         nivelCorreto = i + 2; // Índice 0 = Req para Nvl 2
-                     } else {
-                         break; 
-                     }
-                 }
+            // Loop para garantir que suba vários níveis se tiver muito XP
+            while (xpAtual >= xpNecessario) {
+                xpAtual -= xpNecessario; // Subtrai o custo do nível
+                nivelAtual++;            // Sobe o nível
+                xpNecessario = getXpNecessario(nivelAtual); // Pega a meta do próximo
+                
+                console.log(`Level UP! Agora Nível ${nivelAtual}. XP restante: ${xpAtual}`);
+                alert(`Parabéns! Você alcançou o Nível ${nivelAtual}!`);
+                
+                // Atualiza no banco
+                await updateDoc(doc(db, "users", auth.currentUser.uid), { 
+                    nivel: nivelAtual,
+                    xp: xpAtual 
+                });
             }
+        }
 
-            if (nivelCorreto > nivelAtual) {
-                console.log(`Subindo de nível: ${nivelAtual} -> ${nivelCorreto}`);
-                await updateDoc(doc(db, "users", auth.currentUser.uid), { nivel: nivelCorreto });
-                alert(`Parabéns! Você alcançou o Nível ${nivelCorreto}!`);
+        // Função auxiliar para pegar XP da tabela ou usar padrão
+        function getXpNecessario(nivel) {
+            if(globalXpTable.length > 0 && nivel <= globalXpTable.length) {
+                return globalXpTable[nivel - 1]; // Array começa em 0
             }
+            return 300; // Padrão se não tiver tabela
         }
 
         async function carregarConfiguracoes() { try { const s = await getDoc(doc(db, "game_config", "sistema_nivel")); if(s.exists()) globalXpTable = s.data().tabela_xp || []; } catch(e) {} }
@@ -743,22 +735,12 @@
 
             const nivel = dados.nivel || 1;
             const xpAtual = dados.xp || 0;
-            
-            // Lógica visual da barra baseada na tabela
-            let xpProximo = xp_necessario(nivel);
-            let xpBase = nivel > 1 ? xp_necessario(nivel - 1) : 0;
-            
-            // Se já estourou o último nível da tabela
-            if(globalXpTable.length > 0 && nivel > globalXpTable.length) {
-                xpProximo = xpBase + 1000; // Valor simbólico para max level
-            }
+            const xpMeta = getXpNecessario(nivel);
 
-            const xpNoNivel = xpAtual - xpBase;
-            const xpParaUpar = xpProximo - xpBase;
-            const porcentagem = Math.min((xpNoNivel / xpParaUpar) * 100, 100);
+            const porcentagem = Math.min((xpAtual / xpMeta) * 100, 100);
 
             document.getElementById('level-display').innerText = "Nível " + nivel;
-            document.getElementById('xp-text-display').innerText = `${xpAtual} / ${xpProximo} XP`;
+            document.getElementById('xp-text-display').innerText = `${xpAtual} / ${xpMeta} XP`;
             document.getElementById('xp-bar').style.width = porcentagem + "%";
 
             renderizarIcones(dados.elementos || [], 'dash-elementos', ELEMENTOS_ICONS, 'Naturezas de Chakra');
@@ -871,9 +853,9 @@
                 const st = m[d.id];
                 const k = document.createElement('div'); k.className = 'card jutsu-card-click';
                 let btn = "";
-                if(!st) btn = `<button class="mission-btn-start" onclick="event.stopPropagation(); solicitarConquista('${d.id}')">Reivindicar</button>`;
+                if(!st) btn = `<button class="mission-btn-start" onclick="event.stopPropagation(); solicitarConquista('${d.id}', this)">Reivindicar</button>`;
                 else if(st === 'solicitado') btn = `<button class="mission-btn-wait" onclick="event.stopPropagation();">Aguardando Kage</button>`;
-                else if(st === 'aprovado') btn = `<button class="mission-btn-collect" onclick="event.stopPropagation(); coletarConquista('${d.id}', ${i.recompensa||0}, ${i.xp||0})">Coletar</button>`;
+                else if(st === 'aprovado') btn = `<button class="mission-btn-collect" onclick="event.stopPropagation(); coletarConquista('${d.id}', ${i.recompensa||0}, ${i.xp||0}, this)">Coletar</button>`;
                 else if(st === 'concluido') btn = `<button class="mission-btn-done" onclick="event.stopPropagation();">Concluído</button>`;
                 
                 let stTxt = !st ? "Disponível" : (st==='solicitado' ? "Pendente" : (st==='aprovado' ? "Aprovado!" : "Concluído"));
@@ -885,22 +867,49 @@
         window.verDetalhesConquista = (id, d, st) => {
             document.getElementById('conquista-name-modal').innerText = d.titulo; document.getElementById('conquista-desc-modal').innerText = d.descricao; document.getElementById('conquista-reward-modal').innerText = formatarNum(d.recompensa); document.getElementById('conquista-xp-modal').innerText = d.xp||0; document.getElementById('conquista-img-modal').src = d.imagem||IMG_PADRAO;
             const a = document.getElementById('conquista-actions-modal'); a.innerHTML = '';
-            if(!st) a.innerHTML = `<button class="mission-btn-start" onclick="solicitarConquista('${id}')">Reivindicar</button>`;
+            if(!st) a.innerHTML = `<button class="mission-btn-start" onclick="solicitarConquista('${id}', this)">Reivindicar</button>`;
             else if(st === 'solicitado') a.innerHTML = `<button class="mission-btn-wait">Aguardando</button>`;
-            else if(st === 'aprovado') a.innerHTML = `<button class="mission-btn-collect" onclick="coletarConquista('${id}',${d.recompensa},${d.xp})">Coletar</button>`;
+            else if(st === 'aprovado') a.innerHTML = `<button class="mission-btn-collect" onclick="coletarConquista('${id}',${d.recompensa},${d.xp}, this)">Coletar</button>`;
             else a.innerHTML = `<button class="mission-btn-done">Feito</button>`;
             document.getElementById('conquistaModal').style.display='flex';
         };
         window.fecharConquistaModal = () => document.getElementById('conquistaModal').style.display='none';
-        window.solicitarConquista = async (id) => { await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusConquistas.${id}`]: 'solicitado' }); alert("Solicitado!"); };
-        window.coletarConquista = async (id, r, x) => { const u = currentUserData; await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: (u.ryos||0)+r, xp: (u.xp||0)+x, [`statusConquistas.${id}`]: 'concluido' }); alert("Recebido!"); };
+        
+        window.solicitarConquista = async (id, btn) => {
+            if(btn) { btn.disabled = true; btn.innerText = "Enviando..."; }
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusConquistas.${id}`]: 'solicitado' });
+            alert("Solicitado!");
+            // Não precisa reloadData, o snapshot atualiza
+        };
+        
+        window.coletarConquista = async (id, r, x, btn) => {
+            if(btn) { btn.disabled = true; btn.innerText = "Coletando..."; }
+            const u = currentUserData;
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { 
+                ryos: (u.ryos||0)+r, 
+                xp: (u.xp||0)+x, 
+                [`statusConquistas.${id}`]: 'concluido' 
+            });
+            alert("Recebido!");
+        };
 
         // --- MISSOES ---
         async function carregarMissoes() { const c = document.getElementById('missoes-grid'); if(!c) return; const m = currentUserData.statusMissoes || {}; const s = await getDocs(collection(db, "missoes")); c.innerHTML = ''; s.forEach(d => { const i = d.data(), st = m[d.id] || 'neutro'; const k = document.createElement('div'); k.className = 'card jutsu-card-click'; k.onclick = () => verDetalhesMissao(d.id, i, st); k.innerHTML=`<h4>${i.titulo}</h4><p style="font-size:0.9rem; color:${st==='em_andamento'?'orange':st==='aprovado'?'green':'#777'}; font-weight:bold;">${st==='neutro'?'Disponível':st}</p><small style="color:var(--primary-color)">${i.xp||0} XP | ${formatarNum(i.recompensa)} Ryos</small>`; c.appendChild(k); }); }
-        window.verDetalhesMissao = (id, d, st) => { document.getElementById('missao-name-modal').innerText = d.titulo; document.getElementById('missao-desc-modal').innerText = d.descricao; document.getElementById('missao-reward-modal').innerText = formatarNum(d.recompensa); document.getElementById('missao-xp-modal').innerText = d.xp||0; document.getElementById('missao-img-modal').src = d.imagem||IMG_PADRAO; const a = document.getElementById('missao-actions-modal'); a.innerHTML = ''; if(st==='neutro') a.innerHTML = `<button class="mission-btn-start" onclick="iniciarMissao('${id}')">Aceitar</button>`; else if(st==='aprovado') a.innerHTML = `<button class="mission-btn-collect" onclick="coletarRecompensa('${id}',${d.recompensa},${d.xp||0})">Receber</button>`; document.getElementById('missaoModal').style.display='flex'; };
+        window.verDetalhesMissao = (id, d, st) => { document.getElementById('missao-name-modal').innerText = d.titulo; document.getElementById('missao-desc-modal').innerText = d.descricao; document.getElementById('missao-reward-modal').innerText = formatarNum(d.recompensa); document.getElementById('missao-xp-modal').innerText = d.xp||0; document.getElementById('missao-img-modal').src = d.imagem||IMG_PADRAO; const a = document.getElementById('missao-actions-modal'); a.innerHTML = ''; if(st==='neutro') a.innerHTML = `<button class="mission-btn-start" onclick="iniciarMissao('${id}', this)">Aceitar</button>`; else if(st==='aprovado') a.innerHTML = `<button class="mission-btn-collect" onclick="coletarRecompensa('${id}',${d.recompensa},${d.xp||0}, this)">Receber</button>`; document.getElementById('missaoModal').style.display='flex'; };
         window.fecharMissaoModal = () => document.getElementById('missaoModal').style.display='none';
-        window.iniciarMissao = async (id) => { await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusMissoes.${id}`]: 'em_andamento' }); alert("Iniciada!"); };
-        window.coletarRecompensa = async (id, r, x) => { const u = currentUserData; await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: (u.ryos||0)+r, xp: (u.xp||0)+x, [`statusMissoes.${id}`]: 'concluido' }); alert("Coletado!"); };
+        
+        window.iniciarMissao = async (id, btn) => { 
+            if(btn) { btn.disabled = true; btn.innerText = "Iniciando..."; }
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusMissoes.${id}`]: 'em_andamento' }); 
+            alert("Iniciada!"); 
+        };
+        
+        window.coletarRecompensa = async (id, r, x, btn) => { 
+            if(btn) { btn.disabled = true; btn.innerText = "Coletando..."; }
+            const u = currentUserData; 
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: (u.ryos||0)+r, xp: (u.xp||0)+x, [`statusMissoes.${id}`]: 'concluido' }); 
+            alert("Coletado!"); 
+        };
 
         // --- FUNÇÕES DE MODAL GENÉRICAS ---
         function abrirModalSimples(t, d) {
