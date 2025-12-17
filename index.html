@@ -698,25 +698,22 @@
             let dadosFinais = { ...dadosJutsu };
             
             try {
-                // Verifica se o usuário está logado
-                if (!auth.currentUser) return dadosFinais;
+                const user = auth.currentUser;
+                if (!user || !dadosFinais.escalonamento || typeof dadosFinais.escalonamento !== 'object') {
+                    return dadosFinais;
+                }
 
-                const uid = auth.currentUser.uid;
+                const uid = user.uid;
+                const p = dadosFinais.escalonamento[uid];
                 
-                // Verifica se existe o campo "escalonamento" e se é um objeto válido
-                if (dadosFinais.escalonamento && typeof dadosFinais.escalonamento === 'object') {
-                    const p = dadosFinais.escalonamento[uid];
-                    
-                    // Se encontrou personalização para este ID
-                    if (p) {
-                        if (p.chakra !== undefined) dadosFinais.chakra = p.chakra;
-                        if (p.stamina !== undefined) dadosFinais.stamina = p.stamina;
-                        if (p.dano !== undefined) dadosFinais.dano = p.dano;
-                        if (p.descricao !== undefined) dadosFinais.descricao = p.descricao;
-                    }
+                if (p) {
+                    if (p.chakra !== undefined) dadosFinais.chakra = p.chakra;
+                    if (p.stamina !== undefined) dadosFinais.stamina = p.stamina;
+                    if (p.dano !== undefined) dadosFinais.dano = p.dano;
+                    if (p.descricao !== undefined) dadosFinais.descricao = p.descricao;
                 }
             } catch (err) {
-                // Em caso de qualquer erro, retorna o jutsu original e não trava
+                console.warn("Erro ao processar escalonamento:", err);
                 return dadosJutsu; 
             }
             return dadosFinais;
@@ -996,7 +993,6 @@
             } catch(e) { console.warn("Loja Jutsu Vazia", e); }
         }
 
-        // --- CORREÇÃO DO LOOP INFINITO NOS MEUS JUTSUS ---
         async function carregarMeusJutsus(l) {
             const c = document.getElementById('meus-jutsus-grid'); 
             if(!c) return; 
