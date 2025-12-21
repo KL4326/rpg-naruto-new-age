@@ -828,15 +828,47 @@
         function criarCardLoja(containerId, dados, id, tipo, buyFn, clickFn) {
             const c = document.getElementById(containerId); if(!c) return;
             const div = document.createElement('div'); div.className = 'card'; div.onclick = (e) => { if(!e.target.classList.contains('buy-btn') && !e.target.classList.contains('qtd-input-square')) clickFn(id, dados); };
-            let sub = "", buyControlHTML = "", priceHTML = `<p id="price-${id}" class="price-tag">${formatarNum(dados.preco)} Ryos</p>`;
+            let sub = "", buyControlHTML = "", priceHTML = "";
+
+            // Lógica de Preço Promocional (Firebase Field)
+            let finalPrice = dados.preco;
+            if (dados.preco_promocional && dados.preco_promocional < dados.preco) {
+                finalPrice = dados.preco_promocional;
+                priceHTML = `<p id="price-${id}" class="price-tag">
+                    <span style="text-decoration:line-through; color:#999; font-size:0.85em; margin-right:5px;">${formatarNum(dados.preco)}</span>
+                    <span style="color:var(--primary-color); font-weight:bold;">${formatarNum(finalPrice)} Ryos</span>
+                </p>`;
+            } else {
+                priceHTML = `<p id="price-${id}" class="price-tag">${formatarNum(dados.preco)} Ryos</p>`;
+            }
+
             if(tipo === 'jutsu') sub = "Rank " + dados.rank; else if(tipo === 'ferramenta') sub = dados.dano || "Ferramenta"; else sub = dados.efeito || "Item";
             
             let isOwned = (tipo === 'jutsu' && currentUserData.meusJutsus && currentUserData.meusJutsus.includes(id));
-            if(tipo !== 'jutsu') { buyControlHTML = `<div class="qtd-container-square"><input type="number" id="qtd-${id}" class="qtd-input-square" value="1" min="1" onclick="event.stopPropagation()"></div><button id="btn-buy-${id}" class="buy-btn" onclick="event.stopPropagation(); comprarMultiplos('${id}', ${dados.preco}, '${dados.nome}', '${tipo}', 'qtd-${id}')">Comprar x1</button>`; } 
-            else { buyControlHTML = isOwned ? `<button class="buy-btn" disabled>Adquirido</button>` : `<button class="buy-btn" onclick="event.stopPropagation(); comprarJutsu('${id}', ${dados.preco}, '${dados.nome}')">Comprar</button>`; }
+            
+            if(tipo !== 'jutsu') { 
+                buyControlHTML = `<div class="qtd-container-square"><input type="number" id="qtd-${id}" class="qtd-input-square" value="1" min="1" onclick="event.stopPropagation()"></div><button id="btn-buy-${id}" class="buy-btn" onclick="event.stopPropagation(); comprarMultiplos('${id}', ${finalPrice}, '${dados.nome}', '${tipo}', 'qtd-${id}')">Comprar x1</button>`; 
+            } else { 
+                buyControlHTML = isOwned ? `<button class="buy-btn" disabled>Adquirido</button>` : `<button class="buy-btn" onclick="event.stopPropagation(); comprarJutsu('${id}', ${finalPrice}, '${dados.nome}')">Comprar</button>`; 
+            }
+            
             div.innerHTML = `<img src="${dados.imagem||IMG_PADRAO}" class="card-img-top"><h4>${dados.nome}</h4><small>${sub}</small>${priceHTML}${buyControlHTML}`;
             c.appendChild(div);
-            if(tipo !== 'jutsu') { const inp = document.getElementById(`qtd-${id}`); inp.addEventListener('input', (e) => { let q = parseInt(e.target.value)||1; document.getElementById(`btn-buy-${id}`).innerText = `Comprar x${q}`; document.getElementById(`price-${id}`).innerText = `${formatarNum(dados.preco * q)} Ryos`; }); }
+            
+            if(tipo !== 'jutsu') { 
+                const inp = document.getElementById(`qtd-${id}`); 
+                inp.addEventListener('input', (e) => { 
+                    let q = parseInt(e.target.value)||1; 
+                    document.getElementById(`btn-buy-${id}`).innerText = `Comprar x${q}`; 
+                    
+                    // Atualiza visualmente o total com base no preço (promocional ou normal)
+                    if (dados.preco_promocional && dados.preco_promocional < dados.preco) {
+                         document.getElementById(`price-${id}`).innerHTML = `<span style="text-decoration:line-through; color:#999; font-size:0.85em; margin-right:5px;">${formatarNum(dados.preco * q)}</span><span style="color:var(--primary-color); font-weight:bold;">${formatarNum(finalPrice * q)} Ryos</span>`;
+                    } else {
+                        document.getElementById(`price-${id}`).innerText = `${formatarNum(dados.preco * q)} Ryos`; 
+                    }
+                }); 
+            }
         }
 
         async function carregarLoja() {
@@ -1030,7 +1062,7 @@
         window.fecharJutsuModal = () => document.getElementById('jutsuModal').style.display='none';
         window.fecharToolModal = () => document.getElementById('toolModal').style.display='none';
         window.fecharItemModal = () => document.getElementById('itemModal').style.display='none';
-        window.verPerfil = async (uid) => { const s = await getDoc(doc(db, "users", uid)); if(s.exists()) { const u = s.data(); document.getElementById('profile-modal-name').innerText = u.nome; document.getElementById('profile-modal-char').innerText = u.apelido || ""; document.getElementById('profile-modal-img').src = u.avatar||IMG_PADRAO; renderizarIcones(u.elementos || [], 'profile-elementos-container', ELEMENTOS_ICONS, 'Naturezas de Chakra'); renderizarIcones(u.kekkei_genkai || [], 'profile-kekkei-container', KEKKEI_ICONS, 'Kekkei Genkai'); const statsContainer = document.getElementById('other-profile-stats'); statsContainer.innerHTML = `<div class="stats-divider">Geral</div><div class="stat-card"><div class="stat-value">${u.nivel||1}</div><div class="stat-label">Nível</div></div><div class="stat-card"><div class="stat-value">${u.cargo||'Genin'}</div><div class="stat-label">Cargo</div></div><div class="stat-card"><div class="stat-value">${formatarNum(u.ryos)}</div><div class="stat-label">Ryos</div></div><div class="stats-divider">Batalha</div><div class="stat-card"><div class="stat-value">${u.vitorias||0}</div><div class="stat-label">Vitórias</div></div><div class="stat-card"><div class="stat-value">${u.empates||0}</div><div class="stat-label">Empates</div></div><div class="stat-card"><div class="stat-value">${u.loses||0}</div><div class="stat-label">Derrotas</div></div><div class="stats-divider">Inventário</div><div class="stat-card"><div class="stat-value">${(u.meusJutsus||[]).length}</div><div class="stat-label">Jutsus</div></div><div class="stats-divider">Vitalidade</div><div class="stat-card"><div class="stat-value">${u.vida||100}</div><div class="stat-label">Vida</div></div><div class="stat-card"><div class="stat-value">${u.chakra||100}</div><div class="stat-label">Chakra</div></div><div class="stat-card"><div class="stat-value">${u.stamina||100}</div><div class="stat-label">Stamina</div></div><div class="stat-card"><div class="stat-value">${u.controle_chakra||"Baixo"}</div><div class="stat-label">Controle</div></div><div class="stats-divider">Atributos</div><div class="stat-card"><div class="stat-value">${u.forca||10}</div><div class="stat-label">Força</div></div><div class="stat-card"><div class="stat-value">${u.defesa||10}</div><div class="stat-label">Defesa</div></div><div class="stat-card"><div class="stat-value">${u.agilidade||10}</div><div class="stat-label">Agilidade</div></div><div class="stat-card"><div class="stat-value">${u.velocidade||10}</div><div class="stat-label">Velocidade</div></div><div class="stat-card"><div class="stat-value">${u.intelecto||10}</div><div class="stat-label">Intelecto</div></div>`; document.getElementById('profileModal').style.display = 'flex'; } };
+        window.verPerfil = async (uid) => { const s = await getDoc(doc(db, "users", uid)); if(s.exists()) { const u = s.data(); document.getElementById('profile-modal-name').innerText = u.nome; document.getElementById('profile-modal-char').innerText = u.apelido || ""; document.getElementById('profile-modal-img').src = u.avatar||IMG_PADRAO; renderizarIcones(u.elementos || [], 'profile-elementos-container', ELEMENTOS_ICONS, 'Naturezas de Chakra'); renderizarIcones(u.kekkei_genkai || [], 'profile-kekkei-container', KEKKEI_ICONS, 'Kekkei Genkai'); const statsContainer = document.getElementById('other-profile-stats'); statsContainer.innerHTML = `<div class="stats-divider">Geral</div><div class="stat-card"><div class="stat-value">${u.nivel||1}</div><div class="stat-label">Nível</div></div><div class="stat-card"><div class="stat-value">${u.cargo||'Genin'}</div><div class="stat-label">Cargo</div></div><div class="stat-card"><div class="stat-value">${u.tipo||'Normal'}</div><div class="stat-label">Tipo</div></div><div class="stat-card"><div class="stat-value">${formatarNum(u.ryos)}</div><div class="stat-label">Ryos</div></div><div class="stats-divider">Batalha</div><div class="stat-card"><div class="stat-value">${u.vitorias||0}</div><div class="stat-label">Vitórias</div></div><div class="stat-card"><div class="stat-value">${u.empates||0}</div><div class="stat-label">Empates</div></div><div class="stat-card"><div class="stat-value">${u.loses||0}</div><div class="stat-label">Derrotas</div></div><div class="stats-divider">Inventário</div><div class="stat-card"><div class="stat-value">${(u.meusJutsus||[]).length}</div><div class="stat-label">Jutsus</div></div><div class="stats-divider">Vitalidade</div><div class="stat-card"><div class="stat-value">${u.vida||100}</div><div class="stat-label">Vida</div></div><div class="stat-card"><div class="stat-value">${u.chakra||100}</div><div class="stat-label">Chakra</div></div><div class="stat-card"><div class="stat-value">${u.stamina||100}</div><div class="stat-label">Stamina</div></div><div class="stat-card"><div class="stat-value">${u.controle_chakra||"Baixo"}</div><div class="stat-label">Controle</div></div><div class="stats-divider">Atributos</div><div class="stat-card"><div class="stat-value">${u.forca||10}</div><div class="stat-label">Força</div></div><div class="stat-card"><div class="stat-value">${u.defesa||10}</div><div class="stat-label">Defesa</div></div><div class="stat-card"><div class="stat-value">${u.agilidade||10}</div><div class="stat-label">Agilidade</div></div><div class="stat-card"><div class="stat-value">${u.velocidade||10}</div><div class="stat-label">Velocidade</div></div><div class="stat-card"><div class="stat-value">${u.intelecto||10}</div><div class="stat-label">Intelecto</div></div>`; document.getElementById('profileModal').style.display = 'flex'; } };
         window.fecharProfileModal = () => document.getElementById('profileModal').style.display = 'none';
 
         // --- PAINEL KAGE ---
