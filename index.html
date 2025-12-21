@@ -35,14 +35,14 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background-color: var(--bg-color); color: var(--text-color); height: 100vh; overflow: hidden; }
 
-        /* RANK TAGS */
-        .rank-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-weight: bold; color: white; font-size: 0.8rem; margin-right: 5px; }
-        .rank-s { background-color: #000; border: 1px solid #ed4956; color: #ed4956; } /* Preto e Vermelho */
-        .rank-a { background-color: #ed4956; } /* Vermelho */
-        .rank-b { background-color: #2980b9; } /* Azul */
-        .rank-c { background-color: #2ecc71; } /* Verde */
-        .rank-d { background-color: #f1c40f; color: black; } /* Amarelo */
-        .rank-e { background-color: #95a5a6; } /* Cinza */
+        /* RANK TAGS (MISSÕES) */
+        .rank-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-weight: bold; color: white; font-size: 0.75rem; margin-right: 5px; vertical-align: middle; text-transform: uppercase; }
+        .rank-s { background-color: #000; border: 1px solid #ed4956; color: #ed4956; box-shadow: 0 0 5px #ed4956; } 
+        .rank-a { background-color: #ed4956; } 
+        .rank-b { background-color: #2980b9; } 
+        .rank-c { background-color: #2ecc71; } 
+        .rank-d { background-color: #f1c40f; color: black; } 
+        .rank-e { background-color: #95a5a6; } 
 
         /* LOGIN */
         .login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999; display: flex; justify-content: center; align-items: center; padding: 20px; }
@@ -661,7 +661,7 @@
         // --- SISTEMA DE ABAS BLINDADO ---
         window.showTab = (t) => {
             try {
-                // 1. Troca Visual (Sempre funciona)
+                // 1. Troca Visual
                 document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                 const target = document.getElementById(t);
                 if(target) target.classList.add('active');
@@ -955,7 +955,6 @@
         };
         
         window.coletarConquista = async (id, r, x, btn) => {
-            if(btn && btn.disabled) return;
             if(btn) { btn.disabled = true; btn.innerText = "Coletando..."; }
             const u = currentUserData;
             await updateDoc(doc(db, "users", auth.currentUser.uid), { 
@@ -967,8 +966,29 @@
         };
 
         // --- MISSOES ---
-        async function carregarMissoes() { const c = document.getElementById('missoes-grid'); if(!c) return; const m = currentUserData.statusMissoes || {}; const s = await getDocs(collection(db, "missoes")); c.innerHTML = ''; s.forEach(d => { const i = d.data(), st = m[d.id] || 'neutro'; const k = document.createElement('div'); k.className = 'card jutsu-card-click'; k.onclick = () => verDetalhesMissao(d.id, i, st); k.innerHTML=`<h4>${i.titulo}</h4><p style="font-size:0.9rem; color:${st==='em_andamento'?'orange':st==='aprovado'?'green':'#777'}; font-weight:bold;">${st==='neutro'?'Disponível':st}</p><small style="color:var(--primary-color)">${i.xp||0} XP | ${formatarNum(i.recompensa)} Ryos</small>`; c.appendChild(k); }); }
-        window.verDetalhesMissao = (id, d, st) => { document.getElementById('missao-name-modal').innerText = d.titulo; document.getElementById('missao-desc-modal').innerText = d.descricao; document.getElementById('missao-reward-modal').innerText = formatarNum(d.recompensa); document.getElementById('missao-xp-modal').innerText = d.xp||0; document.getElementById('missao-img-modal').src = d.imagem||IMG_PADRAO; const a = document.getElementById('missao-actions-modal'); a.innerHTML = ''; if(st==='neutro') a.innerHTML = `<button class="mission-btn-start" onclick="iniciarMissao('${id}', this)">Aceitar</button>`; else if(st==='aprovado') a.innerHTML = `<button class="mission-btn-collect" onclick="coletarRecompensa('${id}',${d.recompensa},${d.xp||0}, this)">Receber</button>`; document.getElementById('missaoModal').style.display='flex'; };
+        async function carregarMissoes() { const c = document.getElementById('missoes-grid'); if(!c) return; const m = currentUserData.statusMissoes || {}; const s = await getDocs(collection(db, "missoes")); c.innerHTML = ''; s.forEach(d => { const i = d.data(), st = m[d.id] || 'neutro'; const k = document.createElement('div'); k.className = 'card jutsu-card-click'; 
+        
+        // RANK VISUAL
+        const rankClass = `rank-${(i.rank||'d').toLowerCase()}`;
+        const rankHtml = `<span class="rank-tag ${rankClass}">Rank ${i.rank||'D'}</span>`;
+
+        k.onclick = () => verDetalhesMissao(d.id, i, st); 
+        k.innerHTML=`${rankHtml}<h4>${i.titulo}</h4><p style="font-size:0.9rem; color:${st==='em_andamento'?'orange':st==='aprovado'?'green':'#777'}; font-weight:bold;">${st==='neutro'?'Disponível':st}</p><small style="color:var(--primary-color)">${i.xp||0} XP | ${formatarNum(i.recompensa)} Ryos</small>`; c.appendChild(k); }); }
+        
+        window.verDetalhesMissao = (id, d, st) => { 
+            document.getElementById('missao-name-modal').innerText = d.titulo; 
+            document.getElementById('missao-desc-modal').innerText = d.descricao; 
+            document.getElementById('missao-reward-modal').innerText = formatarNum(d.recompensa); 
+            document.getElementById('missao-xp-modal').innerText = d.xp||0; 
+            document.getElementById('missao-img-modal').src = d.imagem||IMG_PADRAO; 
+            
+            const a = document.getElementById('missao-actions-modal'); a.innerHTML = ''; 
+            
+            if(st==='neutro') a.innerHTML = `<button class="mission-btn-start" onclick="iniciarMissao('${id}', this)">Aceitar</button>`; 
+            else if(st==='aprovado') a.innerHTML = `<button class="mission-btn-collect" onclick="coletarRecompensa('${id}',${d.recompensa},${d.xp||0}, '${d.rank||'D'}', this)">Receber</button>`; 
+            
+            document.getElementById('missaoModal').style.display='flex'; 
+        };
         window.fecharMissaoModal = () => document.getElementById('missaoModal').style.display='none';
         
         window.iniciarMissao = async (id, btn) => { 
@@ -977,11 +997,20 @@
             alert("Iniciada!"); 
         };
         
-        window.coletarRecompensa = async (id, r, x, btn) => { 
+        window.coletarRecompensa = async (id, r, x, rank, btn) => { 
             if(btn && btn.disabled) return;
             if(btn) { btn.disabled = true; btn.innerText = "Coletando..."; }
-            const u = currentUserData; 
-            await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: (u.ryos||0)+r, xp: (u.xp||0)+x, [`statusMissoes.${id}`]: 'concluido' }); 
+            
+            const u = currentUserData;
+            // Incrementa contador de rank específico
+            const rankKey = `missoes_concluidas_${rank.toLowerCase()}`;
+            
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { 
+                ryos: (u.ryos||0)+r, 
+                xp: (u.xp||0)+x, 
+                [`statusMissoes.${id}`]: 'concluido',
+                [rankKey]: increment(1) // Salva contagem no banco
+            }); 
             alert("Coletado!"); 
         };
 
@@ -1001,7 +1030,7 @@
         window.fecharJutsuModal = () => document.getElementById('jutsuModal').style.display='none';
         window.fecharToolModal = () => document.getElementById('toolModal').style.display='none';
         window.fecharItemModal = () => document.getElementById('itemModal').style.display='none';
-        window.verPerfil = async (uid) => { const s = await getDoc(doc(db, "users", uid)); if(s.exists()) { const u = s.data(); document.getElementById('profile-modal-name').innerText = u.nome; document.getElementById('profile-modal-char').innerText = u.apelido || ""; document.getElementById('profile-modal-img').src = u.avatar||IMG_PADRAO; renderizarIcones(u.elementos || [], 'profile-elementos-container', ELEMENTOS_ICONS, 'Naturezas de Chakra'); renderizarIcones(u.kekkei_genkai || [], 'profile-kekkei-container', KEKKEI_ICONS, 'Kekkei Genkai'); const statsContainer = document.getElementById('other-profile-stats'); statsContainer.innerHTML = `<div class="stats-divider">Geral</div><div class="stat-card"><div class="stat-value">${u.nivel||1}</div><div class="stat-label">Nível</div></div><div class="stat-card"><div class="stat-value">${u.cargo||'Genin'}</div><div class="stat-label">Cargo</div></div><div class="stat-card"><div class="stat-value">${u.tipo||'Normal'}</div><div class="stat-label">Tipo</div></div><div class="stat-card"><div class="stat-value">${formatarNum(u.ryos)}</div><div class="stat-label">Ryos</div></div><div class="stats-divider">Batalha</div><div class="stat-card"><div class="stat-value">${u.vitorias||0}</div><div class="stat-label">Vitórias</div></div><div class="stat-card"><div class="stat-value">${u.loses||0}</div><div class="stat-label">Derrotas</div></div><div class="stats-divider">Inventário</div><div class="stat-card"><div class="stat-value">${(u.meusJutsus||[]).length}</div><div class="stat-label">Jutsus</div></div><div class="stats-divider">Vitalidade</div><div class="stat-card"><div class="stat-value">${u.vida||100}</div><div class="stat-label">Vida</div></div><div class="stat-card"><div class="stat-value">${u.chakra||100}</div><div class="stat-label">Chakra</div></div><div class="stat-card"><div class="stat-value">${u.stamina||100}</div><div class="stat-label">Stamina</div></div><div class="stat-card"><div class="stat-value">${u.controle_chakra||"Baixo"}</div><div class="stat-label">Controle</div></div><div class="stats-divider">Atributos</div><div class="stat-card"><div class="stat-value">${u.forca||10}</div><div class="stat-label">Força</div></div><div class="stat-card"><div class="stat-value">${u.defesa||10}</div><div class="stat-label">Defesa</div></div><div class="stat-card"><div class="stat-value">${u.agilidade||10}</div><div class="stat-label">Agilidade</div></div><div class="stat-card"><div class="stat-value">${u.velocidade||10}</div><div class="stat-label">Velocidade</div></div><div class="stat-card"><div class="stat-value">${u.intelecto||10}</div><div class="stat-label">Intelecto</div></div>`; document.getElementById('profileModal').style.display = 'flex'; } };
+        window.verPerfil = async (uid) => { const s = await getDoc(doc(db, "users", uid)); if(s.exists()) { const u = s.data(); document.getElementById('profile-modal-name').innerText = u.nome; document.getElementById('profile-modal-char').innerText = u.apelido || ""; document.getElementById('profile-modal-img').src = u.avatar||IMG_PADRAO; renderizarIcones(u.elementos || [], 'profile-elementos-container', ELEMENTOS_ICONS, 'Naturezas de Chakra'); renderizarIcones(u.kekkei_genkai || [], 'profile-kekkei-container', KEKKEI_ICONS, 'Kekkei Genkai'); const statsContainer = document.getElementById('other-profile-stats'); statsContainer.innerHTML = `<div class="stats-divider">Geral</div><div class="stat-card"><div class="stat-value">${u.nivel||1}</div><div class="stat-label">Nível</div></div><div class="stat-card"><div class="stat-value">${u.cargo||'Genin'}</div><div class="stat-label">Cargo</div></div><div class="stat-card"><div class="stat-value">${u.tipo||'Normal'}</div><div class="stat-label">Tipo</div></div><div class="stat-card"><div class="stat-value">${formatarNum(u.ryos)}</div><div class="stat-label">Ryos</div></div><div class="stats-divider">Batalha</div><div class="stat-card"><div class="stat-value">${u.vitorias||0}</div><div class="stat-label">Vitórias</div></div><div class="stat-card"><div class="stat-value">${u.empates||0}</div><div class="stat-label">Empates</div></div><div class="stat-card"><div class="stat-value">${u.loses||0}</div><div class="stat-label">Derrotas</div></div><div class="stats-divider">Inventário</div><div class="stat-card"><div class="stat-value">${(u.meusJutsus||[]).length}</div><div class="stat-label">Jutsus</div></div><div class="stats-divider">Vitalidade</div><div class="stat-card"><div class="stat-value">${u.vida||100}</div><div class="stat-label">Vida</div></div><div class="stat-card"><div class="stat-value">${u.chakra||100}</div><div class="stat-label">Chakra</div></div><div class="stat-card"><div class="stat-value">${u.stamina||100}</div><div class="stat-label">Stamina</div></div><div class="stat-card"><div class="stat-value">${u.controle_chakra||"Baixo"}</div><div class="stat-label">Controle</div></div><div class="stats-divider">Atributos</div><div class="stat-card"><div class="stat-value">${u.forca||10}</div><div class="stat-label">Força</div></div><div class="stat-card"><div class="stat-value">${u.defesa||10}</div><div class="stat-label">Defesa</div></div><div class="stat-card"><div class="stat-value">${u.agilidade||10}</div><div class="stat-label">Agilidade</div></div><div class="stat-card"><div class="stat-value">${u.velocidade||10}</div><div class="stat-label">Velocidade</div></div><div class="stat-card"><div class="stat-value">${u.intelecto||10}</div><div class="stat-label">Intelecto</div></div>`; document.getElementById('profileModal').style.display = 'flex'; } };
         window.fecharProfileModal = () => document.getElementById('profileModal').style.display = 'none';
 
         // --- PAINEL KAGE ---
@@ -1010,53 +1039,9 @@
         window.aprovarConquista = async (uid, cid) => { if(confirm("Aprovar?")) await updateDoc(doc(db, "users", uid), { [`statusConquistas.${cid}`]: 'aprovado' }); alert("Feito!"); };
 
         // --- OUTROS ---
-        window.handleImageUpload = async (e) => { 
-            const file = e.target.files[0];
-            if(file) {
-                try { 
-                    const btn = document.querySelector('.upload-btn');
-                    btn.innerText = "Processando...";
-                    currentImageBase64 = await comprimirImagem(file); 
-                    document.getElementById('preview-image').src = currentImageBase64; 
-                    document.getElementById('preview-container').style.display='block';
-                    btn.innerText = "Imagem Pronta!";
-                    btn.style.color = "green";
-                } catch(err){
-                    alert("Erro ao processar imagem.");
-                    console.error(err);
-                } 
-            } 
-        };
-        window.removeImage = () => { document.getElementById('imageInput').value=''; currentImageBase64=null; document.getElementById('preview-container').style.display='none'; document.querySelector('.upload-btn').innerHTML = '<i class="fa-regular fa-image"></i> Foto/Vídeo'; };
-        
-        window.publicarPost = async () => { 
-            const t = document.getElementById('postInput').value; 
-            if(!t.trim() && !currentImageBase64) return alert("Escreva algo ou poste uma foto!"); 
-            
-            const btn=document.querySelector('.btn-post'); 
-            btn.innerText="..."; 
-            btn.disabled = true;
-            
-            try { 
-                await addDoc(collection(db, "posts"), { 
-                    uid: auth.currentUser.uid, 
-                    autor: currentUserData.apelido, 
-                    autorAvatar: currentUserData.avatar, 
-                    conteudo: t, 
-                    imagem: currentImageBase64, 
-                    data: serverTimestamp(), 
-                    likes: [], savedBy: [], comments: [] 
-                }); 
-                document.getElementById('postInput').value=''; 
-                removeImage(); 
-            } catch(e){
-                alert("Erro ao publicar.");
-            } finally {
-                btn.innerText="Publicar";
-                btn.disabled = false;
-            } 
-        };
-        
+        window.handleImageUpload = async (e) => { if(e.target.files[0]) { try { currentImageBase64 = await comprimirImagem(e.target.files[0]); document.getElementById('preview-image').src = currentImageBase64; document.getElementById('preview-container').style.display='block'; } catch(e){} } };
+        window.removeImage = () => { document.getElementById('imageInput').value=''; currentImageBase64=null; document.getElementById('preview-container').style.display='none'; };
+        window.publicarPost = async () => { const t = document.getElementById('postInput').value; if(!t.trim() && !currentImageBase64) return alert("Texto vazio"); const btn=document.querySelector('.btn-post'); btn.innerText="..."; try { await addDoc(collection(db, "posts"), { uid: auth.currentUser.uid, autor: currentUserData.apelido, autorAvatar: currentUserData.avatar, conteudo: t, imagem: currentImageBase64, data: serverTimestamp(), likes: [], savedBy: [], comments: [] }); document.getElementById('postInput').value=''; removeImage(); } catch(e){} finally{btn.innerText="Publicar";} };
         window.renderFeed = (f) => { const c = document.getElementById('feed-container'); if(!c) return; try { onSnapshot(query(collection(db, "posts"), orderBy("data", "desc")), (s) => { c.innerHTML = ''; s.forEach(d => { try { const p = d.data(); if(f==='saved' && !(p.savedBy||[]).includes(auth.currentUser.uid)) return; const isLiked=(p.likes||[]).includes(auth.currentUser.uid); const isSaved=(p.savedBy||[]).includes(auth.currentUser.uid); const div=document.createElement('div'); div.className='post'; div.innerHTML=`<div class="post-header"><div class="user-avatar-post"><img src="${p.autorAvatar||IMG_PADRAO}"></div><div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">${calcularTempo(p.data)}</span></div>${p.uid===auth.currentUser.uid?`<div class="post-menu-container"><div class="post-options-btn" onclick="this.nextElementSibling.classList.toggle('active')">...</div><div class="post-dropdown"><div class="dropdown-item danger" onclick="deletarPost('${d.id}')">Excluir</div></div></div>`:''}</div><div class="post-content">${p.conteudo}</div>${p.imagem?`<img src="${p.imagem}" class="post-image" onclick="verPost('${d.id}')">`:''}<div class="post-actions"><button class="action-btn ${isLiked?'liked':''}" onclick="toggleLike('${d.id}')"><i class="${isLiked?'fa-solid':'fa-regular'} fa-heart"></i> ${(p.likes||[]).length}</button><button class="action-btn" onclick="verPost('${d.id}')"><i class="fa-regular fa-comment"></i> ${(p.comments||[]).length}</button><button class="action-btn ${isSaved?'saved':''}" onclick="toggleSave('${d.id}')" style="margin-left:auto;"><i class="${isSaved?'fa-solid':'fa-regular'} fa-bookmark"></i></button></div>`; c.appendChild(div); } catch(e){} }); }); } catch(e){} };
         window.deletarPost = async (id) => { if(confirm("Apagar?")) await deleteDoc(doc(db, "posts", id)); };
         window.toggleLike = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().likes||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{likes:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{likes:arrayUnion(auth.currentUser.uid)}); };
@@ -1065,7 +1050,23 @@
         window.submitComment = async () => { const t = document.getElementById('newCommentText').value; if(!t) return; await updateDoc(doc(db, "posts", currentOpenPostId), { comments: arrayUnion({ autor: currentUserData.nome, texto: t }) }); document.getElementById('newCommentText').value = ""; verPost(currentOpenPostId); };
         window.closeModal = () => document.getElementById('commentModal').style.display = 'none';
 
-        window.carregarRankings = async () => { const c = document.getElementById('ranking-container'); if(!c) return; try { const s = await getDocs(collection(db, "users")); let l = []; s.forEach(d => l.push(d.data())); c.innerHTML = ''; renderRank(c, "Nível", l, 'nivel'); renderRank(c, "Ryos", l, 'ryos'); renderRank(c, "Rankeadas", l, 'pontos_rankeada'); renderRank(c, "Torneios", l, 'vitorias_torneio'); renderRank(c, "Amistosos", l, 'pontos_amistoso'); renderRank(c, "Duplas", l, 'vitorias_dupla'); renderRank(c, "Clãs", l, 'vitorias_cla'); } catch (e) {} };
+        window.carregarRankings = async () => { 
+            const c = document.getElementById('ranking-container'); if(!c) return; 
+            try { 
+                const s = await getDocs(collection(db, "users")); 
+                let l = []; 
+                s.forEach(d => l.push(d.data())); 
+                c.innerHTML = ''; 
+                renderRank(c, "Nível", l, 'nivel'); 
+                renderRank(c, "Ryos", l, 'ryos'); 
+                renderRank(c, "Rankeadas", l, 'pontos_rankeada'); 
+                renderRank(c, "Missões S", l, 'missoes_concluidas_s');
+                renderRank(c, "Missões A", l, 'missoes_concluidas_a');
+                renderRank(c, "Missões B", l, 'missoes_concluidas_b');
+                renderRank(c, "Missões C", l, 'missoes_concluidas_c');
+                renderRank(c, "Missões D", l, 'missoes_concluidas_d');
+            } catch (e) {} 
+        };
         function renderRank(c,t,l,f) { const s=[...l].sort((a,b)=>(b[f]||0)-(a[f]||0)).slice(0,5); let h=`<div class="ranking-col"><h3>${t}</h3><table class="ranking-table">`; s.forEach((u,i)=>h+=`<tr><td>${i+1}. ${u.nome}</td><td>${formatarNum(u[f])}</td></tr>`); h+='</table></div>'; c.innerHTML+=h; }
         window.editarHistoria = async () => { const n=prompt("Texto:",currentUserData.historiaTexto||""); if(n){ const i=prompt("Imagem:",currentUserData.historiaImagem||""); updateDoc(doc(db,"users",auth.currentUser.uid),{historiaTexto:n,historiaImagem:i}).then(reloadData); } }
         async function carregarFrases() { const c = document.getElementById('frases-list-container'); try { onSnapshot(query(collection(db, "frases"), orderBy("data", "desc")), (s) => { c.innerHTML=''; s.forEach(d=>{ const f=d.data(); const k=document.createElement('div'); k.className='frase-item'; const menu = f.uid === auth.currentUser.uid ? `<div class="options-menu-container"><div class="options-btn" onclick="toggleFraseMenu(this); event.stopPropagation();">...</div><div class="options-dropdown"><div class="options-item" onclick="editarFrase('${d.id}','${f.texto}');event.stopPropagation()">Editar</div><div class="options-item danger" onclick="deletarFrase('${d.id}');event.stopPropagation()">Excluir</div></div></div>` : ''; k.onclick=()=>copiarFrase(f.texto); k.innerHTML=`<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor}</div>${menu}`; c.appendChild(k); }); }); } catch(e){} }
