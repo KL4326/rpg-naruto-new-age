@@ -35,6 +35,15 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background-color: var(--bg-color); color: var(--text-color); height: 100vh; overflow: hidden; }
 
+        /* RANK TAGS */
+        .rank-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-weight: bold; color: white; font-size: 0.8rem; margin-right: 5px; }
+        .rank-s { background-color: #000; border: 1px solid #ed4956; color: #ed4956; } /* Preto e Vermelho */
+        .rank-a { background-color: #ed4956; } /* Vermelho */
+        .rank-b { background-color: #2980b9; } /* Azul */
+        .rank-c { background-color: #2ecc71; } /* Verde */
+        .rank-d { background-color: #f1c40f; color: black; } /* Amarelo */
+        .rank-e { background-color: #95a5a6; } /* Cinza */
+
         /* LOGIN */
         .login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999; display: flex; justify-content: center; align-items: center; padding: 20px; }
         .login-box { background: white; padding: 30px; border-radius: 10px; width: 100%; max-width: 320px; text-align: center; }
@@ -652,10 +661,12 @@
         // --- SISTEMA DE ABAS BLINDADO ---
         window.showTab = (t) => {
             try {
+                // 1. Troca Visual (Sempre funciona)
                 document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                 const target = document.getElementById(t);
                 if(target) target.classList.add('active');
 
+                // 2. Atualiza Botões
                 document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
                 document.querySelectorAll('.sidebar button').forEach(b => b.classList.remove('active'));
                 const btnTop = document.getElementById('nav-btn-'+t);
@@ -663,14 +674,17 @@
                 if(btnTop) btnTop.classList.add('active');
                 if(btnSide) btnSide.classList.add('active');
 
+                // 3. Carrega Dados (Protegido)
                 if(currentUserData) {
                     if(t==='personagens') carregarPersonagens();
                     if(t==='frases') carregarFrases();
                     if(t==='inventario') carregarInventario();
+                    // Batalha é em tempo real, não precisa recarregar aqui
                     if(t==='jutsus') carregarMeusJutsus(currentUserData.meusJutsus); 
                     if(t==='conquistas') carregarConquistas();
                     if(t==='missoes') carregarMissoes();
                 }
+                
                 if(window.innerWidth <= 768) window.toggleMobileMenu();
             } catch (e) {
                 console.error("Erro ao trocar aba:", e);
@@ -941,6 +955,7 @@
         };
         
         window.coletarConquista = async (id, r, x, btn) => {
+            if(btn && btn.disabled) return;
             if(btn) { btn.disabled = true; btn.innerText = "Coletando..."; }
             const u = currentUserData;
             await updateDoc(doc(db, "users", auth.currentUser.uid), { 
@@ -963,7 +978,7 @@
         };
         
         window.coletarRecompensa = async (id, r, x, btn) => { 
-            if(btn && btn.disabled) return; 
+            if(btn && btn.disabled) return;
             if(btn) { btn.disabled = true; btn.innerText = "Coletando..."; }
             const u = currentUserData; 
             await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: (u.ryos||0)+r, xp: (u.xp||0)+x, [`statusMissoes.${id}`]: 'concluido' }); 
@@ -995,29 +1010,6 @@
         window.aprovarConquista = async (uid, cid) => { if(confirm("Aprovar?")) await updateDoc(doc(db, "users", uid), { [`statusConquistas.${cid}`]: 'aprovado' }); alert("Feito!"); };
 
         // --- OUTROS ---
-        function comprimirImagem(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const img = new Image();
-                    img.src = event.target.result;
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 600;
-                        const scaleSize = MAX_WIDTH / img.width;
-                        canvas.width = MAX_WIDTH;
-                        canvas.height = img.height * scaleSize;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.7));
-                    };
-                    img.onerror = () => reject("Erro ao carregar imagem.");
-                };
-                reader.onerror = () => reject("Erro ao ler arquivo.");
-                reader.readAsDataURL(file);
-            });
-        }
-        
         window.handleImageUpload = async (e) => { 
             const file = e.target.files[0];
             if(file) {
@@ -1036,7 +1028,35 @@
             } 
         };
         window.removeImage = () => { document.getElementById('imageInput').value=''; currentImageBase64=null; document.getElementById('preview-container').style.display='none'; document.querySelector('.upload-btn').innerHTML = '<i class="fa-regular fa-image"></i> Foto/Vídeo'; };
-        window.publicarPost = async () => { const t = document.getElementById('postInput').value; if(!t.trim() && !currentImageBase64) return alert("Texto vazio"); const btn=document.querySelector('.btn-post'); btn.innerText="..."; try { await addDoc(collection(db, "posts"), { uid: auth.currentUser.uid, autor: currentUserData.apelido, autorAvatar: currentUserData.avatar, conteudo: t, imagem: currentImageBase64, data: serverTimestamp(), likes: [], savedBy: [], comments: [] }); document.getElementById('postInput').value=''; removeImage(); } catch(e){} finally{btn.innerText="Publicar";} };
+        
+        window.publicarPost = async () => { 
+            const t = document.getElementById('postInput').value; 
+            if(!t.trim() && !currentImageBase64) return alert("Escreva algo ou poste uma foto!"); 
+            
+            const btn=document.querySelector('.btn-post'); 
+            btn.innerText="..."; 
+            btn.disabled = true;
+            
+            try { 
+                await addDoc(collection(db, "posts"), { 
+                    uid: auth.currentUser.uid, 
+                    autor: currentUserData.apelido, 
+                    autorAvatar: currentUserData.avatar, 
+                    conteudo: t, 
+                    imagem: currentImageBase64, 
+                    data: serverTimestamp(), 
+                    likes: [], savedBy: [], comments: [] 
+                }); 
+                document.getElementById('postInput').value=''; 
+                removeImage(); 
+            } catch(e){
+                alert("Erro ao publicar.");
+            } finally {
+                btn.innerText="Publicar";
+                btn.disabled = false;
+            } 
+        };
+        
         window.renderFeed = (f) => { const c = document.getElementById('feed-container'); if(!c) return; try { onSnapshot(query(collection(db, "posts"), orderBy("data", "desc")), (s) => { c.innerHTML = ''; s.forEach(d => { try { const p = d.data(); if(f==='saved' && !(p.savedBy||[]).includes(auth.currentUser.uid)) return; const isLiked=(p.likes||[]).includes(auth.currentUser.uid); const isSaved=(p.savedBy||[]).includes(auth.currentUser.uid); const div=document.createElement('div'); div.className='post'; div.innerHTML=`<div class="post-header"><div class="user-avatar-post"><img src="${p.autorAvatar||IMG_PADRAO}"></div><div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">${calcularTempo(p.data)}</span></div>${p.uid===auth.currentUser.uid?`<div class="post-menu-container"><div class="post-options-btn" onclick="this.nextElementSibling.classList.toggle('active')">...</div><div class="post-dropdown"><div class="dropdown-item danger" onclick="deletarPost('${d.id}')">Excluir</div></div></div>`:''}</div><div class="post-content">${p.conteudo}</div>${p.imagem?`<img src="${p.imagem}" class="post-image" onclick="verPost('${d.id}')">`:''}<div class="post-actions"><button class="action-btn ${isLiked?'liked':''}" onclick="toggleLike('${d.id}')"><i class="${isLiked?'fa-solid':'fa-regular'} fa-heart"></i> ${(p.likes||[]).length}</button><button class="action-btn" onclick="verPost('${d.id}')"><i class="fa-regular fa-comment"></i> ${(p.comments||[]).length}</button><button class="action-btn ${isSaved?'saved':''}" onclick="toggleSave('${d.id}')" style="margin-left:auto;"><i class="${isSaved?'fa-solid':'fa-regular'} fa-bookmark"></i></button></div>`; c.appendChild(div); } catch(e){} }); }); } catch(e){} };
         window.deletarPost = async (id) => { if(confirm("Apagar?")) await deleteDoc(doc(db, "posts", id)); };
         window.toggleLike = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().likes||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{likes:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{likes:arrayUnion(auth.currentUser.uid)}); };
