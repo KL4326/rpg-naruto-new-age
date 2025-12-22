@@ -1034,6 +1034,7 @@
         };
         
         window.coletarConquista = async (id, r, x, btn) => {
+            if(btn && btn.disabled) return;
             if(btn) { btn.disabled = true; btn.innerText = "Coletando..."; }
             const u = currentUserData;
             await updateDoc(doc(db, "users", auth.currentUser.uid), { 
