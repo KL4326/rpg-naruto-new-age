@@ -574,6 +574,10 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        // CONFIGURAÇÃO DA PROMOÇÃO (TRUE = LIGADO, FALSE = DESLIGADO)
+        // OBS: AGORA O PREÇO É LIDO DO CAMPO 'preco_promocional' NO FIREBASE
+        const EM_PROMOCAO = true; 
+
         let currentUserData = null;
         let currentImageBase64 = null;
         let currentOpenPostId = null;
@@ -634,6 +638,7 @@
                         
                         verificarLevelUpAutomatico(currentUserData);
                         atualizarInterface(currentUserData);
+                        renderizarBatalha(); // Atualiza barra de vida em tempo real
                     }
                 });
                 
@@ -683,6 +688,7 @@
                     if(t==='jutsus') carregarMeusJutsus(currentUserData.meusJutsus); 
                     if(t==='conquistas') carregarConquistas();
                     if(t==='missoes') carregarMissoes();
+                    if(t==='rankings') carregarRankings();
                 }
                 
                 if(window.innerWidth <= 768) window.toggleMobileMenu();
@@ -805,13 +811,54 @@
                 if(snapshot.empty) { grid.innerHTML = '<p>Sem ninjas.</p>'; return; }
                 snapshot.forEach(docSnap => {
                     const u = docSnap.data(); const uid = docSnap.id;
+                    
+                    // EDITAR MÁXIMO AO CLICAR NO VALOR
+                    const criarLinkMax = (val, max, field) => {
+                        return `<span class="battle-val">${val} / <span style="cursor:pointer; text-decoration:underline;" onclick="window.editarMaximo('${uid}', '${field}')" title="Clique para editar máximo">${max}</span></span>`;
+                    };
+
                     const card = document.createElement('div'); card.className = 'battle-card';
-                    card.innerHTML = `<div class="battle-header-info"><img src="${u.avatar || IMG_PADRAO}" class="battle-avatar"><div><div class="battle-name">${u.nome || "Ninja"}</div><div class="battle-char">${u.apelido || "Sem Apelido"} - Nvl ${u.nivel || 1}</div></div></div><div class="battle-stats-wrapper">${criarLinhaStatus(uid, 'vida', 'Vida', 'HP', u.vida||0, u.max_vida||100, 'bar-life')}${criarLinhaStatus(uid, 'sanidade', 'Sanidade', 'SAN', u.sanidade||0, u.max_sanidade||100, 'bar-sanidade')}${criarLinhaStatus(uid, 'stamina', 'Stamina', 'STA', u.stamina||0, u.max_stamina||100, 'bar-stamina')}${criarLinhaStatus(uid, 'chakra', 'Chakra', 'CHK', u.chakra||0, u.max_chakra||100, 'bar-chakra')}</div>`;
+                    card.innerHTML = `
+                        <div class="battle-header-info">
+                            <img src="${u.avatar || IMG_PADRAO}" class="battle-avatar">
+                            <div>
+                                <div class="battle-name">${u.nome || "Ninja"}</div>
+                                <div class="battle-char">${u.apelido || "Sem Apelido"} - Nvl ${u.nivel || 1}</div>
+                            </div>
+                        </div>
+                        <div class="battle-stats-wrapper">
+                            ${criarLinhaStatusCustom(uid, 'vida', 'Vida', 'HP', u.vida||0, u.max_vida||100, 'bar-life')}
+                            ${criarLinhaStatusCustom(uid, 'sanidade', 'Sanidade', 'SAN', u.sanidade||0, u.max_sanidade||100, 'bar-sanidade')}
+                            ${criarLinhaStatusCustom(uid, 'stamina', 'Stamina', 'STA', u.stamina||0, u.max_stamina||100, 'bar-stamina')}
+                            ${criarLinhaStatusCustom(uid, 'chakra', 'Chakra', 'CHK', u.chakra||0, u.max_chakra||100, 'bar-chakra')}
+                        </div>`;
                     grid.appendChild(card);
                 });
             });
         }
-        function criarLinhaStatus(uid, f, l, a, v, m, c) { const p=Math.min((v/m)*100,100); return `<div class="battle-row"><div class="battle-row-header"><span>${l}</span><span>${a}</span></div><div class="battle-controls"><div class="battle-actions-row"><div class="battle-mini-btn" onclick="alterarStatus('${uid}','${f}',-5)">-5</div><div class="battle-mini-btn" onclick="alterarStatus('${uid}','${f}',-1)">-1</div></div><span class="battle-val">${v} / ${m}</span><div class="battle-actions-row"><div class="battle-mini-btn" onclick="alterarStatus('${uid}','${f}',1)">+1</div><div class="battle-mini-btn" onclick="alterarStatus('${uid}','${f}',5)">+5</div></div></div><div class="battle-bar-bg"><div class="battle-bar-fill ${c}" style="width:${p}%;"></div><div class="battle-bar-text">${p.toFixed(0)}%</div></div></div>`; }
+
+        // Função customizada para Batalha com edição de máximo
+        function criarLinhaStatusCustom(uid, f, l, a, v, m, c) { 
+            const p=Math.min((v/m)*100,100); 
+            return `
+            <div class="battle-row">
+                <div class="battle-row-header"><span>${l}</span><span>${a}</span></div>
+                <div class="battle-controls">
+                    <div class="battle-actions-row"><div class="battle-mini-btn" onclick="alterarStatus('${uid}','${f}',-5)">-5</div><div class="battle-mini-btn" onclick="alterarStatus('${uid}','${f}',-1)">-1</div></div>
+                    <span class="battle-val">${v} / <span style="cursor:pointer; border-bottom:1px dotted #ccc;" onclick="editarMaximo('${uid}', 'max_${f}')">${m}</span></span>
+                    <div class="battle-actions-row"><div class="battle-mini-btn" onclick="alterarStatus('${uid}','${f}',1)">+1</div><div class="battle-mini-btn" onclick="alterarStatus('${uid}','${f}',5)">+5</div></div>
+                </div>
+                <div class="battle-bar-bg"><div class="battle-bar-fill ${c}" style="width:${p}%;"></div><div class="battle-bar-text">${p.toFixed(0)}%</div></div>
+            </div>`; 
+        }
+
+        window.editarMaximo = async (uid, field) => {
+            const novo = prompt("Novo valor máximo:");
+            if(novo && !isNaN(novo)) {
+                await updateDoc(doc(db, "users", uid), { [field]: parseInt(novo) });
+            }
+        };
+
         window.alterarStatus = async (targetUid, stat, valor) => { await updateDoc(doc(db, "users", targetUid), { [stat]: increment(valor) }); };
 
         // --- CORE FUNCTIONS ---
@@ -1034,14 +1081,13 @@
             if(btn) { btn.disabled = true; btn.innerText = "Coletando..."; }
             
             const u = currentUserData;
-            // Incrementa contador de rank específico
             const rankKey = `missoes_concluidas_${rank.toLowerCase()}`;
             
             await updateDoc(doc(db, "users", auth.currentUser.uid), { 
                 ryos: (u.ryos||0)+r, 
                 xp: (u.xp||0)+x, 
                 [`statusMissoes.${id}`]: 'concluido',
-                [rankKey]: increment(1) // Salva contagem no banco
+                [rankKey]: increment(1) 
             }); 
             alert("Coletado!"); 
         };
@@ -1071,8 +1117,46 @@
         window.aprovarConquista = async (uid, cid) => { if(confirm("Aprovar?")) await updateDoc(doc(db, "users", uid), { [`statusConquistas.${cid}`]: 'aprovado' }); alert("Feito!"); };
 
         // --- OUTROS ---
-        window.handleImageUpload = async (e) => { if(e.target.files[0]) { try { currentImageBase64 = await comprimirImagem(e.target.files[0]); document.getElementById('preview-image').src = currentImageBase64; document.getElementById('preview-container').style.display='block'; } catch(e){} } };
-        window.removeImage = () => { document.getElementById('imageInput').value=''; currentImageBase64=null; document.getElementById('preview-container').style.display='none'; };
+        window.handleImageUpload = async (e) => { 
+            const file = e.target.files[0];
+            if(file) {
+                try { 
+                    const btn = document.querySelector('.upload-btn');
+                    btn.innerText = "Processando...";
+                    currentImageBase64 = await comprimirImagem(file); 
+                    document.getElementById('preview-image').src = currentImageBase64; 
+                    document.getElementById('preview-container').style.display='block';
+                    btn.innerText = "Imagem Pronta!";
+                    btn.style.color = "green";
+                } catch(err){
+                    alert("Erro ao processar imagem.");
+                    console.error(err);
+                } 
+            } 
+        };
+        function comprimirImagem(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 600;
+                        const scaleSize = MAX_WIDTH / img.width;
+                        canvas.width = MAX_WIDTH;
+                        canvas.height = img.height * scaleSize;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.7));
+                    };
+                    img.onerror = () => reject("Erro ao carregar imagem.");
+                };
+                reader.onerror = () => reject("Erro ao ler arquivo.");
+                reader.readAsDataURL(file);
+            });
+        }
+        window.removeImage = () => { document.getElementById('imageInput').value=''; currentImageBase64=null; document.getElementById('preview-container').style.display='none'; document.querySelector('.upload-btn').innerHTML = '<i class="fa-regular fa-image"></i> Foto/Vídeo'; };
         window.publicarPost = async () => { const t = document.getElementById('postInput').value; if(!t.trim() && !currentImageBase64) return alert("Texto vazio"); const btn=document.querySelector('.btn-post'); btn.innerText="..."; try { await addDoc(collection(db, "posts"), { uid: auth.currentUser.uid, autor: currentUserData.apelido, autorAvatar: currentUserData.avatar, conteudo: t, imagem: currentImageBase64, data: serverTimestamp(), likes: [], savedBy: [], comments: [] }); document.getElementById('postInput').value=''; removeImage(); } catch(e){} finally{btn.innerText="Publicar";} };
         window.renderFeed = (f) => { const c = document.getElementById('feed-container'); if(!c) return; try { onSnapshot(query(collection(db, "posts"), orderBy("data", "desc")), (s) => { c.innerHTML = ''; s.forEach(d => { try { const p = d.data(); if(f==='saved' && !(p.savedBy||[]).includes(auth.currentUser.uid)) return; const isLiked=(p.likes||[]).includes(auth.currentUser.uid); const isSaved=(p.savedBy||[]).includes(auth.currentUser.uid); const div=document.createElement('div'); div.className='post'; div.innerHTML=`<div class="post-header"><div class="user-avatar-post"><img src="${p.autorAvatar||IMG_PADRAO}"></div><div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">${calcularTempo(p.data)}</span></div>${p.uid===auth.currentUser.uid?`<div class="post-menu-container"><div class="post-options-btn" onclick="this.nextElementSibling.classList.toggle('active')">...</div><div class="post-dropdown"><div class="dropdown-item danger" onclick="deletarPost('${d.id}')">Excluir</div></div></div>`:''}</div><div class="post-content">${p.conteudo}</div>${p.imagem?`<img src="${p.imagem}" class="post-image" onclick="verPost('${d.id}')">`:''}<div class="post-actions"><button class="action-btn ${isLiked?'liked':''}" onclick="toggleLike('${d.id}')"><i class="${isLiked?'fa-solid':'fa-regular'} fa-heart"></i> ${(p.likes||[]).length}</button><button class="action-btn" onclick="verPost('${d.id}')"><i class="fa-regular fa-comment"></i> ${(p.comments||[]).length}</button><button class="action-btn ${isSaved?'saved':''}" onclick="toggleSave('${d.id}')" style="margin-left:auto;"><i class="${isSaved?'fa-solid':'fa-regular'} fa-bookmark"></i></button></div>`; c.appendChild(div); } catch(e){} }); }); } catch(e){} };
         window.deletarPost = async (id) => { if(confirm("Apagar?")) await deleteDoc(doc(db, "posts", id)); };
@@ -1128,4 +1212,3 @@
     </script>
 </body>
 </html>
-
