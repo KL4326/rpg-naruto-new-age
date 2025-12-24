@@ -92,7 +92,9 @@
         .card h4 { margin-bottom: 5px; font-size: 1rem; }
         .card small { display: block; margin-bottom: 8px; color: #777; }
         
-        /* BOTÕES */
+        /* --- ESTILOS DE BOTÕES CORRIGIDOS E ESPECÍFICOS --- */
+        
+        /* Botões de largura total (Loja, Missões) */
         .buy-btn, .mission-btn-start, .mission-btn-collect { 
             background-color: var(--primary-color); 
             color: white; 
@@ -108,21 +110,39 @@
             text-align: center;
         }
 
-        .btn-post, .btn-edit-historia {
+        /* Botão do Feed e Frases (Pequenos e alinhados) */
+        .btn-post {
             background-color: var(--primary-color); 
             color: white; 
             border: none; 
-            padding: 8px 16px; 
-            width: auto;
+            padding: 8px 20px; 
+            width: auto !important; /* FORÇA LARGURA AUTOMÁTICA */
+            min-width: 80px;
             border-radius: 20px; 
             font-weight: 600; 
             cursor: pointer; 
-            font-size: 0.9rem; 
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
+            font-size: 0.9rem;
             white-space: nowrap;
+        }
+        
+        /* Botão Editar História (Posicionado e pequeno) */
+        .btn-edit-historia {
+            background-color: var(--primary-color); 
+            color: white; 
+            border: none; 
+            padding: 8px 20px; 
+            width: auto !important; /* FORÇA LARGURA AUTOMÁTICA */
+            border-radius: 20px; 
+            font-weight: 600; 
+            cursor: pointer;
+            position: absolute; 
+            bottom: 15px; 
+            right: 15px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5); 
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
         .buy-btn:hover, .mission-btn-start:hover, .btn-post:hover, .btn-edit-historia:hover { background-color: #e05200; }
@@ -265,7 +285,31 @@
         .comment-input-area input { flex: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 20px; outline: none; }
         .edit-input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 5px; }
         .edit-avatar-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color); margin: 10px auto; display: block; }
+
+        /* HISTORIA */
+        .historia-container { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; max-width: 800px; margin: 0 auto; position: relative; }
+        .historia-img-container { width: 100%; height: 300px; background-color: #000; position: relative; }
+        .historia-img-container img { width: 100%; height: 100%; object-fit: cover; }
+        .historia-divider { height: 4px; background-color: #dbdbdb; border: none; margin: 0; }
+        .historia-text-content { padding: 30px; line-height: 1.8; font-size: 1.1rem; color: var(--text-color); white-space: pre-wrap; }
+
+        /* FRASES */
+        .frase-input-area { background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px; display: flex; gap: 10px; align-items: center; }
+        .frase-input-area input { flex: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; outline: none; }
+        .frases-list { display: flex; flex-direction: column; gap: 10px; }
+        .frase-item { background: var(--card-bg); padding: 20px; border-bottom: 1px solid #ccc; cursor: pointer; transition: background 0.2s; position: relative; border-radius: 5px; display: flex; justify-content: space-between; align-items: flex-start; }
+        .frase-item:hover { background-color: rgba(0,0,0,0.02); }
+        .frase-content { font-size: 1.1rem; font-style: italic; color: var(--text-color); flex: 1; padding-right: 30px; }
+        .frase-author { font-size: 0.85rem; color: var(--primary-color); font-weight: bold; margin-top: 5px; }
         
+        .options-menu-container { margin-left: auto; position: relative; }
+        .options-btn { cursor: pointer; color: var(--text-color); padding: 8px; width: 30px; text-align: center; }
+        .options-dropdown { display: none; position: absolute; top: 100%; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; width: 140px; }
+        .options-dropdown.active { display: block; }
+        .options-item { padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-color); }
+        .options-item.danger { color: var(--danger-color); }
+
+        /* BARRA DE XP */
         .level-container { background: var(--card-bg); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 20px; }
         .level-info { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; color: var(--text-color); }
         .xp-bar-bg { width: 100%; height: 20px; background: #eee; border-radius: 10px; overflow: hidden; position: relative; }
@@ -1090,6 +1134,7 @@
         };
         
         window.coletarConquista = async (id, r, x, btn) => {
+            if(btn && btn.disabled) return;
             if(btn) { btn.disabled = true; btn.innerText = "Coletando..."; }
             const u = currentUserData;
             await updateDoc(doc(db, "users", auth.currentUser.uid), { 
@@ -1191,32 +1236,50 @@
             const s = await getDoc(doc(db, "users", uid)); 
             if(s.exists()) { 
                 const u = s.data(); 
+                
+                // Variáveis para contagem
+                let totalJutsus = (u.meusJutsus || []).length;
+                let totalTools = 0;
+                let totalItems = 0;
+
+                // Contar Itens e Ferramentas
+                if (u.inventario) {
+                    for (const [id, qtd] of Object.entries(u.inventario)) {
+                        // Verifica no mapa global se é ferramenta ou item
+                        if (globalItensMap[id]) {
+                            if (globalItensMap[id].type === 'tool') {
+                                totalTools += qtd;
+                            } else {
+                                totalItems += qtd;
+                            }
+                        } else {
+                            // Se não estiver no mapa (ex: item deletado), conta como item genérico
+                            totalItems += qtd;
+                        }
+                    }
+                }
+
+                // Construção do HTML resumido
+                let invHtml = `
+                    <div class="stat-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                        <div class="stat-value" style="font-size:1.5rem;">${totalJutsus}</div>
+                        <div class="stat-label">Jutsus</div>
+                    </div>
+                    <div class="stat-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                        <div class="stat-value" style="font-size:1.5rem;">${totalTools}</div>
+                        <div class="stat-label">Ferramentas</div>
+                    </div>
+                    <div class="stat-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                        <div class="stat-value" style="font-size:1.5rem;">${totalItems}</div>
+                        <div class="stat-label">Itens</div>
+                    </div>
+                `;
+
                 document.getElementById('profile-modal-name').innerText = u.nome; 
                 document.getElementById('profile-modal-char').innerText = u.apelido || ""; 
                 document.getElementById('profile-modal-img').src = u.avatar||IMG_PADRAO; 
                 renderizarIcones(u.elementos || [], 'profile-elementos-container', ELEMENTOS_ICONS, 'Naturezas de Chakra'); 
                 renderizarIcones(u.kekkei_genkai || [], 'profile-kekkei-container', KEKKEI_ICONS, 'Kekkei Genkai'); 
-                
-                // CARREGAR INVENTÁRIO DO PERFIL ALVO
-                let invHtml = '';
-                if(u.inventario) {
-                    for (const [id, qtd] of Object.entries(u.inventario)) {
-                         if(qtd > 0) {
-                             const itemData = globalItensMap[id];
-                             if(itemData) {
-                                 invHtml += `
-                                 <div class="stat-card" style="display:flex; align-items:center; gap:10px; padding:5px; text-align:left;">
-                                     <img src="${itemData.imagem || IMG_PADRAO}" style="width:30px; height:30px; border-radius:4px; object-fit:cover;">
-                                     <div>
-                                         <div style="font-weight:bold; font-size:0.8rem;">${itemData.nome}</div>
-                                         <div style="font-size:0.7rem; color:#777;">x${qtd}</div>
-                                     </div>
-                                 </div>`;
-                             }
-                         }
-                    }
-                }
-                if(!invHtml) invHtml = '<p style="text-align:center; color:#777; width:100%;">Mochila vazia.</p>';
 
                 const statsContainer = document.getElementById('other-profile-stats'); 
                 statsContainer.innerHTML = `
@@ -1232,7 +1295,9 @@
                 <div class="stat-card"><div class="stat-value">${u.loses||0}</div><div class="stat-label">Derrotas</div></div>
                 
                 <div class="stats-divider">Inventário</div>
-                ${invHtml}
+                <div style="grid-column: 1 / -1; display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
+                    ${invHtml}
+                </div>
                 
                 <div class="stats-divider">Vitalidade</div>
                 <div class="stat-card"><div class="stat-value">${u.vida||100}</div><div class="stat-label">Vida</div></div>
