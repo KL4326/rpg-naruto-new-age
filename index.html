@@ -92,12 +92,35 @@
         .card h4 { margin-bottom: 5px; font-size: 1rem; }
         .card small { display: block; margin-bottom: 8px; color: #777; }
         
-        .buy-btn { background-color: var(--primary-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; margin-top: auto; font-size: 1rem; cursor: pointer; transition: background 0.2s; }
-        .buy-btn:hover { background-color: #e05200; }
-        .buy-btn:disabled { background-color: #ccc; cursor: not-allowed; opacity: 0.7; }
+        /* BOTÕES PERSONALIZADOS E CORRIGIDOS */
+        .buy-btn, .mission-btn-start, .mission-btn-collect, .btn-post, .btn-edit-historia { 
+            background-color: var(--primary-color); 
+            color: white; 
+            border: none; 
+            padding: 10px; 
+            width: 100%; 
+            border-radius: 5px; 
+            font-weight: bold; 
+            margin-top: auto; 
+            font-size: 1rem; 
+            cursor: pointer; 
+            transition: background 0.2s; 
+            text-align: center;
+            display: inline-block;
+        }
+        .buy-btn:hover, .mission-btn-start:hover, .btn-post:hover, .btn-edit-historia:hover { background-color: #e05200; }
+        .buy-btn:disabled, .mission-btn-collect:disabled, .mission-btn-start:disabled { background-color: #ccc; cursor: not-allowed; opacity: 0.7; }
+        
+        .mission-btn-collect { background-color: var(--green-color); animation: pulse 1.5s infinite; }
+        .mission-btn-collect:hover { background-color: #27ae60; }
+
+        .mission-btn-wait { background-color: var(--yellow-color); color: #333; width: 100%; border: none; padding: 10px; border-radius: 5px; font-weight: bold; margin-top: 5px; cursor: not-allowed; }
+        .mission-btn-done { background-color: #ccc; color: #666; width: 100%; border: none; padding: 10px; border-radius: 5px; font-weight: bold; margin-top: 5px; cursor: not-allowed; }
+        
         .buy-btn.en-btn { background-color: var(--en-color); }
         .buy-btn.en-btn:hover { background-color: #2980b9; }
 
+        /* CAIXA QUADRADA DE QUANTIDADE */
         .qtd-container-square { display: flex; justify-content: center; margin: 10px 0 8px 0; width: 100%; }
         .qtd-input-square { width: 45px; height: 45px; text-align: center; font-size: 1.2rem; font-weight: bold; border: 2px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-color); padding: 0; -moz-appearance: textfield; }
         .qtd-input-square::-webkit-outer-spin-button, .qtd-input-square::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
@@ -105,6 +128,7 @@
         .price-tag { font-weight: bold; font-size: 1.05rem; margin-bottom: 5px; color: var(--primary-color); }
         .price-tag.en-price { color: var(--en-color); }
 
+        /* TAG DE QUANTIDADE (INVENTÁRIO) */
         .qtd-badge { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.3); }
         .inventory-controls { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 8px; background: rgba(0,0,0,0.03); padding: 5px; border-radius: 20px; }
         .btn-minus { background: var(--danger-color); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
@@ -164,7 +188,7 @@
         #preview-container { margin-top: 10px; display: none; position: relative; width: 100%; text-align: center; background: #000; border-radius: 4px; overflow: hidden; }
         #preview-image { max-width: 100%; max-height: 300px; object-fit: contain; }
         .remove-img { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .btn-post { background: var(--primary-color); color: white; border: none; padding: 8px 20px; border-radius: 20px; font-weight: 600; cursor: pointer; font-size: 0.9rem; }
+        
         .post { background: var(--card-bg); border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); position: relative; overflow: visible; }
         .post-header { display: flex; align-items: center; padding: 10px; }
         .user-avatar-post { width: 35px; height: 35px; border-radius: 50%; background: #efefef; margin-right: 10px; overflow: hidden; border: 1px solid var(--border-color); }
@@ -183,19 +207,25 @@
         .post-actions { display: flex; padding: 10px; gap: 15px; }
         .action-btn { background: none; border: none; cursor: pointer; color: var(--text-color); font-size: 1.5rem; display: flex; align-items: center; gap: 5px; padding: 0; }
         .action-btn.liked { color: var(--danger-color); }
+        .edit-textarea { width: 100%; border: 1px solid var(--primary-color); border-radius: 4px; padding: 10px; margin: 10px 0; }
 
+        /* RANKINGS */
         .rankings-wrapper { display: flex; gap: 20px; flex-wrap: wrap; padding-bottom: 20px; }
         .ranking-col { flex: 1 1 300px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; }
         .ranking-col h3 { color: var(--primary-color); text-align: center; margin-bottom: 15px; border-bottom: 2px solid var(--primary-color); font-size: 1.1rem; }
         .ranking-table { width: 100%; border-collapse: collapse; font-size: 14px; }
         .ranking-table td { padding: 8px; border-bottom: 1px solid var(--border-color); }
 
+        /* MODAIS */
         .modal-overlay-comment { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
         .close-modal { position: absolute; top: 10px; left: 15px; font-size: 1.8rem; color: white; cursor: pointer; z-index: 20; text-shadow: 0 0 5px black; }
         .modal-content-card { background: var(--card-bg); padding: 30px; border-radius: 10px; width: 90%; max-width: 350px; text-align: center; position: relative; border: 1px solid var(--border-color); }
         .jutsu-modal-img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); }
         .jutsu-modal-rank { display: inline-block; background: var(--primary-color); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-bottom: 10px; }
         .jutsu-modal-price { color: var(--green-color); font-weight: bold; font-size: 1.2rem; border-top: 1px solid var(--border-color); padding-top: 15px; }
+        
+        .jutsu-stats-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; margin: 10px 0; }
+        .jutsu-stat-tag { padding: 4px 12px; border-radius: 15px; color: white; font-weight: bold; font-size: 0.8rem; margin: 2px; }
 
         .modal-content-profile { background: var(--card-bg); width: 90%; max-width: 800px; max-height: 90vh; border-radius: 15px; overflow-y: auto; position: relative; border: 1px solid var(--border-color); }
         .profile-header { background: linear-gradient(to right, #ff5e00, #ff9100); padding: 40px 20px; text-align: center; color: white; }
@@ -219,7 +249,31 @@
         .comment-input-area input { flex: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 20px; outline: none; }
         .edit-input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 5px; }
         .edit-avatar-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color); margin: 10px auto; display: block; }
+
+        /* HISTORIA */
+        .historia-container { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; max-width: 800px; margin: 0 auto; position: relative; }
+        .historia-img-container { width: 100%; height: 300px; background-color: #000; position: relative; }
+        .historia-img-container img { width: 100%; height: 100%; object-fit: cover; }
+        .historia-divider { height: 4px; background-color: #dbdbdb; border: none; margin: 0; }
+        .historia-text-content { padding: 30px; line-height: 1.8; font-size: 1.1rem; color: var(--text-color); white-space: pre-wrap; }
+
+        /* FRASES */
+        .frase-input-area { background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px; display: flex; gap: 10px; }
+        .frase-input-area input { flex: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; outline: none; }
+        .frases-list { display: flex; flex-direction: column; gap: 10px; }
+        .frase-item { background: var(--card-bg); padding: 20px; border-bottom: 1px solid #ccc; cursor: pointer; transition: background 0.2s; position: relative; border-radius: 5px; display: flex; justify-content: space-between; align-items: flex-start; }
+        .frase-item:hover { background-color: rgba(0,0,0,0.02); }
+        .frase-content { font-size: 1.1rem; font-style: italic; color: var(--text-color); flex: 1; padding-right: 30px; }
+        .frase-author { font-size: 0.85rem; color: var(--primary-color); font-weight: bold; margin-top: 5px; }
         
+        .options-menu-container { margin-left: auto; position: relative; }
+        .options-btn { cursor: pointer; color: var(--text-color); padding: 8px; width: 30px; text-align: center; }
+        .options-dropdown { display: none; position: absolute; top: 100%; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; width: 140px; }
+        .options-dropdown.active { display: block; }
+        .options-item { padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-color); }
+        .options-item.danger { color: var(--danger-color); }
+
+        /* BARRA DE XP */
         .level-container { background: var(--card-bg); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 20px; }
         .level-info { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; color: var(--text-color); }
         .xp-bar-bg { width: 100%; height: 20px; background: #eee; border-radius: 10px; overflow: hidden; position: relative; }
@@ -540,6 +594,7 @@
         const db = getFirestore(app);
 
         // CONFIGURAÇÃO DA PROMOÇÃO (TRUE = LIGADO, FALSE = DESLIGADO)
+        // OBS: AGORA O PREÇO É LIDO DO CAMPO 'preco_promocional' NO FIREBASE
         const EM_PROMOCAO = true; 
 
         let currentUserData = null;
@@ -627,13 +682,15 @@
             }
         });
 
-        // --- SISTEMA DE ABAS ---
+        // --- SISTEMA DE ABAS BLINDADO ---
         window.showTab = (t) => {
             try {
+                // 1. Troca Visual
                 document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                 const target = document.getElementById(t);
                 if(target) target.classList.add('active');
 
+                // 2. Atualiza Botões
                 document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
                 document.querySelectorAll('.sidebar button').forEach(b => b.classList.remove('active'));
                 const btnTop = document.getElementById('nav-btn-'+t);
@@ -641,10 +698,12 @@
                 if(btnTop) btnTop.classList.add('active');
                 if(btnSide) btnSide.classList.add('active');
 
+                // 3. Carrega Dados (Protegido)
                 if(currentUserData) {
                     if(t==='personagens') carregarPersonagens();
                     if(t==='frases') carregarFrases();
                     if(t==='inventario') carregarInventario();
+                    // Batalha é em tempo real, não precisa recarregar aqui
                     if(t==='jutsus') carregarMeusJutsus(currentUserData.meusJutsus); 
                     if(t==='conquistas') carregarConquistas();
                     if(t==='missoes') carregarMissoes();
@@ -657,14 +716,14 @@
             }
         };
 
-        // --- LEVEL UP ---
+        // --- LEVEL UP CORRIGIDO (XP GASTO) ---
         async function verificarLevelUpAutomatico(dados) {
             let xpAtual = dados.xp || 0;
             let nivelAtual = dados.nivel || 1;
             let xpNecessario = getXpNecessario(nivelAtual);
             
             if (xpAtual >= xpNecessario) {
-                let novoXp = xpAtual - xpNecessario; 
+                let novoXp = xpAtual - xpNecessario; // SUBTRAI O CUSTO
                 let novoNivel = nivelAtual + 1;
                 
                 await updateDoc(doc(db, "users", auth.currentUser.uid), { 
@@ -774,6 +833,10 @@
                 snapshot.forEach(docSnap => {
                     const u = docSnap.data(); const uid = docSnap.id;
                     
+                    const criarLinkMax = (val, max, field) => {
+                        return `<span class="battle-val">${val} / <span style="cursor:pointer; text-decoration:underline;" onclick="window.editarMaximo('${uid}', '${field}')" title="Clique para editar máximo">${max}</span></span>`;
+                    };
+
                     const card = document.createElement('div'); card.className = 'battle-card';
                     card.innerHTML = `
                         <div class="battle-header-info">
@@ -794,6 +857,7 @@
             });
         }
 
+        // Função customizada para Batalha com edição de máximo
         function criarLinhaStatusCustom(uid, f, l, a, v, m, c) { 
             const p=Math.min((v/m)*100,100); 
             return `
@@ -919,6 +983,8 @@
             const c = document.getElementById('inventario-grid'); if(!c) return; c.innerHTML = '';
             const inv = currentUserData.inventario || {}; const keys = Object.keys(inv).filter(k => inv[k] > 0);
             if(keys.length === 0) { c.innerHTML = '<p>Mochila vazia.</p>'; return; }
+            
+            // PROTEÇÃO: Carregar do cache ou buscar
             for (const id of keys) {
                 let info = globalItensMap[id];
                 if (!info) {
@@ -950,36 +1016,10 @@
         }
 
         window.consumirItem = async (id, nome) => { if(confirm(`Usar 1x ${nome}?`)) await updateDoc(doc(db, "users", auth.currentUser.uid), { [`inventario.${id}`]: increment(-1) }); };
+        window.comprarJutsu = async (id, p, n) => { if(!confirm(`Comprar ${n}?`)) return; if(currentUserData.ryos < p) return alert("Sem Ryos!"); await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(-p), meusJutsus: arrayUnion(id), [`maestrias.${id}`]: 0 }); alert("Comprado!"); };
+        window.comprarMultiplos = async (id, p, n, t, i) => { const q = parseInt(document.getElementById(i).value)||1; if(q<1) return; const tot=p*q; if(!confirm(`Comprar ${q}x ${n}?`)) return; if(currentUserData.ryos < tot) return alert("Sem Ryos!"); await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(-tot), [`inventario.${id}`]: increment(q) }); alert("Comprado!"); };
         
-        window.comprarJutsu = async (id, p, n, currency) => { 
-            const field = currency === 'EN' ? 'essencia_ninja' : 'ryos';
-            if(!confirm(`Comprar ${n} por ${p} ${currency}?`)) return; 
-            if((currentUserData[field]||0) < p) return alert(`Sem ${currency} suficiente!`); 
-            
-            await updateDoc(doc(db, "users", auth.currentUser.uid), { 
-                [field]: increment(-p), 
-                meusJutsus: arrayUnion(id), 
-                [`maestrias.${id}`]: 0 
-            }); 
-            alert("Comprado!"); 
-        };
-        
-        window.comprarMultiplos = async (id, p, n, t, i, currency) => { 
-            const q = parseInt(document.getElementById(i).value)||1; 
-            if(q<1) return; 
-            const tot=p*q; 
-            const field = currency === 'EN' ? 'essencia_ninja' : 'ryos';
-            
-            if(!confirm(`Comprar ${q}x ${n} por ${tot} ${currency}?`)) return; 
-            if((currentUserData[field]||0) < tot) return alert(`Sem ${currency} suficiente!`); 
-            
-            await updateDoc(doc(db, "users", auth.currentUser.uid), { 
-                [field]: increment(-tot), 
-                [`inventario.${id}`]: increment(q) 
-            }); 
-            alert("Comprado!"); 
-        };
-        
+        // CORREÇÃO FILTRO LOJA: EXPOSTO AO WINDOW
         window.filtrarLojaPorTipo = (t, b) => { 
             lojaAtual = t; 
             document.querySelectorAll('.shop-cat-btn').forEach(x => x.classList.remove('active')); 
@@ -1047,6 +1087,7 @@
         // --- MISSOES ---
         async function carregarMissoes() { const c = document.getElementById('missoes-grid'); if(!c) return; const m = currentUserData.statusMissoes || {}; const s = await getDocs(collection(db, "missoes")); c.innerHTML = ''; s.forEach(d => { const i = d.data(), st = m[d.id] || 'neutro'; const k = document.createElement('div'); k.className = 'card jutsu-card-click'; 
         
+        // RANK VISUAL
         const rankClass = `rank-${(i.rank||'d').toLowerCase()}`;
         const rankHtml = `<span class="rank-tag ${rankClass}">Rank ${i.rank||'D'}</span>`;
 
