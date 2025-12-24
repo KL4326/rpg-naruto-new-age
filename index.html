@@ -92,7 +92,7 @@
         .card h4 { margin-bottom: 5px; font-size: 1rem; }
         .card small { display: block; margin-bottom: 8px; color: #777; }
         
-        /* BOTÕES PRINCIPAIS (100% WIDTH) */
+        /* BOTÕES */
         .buy-btn, .mission-btn-start, .mission-btn-collect { 
             background-color: var(--primary-color); 
             color: white; 
@@ -108,13 +108,12 @@
             text-align: center;
         }
 
-        /* CORREÇÃO BOTÕES PEQUENOS (AUTO WIDTH) */
         .btn-post, .btn-edit-historia {
             background-color: var(--primary-color); 
             color: white; 
             border: none; 
             padding: 8px 16px; 
-            width: auto; /* CORREÇÃO AQUI */
+            width: auto;
             border-radius: 20px; 
             font-weight: 600; 
             cursor: pointer; 
@@ -266,41 +265,7 @@
         .comment-input-area input { flex: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 20px; outline: none; }
         .edit-input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 5px; }
         .edit-avatar-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color); margin: 10px auto; display: block; }
-
-        /* HISTORIA */
-        .historia-container { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; max-width: 800px; margin: 0 auto; position: relative; }
-        .historia-img-container { width: 100%; height: 300px; background-color: #000; position: relative; }
-        .historia-img-container img { width: 100%; height: 100%; object-fit: cover; }
-        .historia-divider { height: 4px; background-color: #dbdbdb; border: none; margin: 0; }
-        .historia-text-content { padding: 30px; line-height: 1.8; font-size: 1.1rem; color: var(--text-color); white-space: pre-wrap; }
         
-        .btn-edit-historia { 
-            position: absolute; 
-            bottom: 15px; 
-            right: 15px; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
-            z-index: 2; /* Correção para sobreposição */
-        }
-
-        /* FRASES */
-        .frase-input-area { background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px; display: flex; gap: 10px; align-items: center; }
-        .frase-input-area input { flex: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; outline: none; }
-        .frase-input-area .btn-post { flex-shrink: 0; }
-        
-        .frases-list { display: flex; flex-direction: column; gap: 10px; }
-        .frase-item { background: var(--card-bg); padding: 20px; border-bottom: 1px solid #ccc; cursor: pointer; transition: background 0.2s; position: relative; border-radius: 5px; display: flex; justify-content: space-between; align-items: flex-start; }
-        .frase-item:hover { background-color: rgba(0,0,0,0.02); }
-        .frase-content { font-size: 1.1rem; font-style: italic; color: var(--text-color); flex: 1; padding-right: 30px; }
-        .frase-author { font-size: 0.85rem; color: var(--primary-color); font-weight: bold; margin-top: 5px; }
-        
-        .options-menu-container { margin-left: auto; position: relative; }
-        .options-btn { cursor: pointer; color: var(--text-color); padding: 8px; width: 30px; text-align: center; }
-        .options-dropdown { display: none; position: absolute; top: 100%; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; width: 140px; }
-        .options-dropdown.active { display: block; }
-        .options-item { padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-color); }
-        .options-item.danger { color: var(--danger-color); }
-
-        /* BARRA DE XP */
         .level-container { background: var(--card-bg); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 20px; }
         .level-info { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; color: var(--text-color); }
         .xp-bar-bg { width: 100%; height: 20px; background: #eee; border-radius: 10px; overflow: hidden; position: relative; }
@@ -859,6 +824,11 @@
                 snapshot.forEach(docSnap => {
                     const u = docSnap.data(); const uid = docSnap.id;
                     
+                    // EDITAR MÁXIMO AO CLICAR NO VALOR
+                    const criarLinkMax = (val, max, field) => {
+                        return `<span class="battle-val">${val} / <span style="cursor:pointer; text-decoration:underline;" onclick="window.editarMaximo('${uid}', '${field}')" title="Clique para editar máximo">${max}</span></span>`;
+                    };
+
                     const card = document.createElement('div'); card.className = 'battle-card';
                     card.innerHTML = `
                         <div class="battle-header-info">
@@ -1038,10 +1008,34 @@
         }
 
         window.consumirItem = async (id, nome) => { if(confirm(`Usar 1x ${nome}?`)) await updateDoc(doc(db, "users", auth.currentUser.uid), { [`inventario.${id}`]: increment(-1) }); };
-        window.comprarJutsu = async (id, p, n) => { if(!confirm(`Comprar ${n}?`)) return; if(currentUserData.ryos < p) return alert("Sem Ryos!"); await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(-p), meusJutsus: arrayUnion(id), [`maestrias.${id}`]: 0 }); alert("Comprado!"); };
-        window.comprarMultiplos = async (id, p, n, t, i) => { const q = parseInt(document.getElementById(i).value)||1; if(q<1) return; const tot=p*q; if(!confirm(`Comprar ${q}x ${n}?`)) return; if(currentUserData.ryos < tot) return alert("Sem Ryos!"); await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(-tot), [`inventario.${id}`]: increment(q) }); alert("Comprado!"); };
+        window.comprarJutsu = async (id, p, n, currency) => { 
+            const field = currency === 'EN' ? 'essencia_ninja' : 'ryos';
+            if(!confirm(`Comprar ${n} por ${p} ${currency}?`)) return; 
+            if((currentUserData[field]||0) < p) return alert(`Sem ${currency} suficiente!`); 
+            
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { 
+                [field]: increment(-p), 
+                meusJutsus: arrayUnion(id), 
+                [`maestrias.${id}`]: 0 
+            }); 
+            alert("Comprado!"); 
+        };
+        window.comprarMultiplos = async (id, p, n, t, i, currency) => { 
+            const q = parseInt(document.getElementById(i).value)||1; 
+            if(q<1) return; 
+            const tot=p*q; 
+            const field = currency === 'EN' ? 'essencia_ninja' : 'ryos';
+            
+            if(!confirm(`Comprar ${q}x ${n} por ${tot} ${currency}?`)) return; 
+            if((currentUserData[field]||0) < tot) return alert(`Sem ${currency} suficiente!`); 
+            
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { 
+                [field]: increment(-tot), 
+                [`inventario.${id}`]: increment(q) 
+            }); 
+            alert("Comprado!"); 
+        };
         
-        // CORREÇÃO FILTRO LOJA: EXPOSTO AO WINDOW
         window.filtrarLojaPorTipo = (t, b) => { 
             lojaAtual = t; 
             document.querySelectorAll('.shop-cat-btn').forEach(x => x.classList.remove('active')); 
@@ -1109,7 +1103,6 @@
         // --- MISSOES ---
         async function carregarMissoes() { const c = document.getElementById('missoes-grid'); if(!c) return; const m = currentUserData.statusMissoes || {}; const s = await getDocs(collection(db, "missoes")); c.innerHTML = ''; s.forEach(d => { const i = d.data(), st = m[d.id] || 'neutro'; const k = document.createElement('div'); k.className = 'card jutsu-card-click'; 
         
-        // RANK VISUAL
         const rankClass = `rank-${(i.rank||'d').toLowerCase()}`;
         const rankHtml = `<span class="rank-tag ${rankClass}">Rank ${i.rank||'D'}</span>`;
 
