@@ -18,12 +18,13 @@
             --green-color: #2ecc71;
             --yellow-color: #f1c40f;
             --danger-color: #ed4956;
+            --en-color: #3498db;
             
             /* CORES DE STATUS */
             --stat-chakra: #2980b9; 
             --stat-stamina: #ff9f43; 
             --stat-dano: #e74c3c;   
-            --stat-buff: #3498db;   
+            --stat-buff: #9b59b6;   
             
             /* CORES BATALHA */
             --hp-color: #e74c3c;       
@@ -35,7 +36,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background-color: var(--bg-color); color: var(--text-color); height: 100vh; overflow: hidden; }
 
-        /* RANK TAGS (MISSÕES) */
+        /* RANK TAGS */
         .rank-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-weight: bold; color: white; font-size: 0.75rem; margin-right: 5px; vertical-align: middle; text-transform: uppercase; }
         .rank-s { background-color: #000; border: 1px solid #ed4956; color: #ed4956; box-shadow: 0 0 5px #ed4956; } 
         .rank-a { background-color: #ed4956; } 
@@ -69,7 +70,9 @@
         .top-btn.active { border-bottom-color: var(--primary-color); color: var(--text-color); font-weight: bold; }
 
         .user-area { display: flex; align-items: center; gap: 10px; position: relative; }
-        .ryos { font-weight: bold; color: #e6b800; background: rgba(230, 184, 0, 0.1); padding: 5px 10px; border-radius: 15px; white-space: nowrap; font-size: 0.8rem; }
+        .currency-container { display: flex; gap: 10px; }
+        .ryos { font-weight: bold; color: #e6b800; background: rgba(230, 184, 0, 0.1); padding: 5px 10px; border-radius: 15px; white-space: nowrap; font-size: 0.8rem; display: flex; align-items: center; gap: 5px; }
+        .essencia { font-weight: bold; color: var(--en-color); background: rgba(52, 152, 219, 0.1); padding: 5px 10px; border-radius: 15px; white-space: nowrap; font-size: 0.8rem; display: flex; align-items: center; gap: 5px; }
         .profile-circle { width: 35px; height: 35px; border-radius: 50%; overflow: hidden; cursor: pointer; border: 1px solid var(--border-color); flex-shrink: 0; }
         .profile-circle img { width: 100%; height: 100%; object-fit: cover; }
         .dropdown-menu { display: none; position: absolute; top: 50px; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); width: 200px; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 5px 0; z-index: 100; }
@@ -92,24 +95,22 @@
         .buy-btn { background-color: var(--primary-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; margin-top: auto; font-size: 1rem; cursor: pointer; transition: background 0.2s; }
         .buy-btn:hover { background-color: #e05200; }
         .buy-btn:disabled { background-color: #ccc; cursor: not-allowed; opacity: 0.7; }
-        
-        /* CAIXA QUADRADA DE QUANTIDADE */
+        .buy-btn.en-btn { background-color: var(--en-color); }
+        .buy-btn.en-btn:hover { background-color: #2980b9; }
+
         .qtd-container-square { display: flex; justify-content: center; margin: 10px 0 8px 0; width: 100%; }
         .qtd-input-square { width: 45px; height: 45px; text-align: center; font-size: 1.2rem; font-weight: bold; border: 2px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-color); padding: 0; -moz-appearance: textfield; }
         .qtd-input-square::-webkit-outer-spin-button, .qtd-input-square::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         .qtd-input-square:focus { border-color: var(--primary-color); outline: none; }
-        .price-tag { color: var(--primary-color); font-weight: bold; font-size: 1.05rem; margin-bottom: 5px; }
+        .price-tag { font-weight: bold; font-size: 1.05rem; margin-bottom: 5px; color: var(--primary-color); }
+        .price-tag.en-price { color: var(--en-color); }
 
-        /* TAG DE QUANTIDADE (INVENTÁRIO) */
         .qtd-badge { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.3); }
         .inventory-controls { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 8px; background: rgba(0,0,0,0.03); padding: 5px; border-radius: 20px; }
         .btn-minus { background: var(--danger-color); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
         .btn-minus:hover { transform: scale(1.1); }
-
-        /* Maestria no Card */
         .maestria-display { display: block; font-size: 0.85rem; color: var(--yellow-color); font-weight: bold; margin-top: 4px; text-shadow: 0 0 1px rgba(0,0,0,0.1); }
 
-        /* NOVO: FILTROS DA LOJA */
         .shop-header { margin-bottom: 20px; background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); }
         .shop-location-select { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; font-size: 1rem; margin-bottom: 10px; background: var(--bg-color); color: var(--text-color); }
         .shop-categories { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
@@ -117,46 +118,43 @@
         .shop-cat-btn.active { background: var(--primary-color); color: white; border-color: var(--primary-color); }
         .shop-cat-btn:hover { opacity: 0.8; }
 
-        /* ELEMENTOS E KEKKEI */
         .powers-wrapper { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; }
         .elementos-container { flex: 1; min-width: 120px; background: var(--card-bg); border-radius: 10px; border: 1px solid var(--border-color); padding: 10px; text-align: center; }
         .elementos-title { font-size: 0.85rem; font-weight: bold; color: #777; margin-bottom: 8px; text-transform: uppercase; }
         .elementos-list { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
         .element-icon { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color); padding: 2px; background: #fff; }
 
-        /* --- ESTILOS DA ABA DE BATALHA (GLOBAL) --- */
+        /* STAT TAGS */
+        .stats-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; margin: 5px 0; }
+        .stat-tag { padding: 3px 8px; border-radius: 10px; color: white; font-weight: bold; font-size: 0.7rem; }
+        .tag-dano { background-color: var(--stat-dano); }
+        .tag-chakra { background-color: var(--stat-chakra); }
+        .tag-stamina { background-color: var(--stat-stamina); }
+        .tag-buff { background-color: var(--stat-buff); }
+        .tag-attr { background-color: #34495e; }
+
+        /* BATALHA */
         .battle-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
         .battle-card { background: #1a1a1a; color: white; border-radius: 15px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); border: 1px solid #333; }
         .battle-header-info { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; }
         .battle-avatar { width: 60px; height: 60px; border-radius: 50%; border: 2px solid #555; object-fit: cover; }
         .battle-name { font-weight: bold; font-size: 1.1rem; }
         .battle-char { font-size: 0.85rem; color: #aaa; }
-        
         .battle-stats-wrapper { display: flex; flex-direction: column; gap: 10px; }
         .battle-row { display: flex; flex-direction: column; gap: 2px; }
         .battle-row-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; font-weight: bold; color: #ccc; }
-        
         .battle-bar-bg { width: 100%; height: 18px; background: #333; border-radius: 4px; overflow: hidden; position: relative; display: flex; align-items: center; }
         .battle-bar-fill { height: 100%; transition: width 0.3s ease; position: absolute; top: 0; left: 0; z-index: 1; }
         .battle-bar-text { position: relative; z-index: 2; width: 100%; text-align: center; font-size: 0.75rem; font-weight: bold; text-shadow: 0 0 3px black; }
-        
         .bar-life { background-color: var(--hp-color); }
         .bar-sanidade { background-color: var(--sanidade-color); }
         .bar-stamina { background-color: var(--stamina-color); } 
         .bar-chakra { background-color: var(--chakra-color); } 
-        
         .battle-actions-row { display: flex; justify-content: space-between; margin-top: 2px; }
         .battle-mini-btn { background: #333; border: 1px solid #444; color: #ccc; width: 25px; height: 25px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; }
         .battle-mini-btn:hover { background: #555; color: white; }
 
-        /* MISSÕES */
-        .mission-btn-start { background: var(--primary-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 5px; }
-        .mission-btn-collect { background: var(--green-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; margin-top: 5px; animation: pulse 1.5s infinite; }
-        .mission-btn-wait { background: var(--yellow-color); color: #333; width: 100%; border: none; padding: 10px; border-radius: 5px; font-weight: bold; margin-top: 5px; cursor: not-allowed; }
-        .mission-btn-done { background: #ccc; color: #666; width: 100%; border: none; padding: 10px; border-radius: 5px; font-weight: bold; margin-top: 5px; cursor: not-allowed; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-
-        /* FEED */
+        /* FEED E OUTROS */
         #feed { max-width: 600px; margin: 0 auto; width: 100%; }
         .create-post { background: var(--card-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border-color); }
         .create-post textarea { width: 100%; padding: 10px; border: none; outline: none; background: transparent; color: var(--text-color); resize: none; font-size: 1rem; }
@@ -167,7 +165,6 @@
         #preview-image { max-width: 100%; max-height: 300px; object-fit: contain; }
         .remove-img { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .btn-post { background: var(--primary-color); color: white; border: none; padding: 8px 20px; border-radius: 20px; font-weight: 600; cursor: pointer; font-size: 0.9rem; }
-        
         .post { background: var(--card-bg); border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); position: relative; overflow: visible; }
         .post-header { display: flex; align-items: center; padding: 10px; }
         .user-avatar-post { width: 35px; height: 35px; border-radius: 50%; background: #efefef; margin-right: 10px; overflow: hidden; border: 1px solid var(--border-color); }
@@ -186,29 +183,19 @@
         .post-actions { display: flex; padding: 10px; gap: 15px; }
         .action-btn { background: none; border: none; cursor: pointer; color: var(--text-color); font-size: 1.5rem; display: flex; align-items: center; gap: 5px; padding: 0; }
         .action-btn.liked { color: var(--danger-color); }
-        .edit-textarea { width: 100%; border: 1px solid var(--primary-color); border-radius: 4px; padding: 10px; margin: 10px 0; }
 
-        /* RANKINGS */
         .rankings-wrapper { display: flex; gap: 20px; flex-wrap: wrap; padding-bottom: 20px; }
         .ranking-col { flex: 1 1 300px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; }
         .ranking-col h3 { color: var(--primary-color); text-align: center; margin-bottom: 15px; border-bottom: 2px solid var(--primary-color); font-size: 1.1rem; }
         .ranking-table { width: 100%; border-collapse: collapse; font-size: 14px; }
         .ranking-table td { padding: 8px; border-bottom: 1px solid var(--border-color); }
 
-        /* MODAIS */
         .modal-overlay-comment { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
         .close-modal { position: absolute; top: 10px; left: 15px; font-size: 1.8rem; color: white; cursor: pointer; z-index: 20; text-shadow: 0 0 5px black; }
         .modal-content-card { background: var(--card-bg); padding: 30px; border-radius: 10px; width: 90%; max-width: 350px; text-align: center; position: relative; border: 1px solid var(--border-color); }
         .jutsu-modal-img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); }
         .jutsu-modal-rank { display: inline-block; background: var(--primary-color); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-bottom: 10px; }
         .jutsu-modal-price { color: var(--green-color); font-weight: bold; font-size: 1.2rem; border-top: 1px solid var(--border-color); padding-top: 15px; }
-        
-        .jutsu-stats-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
-        .jutsu-stat-tag { padding: 4px 12px; border-radius: 15px; color: white; font-weight: bold; font-size: 0.8rem; }
-        .tag-dano { background-color: var(--stat-dano); }
-        .tag-chakra { background-color: var(--stat-chakra); }
-        .tag-stamina { background-color: var(--stat-stamina); }
-        .tag-buff { background-color: var(--stat-buff); }
 
         .modal-content-profile { background: var(--card-bg); width: 90%; max-width: 800px; max-height: 90vh; border-radius: 15px; overflow-y: auto; position: relative; border: 1px solid var(--border-color); }
         .profile-header { background: linear-gradient(to right, #ff5e00, #ff9100); padding: 40px 20px; text-align: center; color: white; }
@@ -232,40 +219,13 @@
         .comment-input-area input { flex: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 20px; outline: none; }
         .edit-input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 5px; }
         .edit-avatar-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color); margin: 10px auto; display: block; }
-
-        /* HISTORIA */
-        .historia-container { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; max-width: 800px; margin: 0 auto; position: relative; }
-        .historia-img-container { width: 100%; height: 300px; background-color: #000; position: relative; }
-        .historia-img-container img { width: 100%; height: 100%; object-fit: cover; }
-        .historia-divider { height: 4px; background-color: #dbdbdb; border: none; margin: 0; }
-        .historia-text-content { padding: 30px; line-height: 1.8; font-size: 1.1rem; color: var(--text-color); white-space: pre-wrap; }
-        .btn-edit-historia { position: absolute; bottom: 15px; right: 15px; background: var(--primary-color); color: white; border: none; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .btn-edit-historia:hover { background: #e05200; }
-
-        /* FRASES */
-        .frase-input-area { background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px; display: flex; gap: 10px; }
-        .frase-input-area input { flex: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; outline: none; }
-        .frases-list { display: flex; flex-direction: column; gap: 10px; }
-        .frase-item { background: var(--card-bg); padding: 20px; border-bottom: 1px solid #ccc; cursor: pointer; transition: background 0.2s; position: relative; border-radius: 5px; display: flex; justify-content: space-between; align-items: flex-start; }
-        .frase-item:hover { background-color: rgba(0,0,0,0.02); }
-        .frase-content { font-size: 1.1rem; font-style: italic; color: var(--text-color); flex: 1; padding-right: 30px; }
-        .frase-author { font-size: 0.85rem; color: var(--primary-color); font-weight: bold; margin-top: 5px; }
         
-        .options-menu-container { margin-left: auto; position: relative; }
-        .options-btn { cursor: pointer; color: var(--text-color); padding: 8px; width: 30px; text-align: center; }
-        .options-dropdown { display: none; position: absolute; top: 100%; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; width: 140px; }
-        .options-dropdown.active { display: block; }
-        .options-item { padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-color); }
-        .options-item.danger { color: var(--danger-color); }
-
-        /* BARRA DE XP */
         .level-container { background: var(--card-bg); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 20px; }
         .level-info { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; color: var(--text-color); }
         .xp-bar-bg { width: 100%; height: 20px; background: #eee; border-radius: 10px; overflow: hidden; position: relative; }
         .xp-bar-fill { height: 100%; background: linear-gradient(90deg, #ff9100, #ff5e00); width: 0%; transition: width 0.5s ease-in-out; }
         .xp-text { position: absolute; width: 100%; text-align: center; top: 0; left: 0; font-size: 0.75rem; color: #333; line-height: 20px; font-weight: bold; text-shadow: 0 0 2px white; }
 
-        /* MOBILE */
         @media (max-width: 768px) {
             #mobile-menu-btn { display: block; }
             .sidebar { position: fixed; top: 0; left: -260px; height: 100%; box-shadow: 2px 0 10px rgba(0,0,0,0.3); transition: left 0.3s ease; }
@@ -326,7 +286,10 @@
                     <button id="nav-btn-frases" onclick="showTab('frases')" class="top-btn">Frases</button>
                 </nav>
                 <div class="user-area">
-                    <span class="ryos"><i class="fa-solid fa-coins"></i> <span id="ryos-text">...</span></span>
+                    <div class="currency-container">
+                        <span class="ryos"><i class="fa-solid fa-coins"></i> <span id="ryos-text">0</span></span>
+                        <span class="essencia"><i class="fa-regular fa-star"></i> <span id="en-text">0</span> EN</span>
+                    </div>
                     <div class="profile-circle" onclick="toggleMenu()">
                         <img id="header-avatar" src="https://placehold.co/40x40/orange/white?text=N" alt="Avatar">
                     </div>
@@ -514,6 +477,7 @@
             <img id="tool-img-modal" src="" class="jutsu-modal-img" style="border-color:#555;">
             <h2 id="tool-name-modal" style="color: #333;"></h2>
             <div id="tool-rank-modal" class="jutsu-modal-rank" style="background-color: #555;"></div>
+            <div id="tool-stats-row" class="jutsu-stats-row"></div>
             <p id="tool-desc-modal" style="margin-top:10px;"></p>
             <div id="tool-price-modal" class="jutsu-modal-price" style="border-color:#555; color:#555;"></div>
         </div>
@@ -525,6 +489,7 @@
             <img id="item-img-modal" src="" class="jutsu-modal-img" style="border-color:#2ecc71;">
             <h2 id="item-name-modal" style="color: #333;"></h2>
             <div id="item-rank-modal" class="jutsu-modal-rank" style="background-color: #2ecc71;"></div>
+            <div id="item-stats-row" class="jutsu-stats-row"></div>
             <p id="item-desc-modal" style="margin-top:10px;"></p>
             <div id="item-price-modal" class="jutsu-modal-price" style="border-color:#2ecc71; color:#2ecc71;"></div>
         </div>
@@ -575,7 +540,6 @@
         const db = getFirestore(app);
 
         // CONFIGURAÇÃO DA PROMOÇÃO (TRUE = LIGADO, FALSE = DESLIGADO)
-        // OBS: AGORA O PREÇO É LIDO DO CAMPO 'preco_promocional' NO FIREBASE
         const EM_PROMOCAO = true; 
 
         let currentUserData = null;
@@ -638,7 +602,7 @@
                         
                         verificarLevelUpAutomatico(currentUserData);
                         atualizarInterface(currentUserData);
-                        renderizarBatalha(); // Atualiza barra de vida em tempo real
+                        renderizarBatalha(); 
                     }
                 });
                 
@@ -648,7 +612,7 @@
                     carregarTudo(); 
                 }
                 else {
-                    const dadosPadrao = { nome: "Novo Ninja", ryos: 100, xp: 0, nivel: 1, email: user.email, meusJutsus: [], inventario: {}, statusMissoes: {}, statusConquistas: {}, elementos: [], kekkei_genkai: [] };
+                    const dadosPadrao = { nome: "Novo Ninja", ryos: 100, xp: 0, nivel: 1, email: user.email, meusJutsus: [], inventario: {}, statusMissoes: {}, statusConquistas: {}, elementos: [], kekkei_genkai: [], essencia_ninja: 0 };
                     await setDoc(docRef, dadosPadrao);
                     currentUserData = dadosPadrao;
                     atualizarInterface(dadosPadrao);
@@ -663,15 +627,13 @@
             }
         });
 
-        // --- SISTEMA DE ABAS BLINDADO ---
+        // --- SISTEMA DE ABAS ---
         window.showTab = (t) => {
             try {
-                // 1. Troca Visual
                 document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                 const target = document.getElementById(t);
                 if(target) target.classList.add('active');
 
-                // 2. Atualiza Botões
                 document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
                 document.querySelectorAll('.sidebar button').forEach(b => b.classList.remove('active'));
                 const btnTop = document.getElementById('nav-btn-'+t);
@@ -679,12 +641,10 @@
                 if(btnTop) btnTop.classList.add('active');
                 if(btnSide) btnSide.classList.add('active');
 
-                // 3. Carrega Dados (Protegido)
                 if(currentUserData) {
                     if(t==='personagens') carregarPersonagens();
                     if(t==='frases') carregarFrases();
                     if(t==='inventario') carregarInventario();
-                    // Batalha é em tempo real, não precisa recarregar aqui
                     if(t==='jutsus') carregarMeusJutsus(currentUserData.meusJutsus); 
                     if(t==='conquistas') carregarConquistas();
                     if(t==='missoes') carregarMissoes();
@@ -697,14 +657,14 @@
             }
         };
 
-        // --- LEVEL UP CORRIGIDO (XP GASTO) ---
+        // --- LEVEL UP ---
         async function verificarLevelUpAutomatico(dados) {
             let xpAtual = dados.xp || 0;
             let nivelAtual = dados.nivel || 1;
             let xpNecessario = getXpNecessario(nivelAtual);
             
             if (xpAtual >= xpNecessario) {
-                let novoXp = xpAtual - xpNecessario; // SUBTRAI O CUSTO
+                let novoXp = xpAtual - xpNecessario; 
                 let novoNivel = nivelAtual + 1;
                 
                 await updateDoc(doc(db, "users", auth.currentUser.uid), { 
@@ -772,6 +732,8 @@
         function atualizarInterface(dados) {
             document.querySelector('.user-info').innerText = dados.apelido || dados.nome || "Ninja";
             document.getElementById('ryos-text').innerText = formatarNum(dados.ryos);
+            document.getElementById('en-text').innerText = formatarNum(dados.essencia_ninja || 0);
+
             if(dados.avatar) document.getElementById('header-avatar').src = dados.avatar;
             if(dados.historiaTexto) document.getElementById('historia-display-text').innerText = dados.historiaTexto;
             if(dados.historiaImagem) document.getElementById('historia-display-img').src = dados.historiaImagem;
@@ -812,11 +774,6 @@
                 snapshot.forEach(docSnap => {
                     const u = docSnap.data(); const uid = docSnap.id;
                     
-                    // EDITAR MÁXIMO AO CLICAR NO VALOR
-                    const criarLinkMax = (val, max, field) => {
-                        return `<span class="battle-val">${val} / <span style="cursor:pointer; text-decoration:underline;" onclick="window.editarMaximo('${uid}', '${field}')" title="Clique para editar máximo">${max}</span></span>`;
-                    };
-
                     const card = document.createElement('div'); card.className = 'battle-card';
                     card.innerHTML = `
                         <div class="battle-header-info">
@@ -837,7 +794,6 @@
             });
         }
 
-        // Função customizada para Batalha com edição de máximo
         function criarLinhaStatusCustom(uid, f, l, a, v, m, c) { 
             const p=Math.min((v/m)*100,100); 
             return `
@@ -861,6 +817,22 @@
 
         window.alterarStatus = async (targetUid, stat, valor) => { await updateDoc(doc(db, "users", targetUid), { [stat]: increment(valor) }); };
 
+        // --- HELPER BÔNUS ---
+        function gerarTagsBonus(d) {
+            let html = '';
+            if(d.bonus_hp) html += `<span class="stat-tag tag-buff">+${d.bonus_hp} HP</span>`;
+            if(d.bonus_stamina) html += `<span class="stat-tag tag-stamina">+${d.bonus_stamina} STA</span>`;
+            if(d.bonus_chakra) html += `<span class="stat-tag tag-chakra">+${d.bonus_chakra} CHK</span>`;
+            if(d.bonus_forca) html += `<span class="stat-tag tag-attr">+${d.bonus_forca} FOR</span>`;
+            if(d.bonus_defesa) html += `<span class="stat-tag tag-attr">+${d.bonus_defesa} DEF</span>`;
+            if(d.bonus_agilidade) html += `<span class="stat-tag tag-attr">+${d.bonus_agilidade} AGI</span>`;
+            if(d.bonus_velocidade) html += `<span class="stat-tag tag-attr">+${d.bonus_velocidade} VEL</span>`;
+            if(d.bonus_intelecto) html += `<span class="stat-tag tag-attr">+${d.bonus_intelecto} INT</span>`;
+            if(d.bonus_constituicao) html += `<span class="stat-tag tag-attr">+${d.bonus_constituicao} CON</span>`;
+            if(d.bonus_destreza) html += `<span class="stat-tag tag-attr">+${d.bonus_destreza} DES</span>`;
+            return html;
+        }
+
         // --- CORE FUNCTIONS ---
         function criarCard(containerId, dados, id, tipo, clickFn, qtd = null) {
             const c = document.getElementById(containerId); if(!c) return;
@@ -878,28 +850,34 @@
             let sub = "", buyControlHTML = "", priceHTML = "";
 
             // Lógica de Preço Promocional (Firebase Field)
-            let finalPrice = dados.preco;
-            if (dados.preco_promocional && dados.preco_promocional < dados.preco) {
+            const currency = dados.preco_en ? 'EN' : 'Ryos';
+            let finalPrice = currency === 'EN' ? dados.preco_en : dados.preco;
+            
+            if (currency === 'Ryos' && dados.preco_promocional && dados.preco_promocional < dados.preco) {
                 finalPrice = dados.preco_promocional;
                 priceHTML = `<p id="price-${id}" class="price-tag">
                     <span style="text-decoration:line-through; color:#999; font-size:0.85em; margin-right:5px;">${formatarNum(dados.preco)}</span>
                     <span style="color:var(--primary-color); font-weight:bold;">${formatarNum(finalPrice)} Ryos</span>
                 </p>`;
             } else {
-                priceHTML = `<p id="price-${id}" class="price-tag">${formatarNum(dados.preco)} Ryos</p>`;
+                const colorClass = currency === 'EN' ? 'en-price' : '';
+                priceHTML = `<p id="price-${id}" class="price-tag ${colorClass}">${formatarNum(finalPrice)} ${currency}</p>`;
             }
 
             if(tipo === 'jutsu') sub = "Rank " + dados.rank; else if(tipo === 'ferramenta') sub = dados.dano || "Ferramenta"; else sub = dados.efeito || "Item";
             
+            const bonusTags = gerarTagsBonus(dados);
+
             let isOwned = (tipo === 'jutsu' && currentUserData.meusJutsus && currentUserData.meusJutsus.includes(id));
-            
+            const btnClass = currency === 'EN' ? 'buy-btn en-btn' : 'buy-btn';
+
             if(tipo !== 'jutsu') { 
-                buyControlHTML = `<div class="qtd-container-square"><input type="number" id="qtd-${id}" class="qtd-input-square" value="1" min="1" onclick="event.stopPropagation()"></div><button id="btn-buy-${id}" class="buy-btn" onclick="event.stopPropagation(); comprarMultiplos('${id}', ${finalPrice}, '${dados.nome}', '${tipo}', 'qtd-${id}')">Comprar x1</button>`; 
+                buyControlHTML = `<div class="qtd-container-square"><input type="number" id="qtd-${id}" class="qtd-input-square" value="1" min="1" onclick="event.stopPropagation()"></div><button id="btn-buy-${id}" class="${btnClass}" onclick="event.stopPropagation(); comprarMultiplos('${id}', ${finalPrice}, '${dados.nome}', '${tipo}', 'qtd-${id}', '${currency}')">Comprar x1</button>`; 
             } else { 
-                buyControlHTML = isOwned ? `<button class="buy-btn" disabled>Adquirido</button>` : `<button class="buy-btn" onclick="event.stopPropagation(); comprarJutsu('${id}', ${finalPrice}, '${dados.nome}')">Comprar</button>`; 
+                buyControlHTML = isOwned ? `<button class="buy-btn" disabled>Adquirido</button>` : `<button class="${btnClass}" onclick="event.stopPropagation(); comprarJutsu('${id}', ${finalPrice}, '${dados.nome}', '${currency}')">Comprar</button>`; 
             }
             
-            div.innerHTML = `<img src="${dados.imagem||IMG_PADRAO}" class="card-img-top"><h4>${dados.nome}</h4><small>${sub}</small>${priceHTML}${buyControlHTML}`;
+            div.innerHTML = `<img src="${dados.imagem||IMG_PADRAO}" class="card-img-top"><h4>${dados.nome}</h4><small>${sub}</small><div class="stats-row">${bonusTags}</div>${priceHTML}${buyControlHTML}`;
             c.appendChild(div);
             
             if(tipo !== 'jutsu') { 
@@ -907,12 +885,10 @@
                 inp.addEventListener('input', (e) => { 
                     let q = parseInt(e.target.value)||1; 
                     document.getElementById(`btn-buy-${id}`).innerText = `Comprar x${q}`; 
-                    
-                    // Atualiza visualmente o total com base no preço (promocional ou normal)
-                    if (dados.preco_promocional && dados.preco_promocional < dados.preco) {
+                    if (currency === 'Ryos' && dados.preco_promocional && dados.preco_promocional < dados.preco) {
                          document.getElementById(`price-${id}`).innerHTML = `<span style="text-decoration:line-through; color:#999; font-size:0.85em; margin-right:5px;">${formatarNum(dados.preco * q)}</span><span style="color:var(--primary-color); font-weight:bold;">${formatarNum(finalPrice * q)} Ryos</span>`;
                     } else {
-                        document.getElementById(`price-${id}`).innerText = `${formatarNum(dados.preco * q)} Ryos`; 
+                        document.getElementById(`price-${id}`).innerText = `${formatarNum(finalPrice * q)} ${currency}`; 
                     }
                 }); 
             }
@@ -943,8 +919,6 @@
             const c = document.getElementById('inventario-grid'); if(!c) return; c.innerHTML = '';
             const inv = currentUserData.inventario || {}; const keys = Object.keys(inv).filter(k => inv[k] > 0);
             if(keys.length === 0) { c.innerHTML = '<p>Mochila vazia.</p>'; return; }
-            
-            // PROTEÇÃO: Carregar do cache ou buscar
             for (const id of keys) {
                 let info = globalItensMap[id];
                 if (!info) {
@@ -976,10 +950,36 @@
         }
 
         window.consumirItem = async (id, nome) => { if(confirm(`Usar 1x ${nome}?`)) await updateDoc(doc(db, "users", auth.currentUser.uid), { [`inventario.${id}`]: increment(-1) }); };
-        window.comprarJutsu = async (id, p, n) => { if(!confirm(`Comprar ${n}?`)) return; if(currentUserData.ryos < p) return alert("Sem Ryos!"); await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(-p), meusJutsus: arrayUnion(id), [`maestrias.${id}`]: 0 }); alert("Comprado!"); };
-        window.comprarMultiplos = async (id, p, n, t, i) => { const q = parseInt(document.getElementById(i).value)||1; if(q<1) return; const tot=p*q; if(!confirm(`Comprar ${q}x ${n}?`)) return; if(currentUserData.ryos < tot) return alert("Sem Ryos!"); await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(-tot), [`inventario.${id}`]: increment(q) }); alert("Comprado!"); };
         
-        // CORREÇÃO FILTRO LOJA: EXPOSTO AO WINDOW
+        window.comprarJutsu = async (id, p, n, currency) => { 
+            const field = currency === 'EN' ? 'essencia_ninja' : 'ryos';
+            if(!confirm(`Comprar ${n} por ${p} ${currency}?`)) return; 
+            if((currentUserData[field]||0) < p) return alert(`Sem ${currency} suficiente!`); 
+            
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { 
+                [field]: increment(-p), 
+                meusJutsus: arrayUnion(id), 
+                [`maestrias.${id}`]: 0 
+            }); 
+            alert("Comprado!"); 
+        };
+        
+        window.comprarMultiplos = async (id, p, n, t, i, currency) => { 
+            const q = parseInt(document.getElementById(i).value)||1; 
+            if(q<1) return; 
+            const tot=p*q; 
+            const field = currency === 'EN' ? 'essencia_ninja' : 'ryos';
+            
+            if(!confirm(`Comprar ${q}x ${n} por ${tot} ${currency}?`)) return; 
+            if((currentUserData[field]||0) < tot) return alert(`Sem ${currency} suficiente!`); 
+            
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { 
+                [field]: increment(-tot), 
+                [`inventario.${id}`]: increment(q) 
+            }); 
+            alert("Comprado!"); 
+        };
+        
         window.filtrarLojaPorTipo = (t, b) => { 
             lojaAtual = t; 
             document.querySelectorAll('.shop-cat-btn').forEach(x => x.classList.remove('active')); 
@@ -1034,7 +1034,6 @@
         };
         
         window.coletarConquista = async (id, r, x, btn) => {
-            if(btn && btn.disabled) return;
             if(btn) { btn.disabled = true; btn.innerText = "Coletando..."; }
             const u = currentUserData;
             await updateDoc(doc(db, "users", auth.currentUser.uid), { 
@@ -1048,7 +1047,6 @@
         // --- MISSOES ---
         async function carregarMissoes() { const c = document.getElementById('missoes-grid'); if(!c) return; const m = currentUserData.statusMissoes || {}; const s = await getDocs(collection(db, "missoes")); c.innerHTML = ''; s.forEach(d => { const i = d.data(), st = m[d.id] || 'neutro'; const k = document.createElement('div'); k.className = 'card jutsu-card-click'; 
         
-        // RANK VISUAL
         const rankClass = `rank-${(i.rank||'d').toLowerCase()}`;
         const rankHtml = `<span class="rank-tag ${rankClass}">Rank ${i.rank||'D'}</span>`;
 
@@ -1100,15 +1098,39 @@
             document.getElementById(t+'-desc-modal').innerText = dados.descricao||""; 
             document.getElementById(t+'-price-modal').innerText = "Valor: "+formatarNum(dados.preco)+" Ryos";
             document.getElementById(t+'-img-modal').src = dados.imagem||IMG_PADRAO;
-            if(t==='jutsu'){ document.getElementById(t+'-rank-modal').innerText="Rank "+dados.rank; let h=""; if(dados.dano) h+=`<span class="jutsu-stat-tag tag-dano">Dano: ${dados.dano}</span>`; if(dados.chakra) h+=`<span class="jutsu-stat-tag tag-chakra">Chakra: ${dados.chakra}</span>`; if(dados.stamina) h+=`<span class="jutsu-stat-tag tag-stamina">Stamina: ${dados.stamina}</span>`; if(dados.bonus) h+=`<span class="jutsu-stat-tag tag-buff">${dados.bonus}</span>`; document.getElementById('jutsu-stats-row').innerHTML=h; }
+            
+            // Exibir Bônus (Jutsus podem ter bônus agora também)
+            let bonusHtml = gerarTagsBonus(dados);
+            
+            if(t==='jutsu'){ 
+                document.getElementById(t+'-rank-modal').innerText="Rank "+dados.rank; 
+                let h=""; 
+                if(dados.dano) h+=`<span class="jutsu-stat-tag tag-dano">Dano: ${dados.dano}</span>`; 
+                if(dados.chakra) h+=`<span class="jutsu-stat-tag tag-chakra">Chakra: ${dados.chakra}</span>`; 
+                if(dados.stamina) h+=`<span class="jutsu-stat-tag tag-stamina">Stamina: ${dados.stamina}</span>`; 
+                if(dados.bonus) h+=`<span class="jutsu-stat-tag tag-buff">${dados.bonus}</span>`; // Campo Texto
+                
+                // Adiciona os bônus numéricos também, se houver
+                h += bonusHtml; 
+                
+                document.getElementById('jutsu-stats-row').innerHTML=h; 
+            } else {
+                document.getElementById(t==='tool'?'tool-stats-row':'item-stats-row').innerHTML = bonusHtml;
+            }
+            
             if(t==='tool') document.getElementById(t+'-rank-modal').innerText = dados.dano||"Ferramenta";
             if(t==='item') document.getElementById(t+'-rank-modal').innerText = dados.efeito||"Item";
             document.getElementById(t+'Modal').style.display='flex';
         }
-        window.verDetalhesJutsu = (id,d) => abrirModalSimples('jutsu',d); window.verDetalhesFerramenta = (id,d) => abrirModalSimples('tool',d); window.verDetalhesItem = (id,d) => abrirModalSimples('item',d);
+
+        window.verDetalhesJutsu = (id,d) => abrirModalSimples('jutsu',d); 
+        window.verDetalhesFerramenta = (id,d) => abrirModalSimples('tool',d); 
+        window.verDetalhesItem = (id,d) => abrirModalSimples('item',d);
+        
         window.fecharJutsuModal = () => document.getElementById('jutsuModal').style.display='none';
         window.fecharToolModal = () => document.getElementById('toolModal').style.display='none';
         window.fecharItemModal = () => document.getElementById('itemModal').style.display='none';
+        
         window.verPerfil = async (uid) => { const s = await getDoc(doc(db, "users", uid)); if(s.exists()) { const u = s.data(); document.getElementById('profile-modal-name').innerText = u.nome; document.getElementById('profile-modal-char').innerText = u.apelido || ""; document.getElementById('profile-modal-img').src = u.avatar||IMG_PADRAO; renderizarIcones(u.elementos || [], 'profile-elementos-container', ELEMENTOS_ICONS, 'Naturezas de Chakra'); renderizarIcones(u.kekkei_genkai || [], 'profile-kekkei-container', KEKKEI_ICONS, 'Kekkei Genkai'); const statsContainer = document.getElementById('other-profile-stats'); statsContainer.innerHTML = `<div class="stats-divider">Geral</div><div class="stat-card"><div class="stat-value">${u.nivel||1}</div><div class="stat-label">Nível</div></div><div class="stat-card"><div class="stat-value">${u.cargo||'Genin'}</div><div class="stat-label">Cargo</div></div><div class="stat-card"><div class="stat-value">${u.tipo||'Normal'}</div><div class="stat-label">Tipo</div></div><div class="stat-card"><div class="stat-value">${formatarNum(u.ryos)}</div><div class="stat-label">Ryos</div></div><div class="stats-divider">Batalha</div><div class="stat-card"><div class="stat-value">${u.vitorias||0}</div><div class="stat-label">Vitórias</div></div><div class="stat-card"><div class="stat-value">${u.empates||0}</div><div class="stat-label">Empates</div></div><div class="stat-card"><div class="stat-value">${u.loses||0}</div><div class="stat-label">Derrotas</div></div><div class="stats-divider">Inventário</div><div class="stat-card"><div class="stat-value">${(u.meusJutsus||[]).length}</div><div class="stat-label">Jutsus</div></div><div class="stats-divider">Vitalidade</div><div class="stat-card"><div class="stat-value">${u.vida||100}</div><div class="stat-label">Vida</div></div><div class="stat-card"><div class="stat-value">${u.chakra||100}</div><div class="stat-label">Chakra</div></div><div class="stat-card"><div class="stat-value">${u.stamina||100}</div><div class="stat-label">Stamina</div></div><div class="stat-card"><div class="stat-value">${u.controle_chakra||"Baixo"}</div><div class="stat-label">Controle</div></div><div class="stats-divider">Atributos</div><div class="stat-card"><div class="stat-value">${u.forca||10}</div><div class="stat-label">Força</div></div><div class="stat-card"><div class="stat-value">${u.defesa||10}</div><div class="stat-label">Defesa</div></div><div class="stat-card"><div class="stat-value">${u.agilidade||10}</div><div class="stat-label">Agilidade</div></div><div class="stat-card"><div class="stat-value">${u.velocidade||10}</div><div class="stat-label">Velocidade</div></div><div class="stat-card"><div class="stat-value">${u.intelecto||10}</div><div class="stat-label">Intelecto</div></div>`; document.getElementById('profileModal').style.display = 'flex'; } };
         window.fecharProfileModal = () => document.getElementById('profileModal').style.display = 'none';
 
@@ -1118,23 +1140,37 @@
         window.aprovarConquista = async (uid, cid) => { if(confirm("Aprovar?")) await updateDoc(doc(db, "users", uid), { [`statusConquistas.${cid}`]: 'aprovado' }); alert("Feito!"); };
 
         // --- OUTROS ---
-        window.handleImageUpload = async (e) => { 
-            const file = e.target.files[0];
-            if(file) {
-                try { 
-                    const btn = document.querySelector('.upload-btn');
-                    btn.innerText = "Processando...";
-                    currentImageBase64 = await comprimirImagem(file); 
-                    document.getElementById('preview-image').src = currentImageBase64; 
-                    document.getElementById('preview-container').style.display='block';
-                    btn.innerText = "Imagem Pronta!";
-                    btn.style.color = "green";
-                } catch(err){
-                    alert("Erro ao processar imagem.");
-                    console.error(err);
-                } 
-            } 
-        };
+        window.handleImageUpload = async (e) => { if(e.target.files[0]) { try { currentImageBase64 = await comprimirImagem(e.target.files[0]); document.getElementById('preview-image').src = currentImageBase64; document.getElementById('preview-container').style.display='block'; } catch(e){} } };
+        window.removeImage = () => { document.getElementById('imageInput').value=''; currentImageBase64=null; document.getElementById('preview-container').style.display='none'; };
+        window.publicarPost = async () => { const t = document.getElementById('postInput').value; if(!t.trim() && !currentImageBase64) return alert("Texto vazio"); const btn=document.querySelector('.btn-post'); btn.innerText="..."; try { await addDoc(collection(db, "posts"), { uid: auth.currentUser.uid, autor: currentUserData.apelido, autorAvatar: currentUserData.avatar, conteudo: t, imagem: currentImageBase64, data: serverTimestamp(), likes: [], savedBy: [], comments: [] }); document.getElementById('postInput').value=''; removeImage(); } catch(e){} finally{btn.innerText="Publicar";} };
+        window.renderFeed = (f) => { const c = document.getElementById('feed-container'); if(!c) return; try { onSnapshot(query(collection(db, "posts"), orderBy("data", "desc")), (s) => { c.innerHTML = ''; s.forEach(d => { try { const p = d.data(); if(f==='saved' && !(p.savedBy||[]).includes(auth.currentUser.uid)) return; const isLiked=(p.likes||[]).includes(auth.currentUser.uid); const isSaved=(p.savedBy||[]).includes(auth.currentUser.uid); const div=document.createElement('div'); div.className='post'; div.innerHTML=`<div class="post-header"><div class="user-avatar-post"><img src="${p.autorAvatar||IMG_PADRAO}"></div><div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">${calcularTempo(p.data)}</span></div>${p.uid===auth.currentUser.uid?`<div class="post-menu-container"><div class="post-options-btn" onclick="this.nextElementSibling.classList.toggle('active')">...</div><div class="post-dropdown"><div class="dropdown-item danger" onclick="deletarPost('${d.id}')">Excluir</div></div></div>`:''}</div><div class="post-content">${p.conteudo}</div>${p.imagem?`<img src="${p.imagem}" class="post-image" onclick="verPost('${d.id}')">`:''}<div class="post-actions"><button class="action-btn ${isLiked?'liked':''}" onclick="toggleLike('${d.id}')"><i class="${isLiked?'fa-solid':'fa-regular'} fa-heart"></i> ${(p.likes||[]).length}</button><button class="action-btn" onclick="verPost('${d.id}')"><i class="fa-regular fa-comment"></i> ${(p.comments||[]).length}</button><button class="action-btn ${isSaved?'saved':''}" onclick="toggleSave('${d.id}')" style="margin-left:auto;"><i class="${isSaved?'fa-solid':'fa-regular'} fa-bookmark"></i></button></div>`; c.appendChild(div); } catch(e){} }); }); } catch(e){} };
+        window.deletarPost = async (id) => { if(confirm("Apagar?")) await deleteDoc(doc(db, "posts", id)); };
+        window.toggleLike = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().likes||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{likes:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{likes:arrayUnion(auth.currentUser.uid)}); };
+        window.toggleSave = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().savedBy||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{savedBy:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{savedBy:arrayUnion(auth.currentUser.uid)}); };
+        window.verPost = async (id) => { currentOpenPostId = id; const s = await getDoc(doc(db, "posts", id)), p = s.data(); document.getElementById('modalPostContent').innerHTML = p.imagem ? `<img src="${p.imagem}" style="width:100%;height:100%;object-fit:contain;">` : `<div style="padding:20px;">${p.conteudo}</div>`; document.getElementById('commentsList').innerHTML = (p.comments||[]).map(c=>`<div><b>${c.autor}</b>: ${c.texto}</div>`).join(''); document.getElementById('commentModal').style.display='flex'; };
+        window.submitComment = async () => { const t = document.getElementById('newCommentText').value; if(!t) return; await updateDoc(doc(db, "posts", currentOpenPostId), { comments: arrayUnion({ autor: currentUserData.nome, texto: t }) }); document.getElementById('newCommentText').value = ""; verPost(currentOpenPostId); };
+        window.closeModal = () => document.getElementById('commentModal').style.display = 'none';
+
+        window.carregarRankings = async () => { const c = document.getElementById('ranking-container'); if(!c) return; try { const s = await getDocs(collection(db, "users")); let l = []; s.forEach(d => l.push(d.data())); c.innerHTML = ''; renderRank(c, "Nível", l, 'nivel'); renderRank(c, "Ryos", l, 'ryos'); renderRank(c, "Rankeadas", l, 'pontos_rankeada'); renderRank(c, "Torneios", l, 'vitorias_torneio'); renderRank(c, "Amistosos", l, 'pontos_amistoso'); renderRank(c, "Duplas", l, 'vitorias_dupla'); renderRank(c, "Guerra de Clãs", l, 'vitorias_cla'); renderRank(c, "Missões Rank S", l, 'missoes_concluidas_s'); renderRank(c, "Missões Rank A", l, 'missoes_concluidas_a'); renderRank(c, "Missões Rank B", l, 'missoes_concluidas_b'); renderRank(c, "Missões Rank C", l, 'missoes_concluidas_c'); renderRank(c, "Missões Rank D", l, 'missoes_concluidas_d'); renderRank(c, "Missões Rank E", l, 'missoes_concluidas_e'); } catch (e) {} };
+        function renderRank(c,t,l,f) { const s=[...l].sort((a,b)=>(b[f]||0)-(a[f]||0)).slice(0,5); let h=`<div class="ranking-col"><h3>${t}</h3><table class="ranking-table">`; s.forEach((u,i)=>h+=`<tr><td>${i+1}. ${u.nome}</td><td>${formatarNum(u[f])}</td></tr>`); h+='</table></div>'; c.innerHTML+=h; }
+        window.editarHistoria = async () => { const n=prompt("Texto:",currentUserData.historiaTexto||""); if(n){ const i=prompt("Imagem:",currentUserData.historiaImagem||""); updateDoc(doc(db,"users",auth.currentUser.uid),{historiaTexto:n,historiaImagem:i}).then(reloadData); } }
+        async function carregarFrases() { const c = document.getElementById('frases-list-container'); try { onSnapshot(query(collection(db, "frases"), orderBy("data", "desc")), (s) => { c.innerHTML=''; s.forEach(d=>{ const f=d.data(); const k=document.createElement('div'); k.className='frase-item'; const menu = f.uid === auth.currentUser.uid ? `<div class="options-menu-container"><div class="options-btn" onclick="toggleFraseMenu(this); event.stopPropagation();">...</div><div class="options-dropdown"><div class="options-item" onclick="editarFrase('${d.id}','${f.texto}');event.stopPropagation()">Editar</div><div class="options-item danger" onclick="deletarFrase('${d.id}');event.stopPropagation()">Excluir</div></div></div>` : ''; k.onclick=()=>copiarFrase(f.texto); k.innerHTML=`<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor}</div>${menu}`; c.appendChild(k); }); }); } catch(e){} }
+        window.toggleFraseMenu = (el) => { const dropdown = el.nextElementSibling; document.querySelectorAll('.options-dropdown').forEach(d => { if(d !== dropdown) d.classList.remove('active'); }); dropdown.classList.toggle('active'); };
+        window.adicionarFrase = async () => { const t=document.getElementById('novaFraseInput').value; if(t) await addDoc(collection(db,"frases"),{texto:t,autor:currentUserData.nome,uid:auth.currentUser.uid,data:serverTimestamp()}); document.getElementById('novaFraseInput').value=''; }
+        window.editarFrase = async (id, oldText) => { const n = prompt("Editar:", oldText); if(n) await updateDoc(doc(db, "frases", id), { texto: n }); };
+        window.deletarFrase = async (id) => { if(confirm("Excluir?")) await deleteDoc(doc(db, "frases", id)); };
+        window.copiarFrase = (t) => { navigator.clipboard.writeText(t).then(() => { const f=document.getElementById('copyFeedback'); f.style.display='block'; setTimeout(()=>f.style.display='none',2000); }); };
+        
+        window.toggleMenu = () => document.getElementById('user-menu').classList.toggle('show');
+        window.fazerLogout = () => signOut(auth).then(() => location.reload());
+        window.openEditProfileModal = () => { document.getElementById('editProfileModal').style.display = 'flex'; document.getElementById('edit-name-input').value = currentUserData.nome || ""; document.getElementById('edit-nick-input').value = currentUserData.apelido || ""; document.getElementById('user-menu').classList.remove('show'); };
+        window.closeEditProfileModal = () => document.getElementById('editProfileModal').style.display = 'none';
+        window.handleAvatarPreview = async (e) => { if(e.target.files[0]) { newAvatarBase64 = await comprimirImagem(e.target.files[0]); document.getElementById('edit-avatar-preview').src = newAvatarBase64; } };
+        window.salvarPerfil = async () => { const nome = document.getElementById('edit-name-input').value; const apelido = document.getElementById('edit-nick-input').value; const updates = { nome: nome, apelido: apelido, personagem: nome }; if(newAvatarBase64) updates.avatar = newAvatarBase64; await updateDoc(doc(db, "users", auth.currentUser.uid), updates); location.reload(); };
+        window.openChangePasswordModal = () => { document.getElementById('changePasswordModal').style.display='flex'; document.getElementById('user-menu').classList.remove('show'); };
+        window.closeChangePasswordModal = () => document.getElementById('changePasswordModal').style.display='none';
+        window.salvarNovaSenha = async () => { const p = document.getElementById('new-password').value; if(!p || p.length < 6) return alert("Mínimo 6 caracteres"); try { await updatePassword(auth.currentUser, p); alert("Sucesso!"); closeChangePasswordModal(); } catch(e) { alert("Erro: " + e.message); } };
+
         function comprimirImagem(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -1157,59 +1193,6 @@
                 reader.readAsDataURL(file);
             });
         }
-        window.removeImage = () => { document.getElementById('imageInput').value=''; currentImageBase64=null; document.getElementById('preview-container').style.display='none'; document.querySelector('.upload-btn').innerHTML = '<i class="fa-regular fa-image"></i> Foto/Vídeo'; };
-        window.publicarPost = async () => { const t = document.getElementById('postInput').value; if(!t.trim() && !currentImageBase64) return alert("Texto vazio"); const btn=document.querySelector('.btn-post'); btn.innerText="..."; try { await addDoc(collection(db, "posts"), { uid: auth.currentUser.uid, autor: currentUserData.apelido, autorAvatar: currentUserData.avatar, conteudo: t, imagem: currentImageBase64, data: serverTimestamp(), likes: [], savedBy: [], comments: [] }); document.getElementById('postInput').value=''; removeImage(); } catch(e){} finally{btn.innerText="Publicar";} };
-        window.renderFeed = (f) => { const c = document.getElementById('feed-container'); if(!c) return; try { onSnapshot(query(collection(db, "posts"), orderBy("data", "desc")), (s) => { c.innerHTML = ''; s.forEach(d => { try { const p = d.data(); if(f==='saved' && !(p.savedBy||[]).includes(auth.currentUser.uid)) return; const isLiked=(p.likes||[]).includes(auth.currentUser.uid); const isSaved=(p.savedBy||[]).includes(auth.currentUser.uid); const div=document.createElement('div'); div.className='post'; div.innerHTML=`<div class="post-header"><div class="user-avatar-post"><img src="${p.autorAvatar||IMG_PADRAO}"></div><div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">${calcularTempo(p.data)}</span></div>${p.uid===auth.currentUser.uid?`<div class="post-menu-container"><div class="post-options-btn" onclick="this.nextElementSibling.classList.toggle('active')">...</div><div class="post-dropdown"><div class="dropdown-item danger" onclick="deletarPost('${d.id}')">Excluir</div></div></div>`:''}</div><div class="post-content">${p.conteudo}</div>${p.imagem?`<img src="${p.imagem}" class="post-image" onclick="verPost('${d.id}')">`:''}<div class="post-actions"><button class="action-btn ${isLiked?'liked':''}" onclick="toggleLike('${d.id}')"><i class="${isLiked?'fa-solid':'fa-regular'} fa-heart"></i> ${(p.likes||[]).length}</button><button class="action-btn" onclick="verPost('${d.id}')"><i class="fa-regular fa-comment"></i> ${(p.comments||[]).length}</button><button class="action-btn ${isSaved?'saved':''}" onclick="toggleSave('${d.id}')" style="margin-left:auto;"><i class="${isSaved?'fa-solid':'fa-regular'} fa-bookmark"></i></button></div>`; c.appendChild(div); } catch(e){} }); }); } catch(e){} };
-        window.deletarPost = async (id) => { if(confirm("Apagar?")) await deleteDoc(doc(db, "posts", id)); };
-        window.toggleLike = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().likes||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{likes:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{likes:arrayUnion(auth.currentUser.uid)}); };
-        window.toggleSave = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().savedBy||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{savedBy:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{savedBy:arrayUnion(auth.currentUser.uid)}); };
-        window.verPost = async (id) => { currentOpenPostId = id; const s = await getDoc(doc(db, "posts", id)), p = s.data(); document.getElementById('modalPostContent').innerHTML = p.imagem ? `<img src="${p.imagem}" style="width:100%;height:100%;object-fit:contain;">` : `<div style="padding:20px;">${p.conteudo}</div>`; document.getElementById('commentsList').innerHTML = (p.comments||[]).map(c=>`<div><b>${c.autor}</b>: ${c.texto}</div>`).join(''); document.getElementById('commentModal').style.display='flex'; };
-        window.submitComment = async () => { const t = document.getElementById('newCommentText').value; if(!t) return; await updateDoc(doc(db, "posts", currentOpenPostId), { comments: arrayUnion({ autor: currentUserData.nome, texto: t }) }); document.getElementById('newCommentText').value = ""; verPost(currentOpenPostId); };
-        window.closeModal = () => document.getElementById('commentModal').style.display = 'none';
-
-        window.carregarRankings = async () => { 
-            const c = document.getElementById('ranking-container'); if(!c) return; 
-            try { 
-                const s = await getDocs(collection(db, "users")); 
-                let l = []; 
-                s.forEach(d => l.push(d.data())); 
-                c.innerHTML = ''; 
-                renderRank(c, "Nível", l, 'nivel'); 
-                renderRank(c, "Ryos", l, 'ryos'); 
-                renderRank(c, "Rankeadas", l, 'pontos_rankeada'); 
-                renderRank(c, "Torneios", l, 'vitorias_torneio'); 
-                renderRank(c, "Amistosos", l, 'pontos_amistoso'); 
-                renderRank(c, "Duplas", l, 'vitorias_dupla'); 
-                renderRank(c, "Guerra de Clãs", l, 'vitorias_cla');
-                
-                // NOVOS RANKINGS DE MISSÕES
-                renderRank(c, "Missões Rank S", l, 'missoes_concluidas_s');
-                renderRank(c, "Missões Rank A", l, 'missoes_concluidas_a');
-                renderRank(c, "Missões Rank B", l, 'missoes_concluidas_b');
-                renderRank(c, "Missões Rank C", l, 'missoes_concluidas_c');
-                renderRank(c, "Missões Rank D", l, 'missoes_concluidas_d');
-                renderRank(c, "Missões Rank E", l, 'missoes_concluidas_e');
-            } catch (e) {} 
-        };
-        function renderRank(c,t,l,f) { const s=[...l].sort((a,b)=>(b[f]||0)-(a[f]||0)).slice(0,5); let h=`<div class="ranking-col"><h3>${t}</h3><table class="ranking-table">`; s.forEach((u,i)=>h+=`<tr><td>${i+1}. ${u.nome}</td><td>${formatarNum(u[f])}</td></tr>`); h+='</table></div>'; c.innerHTML+=h; }
-        window.editarHistoria = async () => { const n=prompt("Texto:",currentUserData.historiaTexto||""); if(n){ const i=prompt("Imagem:",currentUserData.historiaImagem||""); updateDoc(doc(db,"users",auth.currentUser.uid),{historiaTexto:n,historiaImagem:i}).then(reloadData); } }
-        async function carregarFrases() { const c = document.getElementById('frases-list-container'); try { onSnapshot(query(collection(db, "frases"), orderBy("data", "desc")), (s) => { c.innerHTML=''; s.forEach(d=>{ const f=d.data(); const k=document.createElement('div'); k.className='frase-item'; const menu = f.uid === auth.currentUser.uid ? `<div class="options-menu-container"><div class="options-btn" onclick="toggleFraseMenu(this); event.stopPropagation();">...</div><div class="options-dropdown"><div class="options-item" onclick="editarFrase('${d.id}','${f.texto}');event.stopPropagation()">Editar</div><div class="options-item danger" onclick="deletarFrase('${d.id}');event.stopPropagation()">Excluir</div></div></div>` : ''; k.onclick=()=>copiarFrase(f.texto); k.innerHTML=`<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor}</div>${menu}`; c.appendChild(k); }); }); } catch(e){} }
-        window.toggleFraseMenu = (el) => { const dropdown = el.nextElementSibling; document.querySelectorAll('.options-dropdown').forEach(d => { if(d !== dropdown) d.classList.remove('active'); }); dropdown.classList.toggle('active'); };
-        window.adicionarFrase = async () => { const t=document.getElementById('novaFraseInput').value; if(t) await addDoc(collection(db,"frases"),{texto:t,autor:currentUserData.nome,uid:auth.currentUser.uid,data:serverTimestamp()}); document.getElementById('novaFraseInput').value=''; }
-        window.editarFrase = async (id, oldText) => { const n = prompt("Editar:", oldText); if(n) await updateDoc(doc(db, "frases", id), { texto: n }); };
-        window.deletarFrase = async (id) => { if(confirm("Excluir?")) await deleteDoc(doc(db, "frases", id)); };
-        window.copiarFrase = (t) => { navigator.clipboard.writeText(t).then(() => { const f=document.getElementById('copyFeedback'); f.style.display='block'; setTimeout(()=>f.style.display='none',2000); }); };
-        
-        window.toggleMenu = () => document.getElementById('user-menu').classList.toggle('show');
-        window.fazerLogout = () => signOut(auth).then(() => location.reload());
-        window.openEditProfileModal = () => { document.getElementById('editProfileModal').style.display = 'flex'; document.getElementById('edit-name-input').value = currentUserData.nome || ""; document.getElementById('edit-nick-input').value = currentUserData.apelido || ""; document.getElementById('user-menu').classList.remove('show'); };
-        window.closeEditProfileModal = () => document.getElementById('editProfileModal').style.display = 'none';
-        window.handleAvatarPreview = async (e) => { if(e.target.files[0]) { newAvatarBase64 = await comprimirImagem(e.target.files[0]); document.getElementById('edit-avatar-preview').src = newAvatarBase64; } };
-        window.salvarPerfil = async () => { const nome = document.getElementById('edit-name-input').value; const apelido = document.getElementById('edit-nick-input').value; const updates = { nome: nome, apelido: apelido, personagem: nome }; if(newAvatarBase64) updates.avatar = newAvatarBase64; await updateDoc(doc(db, "users", auth.currentUser.uid), updates); location.reload(); };
-        window.openChangePasswordModal = () => { document.getElementById('changePasswordModal').style.display='flex'; document.getElementById('user-menu').classList.remove('show'); };
-        window.closeChangePasswordModal = () => document.getElementById('changePasswordModal').style.display='none';
-        window.salvarNovaSenha = async () => { const p = document.getElementById('new-password').value; if(!p || p.length < 6) return alert("Mínimo 6 caracteres"); try { await updatePassword(auth.currentUser, p); alert("Sucesso!"); closeChangePasswordModal(); } catch(e) { alert("Erro: " + e.message); } };
-
     </script>
 </body>
 </html>
