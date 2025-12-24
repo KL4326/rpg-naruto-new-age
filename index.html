@@ -92,8 +92,8 @@
         .card h4 { margin-bottom: 5px; font-size: 1rem; }
         .card small { display: block; margin-bottom: 8px; color: #777; }
         
-        /* BOTÕES PERSONALIZADOS E CORRIGIDOS */
-        .buy-btn, .mission-btn-start, .mission-btn-collect, .btn-post, .btn-edit-historia { 
+        /* BOTÕES PRINCIPAIS (100% WIDTH) */
+        .buy-btn, .mission-btn-start, .mission-btn-collect { 
             background-color: var(--primary-color); 
             color: white; 
             border: none; 
@@ -106,14 +106,31 @@
             cursor: pointer; 
             transition: background 0.2s; 
             text-align: center;
-            display: inline-block;
         }
+
+        /* CORREÇÃO BOTÕES PEQUENOS (AUTO WIDTH) */
+        .btn-post, .btn-edit-historia {
+            background-color: var(--primary-color); 
+            color: white; 
+            border: none; 
+            padding: 8px 16px; 
+            width: auto; /* CORREÇÃO AQUI */
+            border-radius: 20px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            font-size: 0.9rem; 
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+
         .buy-btn:hover, .mission-btn-start:hover, .btn-post:hover, .btn-edit-historia:hover { background-color: #e05200; }
-        .buy-btn:disabled, .mission-btn-collect:disabled, .mission-btn-start:disabled { background-color: #ccc; cursor: not-allowed; opacity: 0.7; }
+        .buy-btn:disabled, .mission-btn-collect:disabled, .mission-btn-start:disabled, .btn-post:disabled { background-color: #ccc; cursor: not-allowed; opacity: 0.7; }
         
         .mission-btn-collect { background-color: var(--green-color); animation: pulse 1.5s infinite; }
         .mission-btn-collect:hover { background-color: #27ae60; }
-
         .mission-btn-wait { background-color: var(--yellow-color); color: #333; width: 100%; border: none; padding: 10px; border-radius: 5px; font-weight: bold; margin-top: 5px; cursor: not-allowed; }
         .mission-btn-done { background-color: #ccc; color: #666; width: 100%; border: none; padding: 10px; border-radius: 5px; font-weight: bold; margin-top: 5px; cursor: not-allowed; }
         
@@ -224,7 +241,7 @@
         .jutsu-modal-rank { display: inline-block; background: var(--primary-color); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-bottom: 10px; }
         .jutsu-modal-price { color: var(--green-color); font-weight: bold; font-size: 1.2rem; border-top: 1px solid var(--border-color); padding-top: 15px; }
         
-        .jutsu-stats-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; margin: 10px 0; }
+        .jutsu-stats-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
         .jutsu-stat-tag { padding: 4px 12px; border-radius: 15px; color: white; font-weight: bold; font-size: 0.8rem; margin: 2px; }
 
         .modal-content-profile { background: var(--card-bg); width: 90%; max-width: 800px; max-height: 90vh; border-radius: 15px; overflow-y: auto; position: relative; border: 1px solid var(--border-color); }
@@ -256,10 +273,20 @@
         .historia-img-container img { width: 100%; height: 100%; object-fit: cover; }
         .historia-divider { height: 4px; background-color: #dbdbdb; border: none; margin: 0; }
         .historia-text-content { padding: 30px; line-height: 1.8; font-size: 1.1rem; color: var(--text-color); white-space: pre-wrap; }
+        
+        .btn-edit-historia { 
+            position: absolute; 
+            bottom: 15px; 
+            right: 15px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
+            z-index: 2; /* Correção para sobreposição */
+        }
 
         /* FRASES */
-        .frase-input-area { background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px; display: flex; gap: 10px; }
+        .frase-input-area { background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px; display: flex; gap: 10px; align-items: center; }
         .frase-input-area input { flex: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; outline: none; }
+        .frase-input-area .btn-post { flex-shrink: 0; }
+        
         .frases-list { display: flex; flex-direction: column; gap: 10px; }
         .frase-item { background: var(--card-bg); padding: 20px; border-bottom: 1px solid #ccc; cursor: pointer; transition: background 0.2s; position: relative; border-radius: 5px; display: flex; justify-content: space-between; align-items: flex-start; }
         .frase-item:hover { background-color: rgba(0,0,0,0.02); }
@@ -594,7 +621,6 @@
         const db = getFirestore(app);
 
         // CONFIGURAÇÃO DA PROMOÇÃO (TRUE = LIGADO, FALSE = DESLIGADO)
-        // OBS: AGORA O PREÇO É LIDO DO CAMPO 'preco_promocional' NO FIREBASE
         const EM_PROMOCAO = true; 
 
         let currentUserData = null;
@@ -833,10 +859,6 @@
                 snapshot.forEach(docSnap => {
                     const u = docSnap.data(); const uid = docSnap.id;
                     
-                    const criarLinkMax = (val, max, field) => {
-                        return `<span class="battle-val">${val} / <span style="cursor:pointer; text-decoration:underline;" onclick="window.editarMaximo('${uid}', '${field}')" title="Clique para editar máximo">${max}</span></span>`;
-                    };
-
                     const card = document.createElement('div'); card.className = 'battle-card';
                     card.innerHTML = `
                         <div class="battle-header-info">
@@ -1172,7 +1194,68 @@
         window.fecharToolModal = () => document.getElementById('toolModal').style.display='none';
         window.fecharItemModal = () => document.getElementById('itemModal').style.display='none';
         
-        window.verPerfil = async (uid) => { const s = await getDoc(doc(db, "users", uid)); if(s.exists()) { const u = s.data(); document.getElementById('profile-modal-name').innerText = u.nome; document.getElementById('profile-modal-char').innerText = u.apelido || ""; document.getElementById('profile-modal-img').src = u.avatar||IMG_PADRAO; renderizarIcones(u.elementos || [], 'profile-elementos-container', ELEMENTOS_ICONS, 'Naturezas de Chakra'); renderizarIcones(u.kekkei_genkai || [], 'profile-kekkei-container', KEKKEI_ICONS, 'Kekkei Genkai'); const statsContainer = document.getElementById('other-profile-stats'); statsContainer.innerHTML = `<div class="stats-divider">Geral</div><div class="stat-card"><div class="stat-value">${u.nivel||1}</div><div class="stat-label">Nível</div></div><div class="stat-card"><div class="stat-value">${u.cargo||'Genin'}</div><div class="stat-label">Cargo</div></div><div class="stat-card"><div class="stat-value">${u.tipo||'Normal'}</div><div class="stat-label">Tipo</div></div><div class="stat-card"><div class="stat-value">${formatarNum(u.ryos)}</div><div class="stat-label">Ryos</div></div><div class="stats-divider">Batalha</div><div class="stat-card"><div class="stat-value">${u.vitorias||0}</div><div class="stat-label">Vitórias</div></div><div class="stat-card"><div class="stat-value">${u.empates||0}</div><div class="stat-label">Empates</div></div><div class="stat-card"><div class="stat-value">${u.loses||0}</div><div class="stat-label">Derrotas</div></div><div class="stats-divider">Inventário</div><div class="stat-card"><div class="stat-value">${(u.meusJutsus||[]).length}</div><div class="stat-label">Jutsus</div></div><div class="stats-divider">Vitalidade</div><div class="stat-card"><div class="stat-value">${u.vida||100}</div><div class="stat-label">Vida</div></div><div class="stat-card"><div class="stat-value">${u.chakra||100}</div><div class="stat-label">Chakra</div></div><div class="stat-card"><div class="stat-value">${u.stamina||100}</div><div class="stat-label">Stamina</div></div><div class="stat-card"><div class="stat-value">${u.controle_chakra||"Baixo"}</div><div class="stat-label">Controle</div></div><div class="stats-divider">Atributos</div><div class="stat-card"><div class="stat-value">${u.forca||10}</div><div class="stat-label">Força</div></div><div class="stat-card"><div class="stat-value">${u.defesa||10}</div><div class="stat-label">Defesa</div></div><div class="stat-card"><div class="stat-value">${u.agilidade||10}</div><div class="stat-label">Agilidade</div></div><div class="stat-card"><div class="stat-value">${u.velocidade||10}</div><div class="stat-label">Velocidade</div></div><div class="stat-card"><div class="stat-value">${u.intelecto||10}</div><div class="stat-label">Intelecto</div></div>`; document.getElementById('profileModal').style.display = 'flex'; } };
+        window.verPerfil = async (uid) => {
+            const s = await getDoc(doc(db, "users", uid)); 
+            if(s.exists()) { 
+                const u = s.data(); 
+                document.getElementById('profile-modal-name').innerText = u.nome; 
+                document.getElementById('profile-modal-char').innerText = u.apelido || ""; 
+                document.getElementById('profile-modal-img').src = u.avatar||IMG_PADRAO; 
+                renderizarIcones(u.elementos || [], 'profile-elementos-container', ELEMENTOS_ICONS, 'Naturezas de Chakra'); 
+                renderizarIcones(u.kekkei_genkai || [], 'profile-kekkei-container', KEKKEI_ICONS, 'Kekkei Genkai'); 
+                
+                // CARREGAR INVENTÁRIO DO PERFIL ALVO
+                let invHtml = '';
+                if(u.inventario) {
+                    for (const [id, qtd] of Object.entries(u.inventario)) {
+                         if(qtd > 0) {
+                             const itemData = globalItensMap[id];
+                             if(itemData) {
+                                 invHtml += `
+                                 <div class="stat-card" style="display:flex; align-items:center; gap:10px; padding:5px; text-align:left;">
+                                     <img src="${itemData.imagem || IMG_PADRAO}" style="width:30px; height:30px; border-radius:4px; object-fit:cover;">
+                                     <div>
+                                         <div style="font-weight:bold; font-size:0.8rem;">${itemData.nome}</div>
+                                         <div style="font-size:0.7rem; color:#777;">x${qtd}</div>
+                                     </div>
+                                 </div>`;
+                             }
+                         }
+                    }
+                }
+                if(!invHtml) invHtml = '<p style="text-align:center; color:#777; width:100%;">Mochila vazia.</p>';
+
+                const statsContainer = document.getElementById('other-profile-stats'); 
+                statsContainer.innerHTML = `
+                <div class="stats-divider">Geral</div>
+                <div class="stat-card"><div class="stat-value">${u.nivel||1}</div><div class="stat-label">Nível</div></div>
+                <div class="stat-card"><div class="stat-value">${u.cargo||'Genin'}</div><div class="stat-label">Cargo</div></div>
+                <div class="stat-card"><div class="stat-value">${u.tipo||'Normal'}</div><div class="stat-label">Tipo</div></div>
+                <div class="stat-card"><div class="stat-value">${formatarNum(u.ryos)}</div><div class="stat-label">Ryos</div></div>
+                
+                <div class="stats-divider">Batalha</div>
+                <div class="stat-card"><div class="stat-value">${u.vitorias||0}</div><div class="stat-label">Vitórias</div></div>
+                <div class="stat-card"><div class="stat-value">${u.empates||0}</div><div class="stat-label">Empates</div></div>
+                <div class="stat-card"><div class="stat-value">${u.loses||0}</div><div class="stat-label">Derrotas</div></div>
+                
+                <div class="stats-divider">Inventário</div>
+                ${invHtml}
+                
+                <div class="stats-divider">Vitalidade</div>
+                <div class="stat-card"><div class="stat-value">${u.vida||100}</div><div class="stat-label">Vida</div></div>
+                <div class="stat-card"><div class="stat-value">${u.chakra||100}</div><div class="stat-label">Chakra</div></div>
+                <div class="stat-card"><div class="stat-value">${u.stamina||100}</div><div class="stat-label">Stamina</div></div>
+                <div class="stat-card"><div class="stat-value">${u.controle_chakra||"Baixo"}</div><div class="stat-label">Controle</div></div>
+                
+                <div class="stats-divider">Atributos</div>
+                <div class="stat-card"><div class="stat-value">${u.forca||10}</div><div class="stat-label">Força</div></div>
+                <div class="stat-card"><div class="stat-value">${u.defesa||10}</div><div class="stat-label">Defesa</div></div>
+                <div class="stat-card"><div class="stat-value">${u.agilidade||10}</div><div class="stat-label">Agilidade</div></div>
+                <div class="stat-card"><div class="stat-value">${u.velocidade||10}</div><div class="stat-label">Velocidade</div></div>
+                <div class="stat-card"><div class="stat-value">${u.intelecto||10}</div><div class="stat-label">Intelecto</div></div>`; 
+                document.getElementById('profileModal').style.display = 'flex'; 
+            } 
+        };
         window.fecharProfileModal = () => document.getElementById('profileModal').style.display = 'none';
 
         // --- PAINEL KAGE ---
@@ -1192,7 +1275,7 @@
         window.submitComment = async () => { const t = document.getElementById('newCommentText').value; if(!t) return; await updateDoc(doc(db, "posts", currentOpenPostId), { comments: arrayUnion({ autor: currentUserData.nome, texto: t }) }); document.getElementById('newCommentText').value = ""; verPost(currentOpenPostId); };
         window.closeModal = () => document.getElementById('commentModal').style.display = 'none';
 
-        window.carregarRankings = async () => { const c = document.getElementById('ranking-container'); if(!c) return; try { const s = await getDocs(collection(db, "users")); let l = []; s.forEach(d => l.push(d.data())); c.innerHTML = ''; renderRank(c, "Nível", l, 'nivel'); renderRank(c, "Ryos", l, 'ryos'); renderRank(c, "Rankeadas", l, 'pontos_rankeada'); renderRank(c, "Torneios", l, 'vitorias_torneio'); renderRank(c, "Amistosos", l, 'pontos_amistoso'); renderRank(c, "Duplas", l, 'vitorias_dupla'); renderRank(c, "Guerra de Clãs", l, 'vitorias_cla'); renderRank(c, "Missões Rank S", l, 'missoes_concluidas_s'); renderRank(c, "Missões Rank A", l, 'missoes_concluidas_a'); renderRank(c, "Missões Rank B", l, 'missoes_concluidas_b'); renderRank(c, "Missões Rank C", l, 'missoes_concluidas_c'); renderRank(c, "Missões Rank D", l, 'missoes_concluidas_d'); renderRank(c, "Missões Rank E", l, 'missoes_concluidas_e'); } catch (e) {} };
+        window.carregarRankings = async () => { const c = document.getElementById('ranking-container'); if(!c) return; try { const s = await getDocs(collection(db, "users")); let l = []; s.forEach(d => l.push(d.data())); c.innerHTML = ''; renderRank(c, "Nível", l, 'nivel'); renderRank(c, "Ryos", l, 'ryos'); renderRank(c, "Rankeadas", l, 'pontos_rankeada'); renderRank(c, "Torneios", l, 'vitorias_torneio'); renderRank(c, "Amistosos", l, 'pontos_amistoso'); renderRank(c, "Duplas", l, 'vitorias_dupla'); renderRank(c, "Clãs", l, 'vitorias_cla'); renderRank(c, "Missões Rank S", l, 'missoes_concluidas_s'); renderRank(c, "Missões Rank A", l, 'missoes_concluidas_a'); renderRank(c, "Missões Rank B", l, 'missoes_concluidas_b'); renderRank(c, "Missões Rank C", l, 'missoes_concluidas_c'); renderRank(c, "Missões Rank D", l, 'missoes_concluidas_d'); renderRank(c, "Missões Rank E", l, 'missoes_concluidas_e'); } catch (e) {} };
         function renderRank(c,t,l,f) { const s=[...l].sort((a,b)=>(b[f]||0)-(a[f]||0)).slice(0,5); let h=`<div class="ranking-col"><h3>${t}</h3><table class="ranking-table">`; s.forEach((u,i)=>h+=`<tr><td>${i+1}. ${u.nome}</td><td>${formatarNum(u[f])}</td></tr>`); h+='</table></div>'; c.innerHTML+=h; }
         window.editarHistoria = async () => { const n=prompt("Texto:",currentUserData.historiaTexto||""); if(n){ const i=prompt("Imagem:",currentUserData.historiaImagem||""); updateDoc(doc(db,"users",auth.currentUser.uid),{historiaTexto:n,historiaImagem:i}).then(reloadData); } }
         async function carregarFrases() { const c = document.getElementById('frases-list-container'); try { onSnapshot(query(collection(db, "frases"), orderBy("data", "desc")), (s) => { c.innerHTML=''; s.forEach(d=>{ const f=d.data(); const k=document.createElement('div'); k.className='frase-item'; const menu = f.uid === auth.currentUser.uid ? `<div class="options-menu-container"><div class="options-btn" onclick="toggleFraseMenu(this); event.stopPropagation();">...</div><div class="options-dropdown"><div class="options-item" onclick="editarFrase('${d.id}','${f.texto}');event.stopPropagation()">Editar</div><div class="options-item danger" onclick="deletarFrase('${d.id}');event.stopPropagation()">Excluir</div></div></div>` : ''; k.onclick=()=>copiarFrase(f.texto); k.innerHTML=`<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor}</div>${menu}`; c.appendChild(k); }); }); } catch(e){} }
