@@ -1170,6 +1170,10 @@
         }
 
         window.verDetalhesConquista = (id, d, st) => {
+            // VERIFICAÇÃO DE STATUS REAL NO FIREBASE (ANTI-EXPLOIT)
+            // Se o usuário clicar, ignoramos o 'st' passado e usamos o atual
+            const currentSt = currentUserData.statusConquistas[id];
+
             const r = d.recompensa || 0;
             const x = d.xp || 0;
             const en = d.en || 0;
@@ -1185,9 +1189,11 @@
             document.getElementById('conquista-img-modal').src = d.imagem||IMG_PADRAO;
             
             const a = document.getElementById('conquista-actions-modal'); a.innerHTML = '';
-            if(!st) a.innerHTML = `<button class="mission-btn-start" onclick="solicitarConquista('${id}', this)">Reivindicar</button>`;
-            else if(st === 'solicitado') a.innerHTML = `<button class="mission-btn-wait">Aguardando</button>`;
-            else if(st === 'aprovado') a.innerHTML = `<button class="mission-btn-collect" onclick="coletarConquista('${id}', ${r}, ${x}, ${en}, this)">Coletar</button>`;
+            
+            // Usamos currentSt para renderizar o botão correto
+            if(!currentSt) a.innerHTML = `<button class="mission-btn-start" onclick="solicitarConquista('${id}', this)">Reivindicar</button>`;
+            else if(currentSt === 'solicitado') a.innerHTML = `<button class="mission-btn-wait">Aguardando</button>`;
+            else if(currentSt === 'aprovado') a.innerHTML = `<button class="mission-btn-collect" onclick="coletarConquista('${id}', ${r}, ${x}, ${en}, this)">Coletar</button>`;
             else a.innerHTML = `<button class="mission-btn-done">Feito</button>`;
             
             document.getElementById('conquistaModal').style.display='flex';
@@ -1203,7 +1209,7 @@
         
         window.coletarConquista = async (id, r, x, en, btn) => {
             if(btn && btn.disabled) return;
-            if(btn) { btn.disabled = true; btn.innerText = "Coletando..."; btn.style.display = 'none'; } // Hide immediately
+            if(btn) { btn.disabled = true; btn.innerText = "Coletando..."; btn.style.display = 'none'; } 
             
             await updateDoc(doc(db, "users", auth.currentUser.uid), { 
                 ryos: increment(r), 
@@ -1234,6 +1240,9 @@
         k.innerHTML=`${rankHtml}<h4>${i.titulo}</h4><p style="font-size:0.9rem; color:${st==='em_andamento'?'orange':st==='aprovado'?'green':'#777'}; font-weight:bold;">${st==='neutro'?'Disponível':st}</p><small style="color:var(--primary-color)">${rewardText}</small>`; c.appendChild(k); }); }
         
         window.verDetalhesMissao = (id, d, st) => { 
+            // VERIFICAÇÃO DE STATUS REAL NO FIREBASE (ANTI-EXPLOIT)
+            const currentSt = currentUserData.statusMissoes[id] || 'neutro';
+
             const r = d.recompensa || 0;
             const x = d.xp || 0;
             const en = d.en || 0;
@@ -1250,8 +1259,10 @@
             
             const a = document.getElementById('missao-actions-modal'); a.innerHTML = ''; 
             
-            if(st==='neutro') a.innerHTML = `<button class="mission-btn-start" onclick="iniciarMissao('${id}', this)">Aceitar</button>`; 
-            else if(st==='aprovado') a.innerHTML = `<button class="mission-btn-collect" onclick="coletarRecompensa('${id}', ${r}, ${x}, ${en}, '${d.rank||'D'}', this)">Receber</button>`; 
+            if(currentSt==='neutro') a.innerHTML = `<button class="mission-btn-start" onclick="iniciarMissao('${id}', this)">Aceitar</button>`; 
+            else if(currentSt==='em_andamento') a.innerHTML = `<button class="mission-btn-wait">Em Andamento</button>`; 
+            else if(currentSt==='aprovado') a.innerHTML = `<button class="mission-btn-collect" onclick="coletarRecompensa('${id}', ${r}, ${x}, ${en}, '${d.rank||'D'}', this)">Receber</button>`; 
+            else if(currentSt==='concluido') a.innerHTML = `<button class="mission-btn-done">Concluído</button>`; 
             
             document.getElementById('missaoModal').style.display='flex'; 
         };
@@ -1265,7 +1276,7 @@
         
         window.coletarRecompensa = async (id, r, x, en, rank, btn) => { 
             if(btn && btn.disabled) return;
-            if(btn) { btn.disabled = true; btn.innerText = "Coletando..."; btn.style.display = 'none'; } // Hide immediately
+            if(btn) { btn.disabled = true; btn.innerText = "Coletando..."; btn.style.display = 'none'; } 
             
             const rankKey = `missoes_concluidas_${rank.toLowerCase()}`;
             
