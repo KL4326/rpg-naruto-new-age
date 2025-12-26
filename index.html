@@ -113,7 +113,7 @@
             background-color: var(--primary-color); 
             color: white; 
             border: none; 
-            padding: 8px 20px; 
+            padding: 8px 16px; 
             width: auto !important;
             min-width: 80px;
             border-radius: 20px; 
@@ -245,7 +245,9 @@
 
         /* MODAIS */
         .modal-overlay-comment { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
-        .close-modal { position: absolute; top: 10px; left: 15px; font-size: 1.8rem; color: white; cursor: pointer; z-index: 20; text-shadow: 0 0 5px black; }
+        .close-modal { position: absolute; top: 10px; right: 15px; font-size: 2rem; color: #333; cursor: pointer; z-index: 9999; text-shadow: 0 0 5px white; transition: 0.2s; }
+        .close-modal:hover { color: var(--danger-color); transform: scale(1.1); }
+
         .modal-content-card { background: var(--card-bg); padding: 30px; border-radius: 10px; width: 90%; max-width: 350px; text-align: center; position: relative; border: 1px solid var(--border-color); }
         .jutsu-modal-img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); }
         .jutsu-modal-rank { display: inline-block; background: var(--primary-color); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-bottom: 10px; }
@@ -276,7 +278,69 @@
         .comment-input-area input { flex: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 20px; outline: none; }
         .edit-input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 5px; }
         .edit-avatar-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color); margin: 10px auto; display: block; }
+
+        /* HISTORIA - CORREÇÃO */
+        .historia-container { 
+            width: 100%; 
+            max-width: 800px; 
+            margin: 0 auto; /* CENTRALIZADO */
+            background: var(--card-bg); 
+            border: 1px solid var(--border-color); 
+            border-radius: 10px; 
+            overflow: hidden; 
+            position: relative; 
+        }
+        .historia-img-container { width: 100%; height: 300px; background-color: #000; position: relative; }
+        .historia-img-container img { width: 100%; height: 100%; object-fit: cover; }
+        .historia-divider { height: 4px; background-color: #dbdbdb; border: none; margin: 0; }
+        .historia-text-content { padding: 30px; line-height: 1.8; font-size: 1.1rem; color: var(--text-color); white-space: pre-wrap; }
+
+        /* FRASES - CORREÇÃO */
+        .frase-input-area { 
+            background: var(--card-bg); 
+            padding: 15px; 
+            border-radius: 8px; 
+            border: 1px solid var(--border-color); 
+            margin-bottom: 20px; 
+            display: flex; 
+            gap: 10px; 
+            align-items: center; 
+            width: 100%;
+        }
+        .frase-input-area input { 
+            flex-grow: 1; /* OCUPA ESPAÇO */
+            padding: 10px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 5px; 
+            outline: none; 
+            min-width: 0; /* Impede overflow */
+        }
+        .frases-list { display: flex; flex-direction: column; gap: 10px; }
+        .frase-item { 
+            background: var(--card-bg); 
+            padding: 20px; 
+            border-bottom: 1px solid #ccc; 
+            cursor: pointer; 
+            transition: background 0.2s; 
+            position: relative; 
+            border-radius: 5px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-start;
+            word-break: break-word; /* QUEBRA LINHA */
+        }
+        .frase-item:hover { background-color: rgba(0,0,0,0.02); }
+        .frase-content { font-size: 1.1rem; font-style: italic; color: var(--text-color); flex: 1; padding-right: 30px; }
+        .frase-author { font-size: 0.85rem; color: var(--primary-color); font-weight: bold; margin-top: 5px; }
         
+        .options-menu-container { margin-left: auto; position: relative; }
+        .options-btn { cursor: pointer; color: var(--text-color); padding: 8px; width: 30px; text-align: center; }
+        .options-dropdown { display: none; position: absolute; top: 100%; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; width: 140px; }
+        .options-dropdown.active { display: block; }
+        .options-item { padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-color); }
+        .options-item.danger { color: var(--danger-color); }
+
+        /* BARRA DE XP */
         .level-container { background: var(--card-bg); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 20px; }
         .level-info { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; color: var(--text-color); }
         .xp-bar-bg { width: 100%; height: 20px; background: #eee; border-radius: 10px; overflow: hidden; position: relative; }
@@ -1129,6 +1193,14 @@
             document.getElementById('conquistaModal').style.display='flex';
         };
 
+        window.fecharConquistaModal = () => document.getElementById('conquistaModal').style.display='none';
+        
+        window.solicitarConquista = async (id, btn) => {
+            if(btn) { btn.disabled = true; btn.innerText = "Enviando..."; }
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusConquistas.${id}`]: 'solicitado' });
+            alert("Solicitado!");
+        };
+        
         window.coletarConquista = async (id, r, x, en, btn) => {
             if(btn && btn.disabled) return;
             if(btn) { btn.disabled = true; btn.innerText = "Coletando..."; btn.style.display = 'none'; } // Hide immediately
@@ -1298,7 +1370,6 @@
                 <div class="stat-card"><div class="stat-value">${u.nivel||1}</div><div class="stat-label">Nível</div></div>
                 <div class="stat-card"><div class="stat-value">${u.cargo||'Genin'}</div><div class="stat-label">Cargo</div></div>
                 <div class="stat-card"><div class="stat-value">${u.tipo||'Normal'}</div><div class="stat-label">Tipo</div></div>
-                <div class="stat-card"><div class="stat-value">${formatarNum(u.ryos)}</div><div class="stat-label">Ryos</div></div>
                 
                 <div class="stats-divider">Batalha</div>
                 <div class="stat-card"><div class="stat-value">${u.vitorias||0}</div><div class="stat-label">Vitórias</div></div>
