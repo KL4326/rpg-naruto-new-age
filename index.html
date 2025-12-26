@@ -92,9 +92,7 @@
         .card h4 { margin-bottom: 5px; font-size: 1rem; }
         .card small { display: block; margin-bottom: 8px; color: #777; }
         
-        /* --- ESTILOS DE BOTÕES CORRIGIDOS E ESPECÍFICOS --- */
-        
-        /* Botões de largura total (Loja, Missões) */
+        /* BOTÕES PRINCIPAIS */
         .buy-btn, .mission-btn-start, .mission-btn-collect { 
             background-color: var(--primary-color); 
             color: white; 
@@ -110,39 +108,32 @@
             text-align: center;
         }
 
-        /* Botão do Feed e Frases (Pequenos e alinhados) */
-        .btn-post {
+        /* BOTÕES PEQUENOS/AUTO */
+        .btn-post, .btn-edit-historia {
             background-color: var(--primary-color); 
             color: white; 
             border: none; 
             padding: 8px 20px; 
-            width: auto !important; /* FORÇA LARGURA AUTOMÁTICA */
+            width: auto !important;
             min-width: 80px;
             border-radius: 20px; 
             font-weight: 600; 
             cursor: pointer; 
             font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
             white-space: nowrap;
         }
         
-        /* Botão Editar História (Posicionado e pequeno) */
+        /* Posicionamento botão história */
         .btn-edit-historia {
-            background-color: var(--primary-color); 
-            color: white; 
-            border: none; 
-            padding: 8px 20px; 
-            width: auto !important; /* FORÇA LARGURA AUTOMÁTICA */
-            border-radius: 20px; 
-            font-weight: 600; 
-            cursor: pointer;
             position: absolute; 
             bottom: 15px; 
             right: 15px; 
             box-shadow: 0 2px 5px rgba(0,0,0,0.5); 
             z-index: 5;
-            display: flex;
-            align-items: center;
-            gap: 5px;
         }
 
         .buy-btn:hover, .mission-btn-start:hover, .btn-post:hover, .btn-edit-historia:hover { background-color: #e05200; }
@@ -1047,7 +1038,18 @@
             try {
                 const s = await getDocs(collection(db, "users"));
                 c.innerHTML = '';
-                s.forEach(d => { const u = d.data(); const k = document.createElement('div'); k.className = 'card'; k.onclick = () => window.verPerfil(d.id); k.innerHTML = `<div style="width:60px; height:60px; border-radius:50%; overflow:hidden; margin:0 auto 10px;"><img src="${u.avatar||IMG_PADRAO}" style="width:100%; height:100%; object-fit:cover;"></div><h4>${u.nome}</h4><p>${u.apelido||""}</p>`; c.appendChild(k); });
+                s.forEach(d => { const u = d.data(); const k = document.createElement('div'); k.className = 'card'; k.onclick = () => window.verPerfil(d.id); 
+                k.innerHTML = `
+                <div style="width:60px; height:60px; border-radius:50%; overflow:hidden; margin:0 auto 10px;">
+                    <img src="${u.avatar||IMG_PADRAO}" style="width:100%; height:100%; object-fit:cover;">
+                </div>
+                <h4>${u.nome}</h4>
+                <p>${u.apelido||""}</p>
+                <div style="font-size:0.8rem; margin-top:5px; color:#777;">
+                    <span style="color:var(--yellow-color);"><i class="fa-solid fa-coins"></i> ${formatarNum(u.ryos)}</span> | 
+                    <span style="color:var(--en-color);"><i class="fa-regular fa-star"></i> ${formatarNum(u.essencia_ninja||0)}</span>
+                </div>`; 
+                c.appendChild(k); });
             } catch(e){ c.innerHTML='<p>Erro ao carregar.</p>'; }
         }
 
@@ -1105,66 +1107,103 @@
                 const st = m[d.id];
                 const k = document.createElement('div'); k.className = 'card jutsu-card-click';
                 let btn = "";
+                
+                // Preparar valores (Ryos, XP, EN)
+                const r = i.recompensa || 0;
+                const x = i.xp || 0;
+                const en = i.en || 0; 
+
                 if(!st) btn = `<button class="mission-btn-start" onclick="event.stopPropagation(); solicitarConquista('${d.id}', this)">Reivindicar</button>`;
                 else if(st === 'solicitado') btn = `<button class="mission-btn-wait" onclick="event.stopPropagation();">Aguardando Kage</button>`;
-                else if(st === 'aprovado') btn = `<button class="mission-btn-collect" onclick="event.stopPropagation(); coletarConquista('${d.id}', ${i.recompensa||0}, ${i.xp||0}, this)">Coletar</button>`;
+                else if(st === 'aprovado') btn = `<button class="mission-btn-collect" onclick="event.stopPropagation(); coletarConquista('${d.id}', ${r}, ${x}, ${en}, this)">Coletar</button>`;
                 else if(st === 'concluido') btn = `<button class="mission-btn-done" onclick="event.stopPropagation();">Concluído</button>`;
                 
                 let stTxt = !st ? "Disponível" : (st==='solicitado' ? "Pendente" : (st==='aprovado' ? "Aprovado!" : "Concluído"));
                 k.onclick = () => verDetalhesConquista(d.id, i, st);
-                k.innerHTML = `<img src="${i.imagem||IMG_PADRAO}" class="card-img-top"><h4>${i.titulo}</h4><p style="font-weight:bold; color:#777;">${stTxt}</p>${btn}`;
+                
+                let rewardText = `${formatarNum(r)} Ryos`;
+                if(en > 0) rewardText += ` | <span style="color:var(--en-color);">${en} EN</span>`;
+
+                k.innerHTML = `<img src="${i.imagem||IMG_PADRAO}" class="card-img-top"><h4>${i.titulo}</h4><p style="font-weight:bold; color:#777;">${stTxt}</p><small style="color:var(--primary-color)">${rewardText}</small>${btn}`;
                 c.appendChild(k);
             });
         }
+
         window.verDetalhesConquista = (id, d, st) => {
-            document.getElementById('conquista-name-modal').innerText = d.titulo; document.getElementById('conquista-desc-modal').innerText = d.descricao; document.getElementById('conquista-reward-modal').innerText = formatarNum(d.recompensa); document.getElementById('conquista-xp-modal').innerText = d.xp||0; document.getElementById('conquista-img-modal').src = d.imagem||IMG_PADRAO;
+            const r = d.recompensa || 0;
+            const x = d.xp || 0;
+            const en = d.en || 0;
+
+            document.getElementById('conquista-name-modal').innerText = d.titulo;
+            document.getElementById('conquista-desc-modal').innerText = d.descricao;
+            
+            let rewardsHtml = `${formatarNum(r)} Ryos`;
+            if(en > 0) rewardsHtml += ` | <span style="color:var(--en-color); font-weight:bold;">${en} Essência Ninja</span>`;
+            
+            document.getElementById('conquista-reward-modal').innerHTML = rewardsHtml;
+            document.getElementById('conquista-xp-modal').innerText = x;
+            document.getElementById('conquista-img-modal').src = d.imagem||IMG_PADRAO;
+            
             const a = document.getElementById('conquista-actions-modal'); a.innerHTML = '';
             if(!st) a.innerHTML = `<button class="mission-btn-start" onclick="solicitarConquista('${id}', this)">Reivindicar</button>`;
             else if(st === 'solicitado') a.innerHTML = `<button class="mission-btn-wait">Aguardando</button>`;
-            else if(st === 'aprovado') a.innerHTML = `<button class="mission-btn-collect" onclick="coletarConquista('${id}',${d.recompensa},${d.xp}, this)">Coletar</button>`;
+            else if(st === 'aprovado') a.innerHTML = `<button class="mission-btn-collect" onclick="coletarConquista('${id}', ${r}, ${x}, ${en}, this)">Coletar</button>`;
             else a.innerHTML = `<button class="mission-btn-done">Feito</button>`;
+            
             document.getElementById('conquistaModal').style.display='flex';
         };
-        window.fecharConquistaModal = () => document.getElementById('conquistaModal').style.display='none';
-        
-        window.solicitarConquista = async (id, btn) => {
-            if(btn) { btn.disabled = true; btn.innerText = "Enviando..."; }
-            await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusConquistas.${id}`]: 'solicitado' });
-            alert("Solicitado!");
-        };
-        
-        window.coletarConquista = async (id, r, x, btn) => {
+
+        window.coletarConquista = async (id, r, x, en, btn) => {
             if(btn && btn.disabled) return;
-            if(btn) { btn.disabled = true; btn.innerText = "Coletando..."; }
-            const u = currentUserData;
+            if(btn) { btn.disabled = true; btn.innerText = "Coletando..."; btn.style.display = 'none'; } // Hide immediately
+            
             await updateDoc(doc(db, "users", auth.currentUser.uid), { 
-                ryos: (u.ryos||0)+r, 
-                xp: (u.xp||0)+x, 
+                ryos: increment(r), 
+                xp: increment(x),
+                essencia_ninja: increment(en),
                 [`statusConquistas.${id}`]: 'concluido' 
             });
-            alert("Recebido!");
+            alert(`Recebido: ${r} Ryos, ${x} XP` + (en > 0 ? ` e ${en} EN!` : "!"));
+            document.getElementById('conquistaModal').style.display='none';
         };
 
-        // --- MISSOES ---
+        // --- MISSÕES ---
         async function carregarMissoes() { const c = document.getElementById('missoes-grid'); if(!c) return; const m = currentUserData.statusMissoes || {}; const s = await getDocs(collection(db, "missoes")); c.innerHTML = ''; s.forEach(d => { const i = d.data(), st = m[d.id] || 'neutro'; const k = document.createElement('div'); k.className = 'card jutsu-card-click'; 
         
         const rankClass = `rank-${(i.rank||'d').toLowerCase()}`;
         const rankHtml = `<span class="rank-tag ${rankClass}">Rank ${i.rank||'D'}</span>`;
 
+        // Preparar valores
+        const r = i.recompensa || 0;
+        const x = i.xp || 0;
+        const en = i.en || 0; 
+
         k.onclick = () => verDetalhesMissao(d.id, i, st); 
-        k.innerHTML=`${rankHtml}<h4>${i.titulo}</h4><p style="font-size:0.9rem; color:${st==='em_andamento'?'orange':st==='aprovado'?'green':'#777'}; font-weight:bold;">${st==='neutro'?'Disponível':st}</p><small style="color:var(--primary-color)">${i.xp||0} XP | ${formatarNum(i.recompensa)} Ryos</small>`; c.appendChild(k); }); }
+        
+        let rewardText = `${x} XP | ${formatarNum(r)} Ryos`;
+        if(en > 0) rewardText += ` | <span style="color:var(--en-color);">${en} EN</span>`;
+
+        k.innerHTML=`${rankHtml}<h4>${i.titulo}</h4><p style="font-size:0.9rem; color:${st==='em_andamento'?'orange':st==='aprovado'?'green':'#777'}; font-weight:bold;">${st==='neutro'?'Disponível':st}</p><small style="color:var(--primary-color)">${rewardText}</small>`; c.appendChild(k); }); }
         
         window.verDetalhesMissao = (id, d, st) => { 
+            const r = d.recompensa || 0;
+            const x = d.xp || 0;
+            const en = d.en || 0;
+            
             document.getElementById('missao-name-modal').innerText = d.titulo; 
             document.getElementById('missao-desc-modal').innerText = d.descricao; 
-            document.getElementById('missao-reward-modal').innerText = formatarNum(d.recompensa); 
-            document.getElementById('missao-xp-modal').innerText = d.xp||0; 
+            
+            let rewardsHtml = `${formatarNum(r)} Ryos`;
+            if(en > 0) rewardsHtml += ` | <span style="color:var(--en-color); font-weight:bold;">${en} Essência Ninja</span>`;
+            
+            document.getElementById('missao-reward-modal').innerHTML = rewardsHtml; 
+            document.getElementById('missao-xp-modal').innerText = x; 
             document.getElementById('missao-img-modal').src = d.imagem||IMG_PADRAO; 
             
             const a = document.getElementById('missao-actions-modal'); a.innerHTML = ''; 
             
             if(st==='neutro') a.innerHTML = `<button class="mission-btn-start" onclick="iniciarMissao('${id}', this)">Aceitar</button>`; 
-            else if(st==='aprovado') a.innerHTML = `<button class="mission-btn-collect" onclick="coletarRecompensa('${id}',${d.recompensa},${d.xp||0}, '${d.rank||'D'}', this)">Receber</button>`; 
+            else if(st==='aprovado') a.innerHTML = `<button class="mission-btn-collect" onclick="coletarRecompensa('${id}', ${r}, ${x}, ${en}, '${d.rank||'D'}', this)">Receber</button>`; 
             
             document.getElementById('missaoModal').style.display='flex'; 
         };
@@ -1176,20 +1215,21 @@
             alert("Iniciada!"); 
         };
         
-        window.coletarRecompensa = async (id, r, x, rank, btn) => { 
+        window.coletarRecompensa = async (id, r, x, en, rank, btn) => { 
             if(btn && btn.disabled) return;
-            if(btn) { btn.disabled = true; btn.innerText = "Coletando..."; }
+            if(btn) { btn.disabled = true; btn.innerText = "Coletando..."; btn.style.display = 'none'; } // Hide immediately
             
-            const u = currentUserData;
             const rankKey = `missoes_concluidas_${rank.toLowerCase()}`;
             
             await updateDoc(doc(db, "users", auth.currentUser.uid), { 
-                ryos: (u.ryos||0)+r, 
-                xp: (u.xp||0)+x, 
+                ryos: increment(r), 
+                xp: increment(x),
+                essencia_ninja: increment(en), // Adiciona EN
                 [`statusMissoes.${id}`]: 'concluido',
                 [rankKey]: increment(1) 
             }); 
-            alert("Coletado!"); 
+            alert(`Missão cumprida! Ganhou: ${r} Ryos, ${x} XP` + (en > 0 ? ` e ${en} EN!` : "!")); 
+            document.getElementById('missaoModal').style.display='none';
         };
 
         // --- FUNÇÕES DE MODAL GENÉRICAS ---
@@ -1200,7 +1240,7 @@
             document.getElementById(t+'-price-modal').innerText = "Valor: "+formatarNum(dados.preco)+" Ryos";
             document.getElementById(t+'-img-modal').src = dados.imagem||IMG_PADRAO;
             
-            // Exibir Bônus (Jutsus podem ter bônus agora também)
+            // Exibir Bônus
             let bonusHtml = gerarTagsBonus(dados);
             
             if(t==='jutsu'){ 
@@ -1209,11 +1249,8 @@
                 if(dados.dano) h+=`<span class="jutsu-stat-tag tag-dano">Dano: ${dados.dano}</span>`; 
                 if(dados.chakra) h+=`<span class="jutsu-stat-tag tag-chakra">Chakra: ${dados.chakra}</span>`; 
                 if(dados.stamina) h+=`<span class="jutsu-stat-tag tag-stamina">Stamina: ${dados.stamina}</span>`; 
-                if(dados.bonus) h+=`<span class="jutsu-stat-tag tag-buff">${dados.bonus}</span>`; // Campo Texto
-                
-                // Adiciona os bônus numéricos também, se houver
-                h += bonusHtml; 
-                
+                if(dados.bonus) h+=`<span class="jutsu-stat-tag tag-buff">${dados.bonus}</span>`; 
+                h += bonusHtml;
                 document.getElementById('jutsu-stats-row').innerHTML=h; 
             } else {
                 document.getElementById(t==='tool'?'tool-stats-row':'item-stats-row').innerHTML = bonusHtml;
@@ -1242,10 +1279,9 @@
                 let totalTools = 0;
                 let totalItems = 0;
 
-                // Contar Itens e Ferramentas
+                // Contar Itens e Ferramentas (Simples soma de quantidades)
                 if (u.inventario) {
                     for (const [id, qtd] of Object.entries(u.inventario)) {
-                        // Verifica no mapa global se é ferramenta ou item
                         if (globalItensMap[id]) {
                             if (globalItensMap[id].type === 'tool') {
                                 totalTools += qtd;
@@ -1253,13 +1289,12 @@
                                 totalItems += qtd;
                             }
                         } else {
-                            // Se não estiver no mapa (ex: item deletado), conta como item genérico
-                            totalItems += qtd;
+                            totalItems += qtd; // Fallback
                         }
                     }
                 }
 
-                // Construção do HTML resumido
+                // HTML Resumido (Só números)
                 let invHtml = `
                     <div class="stat-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
                         <div class="stat-value" style="font-size:1.5rem;">${totalJutsus}</div>
