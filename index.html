@@ -20,11 +20,13 @@
             --danger-color: #ed4956;
             --en-color: #3498db;
             
+            /* CORES DE STATUS */
             --stat-chakra: #2980b9; 
             --stat-stamina: #ff9f43; 
             --stat-dano: #e74c3c;   
             --stat-buff: #9b59b6;   
             
+            /* CORES BATALHA */
             --hp-color: #e74c3c;       
             --sanidade-color: #3498db; 
             --stamina-color: #ff9f43;  
@@ -82,6 +84,7 @@
         .tab-content { display: none; animation: fadeIn 0.3s; }
         .tab-content.active { display: block; }
 
+        /* CARDS E GRIDS */
         .bucket-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; margin-top: 20px; }
         .card { background: var(--card-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); text-align: center; cursor: pointer; transition: 0.2s; overflow: hidden; position: relative; display: flex; flex-direction: column; }
         .card:hover { transform: translateY(-2px); border-color: var(--primary-color); }
@@ -89,6 +92,7 @@
         .card h4 { margin-bottom: 5px; font-size: 1rem; }
         .card small { display: block; margin-bottom: 8px; color: #777; }
         
+        /* BOTÕES */
         .buy-btn, .mission-btn-start, .mission-btn-collect { 
             background-color: var(--primary-color); 
             color: white; 
@@ -108,7 +112,7 @@
             background-color: var(--primary-color); 
             color: white; 
             border: none; 
-            padding: 8px 16px; 
+            padding: 8px 20px; 
             width: auto !important;
             min-width: 80px;
             border-radius: 20px; 
@@ -141,6 +145,7 @@
         .buy-btn.en-btn { background-color: var(--en-color); }
         .buy-btn.en-btn:hover { background-color: #2980b9; }
 
+        /* CAIXA QUADRADA DE QUANTIDADE */
         .qtd-container-square { display: flex; justify-content: center; margin: 10px 0 8px 0; width: 100%; }
         .qtd-input-square { width: 45px; height: 45px; text-align: center; font-size: 1.2rem; font-weight: bold; border: 2px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-color); padding: 0; -moz-appearance: textfield; }
         .qtd-input-square::-webkit-outer-spin-button, .qtd-input-square::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
@@ -148,6 +153,7 @@
         .price-tag { font-weight: bold; font-size: 1.05rem; margin-bottom: 5px; color: var(--primary-color); }
         .price-tag.en-price { color: var(--en-color); }
 
+        /* TAG DE QUANTIDADE (INVENTÁRIO) */
         .qtd-badge { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.3); }
         .inventory-controls { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 8px; background: rgba(0,0,0,0.03); padding: 5px; border-radius: 20px; }
         .btn-minus { background: var(--danger-color); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
@@ -167,6 +173,7 @@
         .elementos-list { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
         .element-icon { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color); padding: 2px; background: #fff; }
 
+        /* STAT TAGS */
         .stats-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; margin: 5px 0; }
         .stat-tag { padding: 3px 8px; border-radius: 10px; color: white; font-weight: bold; font-size: 0.7rem; }
         .tag-dano { background-color: var(--stat-dano); }
@@ -175,6 +182,7 @@
         .tag-buff { background-color: var(--stat-buff); }
         .tag-attr { background-color: #34495e; }
 
+        /* BATALHA */
         .battle-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
         .battle-card { background: #1a1a1a; color: white; border-radius: 15px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); border: 1px solid #333; }
         .battle-header-info { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; }
@@ -195,6 +203,7 @@
         .battle-mini-btn { background: #333; border: 1px solid #444; color: #ccc; width: 25px; height: 25px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; }
         .battle-mini-btn:hover { background: #555; color: white; }
 
+        /* FEED E OUTROS */
         #feed { max-width: 600px; margin: 0 auto; width: 100%; }
         .create-post { background: var(--card-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border-color); }
         .create-post textarea { width: 100%; padding: 10px; border: none; outline: none; background: transparent; color: var(--text-color); resize: none; font-size: 1rem; }
@@ -225,12 +234,14 @@
         .action-btn.liked { color: var(--danger-color); }
         .edit-textarea { width: 100%; border: 1px solid var(--primary-color); border-radius: 4px; padding: 10px; margin: 10px 0; }
 
+        /* RANKINGS */
         .rankings-wrapper { display: flex; gap: 20px; flex-wrap: wrap; padding-bottom: 20px; }
         .ranking-col { flex: 1 1 300px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; }
         .ranking-col h3 { color: var(--primary-color); text-align: center; margin-bottom: 15px; border-bottom: 2px solid var(--primary-color); font-size: 1.1rem; }
         .ranking-table { width: 100%; border-collapse: collapse; font-size: 14px; }
         .ranking-table td { padding: 8px; border-bottom: 1px solid var(--border-color); }
 
+        /* MODAIS */
         .modal-overlay-comment { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
         .close-modal { position: absolute; top: 10px; right: 15px; font-size: 2rem; color: #333; cursor: pointer; z-index: 9999; text-shadow: 0 0 5px white; transition: 0.2s; }
         .close-modal:hover { color: var(--danger-color); transform: scale(1.1); }
@@ -239,6 +250,7 @@
         .jutsu-modal-img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); }
         .jutsu-modal-rank { display: inline-block; background: var(--primary-color); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-bottom: 10px; }
         .jutsu-modal-price { color: var(--green-color); font-weight: bold; font-size: 1.2rem; border-top: 1px solid var(--border-color); padding-top: 15px; }
+        
         .jutsu-stats-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
         .jutsu-stat-tag { padding: 4px 12px; border-radius: 15px; color: white; font-weight: bold; font-size: 0.8rem; margin: 2px; }
 
@@ -265,16 +277,56 @@
         .edit-input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 5px; }
         .edit-avatar-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color); margin: 10px auto; display: block; }
 
-        .historia-container { width: 100%; max-width: 800px; margin: 0 auto; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; position: relative; }
+        /* HISTORIA - CORREÇÃO */
+        .historia-container { 
+            width: 100%; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: var(--card-bg); 
+            border: 1px solid var(--border-color); 
+            border-radius: 10px; 
+            overflow: hidden; 
+            position: relative; 
+        }
         .historia-img-container { width: 100%; height: 300px; background-color: #000; position: relative; }
         .historia-img-container img { width: 100%; height: 100%; object-fit: cover; }
         .historia-divider { height: 4px; background-color: #dbdbdb; border: none; margin: 0; }
         .historia-text-content { padding: 30px; line-height: 1.8; font-size: 1.1rem; color: var(--text-color); white-space: pre-wrap; }
 
-        .frase-input-area { background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px; display: flex; gap: 10px; align-items: center; width: 100%; }
-        .frase-input-area input { flex-grow: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; outline: none; min-width: 0; }
+        /* FRASES - CORREÇÃO */
+        .frase-input-area { 
+            background: var(--card-bg); 
+            padding: 15px; 
+            border-radius: 8px; 
+            border: 1px solid var(--border-color); 
+            margin-bottom: 20px; 
+            display: flex; 
+            gap: 10px; 
+            align-items: center; 
+            width: 100%;
+        }
+        .frase-input-area input { 
+            flex-grow: 1; 
+            padding: 10px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 5px; 
+            outline: none; 
+            min-width: 0; 
+        }
         .frases-list { display: flex; flex-direction: column; gap: 10px; }
-        .frase-item { background: var(--card-bg); padding: 20px; border-bottom: 1px solid #ccc; cursor: pointer; transition: background 0.2s; position: relative; border-radius: 5px; display: flex; justify-content: space-between; align-items: flex-start; word-break: break-word; }
+        .frase-item { 
+            background: var(--card-bg); 
+            padding: 20px; 
+            border-bottom: 1px solid #ccc; 
+            cursor: pointer; 
+            transition: background 0.2s; 
+            position: relative; 
+            border-radius: 5px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-start;
+            word-break: break-word; 
+        }
         .frase-item:hover { background-color: rgba(0,0,0,0.02); }
         .frase-content { font-size: 1.1rem; font-style: italic; color: var(--text-color); flex: 1; padding-right: 30px; }
         .frase-author { font-size: 0.85rem; color: var(--primary-color); font-weight: bold; margin-top: 5px; }
@@ -286,6 +338,7 @@
         .options-item { padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-color); }
         .options-item.danger { color: var(--danger-color); }
 
+        /* BARRA DE XP */
         .level-container { background: var(--card-bg); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 20px; }
         .level-info { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; color: var(--text-color); }
         .xp-bar-bg { width: 100%; height: 20px; background: #eee; border-radius: 10px; overflow: hidden; position: relative; }
@@ -401,9 +454,6 @@
                     <div class="bucket-grid" id="conquistas-grid"><p>Carregando...</p></div>
                 </div>
 
-                <div id="jutsus" class="tab-content"><h3>Meus Jutsus</h3><div class="bucket-grid" id="meus-jutsus-grid"><p>Carregando...</p></div><hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;"><h3>Loja de Jutsus</h3><div class="bucket-grid" id="loja-jutsus-grid"><p>Carregando...</p></div></div>
-                <div id="ferramentas" class="tab-content"><h3>Loja de Ferramentas</h3><div class="bucket-grid" id="loja-ferramentas-grid"><p>Carregando...</p></div></div>
-                
                 <div id="jutsus" class="tab-content"><h3>Meus Jutsus</h3><div class="bucket-grid" id="meus-jutsus-grid"><p>Carregando...</p></div><hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;"><h3>Loja de Jutsus</h3><div class="bucket-grid" id="loja-jutsus-grid"><p>Carregando...</p></div></div>
                 <div id="ferramentas" class="tab-content"><h3>Loja de Ferramentas</h3><div class="bucket-grid" id="loja-ferramentas-grid"><p>Carregando...</p></div></div>
                 
@@ -607,10 +657,41 @@
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, addDoc, serverTimestamp, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // CONFIGURAÇÃO DO FIREBASE (INSIRA SUAS CHAVES AQUI SE NECESSÁRIO)
         const firebaseConfig = { apiKey: "AIzaSyC3HOor32_p5Z-iADm0VgZ279rt1kj8ICg", authDomain: "rpg-naruto-5150a.firebaseapp.com", projectId: "rpg-naruto-5150a", storageBucket: "rpg-naruto-5150a.firebasestorage.app", messagingSenderId: "1007094335306", appId: "1:1007094335306:web:ac96fa96f9494f90fd63b3" };
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+
+        // --- SISTEMA DE LOGIN (PRIORIDADE MÁXIMA) ---
+        console.log("Script carregado.");
+        
+        const btnLogin = document.getElementById('btnLogin');
+        if (btnLogin) {
+            btnLogin.addEventListener('click', () => {
+                const e = document.getElementById('emailInput').value;
+                const s = document.getElementById('passwordInput').value;
+                
+                if(!e || !s) return alert("Preencha e-mail e senha!");
+                
+                btnLogin.innerText = "Carregando...";
+                signInWithEmailAndPassword(auth, e, s)
+                    .then(() => {
+                        console.log("Login sucesso!");
+                    })
+                    .catch((err) => {
+                        console.error("Erro login:", err);
+                        btnLogin.innerText = "Entrar";
+                        alert("Erro: " + err.message);
+                    });
+            });
+        } else {
+            console.error("Botão de login não encontrado!");
+        }
+
+        const passInput = document.getElementById('passwordInput');
+        if (passInput) passInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('btnLogin').click(); });
+
 
         // CONFIGURAÇÃO DA PROMOÇÃO (TRUE = LIGADO, FALSE = DESLIGADO)
         const EM_PROMOCAO = true; 
@@ -666,16 +747,11 @@
         const KEKKEI_TOUTA_ICONS = {
             "estilo_poeira": "data:image/jpeg;base64,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ZkE3PxAKFk1TH0x2srxsifqltPco5pjiEkNMNmcpkeIy4cQ2xJy8x3cVlxDSimikdG5znFu45G3APNe/FRzSjHYamFjI892yB5zNtuykc/dSqvLlEzHT2yzHjMRPbJq60Klxes2THbOKLK+aXddjCTYNHK42NuTcV9U4Fg0FFTR0tLGI44xYAcSeVzjyuPKVS/qZ/wA7iXyKX/mVXuui54iIgIiICIiAiIgIiIChWtTQ2bF6OGnhljiMU4mJlzWIyObYZQd/slNUQfPfUCru3KX6pPQofp9q/qcHMJnfFKyfMGviJ3Oba7SHWPAgr60VL+qW9zYf32o8liCA6CVr3wPY92YROa1t+IaQd1+bduUra9VtozjkdK2QPa92ctIyAbrA8bkc6kNJphTve1hEjMxtmeG2HxkHcFguqy5TMQ31W48YiZ7S1r1la9aLXrIHrMvboevdotQSL3aINraLwvWttF4ZEGcvWNz1hL1+HPQftz1wdL658VI4xuylzmx3HEA3vbmO7isWJaVQQymOz3lu4mMAgHmuTxXA0i0iiqYNmxkgOdrrvDbWAPMe6r66suUTMdKbLMeMxE9vxoNodUYvUup6d0bNnGZXvlJs1twBuG8kkhTzqBV3blL9UnoT1NnXCs+at841fQi6Lnq51T6vZ8HfVOmmhlFQ2EDZB3sSwvvfMB2QVjIiAiIgIiICIiAiIgIiICIiAoRrP0DdjMdMxtQ2n/B3yPu6IvzZg0chFuCm6IKI/wAvsn7SZ9lPTUL1hatKrCAyUvFTA+zTNGwt2cnYvbc27hvvX1WsFdRxzxPhmY2SORpY5jxcOaeQhB8h4NpTJBHs3s2obbLd+UtHNexuObmXRGnP7v8Azv7Va0+oSgL3FlVVMaXEhtmHKCdwuRcrH1AaLt2q8GP0KqacJncwti7OI1Equ9fX7t/O/tXvr7/dv539qtDqA0XbtV4MfoTqA0XbtV4MfoXn+PX4e+vZ5Vf6+/3b+d/avPX1+7fzv7VaPUBou3arwY/QnUBou3arwY/Qn+PX4PXs8qtOnP7v/O/tWpiOmEkkZZHHsi7cXiTMQ3ly7hY91W71AaLt2q8GP0INQNF25VeDH6F7FFcfs8m/Of3VPoDoJU4vO5kX4qKP85O9pLWG25oG7M481+G9WD/l9k/aTPsp6aujAsGgoqaOlpYxHHGLADiTyuceVx5St9WqldastWj8HqZpnVTagTRCLK2EsynMHXvmN+CsVEQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREH/2Q=="
         };
-        
         const IMG_PADRAO = "https://img.freepik.com/vetores-gratis/ilustracao-de-pergaminho-ninja-desenhada-a-mao_23-2151159846.jpg";
 
         function calcularTempo(timestamp) { try { if (!timestamp) return "Desconhecido"; let date = (typeof timestamp.toDate === 'function') ? timestamp.toDate() : new Date(timestamp); if (isNaN(date.getTime())) return "-"; return date.toLocaleDateString('pt-BR'); } catch (e) { return "-"; } }
 
         window.toggleMobileMenu = () => { document.querySelector('.sidebar').classList.toggle('mobile-active'); document.querySelector('.sidebar-overlay').classList.toggle('active'); };
-        const btnLogin = document.getElementById('btnLogin');
-        if(btnLogin) btnLogin.addEventListener('click', () => { const e = document.getElementById('emailInput').value, s = document.getElementById('passwordInput').value; if(!e || !s) return alert("Preencha tudo!"); btnLogin.innerText = "Carregando..."; signInWithEmailAndPassword(auth, e, s).catch((err) => { btnLogin.innerText = "Entrar"; alert(err.message); }); });
-        const passInput = document.getElementById('passwordInput');
-        if (passInput) passInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('btnLogin').click(); });
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -696,6 +772,10 @@
                         verificarLevelUpAutomatico(currentUserData);
                         atualizarInterface(currentUserData);
                         renderizarBatalha(); 
+                        
+                        // Atualiza as abas de missão/conquista em tempo real para corrigir status
+                        if(document.getElementById('missoes').classList.contains('active')) carregarMissoes();
+                        if(document.getElementById('conquistas').classList.contains('active')) carregarConquistas();
                     }
                 });
                 
@@ -873,7 +953,6 @@
                 snapshot.forEach(docSnap => {
                     const u = docSnap.data(); const uid = docSnap.id;
                     
-                    // EDITAR MÁXIMO AO CLICAR NO VALOR
                     const criarLinkMax = (val, max, field) => {
                         return `<span class="battle-val">${val} / <span style="cursor:pointer; text-decoration:underline;" onclick="window.editarMaximo('${uid}', '${field}')" title="Clique para editar máximo">${max}</span></span>`;
                     };
@@ -898,7 +977,6 @@
             });
         }
 
-        // Função customizada para Batalha com edição de máximo
         function criarLinhaStatusCustom(uid, f, l, a, v, m, c) { 
             const p=Math.min((v/m)*100,100); 
             return `
@@ -922,7 +1000,6 @@
 
         window.alterarStatus = async (targetUid, stat, valor) => { await updateDoc(doc(db, "users", targetUid), { [stat]: increment(valor) }); };
 
-        // --- HELPER BÔNUS ---
         function gerarTagsBonus(d) {
             let html = '';
             if(d.bonus_hp) html += `<span class="stat-tag tag-buff">+${d.bonus_hp} HP</span>`;
@@ -938,7 +1015,6 @@
             return html;
         }
 
-        // --- CORE FUNCTIONS ---
         function criarCard(containerId, dados, id, tipo, clickFn, qtd = null) {
             const c = document.getElementById(containerId); if(!c) return;
             const div = document.createElement('div'); div.className = 'card'; div.onclick = () => clickFn(id, dados);
@@ -954,7 +1030,6 @@
             const div = document.createElement('div'); div.className = 'card'; div.onclick = (e) => { if(!e.target.classList.contains('buy-btn') && !e.target.classList.contains('qtd-input-square')) clickFn(id, dados); };
             let sub = "", buyControlHTML = "", priceHTML = "";
 
-            // Lógica de Preço Promocional (Firebase Field)
             const currency = dados.preco_en ? 'EN' : 'Ryos';
             let finalPrice = currency === 'EN' ? dados.preco_en : dados.preco;
             
@@ -1024,8 +1099,6 @@
             const c = document.getElementById('inventario-grid'); if(!c) return; c.innerHTML = '';
             const inv = currentUserData.inventario || {}; const keys = Object.keys(inv).filter(k => inv[k] > 0);
             if(keys.length === 0) { c.innerHTML = '<p>Mochila vazia.</p>'; return; }
-            
-            // PROTEÇÃO: Carregar do cache ou buscar
             for (const id of keys) {
                 let info = globalItensMap[id];
                 if (!info) {
@@ -1144,7 +1217,7 @@
         }
 
         window.verDetalhesConquista = (id, d, st) => {
-            const currentSt = currentUserData.statusConquistas[id]; // STATUS REAL
+            const currentSt = currentUserData.statusConquistas[id];
 
             const r = d.recompensa || 0;
             const x = d.xp || 0;
@@ -1162,7 +1235,6 @@
             
             const a = document.getElementById('conquista-actions-modal'); a.innerHTML = '';
             
-            // Lógica baseada no status REAL
             if(!currentSt) a.innerHTML = `<button class="mission-btn-start" onclick="solicitarConquista('${id}', this)">Reivindicar</button>`;
             else if(currentSt === 'solicitado') a.innerHTML = `<button class="mission-btn-wait">Aguardando</button>`;
             else if(currentSt === 'aprovado') a.innerHTML = `<button class="mission-btn-collect" onclick="coletarConquista('${id}', ${r}, ${x}, ${en}, this)">Coletar</button>`;
@@ -1304,6 +1376,7 @@
             if(s.exists()) { 
                 const u = s.data(); 
                 
+                // Variáveis para contagem
                 let totalJutsus = (u.meusJutsus || []).length;
                 let totalTools = 0;
                 let totalItems = 0;
