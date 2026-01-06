@@ -92,7 +92,7 @@
         .card h4 { margin-bottom: 5px; font-size: 1rem; }
         .card small { display: block; margin-bottom: 8px; color: #777; }
         
-        /* BOTÕES */
+        /* BOTÕES PRINCIPAIS */
         .buy-btn, .mission-btn-start, .mission-btn-collect { 
             background-color: var(--primary-color); 
             color: white; 
@@ -108,6 +108,7 @@
             text-align: center;
         }
 
+        /* BOTÕES PEQUENOS/AUTO */
         .btn-post, .btn-edit-historia {
             background-color: var(--primary-color); 
             color: white; 
@@ -126,6 +127,7 @@
             white-space: nowrap;
         }
         
+        /* Posicionamento botão história */
         .btn-edit-historia {
             position: absolute; 
             bottom: 15px; 
@@ -281,7 +283,7 @@
         .historia-container { 
             width: 100%; 
             max-width: 800px; 
-            margin: 0 auto; /* CENTRALIZADO */
+            margin: 0 auto; 
             background: var(--card-bg); 
             border: 1px solid var(--border-color); 
             border-radius: 10px; 
@@ -306,12 +308,12 @@
             width: 100%;
         }
         .frase-input-area input { 
-            flex-grow: 1; /* OCUPA ESPAÇO */
+            flex-grow: 1; 
             padding: 10px; 
             border: 1px solid var(--border-color); 
             border-radius: 5px; 
             outline: none; 
-            min-width: 0; /* Impede overflow */
+            min-width: 0; 
         }
         .frases-list { display: flex; flex-direction: column; gap: 10px; }
         .frase-item { 
@@ -325,7 +327,7 @@
             display: flex; 
             justify-content: space-between; 
             align-items: flex-start;
-            word-break: break-word; /* QUEBRA LINHA */
+            word-break: break-word; 
         }
         .frase-item:hover { background-color: rgba(0,0,0,0.02); }
         .frase-content { font-size: 1.1rem; font-style: italic; color: var(--text-color); flex: 1; padding-right: 30px; }
@@ -515,6 +517,7 @@
                         <div class="stats-divider">Geral</div>
                         <div class="stat-card"><div class="stat-value" id="dash-nivel">1</div><div class="stat-label">Nível</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-cargo">Genin</div><div class="stat-label">Cargo</div></div>
+                        <div class="stat-card"><div class="stat-value" id="dash-patente">Genin</div><div class="stat-label">Patente</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-tipo">Normal</div><div class="stat-label">Tipo</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-ryos">0</div><div class="stat-label">Ryos</div></div>
                         <div class="stats-divider">Batalha</div>
@@ -933,7 +936,7 @@
             renderizarIcones(dados.kekkei_touta || [], 'dash-touta', KEKKEI_TOUTA_ICONS, 'Kekkei Touta');
 
             const set = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
-            set('dash-nivel', nivel); set('dash-cargo', dados.cargo||"Genin"); set('dash-tipo', dados.tipo||"Normal"); set('dash-ryos', formatarNum(dados.ryos));
+            set('dash-nivel', nivel); set('dash-cargo', dados.cargo||"Genin"); set('dash-patente', dados.patente||"Genin"); set('dash-tipo', dados.tipo||"Normal"); set('dash-ryos', formatarNum(dados.ryos));
             set('dash-jutsus', (dados.meusJutsus || []).length); 
             
             let totalItems = 0, totalTools = 0;
@@ -1002,7 +1005,6 @@
 
         window.alterarStatus = async (targetUid, stat, valor) => { await updateDoc(doc(db, "users", targetUid), { [stat]: increment(valor) }); };
 
-        // --- HELPER BÔNUS ---
         function gerarTagsBonus(d) {
             let html = '';
             if(d.bonus_hp) html += `<span class="stat-tag tag-buff">+${d.bonus_hp} HP</span>`;
@@ -1103,8 +1105,6 @@
             const c = document.getElementById('inventario-grid'); if(!c) return; c.innerHTML = '';
             const inv = currentUserData.inventario || {}; const keys = Object.keys(inv).filter(k => inv[k] > 0);
             if(keys.length === 0) { c.innerHTML = '<p>Mochila vazia.</p>'; return; }
-            
-            // PROTEÇÃO: Carregar do cache ou buscar
             for (const id of keys) {
                 let info = globalItensMap[id];
                 if (!info) {
@@ -1431,6 +1431,7 @@
                 <div class="stats-divider">Geral</div>
                 <div class="stat-card"><div class="stat-value">${u.nivel||1}</div><div class="stat-label">Nível</div></div>
                 <div class="stat-card"><div class="stat-value">${u.cargo||'Genin'}</div><div class="stat-label">Cargo</div></div>
+                <div class="stat-card"><div class="stat-value">${u.patente||'Genin'}</div><div class="stat-label">Patente</div></div>
                 <div class="stat-card"><div class="stat-value">${u.tipo||'Normal'}</div><div class="stat-label">Tipo</div></div>
                 
                 <div class="stats-divider">Batalha</div>
