@@ -279,56 +279,16 @@
         .edit-input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 5px; }
         .edit-avatar-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color); margin: 10px auto; display: block; }
 
-        /* HISTORIA - CORREÇÃO */
-        .historia-container { 
-            width: 100%; 
-            max-width: 800px; 
-            margin: 0 auto; 
-            background: var(--card-bg); 
-            border: 1px solid var(--border-color); 
-            border-radius: 10px; 
-            overflow: hidden; 
-            position: relative; 
-        }
+        .historia-container { width: 100%; max-width: 800px; margin: 0 auto; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; position: relative; }
         .historia-img-container { width: 100%; height: 300px; background-color: #000; position: relative; }
         .historia-img-container img { width: 100%; height: 100%; object-fit: cover; }
         .historia-divider { height: 4px; background-color: #dbdbdb; border: none; margin: 0; }
         .historia-text-content { padding: 30px; line-height: 1.8; font-size: 1.1rem; color: var(--text-color); white-space: pre-wrap; }
 
-        /* FRASES - CORREÇÃO */
-        .frase-input-area { 
-            background: var(--card-bg); 
-            padding: 15px; 
-            border-radius: 8px; 
-            border: 1px solid var(--border-color); 
-            margin-bottom: 20px; 
-            display: flex; 
-            gap: 10px; 
-            align-items: center; 
-            width: 100%;
-        }
-        .frase-input-area input { 
-            flex-grow: 1; 
-            padding: 10px; 
-            border: 1px solid var(--border-color); 
-            border-radius: 5px; 
-            outline: none; 
-            min-width: 0; 
-        }
+        .frase-input-area { background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px; display: flex; gap: 10px; align-items: center; width: 100%; }
+        .frase-input-area input { flex-grow: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; outline: none; min-width: 0; }
         .frases-list { display: flex; flex-direction: column; gap: 10px; }
-        .frase-item { 
-            background: var(--card-bg); 
-            padding: 20px; 
-            border-bottom: 1px solid #ccc; 
-            cursor: pointer; 
-            transition: background 0.2s; 
-            position: relative; 
-            border-radius: 5px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: flex-start;
-            word-break: break-word; 
-        }
+        .frase-item { background: var(--card-bg); padding: 20px; border-bottom: 1px solid #ccc; cursor: pointer; transition: background 0.2s; position: relative; border-radius: 5px; display: flex; justify-content: space-between; align-items: flex-start; word-break: break-word; }
         .frase-item:hover { background-color: rgba(0,0,0,0.02); }
         .frase-content { font-size: 1.1rem; font-style: italic; color: var(--text-color); flex: 1; padding-right: 30px; }
         .frase-author { font-size: 0.85rem; color: var(--primary-color); font-weight: bold; margin-top: 5px; }
@@ -340,7 +300,6 @@
         .options-item { padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-color); }
         .options-item.danger { color: var(--danger-color); }
 
-        /* BARRA DE XP */
         .level-container { background: var(--card-bg); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 20px; }
         .level-info { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; color: var(--text-color); }
         .xp-bar-bg { width: 100%; height: 20px; background: #eee; border-radius: 10px; overflow: hidden; position: relative; }
@@ -518,6 +477,7 @@
                         <div class="stat-card"><div class="stat-value" id="dash-nivel">1</div><div class="stat-label">Nível</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-cargo">Genin</div><div class="stat-label">Cargo</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-patente">Genin</div><div class="stat-label">Patente</div></div>
+                        <div class="stat-card"><div class="stat-value" id="dash-rank">E</div><div class="stat-label">Rank</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-tipo">Normal</div><div class="stat-label">Tipo</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-ryos">0</div><div class="stat-label">Ryos</div></div>
                         <div class="stats-divider">Batalha</div>
@@ -660,41 +620,10 @@
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, addDoc, serverTimestamp, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // CONFIGURAÇÃO DO FIREBASE (INSIRA SUAS CHAVES AQUI SE NECESSÁRIO)
         const firebaseConfig = { apiKey: "AIzaSyC3HOor32_p5Z-iADm0VgZ279rt1kj8ICg", authDomain: "rpg-naruto-5150a.firebaseapp.com", projectId: "rpg-naruto-5150a", storageBucket: "rpg-naruto-5150a.firebasestorage.app", messagingSenderId: "1007094335306", appId: "1:1007094335306:web:ac96fa96f9494f90fd63b3" };
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-
-        // --- SISTEMA DE LOGIN (PRIORIDADE MÁXIMA) ---
-        console.log("Script carregado.");
-        
-        const btnLogin = document.getElementById('btnLogin');
-        if (btnLogin) {
-            btnLogin.addEventListener('click', () => {
-                const e = document.getElementById('emailInput').value;
-                const s = document.getElementById('passwordInput').value;
-                
-                if(!e || !s) return alert("Preencha e-mail e senha!");
-                
-                btnLogin.innerText = "Carregando...";
-                signInWithEmailAndPassword(auth, e, s)
-                    .then(() => {
-                        console.log("Login sucesso!");
-                    })
-                    .catch((err) => {
-                        console.error("Erro login:", err);
-                        btnLogin.innerText = "Entrar";
-                        alert("Erro: " + err.message);
-                    });
-            });
-        } else {
-            console.error("Botão de login não encontrado!");
-        }
-
-        const passInput = document.getElementById('passwordInput');
-        if (passInput) passInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('btnLogin').click(); });
-
 
         // CONFIGURAÇÃO DA PROMOÇÃO (TRUE = LIGADO, FALSE = DESLIGADO)
         const EM_PROMOCAO = true; 
@@ -757,6 +686,10 @@
         function calcularTempo(timestamp) { try { if (!timestamp) return "Desconhecido"; let date = (typeof timestamp.toDate === 'function') ? timestamp.toDate() : new Date(timestamp); if (isNaN(date.getTime())) return "-"; return date.toLocaleDateString('pt-BR'); } catch (e) { return "-"; } }
 
         window.toggleMobileMenu = () => { document.querySelector('.sidebar').classList.toggle('mobile-active'); document.querySelector('.sidebar-overlay').classList.toggle('active'); };
+        const btnLogin = document.getElementById('btnLogin');
+        if(btnLogin) btnLogin.addEventListener('click', () => { const e = document.getElementById('emailInput').value, s = document.getElementById('passwordInput').value; if(!e || !s) return alert("Preencha tudo!"); btnLogin.innerText = "Carregando..."; signInWithEmailAndPassword(auth, e, s).catch((err) => { btnLogin.innerText = "Entrar"; alert(err.message); }); });
+        const passInput = document.getElementById('passwordInput');
+        if (passInput) passInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('btnLogin').click(); });
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -777,10 +710,6 @@
                         verificarLevelUpAutomatico(currentUserData);
                         atualizarInterface(currentUserData);
                         renderizarBatalha(); 
-                        
-                        // Atualiza as abas de missão/conquista em tempo real para corrigir status
-                        if(document.getElementById('missoes').classList.contains('active')) carregarMissoes();
-                        if(document.getElementById('conquistas').classList.contains('active')) carregarConquistas();
                     }
                 });
                 
@@ -936,7 +865,7 @@
             renderizarIcones(dados.kekkei_touta || [], 'dash-touta', KEKKEI_TOUTA_ICONS, 'Kekkei Touta');
 
             const set = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
-            set('dash-nivel', nivel); set('dash-cargo', dados.cargo||"Genin"); set('dash-patente', dados.patente||"Genin"); set('dash-tipo', dados.tipo||"Normal"); set('dash-ryos', formatarNum(dados.ryos));
+            set('dash-nivel', nivel); set('dash-cargo', dados.cargo||"Genin"); set('dash-patente', dados.patente||"Genin"); set('dash-rank', dados.rank||"E"); set('dash-tipo', dados.tipo||"Normal"); set('dash-ryos', formatarNum(dados.ryos));
             set('dash-jutsus', (dados.meusJutsus || []).length); 
             
             let totalItems = 0, totalTools = 0;
@@ -1020,7 +949,6 @@
             return html;
         }
 
-        // --- CORE FUNCTIONS ---
         function criarCard(containerId, dados, id, tipo, clickFn, qtd = null) {
             const c = document.getElementById(containerId); if(!c) return;
             const div = document.createElement('div'); div.className = 'card'; div.onclick = () => clickFn(id, dados);
@@ -1432,6 +1360,7 @@
                 <div class="stat-card"><div class="stat-value">${u.nivel||1}</div><div class="stat-label">Nível</div></div>
                 <div class="stat-card"><div class="stat-value">${u.cargo||'Genin'}</div><div class="stat-label">Cargo</div></div>
                 <div class="stat-card"><div class="stat-value">${u.patente||'Genin'}</div><div class="stat-label">Patente</div></div>
+                <div class="stat-card"><div class="stat-value">${u.rank||'E'}</div><div class="stat-label">Rank</div></div>
                 <div class="stat-card"><div class="stat-value">${u.tipo||'Normal'}</div><div class="stat-label">Tipo</div></div>
                 
                 <div class="stats-divider">Batalha</div>
