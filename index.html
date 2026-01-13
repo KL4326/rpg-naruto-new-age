@@ -661,10 +661,41 @@
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, addDoc, serverTimestamp, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // CONFIGURAÇÃO DO FIREBASE (INSIRA SUAS CHAVES AQUI SE NECESSÁRIO)
         const firebaseConfig = { apiKey: "AIzaSyC3HOor32_p5Z-iADm0VgZ279rt1kj8ICg", authDomain: "rpg-naruto-5150a.firebaseapp.com", projectId: "rpg-naruto-5150a", storageBucket: "rpg-naruto-5150a.firebasestorage.app", messagingSenderId: "1007094335306", appId: "1:1007094335306:web:ac96fa96f9494f90fd63b3" };
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+
+        // --- SISTEMA DE LOGIN (PRIORIDADE MÁXIMA) ---
+        console.log("Script carregado.");
+        
+        const btnLogin = document.getElementById('btnLogin');
+        if (btnLogin) {
+            btnLogin.addEventListener('click', () => {
+                const e = document.getElementById('emailInput').value;
+                const s = document.getElementById('passwordInput').value;
+                
+                if(!e || !s) return alert("Preencha e-mail e senha!");
+                
+                btnLogin.innerText = "Carregando...";
+                signInWithEmailAndPassword(auth, e, s)
+                    .then(() => {
+                        console.log("Login sucesso!");
+                    })
+                    .catch((err) => {
+                        console.error("Erro login:", err);
+                        btnLogin.innerText = "Entrar";
+                        alert("Erro: " + err.message);
+                    });
+            });
+        } else {
+            console.error("Botão de login não encontrado!");
+        }
+
+        const passInput = document.getElementById('passwordInput');
+        if (passInput) passInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('btnLogin').click(); });
+
 
         // CONFIGURAÇÃO DA PROMOÇÃO (TRUE = LIGADO, FALSE = DESLIGADO)
         const EM_PROMOCAO = true; 
@@ -727,10 +758,6 @@
         function calcularTempo(timestamp) { try { if (!timestamp) return "Desconhecido"; let date = (typeof timestamp.toDate === 'function') ? timestamp.toDate() : new Date(timestamp); if (isNaN(date.getTime())) return "-"; return date.toLocaleDateString('pt-BR'); } catch (e) { return "-"; } }
 
         window.toggleMobileMenu = () => { document.querySelector('.sidebar').classList.toggle('mobile-active'); document.querySelector('.sidebar-overlay').classList.toggle('active'); };
-        const btnLogin = document.getElementById('btnLogin');
-        if(btnLogin) btnLogin.addEventListener('click', () => { const e = document.getElementById('emailInput').value, s = document.getElementById('passwordInput').value; if(!e || !s) return alert("Preencha tudo!"); btnLogin.innerText = "Carregando..."; signInWithEmailAndPassword(auth, e, s).catch((err) => { btnLogin.innerText = "Entrar"; alert(err.message); }); });
-        const passInput = document.getElementById('passwordInput');
-        if (passInput) passInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('btnLogin').click(); });
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -751,6 +778,10 @@
                         verificarLevelUpAutomatico(currentUserData);
                         atualizarInterface(currentUserData);
                         renderizarBatalha(); 
+                        
+                        // Atualiza as abas de missão/conquista em tempo real para corrigir status
+                        if(document.getElementById('missoes').classList.contains('active')) carregarMissoes();
+                        if(document.getElementById('conquistas').classList.contains('active')) carregarConquistas();
                     }
                 });
                 
@@ -975,7 +1006,6 @@
 
         window.alterarStatus = async (targetUid, stat, valor) => { await updateDoc(doc(db, "users", targetUid), { [stat]: increment(valor) }); };
 
-        // --- HELPER BÔNUS ---
         function gerarTagsBonus(d) {
             let html = '';
             if(d.bonus_hp) html += `<span class="stat-tag tag-buff">+${d.bonus_hp} HP</span>`;
