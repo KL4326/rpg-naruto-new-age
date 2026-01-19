@@ -266,13 +266,37 @@
         }
         .close-modal:hover { color: var(--danger-color); transform: scale(1.1); background: #fff; }
 
-        .modal-content-card { background: var(--card-bg); padding: 30px; border-radius: 10px; width: 90%; max-width: 350px; text-align: center; position: relative; border: 1px solid var(--border-color); }
+        .modal-content-card { 
+            background: var(--card-bg); 
+            padding: 30px; 
+            border-radius: 10px; 
+            width: 90%; 
+            max-width: 350px; 
+            text-align: center; 
+            position: relative; 
+            border: 1px solid var(--border-color);
+            /* Modificações para mobile */
+            max-height: 90vh; 
+            overflow-y: auto; 
+            overflow-x: hidden;
+        }
         .jutsu-modal-img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); }
         .jutsu-modal-rank { display: inline-block; background: var(--primary-color); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-bottom: 10px; }
         .jutsu-modal-price { color: var(--green-color); font-weight: bold; font-size: 1.2rem; border-top: 1px solid var(--border-color); padding-top: 15px; }
         
         .jutsu-stats-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
         .jutsu-stat-tag { padding: 4px 12px; border-radius: 15px; color: white; font-weight: bold; font-size: 0.8rem; margin: 2px; }
+
+        /* Estilo da descrição rolável */
+        .desc-scroll-container {
+            max-height: 150px; 
+            overflow-y: auto; 
+            text-align: left;
+            margin: 10px 0;
+            padding: 5px;
+            border: 1px solid transparent; 
+            scrollbar-width: thin;
+        }
 
         .modal-content-profile { background: var(--card-bg); width: 90%; max-width: 800px; max-height: 90vh; border-radius: 15px; overflow-y: auto; position: relative; border: 1px solid var(--border-color); }
         .profile-header { background: linear-gradient(to right, #ff5e00, #ff9100); padding: 40px 20px; text-align: center; color: white; }
@@ -589,22 +613,24 @@
 
     <div class="modal-overlay-comment" id="jutsuModal" style="z-index: 2001;">
         <div class="modal-content-card">
-            <span class="close-modal" onclick="fecharJutsuModal()" style="color: #333; top: 10px; right: 15px;">&times;</span>
+            <span class="close-modal" onclick="fecharJutsuModal()">&times;</span>
             <img id="jutsu-img-modal" src="" class="jutsu-modal-img">
             <h2 id="jutsu-name-modal" style="color:var(--primary-color);"></h2>
             <div id="jutsu-rank-modal" class="jutsu-modal-rank"></div>
             <div id="jutsu-stats-row" class="jutsu-stats-row"></div>
-            <p id="jutsu-desc-modal" style="margin-top:10px;"></p>
+            <div class="desc-scroll-container">
+                <p id="jutsu-desc-modal"></p>
+            </div>
             <div id="jutsu-price-modal" class="jutsu-modal-price"></div>
         </div>
     </div>
 
     <div class="modal-overlay-comment" id="conquistaModal" style="z-index: 2001;">
         <div class="modal-content-card" style="border-color: #e6b800; max-width: 500px;">
-            <span class="close-modal" onclick="fecharConquistaModal()" style="color: #333; top: 10px; right: 15px;">&times;</span>
+            <span class="close-modal" onclick="fecharConquistaModal()">&times;</span>
             <img id="conquista-img-modal" src="" class="jutsu-modal-img" style="border-color:#e6b800; height: 150px;">
             <h2 id="conquista-name-modal" style="color: #e6b800;"></h2>
-            <div style="text-align: left; margin-bottom: 20px; max-height: 200px; overflow-y: auto; padding-right: 5px;">
+            <div class="desc-scroll-container">
                 <p id="conquista-desc-modal" style="color: #555; line-height: 1.6;"></p>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e6b800; padding-top: 15px;">
@@ -616,34 +642,38 @@
     
     <div class="modal-overlay-comment" id="toolModal" style="z-index: 2001;">
         <div class="modal-content-card" style="border-color: #555;">
-            <span class="close-modal" onclick="fecharToolModal()" style="color: #333; top: 10px; right: 15px;">&times;</span>
+            <span class="close-modal" onclick="fecharToolModal()">&times;</span>
             <img id="tool-img-modal" src="" class="jutsu-modal-img" style="border-color:#555;">
             <h2 id="tool-name-modal" style="color: #333;"></h2>
             <div id="tool-rank-modal" class="jutsu-modal-rank" style="background-color: #555;"></div>
             <div id="tool-stats-row" class="jutsu-stats-row"></div>
-            <p id="tool-desc-modal" style="margin-top:10px;"></p>
+            <div class="desc-scroll-container">
+                <p id="tool-desc-modal"></p>
+            </div>
             <div id="tool-price-modal" class="jutsu-modal-price" style="border-color:#555; color:#555;"></div>
         </div>
     </div>
 
     <div class="modal-overlay-comment" id="itemModal" style="z-index: 2001;">
         <div class="modal-content-card" style="border-color: #2ecc71;">
-            <span class="close-modal" onclick="fecharItemModal()" style="color: #333; top: 10px; right: 15px;">&times;</span>
+            <span class="close-modal" onclick="fecharItemModal()">&times;</span>
             <img id="item-img-modal" src="" class="jutsu-modal-img" style="border-color:#2ecc71;">
             <h2 id="item-name-modal" style="color: #333;"></h2>
             <div id="item-rank-modal" class="jutsu-modal-rank" style="background-color: #2ecc71;"></div>
             <div id="item-stats-row" class="jutsu-stats-row"></div>
-            <p id="item-desc-modal" style="margin-top:10px;"></p>
+            <div class="desc-scroll-container">
+                <p id="item-desc-modal"></p>
+            </div>
             <div id="item-price-modal" class="jutsu-modal-price" style="border-color:#2ecc71; color:#2ecc71;"></div>
         </div>
     </div>
 
     <div class="modal-overlay-comment" id="missaoModal" style="z-index: 2001;">
         <div class="modal-content-card" style="border-color: #e6b800; max-width: 500px;">
-            <span class="close-modal" onclick="fecharMissaoModal()" style="color: #333; top: 10px; right: 15px;">&times;</span>
+            <span class="close-modal" onclick="fecharMissaoModal()">&times;</span>
             <img id="missao-img-modal" src="" class="jutsu-modal-img" style="border-color:#e6b800; height: 150px;">
             <h2 id="missao-name-modal" style="color: #e6b800;"></h2>
-            <div style="text-align: left; margin-bottom: 20px; max-height: 200px; overflow-y: auto; padding-right: 5px;">
+            <div class="desc-scroll-container">
                 <p id="missao-desc-modal" style="color: #555; line-height: 1.6;"></p>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e6b800; padding-top: 15px;">
@@ -1124,8 +1154,6 @@
             const c = document.getElementById('inventario-grid'); if(!c) return; c.innerHTML = '';
             const inv = currentUserData.inventario || {}; const keys = Object.keys(inv).filter(k => inv[k] > 0);
             if(keys.length === 0) { c.innerHTML = '<p>Mochila vazia.</p>'; return; }
-            
-            // PROTEÇÃO: Carregar do cache ou buscar
             for (const id of keys) {
                 let info = globalItensMap[id];
                 if (!info) {
@@ -1434,6 +1462,7 @@
             if(s.exists()) { 
                 const u = s.data(); 
                 
+                // Variáveis para contagem
                 let totalJutsus = (u.meusJutsus || []).length;
                 let totalTools = 0;
                 let totalItems = 0;
