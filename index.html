@@ -263,6 +263,10 @@
             box-shadow: 0 0 5px rgba(0,0,0,0.3);
             text-shadow: none;
             transition: 0.2s;
+            position: -webkit-sticky; /* Stick no topo */
+            position: sticky;
+            top: 10px;
+            margin-left: auto;
         }
         .close-modal:hover { color: var(--danger-color); transform: scale(1.1); background: #fff; }
 
@@ -279,6 +283,7 @@
             max-height: 90vh; 
             overflow-y: auto; 
             overflow-x: hidden;
+            padding-top: 10px; /* Espaço para o botão X */
         }
         .jutsu-modal-img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); }
         .jutsu-modal-rank { display: inline-block; background: var(--primary-color); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-bottom: 10px; }
@@ -1435,8 +1440,8 @@
             } else if (t === 'tool') {
                 document.getElementById(t+'-rank-modal').innerText=dados.dano||"Ferramenta";
                 let h = "";
-                // LOGICA DE STAMINA PARA FERRAMENTA
-                if(dados.stamina && dados.stamina > 0) {
+                // LOGICA DE STAMINA PARA FERRAMENTA (VERIFICAÇÃO DUPLA)
+                if(dados.stamina && Number(dados.stamina) > 0) {
                      h += `<span class="jutsu-stat-tag tag-stamina">Stamina: ${dados.stamina}</span>`;
                 }
                 h += bonusHtml;
