@@ -245,10 +245,13 @@
 
         /* MODAIS */
         .modal-overlay-comment { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
+        
+        /* BOTÃO X FLUTUANTE EM STICKY */
         .close-modal { 
-            position: fixed; /* MUDANÇA: Fixed para flutuar na tela, não no card */
-            top: 20px; 
-            right: 20px; 
+            position: sticky; 
+            top: 10px; 
+            float: right;
+            margin-bottom: -40px; 
             font-size: 2rem; 
             color: #333; 
             cursor: pointer; 
@@ -260,7 +263,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
             text-shadow: none;
             transition: 0.2s;
         }
@@ -275,11 +278,10 @@
             text-align: center; 
             position: relative; 
             border: 1px solid var(--border-color);
-            /* Modificações para mobile */
             max-height: 90vh; 
             overflow-y: auto; 
             overflow-x: hidden;
-            padding-top: 20px; 
+            padding-top: 20px; /* Espaço para o botão */
         }
         .jutsu-modal-img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); }
         .jutsu-modal-rank { display: inline-block; background: var(--primary-color); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-bottom: 10px; }
@@ -562,6 +564,7 @@
                         <div class="stat-card"><div class="stat-value" id="dash-cargo">Genin</div><div class="stat-label">Cargo</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-patente">Genin</div><div class="stat-label">Patente</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-rank">E</div><div class="stat-label">Rank</div></div>
+                        <div class="stat-card"><div class="stat-value" id="dash-speed-rank">E</div><div class="stat-label">Rank Vel.</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-tipo">Normal</div><div class="stat-label">Tipo</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-ryos">0</div><div class="stat-label">Ryos</div></div>
                         <div class="stats-divider">Batalha</div>
@@ -986,7 +989,7 @@
             renderizarIcones(dados.kekkei_touta || [], 'dash-touta', KEKKEI_TOUTA_ICONS, 'Kekkei Touta');
 
             const set = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
-            set('dash-nivel', nivel); set('dash-cargo', dados.cargo||"Genin"); set('dash-patente', dados.patente||"Genin"); set('dash-rank', dados.rank||"E"); set('dash-tipo', dados.tipo||"Normal"); set('dash-ryos', formatarNum(dados.ryos));
+            set('dash-nivel', nivel); set('dash-cargo', dados.cargo||"Genin"); set('dash-patente', dados.patente||"Genin"); set('dash-rank', dados.rank||"E"); set('dash-speed-rank', dados.speed_rank||"E"); set('dash-tipo', dados.tipo||"Normal"); set('dash-ryos', formatarNum(dados.ryos));
             set('dash-jutsus', (dados.meusJutsus || []).length); 
             
             let totalItems = 0, totalTools = 0;
@@ -1438,11 +1441,14 @@
                 let h = "";
                 
                 // --- DEBUG DE STAMINA ---
-                console.log("ABRINDO TOOL:", dados); // Olhe no console (F12) se 'stamina' aparece aqui
+                console.log("ABRINDO TOOL:", dados); 
                 
-                // Agora aceita stamina > 0 ou string "10", etc.
-                if(dados.stamina && dados.stamina != 0) {
-                     h += `<span class="jutsu-stat-tag tag-stamina">Stamina: ${dados.stamina}</span>`;
+                // Conversão agressiva para garantir leitura (Number e String)
+                let custoStamina = 0;
+                if(dados.stamina) custoStamina = Number(dados.stamina);
+                
+                if(custoStamina > 0) {
+                     h += `<span class="jutsu-stat-tag tag-stamina">Stamina: ${custoStamina}</span>`;
                 }
                 
                 h += bonusHtml;
@@ -1517,6 +1523,7 @@
                 <div class="stat-card"><div class="stat-value">${u.cargo||'Genin'}</div><div class="stat-label">Cargo</div></div>
                 <div class="stat-card"><div class="stat-value">${u.patente||'Genin'}</div><div class="stat-label">Patente</div></div>
                 <div class="stat-card"><div class="stat-value">${u.rank||'E'}</div><div class="stat-label">Rank</div></div>
+                <div class="stat-card"><div class="stat-value">${u.speed_rank||"E"}</div><div class="stat-label">Rank Vel.</div></div>
                 <div class="stat-card"><div class="stat-value">${u.tipo||'Normal'}</div><div class="stat-label">Tipo</div></div>
                 
                 <div class="stats-divider">Batalha</div>
