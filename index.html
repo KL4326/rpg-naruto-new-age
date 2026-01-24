@@ -162,6 +162,18 @@
         .btn-minus:hover { transform: scale(1.1); }
         .maestria-display { display: block; font-size: 0.85rem; color: var(--yellow-color); font-weight: bold; margin-top: 4px; text-shadow: 0 0 1px rgba(0,0,0,0.1); }
 
+        /* FILTRO SELECT */
+        .filter-select { 
+            width: 100%; 
+            padding: 8px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 5px; 
+            font-size: 0.9rem; 
+            background: var(--bg-color); 
+            color: var(--text-color);
+            margin-bottom: 10px;
+        }
+
         .shop-header { margin-bottom: 20px; background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); }
         .shop-location-select { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; font-size: 1rem; margin-bottom: 10px; background: var(--bg-color); color: var(--text-color); }
         .shop-categories { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
@@ -245,8 +257,6 @@
 
         /* MODAIS */
         .modal-overlay-comment { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
-        
-        /* BOTÃO X FLUTUANTE EM STICKY */
         .close-modal { 
             position: sticky; 
             top: 10px; 
@@ -281,7 +291,7 @@
             max-height: 90vh; 
             overflow-y: auto; 
             overflow-x: hidden;
-            padding-top: 20px; /* Espaço para o botão */
+            padding-top: 20px; 
         }
         .jutsu-modal-img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); }
         .jutsu-modal-rank { display: inline-block; background: var(--primary-color); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-bottom: 10px; }
@@ -501,8 +511,32 @@
                     <div class="bucket-grid" id="conquistas-grid"><p>Carregando...</p></div>
                 </div>
 
-                <div id="jutsus" class="tab-content"><h3>Meus Jutsus</h3><div class="bucket-grid" id="meus-jutsus-grid"><p>Carregando...</p></div><hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;"><h3>Loja de Jutsus</h3><div class="bucket-grid" id="loja-jutsus-grid"><p>Carregando...</p></div></div>
-                <div id="ferramentas" class="tab-content"><h3>Loja de Ferramentas</h3><div class="bucket-grid" id="loja-ferramentas-grid"><p>Carregando...</p></div></div>
+                <div id="jutsus" class="tab-content">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h3>Meus Jutsus</h3>
+                        <select class="filter-select" style="width:auto;" onchange="window.mudarOrdenacao(this.value)">
+                            <option value="alfabetica">A-Z</option>
+                            <option value="menor_valor">Menor Valor</option>
+                            <option value="maior_valor">Maior Valor</option>
+                        </select>
+                    </div>
+                    <div class="bucket-grid" id="meus-jutsus-grid"><p>Carregando...</p></div>
+                    <hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;">
+                    <h3>Loja de Jutsus</h3>
+                    <div class="bucket-grid" id="loja-jutsus-grid"><p>Carregando...</p></div>
+                </div>
+
+                <div id="ferramentas" class="tab-content">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h3>Loja de Ferramentas</h3>
+                        <select class="filter-select" style="width:auto;" onchange="window.mudarOrdenacao(this.value)">
+                            <option value="alfabetica">A-Z</option>
+                            <option value="menor_valor">Menor Valor</option>
+                            <option value="maior_valor">Maior Valor</option>
+                        </select>
+                    </div>
+                    <div class="bucket-grid" id="loja-ferramentas-grid"><p>Carregando...</p></div>
+                </div>
                 
                 <div id="loja" class="tab-content">
                       <div class="shop-header">
@@ -530,7 +564,14 @@
                             <button class="shop-cat-btn" onclick="filtrarLojaPorTipo('biblioteca', this)">Biblioteca</button>
                         </div>
                     </div>
-                    <h3>Itens à Venda</h3>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h3>Itens à Venda</h3>
+                        <select class="filter-select" style="width:auto;" onchange="window.mudarOrdenacao(this.value)">
+                            <option value="alfabetica">A-Z</option>
+                            <option value="menor_valor">Menor Valor</option>
+                            <option value="maior_valor">Maior Valor</option>
+                        </select>
+                    </div>
                     <div class="bucket-grid" id="loja-itens-grid"><p>Carregando...</p></div>
                 </div>
 
@@ -760,6 +801,7 @@
         let vilaAtual = "Konoha";
         let lojaAtual = "geral";
         let globalItensMap = {}; 
+        let ordenacaoAtual = 'alfabetica';
 
         // CONFIGURAÇÃO DE LEVEL
         function getXpNecessario(nivel) {
@@ -891,6 +933,30 @@
                 console.error("Erro ao trocar aba:", e);
             }
         };
+        
+        window.mudarOrdenacao = (ordem) => {
+            ordenacaoAtual = ordem;
+            if(document.getElementById('jutsus').classList.contains('active')) {
+                carregarMeusJutsus(currentUserData.meusJutsus);
+                carregarLoja();
+            } else if(document.getElementById('ferramentas').classList.contains('active')) {
+                carregarLojaFerramentas();
+            } else if(document.getElementById('loja').classList.contains('active')) {
+                carregarLojaItens();
+            }
+        };
+
+        function aplicarOrdenacao(lista, ordem) {
+            const novaLista = [...lista];
+            if (ordem === 'menor_valor') {
+                return novaLista.sort((a, b) => (a.preco || 0) - (b.preco || 0));
+            } else if (ordem === 'maior_valor') {
+                return novaLista.sort((a, b) => (b.preco || 0) - (a.preco || 0));
+            } else if (ordem === 'alfabetica') {
+                return novaLista.sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
+            }
+            return novaLista;
+        }
 
         // --- LEVEL UP CORRIGIDO (XP GASTO) ---
         async function verificarLevelUpAutomatico(dados) {
@@ -1138,22 +1204,57 @@
                 const c = document.getElementById('loja-jutsus-grid'); if(!c) return; c.innerHTML = '';
                 const m = currentUserData.meusJutsus || []; const isAdmin = auth.currentUser.email === "admin@rpgnaruto.com";
                 const snap = await getDocs(collection(db, "jutsus"));
-                snap.forEach(d => { try { let i = d.data(); i = aplicarEscalaPersonalizada(i); const p = i.restrito_a || []; if(!isAdmin && p.length > 0 && !p.includes(currentUserData.nome || "")) return; criarCardLoja('loja-jutsus-grid', i, d.id, 'jutsu', null, (id, i) => verDetalhesJutsu(id, i)); } catch(e){} });
+                
+                let lista = [];
+                snap.forEach(d => { try { let i = d.data(); i = aplicarEscalaPersonalizada(i); const p = i.restrito_a || []; if(!isAdmin && p.length > 0 && !p.includes(currentUserData.nome || "")) return; lista.push({id:d.id, ...i}); } catch(e){} });
+                
+                lista = aplicarOrdenacao(lista, ordenacaoAtual);
+                lista.forEach(item => criarCardLoja('loja-jutsus-grid', item, item.id, 'jutsu', null, (id, i) => verDetalhesJutsu(id, i)));
             } catch(e) {}
         }
+
         async function carregarMeusJutsus(l) {
             const c = document.getElementById('meus-jutsus-grid'); if(!c) return; c.innerHTML = ''; l = (l || []).filter(id => id); 
             if(l.length === 0) { c.innerHTML = '<p>Nenhum jutsu aprendido.</p>'; return; }
-            const promises = l.map(async (id) => { try { const s = await getDoc(doc(db, "jutsus", id)); if(s.exists()) { let data = s.data(); try { data = aplicarEscalaPersonalizada(data); } catch(e){} return { id, data }; } } catch(e) { return null; } });
-            const resultados = await Promise.allSettled(promises);
-            resultados.forEach(res => { if(res.status === 'fulfilled' && res.value) criarCard('meus-jutsus-grid', res.value.data, res.value.id, 'jutsu', (id, i) => verDetalhesJutsu(id, i)); });
+            const promises = l.map(async (id) => { try { const s = await getDoc(doc(db, "jutsus", id)); if(s.exists()) { let data = s.data(); try { data = aplicarEscalaPersonalizada(data); } catch(e){} return { id, ...data }; } } catch(e) { return null; } });
+            
+            const resultados = await Promise.all(promises);
+            let lista = resultados.filter(item => item !== null);
+            
+            // Jutsus geralmente não têm preço para ordenar por valor, mas vamos manter a lógica caso tenham, ou ordenar por nome
+            lista = aplicarOrdenacao(lista, ordenacaoAtual);
+            
+            lista.forEach(item => criarCard('meus-jutsus-grid', item, item.id, 'jutsu', (id, i) => verDetalhesJutsu(id, i)));
         }
-        async function carregarLojaFerramentas() { const c = document.getElementById('loja-ferramentas-grid'); if(!c) return; c.innerHTML = ''; const s = await getDocs(collection(db, "ferramentas")); s.forEach(d => criarCardLoja('loja-ferramentas-grid', d.data(), d.id, 'ferramenta', null, (id, i) => verDetalhesFerramenta(id, i))); }
+
+        async function carregarLojaFerramentas() { 
+            const c = document.getElementById('loja-ferramentas-grid'); if(!c) return; c.innerHTML = ''; 
+            const s = await getDocs(collection(db, "ferramentas")); 
+            let lista = [];
+            s.forEach(d => lista.push({id:d.id, ...d.data()}));
+            
+            lista = aplicarOrdenacao(lista, ordenacaoAtual);
+            lista.forEach(item => criarCardLoja('loja-ferramentas-grid', item, item.id, 'ferramenta', null, (id, i) => verDetalhesFerramenta(id, i)));
+        }
+
         async function carregarLojaItens() {
             const c = document.getElementById('loja-itens-grid'); if(!c) return; c.innerHTML = '';
             const s = await getDocs(collection(db, "itens"));
-            s.forEach(d => { const i = d.data(); let ok=false; if(!i.vila || i.vila==='Global') ok=true; else if(Array.isArray(i.vila)){if(i.vila.includes(vilaAtual)||i.vila.includes('Global')) ok=true;} else if(i.vila===vilaAtual) ok=true; if(i.tipo!==lojaAtual) return; if(ok) criarCardLoja('loja-itens-grid', i, d.id, 'item', null, (id, i) => verDetalhesItem(id, i)); });
+            let lista = [];
+            s.forEach(d => { 
+                const i = d.data(); 
+                let ok=false; 
+                if(!i.vila || i.vila==='Global') ok=true; 
+                else if(Array.isArray(i.vila)){if(i.vila.includes(vilaAtual)||i.vila.includes('Global')) ok=true;} 
+                else if(i.vila===vilaAtual) ok=true; 
+                
+                if(i.tipo===lojaAtual && ok) lista.push({id:d.id, ...i}); 
+            });
+            
+            lista = aplicarOrdenacao(lista, ordenacaoAtual);
+            lista.forEach(item => criarCardLoja('loja-itens-grid', item, item.id, 'item', null, (id, i) => verDetalhesItem(id, i)));
         }
+
         async function carregarInventario() {
             const c = document.getElementById('inventario-grid'); if(!c) return; c.innerHTML = '';
             const inv = currentUserData.inventario || {}; const keys = Object.keys(inv).filter(k => inv[k] > 0);
