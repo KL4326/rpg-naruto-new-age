@@ -127,6 +127,21 @@
             white-space: nowrap;
         }
         
+        /* BOTÃO DE PRESENTEAR */
+        .gift-btn {
+            background-color: #8e44ad; /* Roxo */
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 8px;
+            width: 100%;
+        }
+        .gift-btn:hover { background-color: #9b59b6; }
+        
         /* Posicionamento botão história */
         .btn-edit-historia {
             position: absolute; 
@@ -655,6 +670,24 @@
             </div>
         </main>
     </div>
+    
+    <div id="giftModal" class="modal-overlay-comment" style="z-index: 2005;">
+        <div class="modal-content-card" style="max-width: 320px;">
+            <span class="close-modal" onclick="document.getElementById('giftModal').style.display='none'">&times;</span>
+            <h3 style="color:var(--primary-color); margin-bottom:15px;">Presentear <span id="gift-target-name"></span></h3>
+            
+            <label style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">Moeda:</label>
+            <select id="gift-currency" class="filter-select">
+                <option value="ryos">Ryos</option>
+                <option value="essencia_ninja">Essência Ninja</option>
+            </select>
+            
+            <label style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">Quantidade:</label>
+            <input type="number" id="gift-amount" class="edit-input" placeholder="Valor" min="1">
+            
+            <button class="buy-btn" onclick="enviarPresente()">Enviar Presente</button>
+        </div>
+    </div>
 
     <div class="modal-overlay-comment" id="jutsuModal" style="z-index: 2001;">
         <div class="modal-content-card">
@@ -802,6 +835,7 @@
         let lojaAtual = "geral";
         let globalItensMap = {}; 
         let ordenacaoAtual = 'alfabetica';
+        let currentGiftTarget = null; // ID de quem vai receber presente
 
         // CONFIGURAÇÃO DE LEVEL
         function getXpNecessario(nivel) {
@@ -1295,10 +1329,52 @@
                 <div style="font-size:0.8rem; margin-top:5px; color:#777;">
                     <span style="color:var(--yellow-color);"><i class="fa-solid fa-coins"></i> ${formatarNum(u.ryos)}</span> | 
                     <span style="color:var(--en-color);"><i class="fa-regular fa-star"></i> ${formatarNum(u.essencia_ninja||0)}</span>
-                </div>`; 
+                </div>
+                ${u.id !== auth.currentUser.uid ? `<button class="gift-btn" onclick="event.stopPropagation(); openGiftModal('${d.id}', '${u.nome}')"><i class="fa-solid fa-gift"></i> Presentear</button>` : ''}
+                `; 
                 c.appendChild(k); });
             } catch(e){ c.innerHTML='<p>Erro ao carregar.</p>'; }
         }
+
+        window.openGiftModal = (uid, nome) => {
+            currentGiftTarget = uid;
+            document.getElementById('gift-target-name').innerText = nome;
+            document.getElementById('giftModal').style.display = 'flex';
+        };
+
+        window.enviarPresente = async () => {
+            const qtd = parseInt(document.getElementById('gift-amount').value);
+            const tipo = document.getElementById('gift-currency').value;
+            
+            if(!qtd || qtd <= 0) return alert("Digite uma quantidade válida!");
+            if(!currentGiftTarget) return;
+
+            const field = tipo === 'ryos' ? 'ryos' : 'essencia_ninja';
+            const moedaNome = tipo === 'ryos' ? 'Ryos' : 'Essência Ninja';
+
+            if((currentUserData[field] || 0) < qtd) return alert(`Você não tem ${moedaNome} suficiente!`);
+
+            if(!confirm(`Enviar ${qtd} ${moedaNome} para ${document.getElementById('gift-target-name').innerText}?`)) return;
+
+            try {
+                // Desconta do remetente
+                await updateDoc(doc(db, "users", auth.currentUser.uid), {
+                    [field]: increment(-qtd)
+                });
+                
+                // Adiciona ao destinatário
+                await updateDoc(doc(db, "users", currentGiftTarget), {
+                    [field]: increment(qtd)
+                });
+
+                alert("Presente enviado com sucesso!");
+                document.getElementById('giftModal').style.display = 'none';
+                document.getElementById('gift-amount').value = '';
+            } catch(e) {
+                alert("Erro ao enviar: " + e.message);
+            }
+        };
+
 
         window.consumirItem = async (id, nome) => { 
             // 1. Encontra os dados do item no cache global (ou busca se precisar, mas vamos assumir que está no cache já que veio do inventário)
