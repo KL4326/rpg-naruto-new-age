@@ -1527,17 +1527,7 @@
         };
 
         // --- MISSÕES ---
-        async function carregarMissoes() { const c = document.getElementById('missoes-grid'); if(!c) return; const m = currentUserData.statusMissoes || {}; const s = await getDocs(collection(db, "missoes")); c.innerHTML = ''; 
-        
-        const isAdmin = auth.currentUser.email === "admin@rpgnaruto.com";
-
-        s.forEach(d => { 
-            const i = d.data();
-            
-            const p = i.restrito_a || [];
-            if (!isAdmin && p.length > 0 && !p.includes(currentUserData.nome)) return;
-
-            const st = m[d.id] || 'neutro'; const k = document.createElement('div'); k.className = 'card jutsu-card-click'; 
+        async function carregarMissoes() { const c = document.getElementById('missoes-grid'); if(!c) return; const m = currentUserData.statusMissoes || {}; const s = await getDocs(collection(db, "missoes")); c.innerHTML = ''; s.forEach(d => { const i = d.data(), st = m[d.id] || 'neutro'; const k = document.createElement('div'); k.className = 'card jutsu-card-click'; 
         
         const rankClass = `rank-${(i.rank||'d').toLowerCase()}`;
         const rankHtml = `<span class="rank-tag ${rankClass}">Rank ${i.rank||'D'}</span>`;
