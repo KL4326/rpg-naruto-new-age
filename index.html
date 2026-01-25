@@ -272,6 +272,8 @@
 
         /* MODAIS */
         .modal-overlay-comment { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
+        
+        /* BOTÃO X FLUTUANTE EM STICKY */
         .close-modal { 
             position: sticky; 
             top: 10px; 
@@ -1286,7 +1288,7 @@
             });
             
             lista = aplicarOrdenacao(lista, ordenacaoAtual);
-            lista.forEach(item => criarCardLoja('loja-itens-grid', item, item.id, 'item', null, (id, i) => verDetalhesItem(id, i)));
+            lista.forEach(item => criarCardLoja('loja-itens-grid', item, item.id, 'item', null, (id, i) => verDetalhesItem(id, i));
         }
 
         async function carregarInventario() {
@@ -1525,7 +1527,17 @@
         };
 
         // --- MISSÕES ---
-        async function carregarMissoes() { const c = document.getElementById('missoes-grid'); if(!c) return; const m = currentUserData.statusMissoes || {}; const s = await getDocs(collection(db, "missoes")); c.innerHTML = ''; s.forEach(d => { const i = d.data(), st = m[d.id] || 'neutro'; const k = document.createElement('div'); k.className = 'card jutsu-card-click'; 
+        async function carregarMissoes() { const c = document.getElementById('missoes-grid'); if(!c) return; const m = currentUserData.statusMissoes || {}; const s = await getDocs(collection(db, "missoes")); c.innerHTML = ''; 
+        
+        const isAdmin = auth.currentUser.email === "admin@rpgnaruto.com";
+
+        s.forEach(d => { 
+            const i = d.data();
+            
+            const p = i.restrito_a || [];
+            if (!isAdmin && p.length > 0 && !p.includes(currentUserData.nome)) return;
+
+            const st = m[d.id] || 'neutro'; const k = document.createElement('div'); k.className = 'card jutsu-card-click'; 
         
         const rankClass = `rank-${(i.rank||'d').toLowerCase()}`;
         const rankHtml = `<span class="rank-tag ${rankClass}">Rank ${i.rank||'D'}</span>`;
