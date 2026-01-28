@@ -78,13 +78,8 @@ onAuthStateChanged(auth, async (user) => {
     if (user) {
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('app-container').style.display = 'flex';
+        if(user.email === "admin@rpgnaruto.com") document.getElementById('btn-admin-panel').style.display = 'flex';
         
-        // Verifica se é admin para mostrar o botão
-        if(user.email === "admin@rpgnaruto.com") {
-            const btnAdmin = document.getElementById('btn-admin-panel');
-            if(btnAdmin) btnAdmin.style.display = 'flex';
-        }
-
         await carregarConfiguracoes();
         await carregarCacheItens();
         
@@ -92,7 +87,6 @@ onAuthStateChanged(auth, async (user) => {
         onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists()) {
                 currentUserData = docSnap.data();
-                // Inicialização de segurança
                 if(!currentUserData.inventario) currentUserData.inventario = {};
                 if(!currentUserData.meusJutsus) currentUserData.meusJutsus = [];
                 if(!currentUserData.statusConquistas) currentUserData.statusConquistas = {};
@@ -108,7 +102,6 @@ onAuthStateChanged(auth, async (user) => {
             }
         });
         
-        // Carregamento inicial
         carregarTudo();
         setTimeout(() => { try { window.renderFeed('all'); } catch(e) {} }, 800); 
 
@@ -157,11 +150,13 @@ window.showTab = (t) => {
             if(t==='inventario') carregarInventario();
             if(t==='loja') carregarLojaItens();
             if(t==='jutsus') carregarMeusJutsus(currentUserData.meusJutsus); 
+            // AQUI ESTAVA FALTANDO A CHAMADA PARA FERRAMENTAS:
+            if(t==='ferramentas') carregarLojaFerramentas(); 
             if(t==='conquistas') carregarConquistas();
             if(t==='missoes') carregarMissoes();
             if(t==='rankings') carregarRankings();
             if(t==='mentorias') carregarMentorias();
-            if(t==='admin-panel') carregarPainelAdmin(); // ADICIONADO: Carrega painel Kage ao clicar
+            if(t==='admin-panel') carregarPainelAdmin();
         }
         
         if(window.innerWidth <= 768) {
@@ -175,14 +170,9 @@ window.showTab = (t) => {
 
 window.mudarOrdenacao = (ordem) => {
     ordenacaoAtual = ordem;
-    if(document.getElementById('jutsus').classList.contains('active')) {
-        carregarMeusJutsus(currentUserData.meusJutsus);
-        carregarLoja();
-    } else if(document.getElementById('ferramentas').classList.contains('active')) {
-        carregarLojaFerramentas();
-    } else if(document.getElementById('loja').classList.contains('active')) {
-        carregarLojaItens();
-    }
+    if(document.getElementById('jutsus').classList.contains('active')) carregarMeusJutsus(currentUserData.meusJutsus);
+    if(document.getElementById('ferramentas').classList.contains('active')) carregarLojaFerramentas();
+    if(document.getElementById('loja').classList.contains('active')) carregarLojaItens();
 };
 
 function aplicarOrdenacao(lista, ordem) {
@@ -219,17 +209,15 @@ async function carregarCacheItens() {
 }
 
 function carregarTudo() {
-    try { carregarLoja(); } catch(e){}
-    try { carregarMeusJutsus(currentUserData.meusJutsus); } catch(e){}
-    try { carregarLojaFerramentas(); } catch(e){}
-    try { carregarLojaItens(); } catch(e){}
-    try { carregarInventario(); } catch(e){}
-    try { carregarMissoes(); } catch(e){}
-    try { carregarConquistas(); } catch(e){}
-    try { carregarRankings(); } catch(e){}
-    try { carregarFrases(); } catch(e){}
-    try { carregarMentorias(); } catch(e){}
-    // Removido carregamento automático do painel para evitar peso desnecessário na inicialização
+    try { carregarLojaItens(); } catch(e){ console.error(e); }
+    try { carregarMeusJutsus(currentUserData.meusJutsus); } catch(e){ console.error(e); }
+    try { carregarLojaFerramentas(); } catch(e){ console.error(e); }
+    try { carregarInventario(); } catch(e){ console.error(e); }
+    try { carregarMissoes(); } catch(e){ console.error(e); }
+    try { carregarConquistas(); } catch(e){ console.error(e); }
+    try { carregarRankings(); } catch(e){ console.error(e); }
+    try { carregarFrases(); } catch(e){ console.error(e); }
+    try { carregarMentorias(); } catch(e){ console.error(e); }
 }
 
 function formatarNum(v) { return Number(v||0).toLocaleString('pt-BR'); }
@@ -460,16 +448,31 @@ async function carregarMeusJutsus(l) {
     } catch(e) { console.error(e); }
 }
 
+// CORREÇÃO: Função carregarLojaFerramentas
 async function carregarLojaFerramentas() { 
     try {
-        if (!currentUserData) return;
-        const c = document.getElementById('loja-ferramentas-grid'); if(!c) return; c.innerHTML = ''; 
+        const c = document.getElementById('loja-ferramentas-grid'); 
+        if(!c) return; 
+        
+        c.innerHTML = '<p>Carregando...</p>'; 
         const s = await getDocs(collection(db, "ferramentas")); 
+        c.innerHTML = '';
+        
         let lista = [];
         s.forEach(d => lista.push({id:d.id, ...d.data()}));
+        
+        if (lista.length === 0) {
+            c.innerHTML = '<p>Nenhuma ferramenta disponível.</p>';
+            return;
+        }
+
         lista = aplicarOrdenacao(lista, ordenacaoAtual);
-        lista.forEach(item => criarCardLoja('loja-ferramentas-grid', item, item.id, 'ferramenta', null, (id, i) => verDetalhesFerramenta(id, i)));
-    } catch(e) { console.error(e); }
+        lista.forEach(item => criarCardLoja('loja-ferramentas-grid', item, item.id, 'ferramenta', null, (id, i) => verDetalhesFerramenta(id, item)));
+    } catch(e) { 
+        console.error(e);
+        const c = document.getElementById('loja-ferramentas-grid');
+        if(c) c.innerHTML = '<p>Erro ao carregar.</p>';
+    }
 }
 
 async function carregarLojaItens() {
@@ -832,188 +835,6 @@ function abrirModalSimples(t, d) {
     document.getElementById(t+'Modal').style.display='flex';
 }
 
-// CORRIGIDO: Função verPerfil (agora blindada)
-window.verPerfil = async (uid) => {
-    try {
-        const s = await getDoc(doc(db, "users", uid)); 
-        if(s.exists()) { 
-            const u = s.data(); 
-            
-            // Variáveis para contagem
-            let totalJutsus = (u.meusJutsus || []).length;
-            let totalTools = 0;
-            let totalItems = 0;
-
-            if (u.inventario) {
-                for (const [id, qtd] of Object.entries(u.inventario)) {
-                    // Verifica se o item existe no cache antes de acessar a propriedade .type
-                    if (globalItensMap[id]) {
-                        if (globalItensMap[id].type === 'tool') {
-                            totalTools += qtd;
-                        } else {
-                            totalItems += qtd;
-                        }
-                    } else {
-                        // Se não estiver no cache, conta como item genérico para não quebrar
-                        totalItems += qtd; 
-                    }
-                }
-            }
-
-            document.getElementById('profile-modal-name').innerText = u.nome; 
-            document.getElementById('profile-modal-char').innerText = u.apelido || ""; 
-            document.getElementById('profile-modal-img').src = u.avatar || IMG_PADRAO; 
-            
-            renderizarIcones(u.elementos || [], 'profile-elementos-container', ELEMENTOS_ICONS, 'Naturezas de Chakra'); 
-            renderizarIcones(u.kekkei_genkai || [], 'profile-kekkei-container', KEKKEI_ICONS, 'Kekkei Genkai'); 
-            renderizarIcones(u.kekkei_moura || [], 'profile-moura-container', KEKKEI_MOURA_ICONS, 'Kekkei Moura'); 
-            renderizarIcones(u.kekkei_touta || [], 'profile-touta-container', KEKKEI_TOUTA_ICONS, 'Kekkei Touta'); 
-
-            let invHtml = `
-                <div class="stat-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
-                    <div class="stat-value" style="font-size:1.5rem;">${totalJutsus}</div>
-                    <div class="stat-label">Jutsus</div>
-                </div>
-                <div class="stat-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
-                    <div class="stat-value" style="font-size:1.5rem;">${totalTools}</div>
-                    <div class="stat-label">Ferramentas</div>
-                </div>
-                <div class="stat-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
-                    <div class="stat-value" style="font-size:1.5rem;">${totalItems}</div>
-                    <div class="stat-label">Itens</div>
-                </div>
-            `;
-
-            const statsContainer = document.getElementById('other-profile-stats'); 
-            statsContainer.innerHTML = `
-            <div class="stats-divider">Geral</div>
-            <div class="stat-card"><div class="stat-value">${u.nivel||1}</div><div class="stat-label">Nível</div></div>
-            <div class="stat-card"><div class="stat-value">${u.cargo||'Genin'}</div><div class="stat-label">Cargo</div></div>
-            <div class="stat-card"><div class="stat-value">${u.patente||'Genin'}</div><div class="stat-label">Patente</div></div>
-            <div class="stat-card"><div class="stat-value">${u.rank||'E'}</div><div class="stat-label">Rank</div></div>
-            <div class="stat-card"><div class="stat-value">${u.speed_rank||"E"}</div><div class="stat-label">Rank Vel.</div></div>
-            <div class="stat-card"><div class="stat-value">${u.tipo||'Normal'}</div><div class="stat-label">Tipo</div></div>
-            
-            <div class="stats-divider">Batalha</div>
-            <div class="stat-card"><div class="stat-value">${u.vitorias||0}</div><div class="stat-label">Vitórias</div></div>
-            <div class="stat-card"><div class="stat-value">${u.empates||0}</div><div class="stat-label">Empates</div></div>
-            <div class="stat-card"><div class="stat-value">${u.derrotas||0}</div><div class="stat-label">Derrotas</div></div>
-            
-            <div class="stats-divider">Inventário</div>
-            <div style="grid-column: 1 / -1; display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
-                ${invHtml}
-            </div>
-            
-            <div class="stats-divider">Vitalidade</div>
-            <div class="stat-card"><div class="stat-value">${u.vida||100}</div><div class="stat-label">Vida</div></div>
-            <div class="stat-card"><div class="stat-value">${u.chakra||100}</div><div class="stat-label">Chakra</div></div>
-            <div class="stat-card"><div class="stat-value">${u.stamina||100}</div><div class="stat-label">Stamina</div></div>
-            <div class="stat-card"><div class="stat-value">${u.controle_chakra||"Baixo"}</div><div class="stat-label">Controle</div></div>
-            
-            <div class="stats-divider">Atributos</div>
-            <div class="stat-card"><div class="stat-value">${u.forca||10}</div><div class="stat-label">Força</div></div>
-            <div class="stat-card"><div class="stat-value">${u.defesa||10}</div><div class="stat-label">Defesa</div></div>
-            <div class="stat-card"><div class="stat-value">${u.agilidade||10}</div><div class="stat-label">Agilidade</div></div>
-            <div class="stat-card"><div class="stat-value">${u.velocidade||10}</div><div class="stat-label">Velocidade</div></div>
-            <div class="stat-card"><div class="stat-value">${u.intelecto||10}</div><div class="stat-label">Intelecto</div></div>`; 
-            
-            document.getElementById('profileModal').style.display = 'flex'; 
-        } 
-    } catch(e) {
-        console.error("Erro ao abrir perfil:", e);
-        alert("Erro ao carregar perfil do usuário.");
-    }
-};
-
-window.fecharProfileModal = () => document.getElementById('profileModal').style.display = 'none';
-
-// --- CORRIGIDO: Painel Kage (Função de Aprovação Global) ---
-window.aprovarMissao = async (uid, mid) => { 
-    if(confirm("Aprovar missão?")) {
-        await updateDoc(doc(db, "users", uid), { [`statusMissoes.${mid}`]: 'aprovado' }); 
-        alert("Missão aprovada!"); 
-        carregarPainelAdmin(); // Recarrega a lista
-    }
-};
-
-window.aprovarConquista = async (uid, cid) => { 
-    if(confirm("Aprovar conquista?")) {
-        await updateDoc(doc(db, "users", uid), { [`statusConquistas.${cid}`]: 'aprovado' }); 
-        alert("Conquista aprovada!"); 
-        carregarPainelAdmin(); // Recarrega a lista
-    }
-};
-
-async function carregarPainelAdmin() { 
-    const c = document.getElementById('admin-missoes-grid'); 
-    if(!c) return;
-    
-    c.innerHTML='<p>Carregando solicitações...</p>'; 
-    
-    try {
-        const s = await getDocs(collection(db, "users")); 
-        c.innerHTML=''; 
-        let hasItems = false;
-
-        s.forEach(u => { 
-            const d = u.data(); 
-            const m = d.statusMissoes || {}; 
-            const cq = d.statusConquistas || {}; 
-            
-            // Loop de Missões
-            for(const [mid, st] of Object.entries(m)) { 
-                if(st === 'em_andamento') { 
-                    hasItems = true;
-                    const k = document.createElement('div'); 
-                    k.className = 'card'; 
-                    // Importante: onclick chama a função global window.aprovarMissao
-                    k.innerHTML = `
-                        <h4>${d.nome} (Missão)</h4>
-                        <p style="font-size:0.8rem">${mid}</p>
-                        <button class="mission-btn-collect" onclick="window.aprovarMissao('${u.id}','${mid}')">Aprovar</button>
-                    `; 
-                    c.appendChild(k); 
-                } 
-            } 
-            
-            // Loop de Conquistas
-            for(const [cid, st] of Object.entries(cq)) { 
-                if(st === 'solicitado') { 
-                    hasItems = true;
-                    const k = document.createElement('div'); 
-                    k.className = 'card'; 
-                    k.innerHTML = `
-                        <h4>${d.nome} (Conquista)</h4>
-                        <p style="font-size:0.8rem">${cid}</p>
-                        <button class="mission-btn-collect" onclick="window.aprovarConquista('${u.id}','${cid}')">Aprovar</button>
-                    `; 
-                    c.appendChild(k); 
-                } 
-            } 
-        }); 
-        
-        if (!hasItems) {
-            c.innerHTML = '<p style="color:#777; font-style:italic;">Nenhuma solicitação pendente.</p>';
-        }
-
-    } catch(e) {
-        console.error("Erro admin:", e);
-        c.innerHTML = '<p>Erro ao carregar painel.</p>';
-    } 
-}
-
-// --- OUTROS ---
-window.handleImageUpload = async (e) => { if(e.target.files[0]) { try { currentImageBase64 = await comprimirImagem(e.target.files[0]); document.getElementById('preview-image').src = currentImageBase64; document.getElementById('preview-container').style.display='block'; } catch(e){} } };
-window.removeImage = () => { document.getElementById('imageInput').value=''; currentImageBase64=null; document.getElementById('preview-container').style.display='none'; };
-window.publicarPost = async () => { const t = document.getElementById('postInput').value; if(!t.trim() && !currentImageBase64) return alert("Texto vazio"); const btn=document.querySelector('.btn-post'); btn.innerText="..."; try { await addDoc(collection(db, "posts"), { uid: auth.currentUser.uid, autor: currentUserData.apelido, autorAvatar: currentUserData.avatar, conteudo: t, imagem: currentImageBase64, data: serverTimestamp(), likes: [], savedBy: [], comments: [] }); document.getElementById('postInput').value=''; removeImage(); } catch(e){} finally{btn.innerText="Publicar";} };
-window.renderFeed = (f) => { const c = document.getElementById('feed-container'); if(!c) return; try { onSnapshot(query(collection(db, "posts"), orderBy("data", "desc")), (s) => { c.innerHTML = ''; s.forEach(d => { try { const p = d.data(); if(f==='saved' && !(p.savedBy||[]).includes(auth.currentUser.uid)) return; const isLiked=(p.likes||[]).includes(auth.currentUser.uid); const isSaved=(p.savedBy||[]).includes(auth.currentUser.uid); const div=document.createElement('div'); div.className='post'; div.innerHTML=`<div class="post-header"><div class="user-avatar-post"><img src="${p.autorAvatar||IMG_PADRAO}"></div><div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">${calcularTempo(p.data)}</span></div>${p.uid===auth.currentUser.uid?`<div class="post-menu-container"><div class="post-options-btn" onclick="this.nextElementSibling.classList.toggle('active')">...</div><div class="post-dropdown"><div class="dropdown-item danger" onclick="deletarPost('${d.id}')">Excluir</div></div></div>`:''}</div><div class="post-content">${p.conteudo}</div>${p.imagem?`<img src="${p.imagem}" class="post-image" onclick="verPost('${d.id}')">`:''}<div class="post-actions"><button class="action-btn ${isLiked?'liked':''}" onclick="toggleLike('${d.id}')"><i class="${isLiked?'fa-solid':'fa-regular'} fa-heart"></i> ${(p.likes||[]).length}</button><button class="action-btn" onclick="verPost('${d.id}')"><i class="fa-regular fa-comment"></i> ${(p.comments||[]).length}</button><button class="action-btn ${isSaved?'saved':''}" onclick="toggleSave('${d.id}')" style="margin-left:auto;"><i class="${isSaved?'fa-solid':'fa-regular'} fa-bookmark"></i></button></div>`; c.appendChild(div); } catch(e){} }); }); } catch(e){} };
-window.deletarPost = async (id) => { if(confirm("Apagar?")) await deleteDoc(doc(db, "posts", id)); };
-window.toggleLike = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().likes||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{likes:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{likes:arrayUnion(auth.currentUser.uid)}); };
-window.toggleSave = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().savedBy||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{savedBy:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{savedBy:arrayUnion(auth.currentUser.uid)}); };
-window.verPost = async (id) => { currentOpenPostId = id; const s = await getDoc(doc(db, "posts", id)), p = s.data(); document.getElementById('modalPostContent').innerHTML = p.imagem ? `<img src="${p.imagem}" style="width:100%;height:100%;object-fit:contain;">` : `<div style="padding:20px;">${p.conteudo}</div>`; document.getElementById('commentsList').innerHTML = (p.comments||[]).map(c=>`<div><b>${c.autor}</b>: ${c.texto}</div>`).join(''); document.getElementById('commentModal').style.display='flex'; };
-window.submitComment = async () => { const t = document.getElementById('newCommentText').value; if(!t) return; await updateDoc(doc(db, "posts", currentOpenPostId), { comments: arrayUnion({ autor: currentUserData.nome, texto: t }) }); document.getElementById('newCommentText').value = ""; verPost(currentOpenPostId); };
-window.closeModal = () => document.getElementById('commentModal').style.display = 'none';
-
 window.openEditProfileModal = () => { document.getElementById('editProfileModal').style.display = 'flex'; document.getElementById('edit-name-input').value = currentUserData.nome || ""; document.getElementById('edit-nick-input').value = currentUserData.apelido || ""; document.getElementById('user-menu').classList.remove('show'); };
 window.closeEditProfileModal = () => document.getElementById('editProfileModal').style.display = 'none';
 window.openChangePasswordModal = () => { document.getElementById('changePasswordModal').style.display='flex'; document.getElementById('user-menu').classList.remove('show'); };
@@ -1073,6 +894,14 @@ window.copiarFrase = (t) => { navigator.clipboard.writeText(t).then(() => { cons
 window.handleAvatarPreview = async (e) => { if(e.target.files[0]) { newAvatarBase64 = await comprimirImagem(e.target.files[0]); document.getElementById('edit-avatar-preview').src = newAvatarBase64; } };
 window.salvarPerfil = async () => { const nome = document.getElementById('edit-name-input').value; const apelido = document.getElementById('edit-nick-input').value; const updates = { nome: nome, apelido: apelido, personagem: nome }; if(newAvatarBase64) updates.avatar = newAvatarBase64; await updateDoc(doc(db, "users", auth.currentUser.uid), updates); location.reload(); };
 window.salvarNovaSenha = async () => { const p = document.getElementById('new-password').value; if(!p || p.length < 6) return alert("Mínimo 6 caracteres"); try { await updatePassword(auth.currentUser, p); alert("Sucesso!"); closeChangePasswordModal(); } catch(e) { alert("Erro: " + e.message); } };
+
+window.renderFeed = (f) => { const c = document.getElementById('feed-container'); if(!c) return; try { onSnapshot(query(collection(db, "posts"), orderBy("data", "desc")), (s) => { c.innerHTML = ''; s.forEach(d => { try { const p = d.data(); if(f==='saved' && !(p.savedBy||[]).includes(auth.currentUser.uid)) return; const isLiked=(p.likes||[]).includes(auth.currentUser.uid); const isSaved=(p.savedBy||[]).includes(auth.currentUser.uid); const div=document.createElement('div'); div.className='post'; div.innerHTML=`<div class="post-header"><div class="user-avatar-post"><img src="${p.autorAvatar||IMG_PADRAO}"></div><div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">${calcularTempo(p.data)}</span></div>${p.uid===auth.currentUser.uid?`<div class="post-menu-container"><div class="post-options-btn" onclick="this.nextElementSibling.classList.toggle('active')">...</div><div class="post-dropdown"><div class="dropdown-item danger" onclick="deletarPost('${d.id}')">Excluir</div></div></div>`:''}</div><div class="post-content">${p.conteudo}</div>${p.imagem?`<img src="${p.imagem}" class="post-image" onclick="verPost('${d.id}')">`:''}<div class="post-actions"><button class="action-btn ${isLiked?'liked':''}" onclick="toggleLike('${d.id}')"><i class="${isLiked?'fa-solid':'fa-regular'} fa-heart"></i> ${(p.likes||[]).length}</button><button class="action-btn" onclick="verPost('${d.id}')"><i class="fa-regular fa-comment"></i> ${(p.comments||[]).length}</button><button class="action-btn ${isSaved?'saved':''}" onclick="toggleSave('${d.id}')" style="margin-left:auto;"><i class="${isSaved?'fa-solid':'fa-regular'} fa-bookmark"></i></button></div>`; c.appendChild(div); } catch(e){} }); }); } catch(e){} };
+window.deletarPost = async (id) => { if(confirm("Apagar?")) await deleteDoc(doc(db, "posts", id)); };
+window.toggleLike = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().likes||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{likes:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{likes:arrayUnion(auth.currentUser.uid)}); };
+window.toggleSave = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().savedBy||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{savedBy:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{savedBy:arrayUnion(auth.currentUser.uid)}); };
+window.verPost = async (id) => { currentOpenPostId = id; const s = await getDoc(doc(db, "posts", id)), p = s.data(); document.getElementById('modalPostContent').innerHTML = p.imagem ? `<img src="${p.imagem}" style="width:100%;height:100%;object-fit:contain;">` : `<div style="padding:20px;">${p.conteudo}</div>`; document.getElementById('commentsList').innerHTML = (p.comments||[]).map(c=>`<div><b>${c.autor}</b>: ${c.texto}</div>`).join(''); document.getElementById('commentModal').style.display='flex'; };
+window.submitComment = async () => { const t = document.getElementById('newCommentText').value; if(!t) return; await updateDoc(doc(db, "posts", currentOpenPostId), { comments: arrayUnion({ autor: currentUserData.nome, texto: t }) }); document.getElementById('newCommentText').value = ""; verPost(currentOpenPostId); };
+window.closeModal = () => document.getElementById('commentModal').style.display = 'none';
 
 async function carregarFrases() { const c = document.getElementById('frases-list-container'); try { onSnapshot(query(collection(db, "frases"), orderBy("data", "desc")), (s) => { c.innerHTML=''; s.forEach(d=>{ const f=d.data(); const k=document.createElement('div'); k.className='frase-item'; const menu = f.uid === auth.currentUser.uid ? `<div class="options-menu-container"><div class="options-btn" onclick="toggleFraseMenu(this); event.stopPropagation();">...</div><div class="options-dropdown"><div class="options-item" onclick="editarFrase('${d.id}','${f.texto}');event.stopPropagation()">Editar</div><div class="options-item danger" onclick="deletarFrase('${d.id}');event.stopPropagation()">Excluir</div></div></div>` : ''; k.onclick=()=>copiarFrase(f.texto); k.innerHTML=`<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor}</div>${menu}`; c.appendChild(k); }); }); } catch(e){} }
 
