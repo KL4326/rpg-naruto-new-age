@@ -4,29 +4,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RPG Naruto</title>
+    <link rel="icon" href="favicon.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
         :root {
-            --bg-color: #fafafa; --sidebar-bg: #ffffff; --text-color: #262626; --primary-color: #ff5e00;
-            --card-bg: #ffffff; --border-color: #dbdbdb; --green-color: #2ecc71; --yellow-color: #f1c40f;
-            --danger-color: #ed4956; --en-color: #3498db;
-            --stat-chakra: #2980b9; --stat-stamina: #ff9f43; --stat-dano: #e74c3c; --stat-buff: #9b59b6;
-            --hp-color: #e74c3c; --sanidade-color: #3498db; --stamina-color: #ff9f43; --chakra-color: #2980b9;
+            --bg-color: #fafafa;
+            --sidebar-bg: #ffffff;
+            --text-color: #262626;
+            --primary-color: #ff5e00;
+            --card-bg: #ffffff;
+            --border-color: #dbdbdb;
+            --green-color: #2ecc71;
+            --yellow-color: #f1c40f;
+            --danger-color: #ed4956;
+            --en-color: #3498db;
+            
+            /* CORES DE STATUS */
+            --stat-chakra: #2980b9; 
+            --stat-stamina: #ff9f43; 
+            --stat-dano: #e74c3c;   
+            --stat-buff: #9b59b6;   
+            
+            /* CORES BATALHA */
+            --hp-color: #e74c3c;       
+            --sanidade-color: #3498db; 
+            --stamina-color: #ff9f43;  
+            --chakra-color: #2980b9;   
         }
         body.dark-mode { --bg-color: #000000; --sidebar-bg: #000000; --text-color: #f5f5f5; --card-bg: #121212; --border-color: #363636; }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background-color: var(--bg-color); color: var(--text-color); height: 100vh; overflow: hidden; }
 
+        /* RANK TAGS */
         .rank-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-weight: bold; color: white; font-size: 0.75rem; margin-right: 5px; vertical-align: middle; text-transform: uppercase; }
-        .rank-s { background-color: #000; border: 1px solid #ed4956; color: #ed4956; box-shadow: 0 0 5px #ed4956; }
-        .rank-a { background-color: #ed4956; } .rank-b { background-color: #2980b9; } .rank-c { background-color: #2ecc71; }
-        .rank-d { background-color: #f1c40f; color: black; } .rank-e { background-color: #95a5a6; }
+        .rank-s { background-color: #000; border: 1px solid #ed4956; color: #ed4956; box-shadow: 0 0 5px #ed4956; } 
+        .rank-a { background-color: #ed4956; } 
+        .rank-b { background-color: #2980b9; } 
+        .rank-c { background-color: #2ecc71; } 
+        .rank-d { background-color: #f1c40f; color: black; } 
+        .rank-e { background-color: #95a5a6; } 
 
+        /* LOGIN */
         .login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999; display: flex; justify-content: center; align-items: center; padding: 20px; }
         .login-box { background: white; padding: 30px; border-radius: 10px; width: 100%; max-width: 320px; text-align: center; }
         .login-box input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
         .login-box button { background: var(--primary-color); color: white; border: none; padding: 12px; width: 100%; cursor: pointer; border-radius: 5px; font-weight: bold; font-size: 16px; }
 
+        /* LAYOUT */
         #app-container { display: flex; height: 100vh; position: relative; }
         .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 998; opacity: 0; transition: opacity 0.3s; }
         .sidebar-overlay.active { display: block; opacity: 1; }
@@ -59,6 +84,7 @@
         .tab-content { display: none; animation: fadeIn 0.3s; }
         .tab-content.active { display: block; }
 
+        /* CARDS E GRIDS */
         .bucket-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; margin-top: 20px; }
         .card { background: var(--card-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); text-align: center; cursor: pointer; transition: 0.2s; overflow: hidden; position: relative; display: flex; flex-direction: column; }
         .card:hover { transform: translateY(-2px); border-color: var(--primary-color); }
@@ -66,34 +92,103 @@
         .card h4 { margin-bottom: 5px; font-size: 1rem; }
         .card small { display: block; margin-bottom: 8px; color: #777; }
         
-        .buy-btn, .mission-btn-start, .mission-btn-collect { background-color: var(--primary-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; margin-top: auto; font-size: 1rem; cursor: pointer; transition: background 0.2s; text-align: center; }
-        .btn-post, .btn-edit-historia { background-color: var(--primary-color); color: white; border: none; padding: 8px 16px; width: auto !important; min-width: 80px; border-radius: 20px; font-weight: 600; cursor: pointer; font-size: 0.9rem; display: inline-flex; align-items: center; justify-content: center; gap: 5px; white-space: nowrap; }
-        .gift-btn { background-color: #8e44ad; color: white; border: none; padding: 5px 10px; border-radius: 5px; font-size: 0.8rem; font-weight: bold; cursor: pointer; margin-top: 8px; width: 100%; }
+        /* BOTÕES PRINCIPAIS */
+        .buy-btn, .mission-btn-start, .mission-btn-collect { 
+            background-color: var(--primary-color); 
+            color: white; 
+            border: none; 
+            padding: 10px; 
+            width: 100%; 
+            border-radius: 5px; 
+            font-weight: bold; 
+            margin-top: auto; 
+            font-size: 1rem; 
+            cursor: pointer; 
+            transition: background 0.2s; 
+            text-align: center;
+        }
+
+        /* BOTÕES PEQUENOS/AUTO */
+        .btn-post, .btn-edit-historia {
+            background-color: var(--primary-color); 
+            color: white; 
+            border: none; 
+            padding: 8px 16px; 
+            width: auto !important;
+            min-width: 80px;
+            border-radius: 20px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            white-space: nowrap;
+        }
+        
+        /* BOTÃO DE PRESENTEAR */
+        .gift-btn {
+            background-color: #8e44ad; /* Roxo */
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 8px;
+            width: 100%;
+        }
         .gift-btn:hover { background-color: #9b59b6; }
         
-        .btn-edit-historia { position: absolute; bottom: 15px; right: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.5); z-index: 5; }
+        /* Posicionamento botão história */
+        .btn-edit-historia {
+            position: absolute; 
+            bottom: 15px; 
+            right: 15px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5); 
+            z-index: 5;
+        }
+
         .buy-btn:hover, .mission-btn-start:hover, .btn-post:hover, .btn-edit-historia:hover { background-color: #e05200; }
         .buy-btn:disabled, .mission-btn-collect:disabled, .mission-btn-start:disabled, .btn-post:disabled { background-color: #ccc; cursor: not-allowed; opacity: 0.7; }
+        
         .mission-btn-collect { background-color: var(--green-color); animation: pulse 1.5s infinite; }
         .mission-btn-collect:hover { background-color: #27ae60; }
         .mission-btn-wait { background-color: var(--yellow-color); color: #333; width: 100%; border: none; padding: 10px; border-radius: 5px; font-weight: bold; margin-top: 5px; cursor: not-allowed; }
         .mission-btn-done { background-color: #ccc; color: #666; width: 100%; border: none; padding: 10px; border-radius: 5px; font-weight: bold; margin-top: 5px; cursor: not-allowed; }
+        
         .buy-btn.en-btn { background-color: var(--en-color); }
         .buy-btn.en-btn:hover { background-color: #2980b9; }
 
+        /* CAIXA QUADRADA DE QUANTIDADE */
         .qtd-container-square { display: flex; justify-content: center; margin: 10px 0 8px 0; width: 100%; }
         .qtd-input-square { width: 45px; height: 45px; text-align: center; font-size: 1.2rem; font-weight: bold; border: 2px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-color); padding: 0; -moz-appearance: textfield; }
+        .qtd-input-square::-webkit-outer-spin-button, .qtd-input-square::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         .qtd-input-square:focus { border-color: var(--primary-color); outline: none; }
         .price-tag { font-weight: bold; font-size: 1.05rem; margin-bottom: 5px; color: var(--primary-color); }
         .price-tag.en-price { color: var(--en-color); }
 
+        /* TAG DE QUANTIDADE (INVENTÁRIO) */
         .qtd-badge { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; font-weight: bold; border: 1px solid rgba(255,255,255,0.3); }
         .inventory-controls { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 8px; background: rgba(0,0,0,0.03); padding: 5px; border-radius: 20px; }
         .btn-minus { background: var(--danger-color); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
         .btn-minus:hover { transform: scale(1.1); }
         .maestria-display { display: block; font-size: 0.85rem; color: var(--yellow-color); font-weight: bold; margin-top: 4px; text-shadow: 0 0 1px rgba(0,0,0,0.1); }
 
-        .filter-select { width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 5px; font-size: 0.9rem; background: var(--bg-color); color: var(--text-color); margin-bottom: 10px; }
+        /* FILTRO SELECT */
+        .filter-select { 
+            width: 100%; 
+            padding: 8px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 5px; 
+            font-size: 0.9rem; 
+            background: var(--bg-color); 
+            color: var(--text-color);
+            margin-bottom: 10px;
+        }
+
         .shop-header { margin-bottom: 20px; background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); }
         .shop-location-select { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; font-size: 1rem; margin-bottom: 10px; background: var(--bg-color); color: var(--text-color); }
         .shop-categories { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
@@ -107,12 +202,16 @@
         .elementos-list { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
         .element-icon { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color); padding: 2px; background: #fff; }
 
+        /* STAT TAGS */
         .stats-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; margin: 5px 0; }
         .stat-tag { padding: 3px 8px; border-radius: 10px; color: white; font-weight: bold; font-size: 0.7rem; }
-        .tag-dano { background-color: var(--stat-dano); } .tag-chakra { background-color: var(--stat-chakra); }
-        .tag-stamina { background-color: var(--stat-stamina); } .tag-buff { background-color: var(--stat-buff); }
+        .tag-dano { background-color: var(--stat-dano); }
+        .tag-chakra { background-color: var(--stat-chakra); }
+        .tag-stamina { background-color: var(--stat-stamina); }
+        .tag-buff { background-color: var(--stat-buff); }
         .tag-attr { background-color: #34495e; }
 
+        /* BATALHA */
         .battle-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
         .battle-card { background: #1a1a1a; color: white; border-radius: 15px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); border: 1px solid #333; }
         .battle-header-info { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; }
@@ -125,12 +224,16 @@
         .battle-bar-bg { width: 100%; height: 18px; background: #333; border-radius: 4px; overflow: hidden; position: relative; display: flex; align-items: center; }
         .battle-bar-fill { height: 100%; transition: width 0.3s ease; position: absolute; top: 0; left: 0; z-index: 1; }
         .battle-bar-text { position: relative; z-index: 2; width: 100%; text-align: center; font-size: 0.75rem; font-weight: bold; text-shadow: 0 0 3px black; }
-        .bar-life { background-color: var(--hp-color); } .bar-sanidade { background-color: var(--sanidade-color); }
-        .bar-stamina { background-color: var(--stamina-color); } .bar-chakra { background-color: var(--chakra-color); }
+        .bar-life { background-color: var(--hp-color); }
+        .bar-sanidade { background-color: var(--sanidade-color); }
+        .bar-stamina { background-color: var(--stamina-color); } 
+        .bar-chakra { background-color: var(--chakra-color); } 
         .battle-actions-row { display: flex; justify-content: space-between; margin-top: 2px; }
         .battle-mini-btn { background: #333; border: 1px solid #444; color: #ccc; width: 25px; height: 25px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; }
         .battle-mini-btn:hover { background: #555; color: white; }
 
+        /* FEED E OUTROS */
+        #feed { max-width: 600px; margin: 0 auto; width: 100%; }
         .create-post { background: var(--card-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border-color); }
         .create-post textarea { width: 100%; padding: 10px; border: none; outline: none; background: transparent; color: var(--text-color); resize: none; font-size: 1rem; }
         .post-tools { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 10px; margin-top: 10px; }
@@ -139,6 +242,7 @@
         #preview-container { margin-top: 10px; display: none; position: relative; width: 100%; text-align: center; background: #000; border-radius: 4px; overflow: hidden; }
         #preview-image { max-width: 100%; max-height: 300px; object-fit: contain; }
         .remove-img { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        
         .post { background: var(--card-bg); border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); position: relative; overflow: visible; }
         .post-header { display: flex; align-items: center; padding: 10px; }
         .user-avatar-post { width: 35px; height: 35px; border-radius: 50%; background: #efefef; margin-right: 10px; overflow: hidden; border: 1px solid var(--border-color); }
@@ -157,28 +261,70 @@
         .post-actions { display: flex; padding: 10px; gap: 15px; }
         .action-btn { background: none; border: none; cursor: pointer; color: var(--text-color); font-size: 1.5rem; display: flex; align-items: center; gap: 5px; padding: 0; }
         .action-btn.liked { color: var(--danger-color); }
-        
+        .edit-textarea { width: 100%; border: 1px solid var(--primary-color); border-radius: 4px; padding: 10px; margin: 10px 0; }
+
+        /* RANKINGS */
         .rankings-wrapper { display: flex; gap: 20px; flex-wrap: wrap; padding-bottom: 20px; }
         .ranking-col { flex: 1 1 300px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; }
         .ranking-col h3 { color: var(--primary-color); text-align: center; margin-bottom: 15px; border-bottom: 2px solid var(--primary-color); font-size: 1.1rem; }
         .ranking-table { width: 100%; border-collapse: collapse; font-size: 14px; }
         .ranking-table td { padding: 8px; border-bottom: 1px solid var(--border-color); }
 
+        /* MODAIS */
         .modal-overlay-comment { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
-        .close-modal { position: sticky; top: 10px; float: right; margin-bottom: -40px; font-size: 2rem; color: #333; cursor: pointer; z-index: 2005; background: rgba(255, 255, 255, 0.9); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.3); text-shadow: none; transition: 0.2s; }
+        .close-modal { 
+            position: sticky; 
+            top: 10px; 
+            float: right;
+            margin-bottom: -40px; 
+            font-size: 2rem; 
+            color: #333; 
+            cursor: pointer; 
+            z-index: 2005; 
+            background: rgba(255, 255, 255, 0.9);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            text-shadow: none;
+            transition: 0.2s;
+        }
         .close-modal:hover { color: var(--danger-color); transform: scale(1.1); background: #fff; }
-        .modal-content-card { background: var(--card-bg); padding: 30px; border-radius: 10px; width: 90%; max-width: 350px; text-align: center; position: relative; border: 1px solid var(--border-color); max-height: 90vh; overflow-y: auto; overflow-x: hidden; padding-top: 20px; }
+
+        .modal-content-card { 
+            background: var(--card-bg); 
+            padding: 30px; 
+            border-radius: 10px; 
+            width: 90%; 
+            max-width: 350px; 
+            text-align: center; 
+            position: relative; 
+            border: 1px solid var(--border-color);
+            max-height: 90vh; 
+            overflow-y: auto; 
+            overflow-x: hidden;
+            padding-top: 20px; 
+        }
         .jutsu-modal-img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 15px; border: 1px solid var(--border-color); }
         .jutsu-modal-rank { display: inline-block; background: var(--primary-color); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-bottom: 10px; }
         .jutsu-modal-price { color: var(--green-color); font-weight: bold; font-size: 1.2rem; border-top: 1px solid var(--border-color); padding-top: 15px; }
+        
         .jutsu-stats-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
         .jutsu-stat-tag { padding: 4px 12px; border-radius: 15px; color: white; font-weight: bold; font-size: 0.8rem; margin: 2px; }
-        .desc-scroll-container { max-height: 150px; overflow-y: auto; text-align: left; margin: 10px 0; padding: 5px; border: 1px solid transparent; scrollbar-width: thin; }
 
-        .section-title { border-bottom: 2px solid #ccc; padding-bottom: 5px; margin-top: 25px; margin-bottom: 15px; color: var(--text-color); }
-        .mentoria-option { background: var(--bg-color); border: 1px solid var(--border-color); padding: 10px; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; cursor: pointer; transition: 0.2s; }
-        .mentoria-option:hover { border-color: var(--primary-color); }
-        .mentoria-radio { margin-right: 10px; transform: scale(1.2); cursor: pointer; }
+        /* Estilo da descrição rolável */
+        .desc-scroll-container {
+            max-height: 150px; 
+            overflow-y: auto; 
+            text-align: left;
+            margin: 10px 0;
+            padding: 5px;
+            border: 1px solid transparent; 
+            scrollbar-width: thin;
+        }
 
         .modal-content-profile { background: var(--card-bg); width: 90%; max-width: 800px; max-height: 90vh; border-radius: 15px; overflow-y: auto; position: relative; border: 1px solid var(--border-color); }
         .profile-header { background: linear-gradient(to right, #ff5e00, #ff9100); padding: 40px 20px; text-align: center; color: white; }
@@ -188,6 +334,11 @@
         .profile-char { font-size: 1.1rem; opacity: 0.9; }
         .profile-body { padding: 20px; }
         .profile-stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; margin-bottom: 30px; }
+        .stat-card { background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px; text-align: center; }
+        .stat-value { font-size: 1.2rem; font-weight: bold; color: var(--primary-color); }
+        .stat-label { font-size: 0.75rem; color: #777; margin-top: 3px; text-transform: uppercase; font-weight: bold; }
+        .stats-divider { grid-column: 1 / -1; font-weight: bold; color: var(--text-color); margin: 20px 0 5px 0; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
+
         .modal-content-comment { background: var(--card-bg); width: 90%; max-width: 900px; height: 80vh; border-radius: 4px; display: flex; overflow: hidden; position: relative; }
         .modal-left { flex: 1.5; background: #000; display: flex; align-items: center; justify-content: center; }
         .modal-left img { max-width: 100%; max-height: 100%; object-fit: contain; }
@@ -197,19 +348,75 @@
         .comment-input-area input { flex: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 20px; outline: none; }
         .edit-input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 5px; }
         .edit-avatar-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color); margin: 10px auto; display: block; }
-        .historia-container { width: 100%; max-width: 800px; margin: 0 auto; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; position: relative; }
+
+        /* HISTORIA - CORREÇÃO */
+        .historia-container { 
+            width: 100%; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: var(--card-bg); 
+            border: 1px solid var(--border-color); 
+            border-radius: 10px; 
+            overflow: hidden; 
+            position: relative; 
+        }
         .historia-img-container { width: 100%; height: 300px; background-color: #000; position: relative; }
         .historia-img-container img { width: 100%; height: 100%; object-fit: cover; }
         .historia-divider { height: 4px; background-color: #dbdbdb; border: none; margin: 0; }
         .historia-text-content { padding: 30px; line-height: 1.8; font-size: 1.1rem; color: var(--text-color); white-space: pre-wrap; }
-        .frase-input-area { background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px; display: flex; gap: 10px; align-items: center; width: 100%; }
-        .frase-input-area input { flex-grow: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; outline: none; min-width: 0; }
+
+        /* FRASES - CORREÇÃO */
+        .frase-input-area { 
+            background: var(--card-bg); 
+            padding: 15px; 
+            border-radius: 8px; 
+            border: 1px solid var(--border-color); 
+            margin-bottom: 20px; 
+            display: flex; 
+            gap: 10px; 
+            align-items: center; 
+            width: 100%;
+        }
+        .frase-input-area input { 
+            flex-grow: 1; 
+            padding: 10px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 5px; 
+            outline: none; 
+            min-width: 0; 
+        }
         .frases-list { display: flex; flex-direction: column; gap: 10px; }
-        .frase-item { background: var(--card-bg); padding: 20px; border-bottom: 1px solid #ccc; cursor: pointer; transition: background 0.2s; position: relative; border-radius: 5px; display: flex; justify-content: space-between; align-items: flex-start; word-break: break-word; }
+        .frase-item { 
+            background: var(--card-bg); 
+            padding: 20px; 
+            border-bottom: 1px solid #ccc; 
+            cursor: pointer; 
+            transition: background 0.2s; 
+            position: relative; 
+            border-radius: 5px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-start;
+            word-break: break-word; 
+        }
         .frase-item:hover { background-color: rgba(0,0,0,0.02); }
         .frase-content { font-size: 1.1rem; font-style: italic; color: var(--text-color); flex: 1; padding-right: 30px; }
         .frase-author { font-size: 0.85rem; color: var(--primary-color); font-weight: bold; margin-top: 5px; }
         
+        .options-menu-container { margin-left: auto; position: relative; }
+        .options-btn { cursor: pointer; color: var(--text-color); padding: 8px; width: 30px; text-align: center; }
+        .options-dropdown { display: none; position: absolute; top: 100%; right: 0; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; width: 140px; }
+        .options-dropdown.active { display: block; }
+        .options-item { padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-color); }
+        .options-item.danger { color: var(--danger-color); }
+
+        /* BARRA DE XP */
+        .level-container { background: var(--card-bg); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 20px; }
+        .level-info { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; color: var(--text-color); }
+        .xp-bar-bg { width: 100%; height: 20px; background: #eee; border-radius: 10px; overflow: hidden; position: relative; }
+        .xp-bar-fill { height: 100%; background: linear-gradient(90deg, #ff9100, #ff5e00); width: 0%; transition: width 0.5s ease-in-out; }
+        .xp-text { position: absolute; width: 100%; text-align: center; top: 0; left: 0; font-size: 0.75rem; color: #333; line-height: 20px; font-weight: bold; text-shadow: 0 0 2px white; }
+
         @media (max-width: 768px) {
             #mobile-menu-btn { display: block; }
             .sidebar { position: fixed; top: 0; left: -260px; height: 100%; box-shadow: 2px 0 10px rgba(0,0,0,0.3); transition: left 0.3s ease; }
@@ -250,7 +457,6 @@
                 <button id="side-btn-dashboard" onclick="showTab('dashboard')" class="active"><i class="fa-solid fa-chart-line"></i> Dashboard</button>
                 <button id="side-btn-batalha" onclick="showTab('batalha')"><i class="fa-solid fa-khanda"></i> Batalha</button>
                 <button id="side-btn-inventario" onclick="showTab('inventario')"><i class="fa-solid fa-box-open"></i> Inventário</button>
-                <button id="side-btn-mentorias" onclick="showTab('mentorias')"><i class="fa-solid fa-chalkboard-teacher"></i> Mentorias</button>
                 <button id="side-btn-missoes" onclick="showTab('missoes')"><i class="fa-solid fa-scroll"></i> Missões</button>
                 <button id="side-btn-conquistas" onclick="showTab('conquistas')"><i class="fa-solid fa-trophy"></i> Conquistas</button>
                 <button id="side-btn-personagens" onclick="showTab('personagens')"><i class="fa-solid fa-users"></i> Personagens</button>
@@ -312,18 +518,6 @@
                     <h2 style="margin-bottom:15px;">Painel de Batalha</h2>
                     <div class="battle-grid" id="battle-grid">
                         <p style="color:#777;">Carregando lutadores...</p>
-                    </div>
-                </div>
-
-                <div id="mentorias" class="tab-content">
-                    <h2>Mentorias</h2>
-                    <h3 class="section-title">RPG de Turno</h3>
-                    <div id="grid-mentorias-turno" class="bucket-grid">
-                        <p style="color:#777;">Carregando mentores...</p>
-                    </div>
-                    <h3 class="section-title">RPG de Cards</h3>
-                    <div id="grid-mentorias-cards" class="bucket-grid">
-                        <p style="color:#777;">Carregando mentores...</p>
                     </div>
                 </div>
 
@@ -432,7 +626,7 @@
                         <div class="stats-divider">Batalha</div>
                         <div class="stat-card"><div class="stat-value" id="dash-wins">0</div><div class="stat-label">Vitórias</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-draws">0</div><div class="stat-label">Empates</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-derrotas">0</div><div class="stat-label">Derrotas</div></div>
+                        <div class="stat-card"><div class="stat-value" id="dash-loses">0</div><div class="stat-label">Derrotas</div></div>
                         <div class="stats-divider">Inventário</div>
                         <div class="stat-card"><div class="stat-value" id="dash-jutsus">0</div><div class="stat-label">Jutsus</div></div>
                         <div class="stat-card"><div class="stat-value" id="dash-tools">0</div><div class="stat-label">Ferramentas</div></div>
@@ -492,22 +686,6 @@
             <input type="number" id="gift-amount" class="edit-input" placeholder="Valor" min="1">
             
             <button class="buy-btn" onclick="enviarPresente()">Enviar Presente</button>
-        </div>
-    </div>
-    
-    <div id="mentoriaModal" class="modal-overlay-comment" style="z-index: 2005;">
-        <div class="modal-content-card" style="max-width: 350px;">
-            <span class="close-modal" onclick="document.getElementById('mentoriaModal').style.display='none'">&times;</span>
-            
-            <img id="mentor-img-modal" src="" class="jutsu-modal-img">
-            <h2 id="mentor-name-modal" style="color:var(--primary-color);"></h2>
-            
-            <h4 style="margin: 15px 0 10px; color: #555;">O que você quer aprender?</h4>
-            
-            <div id="mentoria-options-container" style="text-align:left; max-height: 200px; overflow-y: auto; margin-bottom: 15px;">
-                </div>
-            
-            <button class="buy-btn" onclick="confirmarMentoria()">Pagar</button>
         </div>
     </div>
 
@@ -658,8 +836,6 @@
         let globalItensMap = {}; 
         let ordenacaoAtual = 'alfabetica';
         let currentGiftTarget = null; // ID de quem vai receber presente
-        let currentMentorData = null; // Guarda dados do mentor atual
-        let globalMentores = {}; // Cache de mentores para acesso fácil
 
         // CONFIGURAÇÃO DE LEVEL
         function getXpNecessario(nivel) {
@@ -726,25 +902,24 @@
                         if(!currentUserData.inventario) currentUserData.inventario = {};
                         if(!currentUserData.meusJutsus) currentUserData.meusJutsus = [];
                         if(!currentUserData.statusConquistas) currentUserData.statusConquistas = {};
-                        if(!currentUserData.aprendizados) currentUserData.aprendizados = [];
                         
                         verificarLevelUpAutomatico(currentUserData);
                         atualizarInterface(currentUserData);
                         renderizarBatalha(); 
                         
-                        const activeTab = document.querySelector('.tab-content.active');
-                        if (activeTab) window.showTab(activeTab.id);
+                        // Atualiza as abas de missão/conquista em tempo real para corrigir status
+                        if(document.getElementById('missoes').classList.contains('active')) carregarMissoes();
+                        if(document.getElementById('conquistas').classList.contains('active')) carregarConquistas();
                     }
                 });
                 
                 const initialSnap = await getDoc(docRef);
                 if(initialSnap.exists()){ 
                     currentUserData = initialSnap.data(); 
-                    // Carrega tudo UMA VEZ no início
                     carregarTudo(); 
                 }
                 else {
-                    const dadosPadrao = { nome: "Novo Ninja", ryos: 100, xp: 0, nivel: 1, email: user.email, meusJutsus: [], inventario: {}, statusMissoes: {}, statusConquistas: {}, elementos: [], kekkei_genkai: [], essencia_ninja: 0, aprendizados: [] };
+                    const dadosPadrao = { nome: "Novo Ninja", ryos: 100, xp: 0, nivel: 1, email: user.email, meusJutsus: [], inventario: {}, statusMissoes: {}, statusConquistas: {}, elementos: [], kekkei_genkai: [], essencia_ninja: 0 };
                     await setDoc(docRef, dadosPadrao);
                     currentUserData = dadosPadrao;
                     atualizarInterface(dadosPadrao);
@@ -759,16 +934,78 @@
             }
         });
 
-        // --- CORE FUNCTIONS (DEFINIÇÕES) ---
+        // --- SISTEMA DE ABAS BLINDADO ---
+        window.showTab = (t) => {
+            try {
+                // 1. Troca Visual
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                const target = document.getElementById(t);
+                if(target) target.classList.add('active');
+
+                // 2. Atualiza Botões
+                document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.sidebar button').forEach(b => b.classList.remove('active'));
+                const btnTop = document.getElementById('nav-btn-'+t);
+                const btnSide = document.getElementById('side-btn-'+t);
+                if(btnTop) btnTop.classList.add('active');
+                if(btnSide) btnSide.classList.add('active');
+
+                // 3. Carrega Dados (Protegido)
+                if(currentUserData) {
+                    if(t==='personagens') carregarPersonagens();
+                    if(t==='frases') carregarFrases();
+                    if(t==='inventario') carregarInventario();
+                    // Batalha é em tempo real, não precisa recarregar aqui
+                    if(t==='jutsus') carregarMeusJutsus(currentUserData.meusJutsus); 
+                    if(t==='conquistas') carregarConquistas();
+                    if(t==='missoes') carregarMissoes();
+                    if(t==='rankings') carregarRankings();
+                }
+                
+                if(window.innerWidth <= 768) window.toggleMobileMenu();
+            } catch (e) {
+                console.error("Erro ao trocar aba:", e);
+            }
+        };
         
+        window.mudarOrdenacao = (ordem) => {
+            ordenacaoAtual = ordem;
+            if(document.getElementById('jutsus').classList.contains('active')) {
+                carregarMeusJutsus(currentUserData.meusJutsus);
+                carregarLoja();
+            } else if(document.getElementById('ferramentas').classList.contains('active')) {
+                carregarLojaFerramentas();
+            } else if(document.getElementById('loja').classList.contains('active')) {
+                carregarLojaItens();
+            }
+        };
+
+        function aplicarOrdenacao(lista, ordem) {
+            const novaLista = [...lista];
+            if (ordem === 'menor_valor') {
+                return novaLista.sort((a, b) => (a.preco || 0) - (b.preco || 0));
+            } else if (ordem === 'maior_valor') {
+                return novaLista.sort((a, b) => (b.preco || 0) - (a.preco || 0));
+            } else if (ordem === 'alfabetica') {
+                return novaLista.sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
+            }
+            return novaLista;
+        }
+
+        // --- LEVEL UP CORRIGIDO (XP GASTO) ---
         async function verificarLevelUpAutomatico(dados) {
             let xpAtual = dados.xp || 0;
             let nivelAtual = dados.nivel || 1;
             let xpNecessario = getXpNecessario(nivelAtual);
+            
             if (xpAtual >= xpNecessario) {
-                let novoXp = xpAtual - xpNecessario; 
+                let novoXp = xpAtual - xpNecessario; // SUBTRAI O CUSTO
                 let novoNivel = nivelAtual + 1;
-                await updateDoc(doc(db, "users", auth.currentUser.uid), { nivel: novoNivel, xp: novoXp });
+                
+                await updateDoc(doc(db, "users", auth.currentUser.uid), { 
+                    nivel: novoNivel,
+                    xp: novoXp 
+                });
                 alert(`Level Up! Nível ${novoNivel}!`);
             }
         }
@@ -780,7 +1017,163 @@
                 const s2 = await getDocs(collection(db, "ferramentas")); s2.forEach(d => globalItensMap[d.id] = { ...d.data(), type: 'tool' });
             } catch(e) {}
         }
-        
+
+        function carregarTudo() {
+            try { carregarLoja(); } catch(e){}
+            try { carregarMeusJutsus(currentUserData.meusJutsus); } catch(e){}
+            try { carregarLojaFerramentas(); } catch(e){}
+            try { carregarLojaItens(); } catch(e){}
+            try { carregarInventario(); } catch(e){}
+            try { carregarMissoes(); } catch(e){}
+            try { carregarConquistas(); } catch(e){}
+            try { carregarRankings(); } catch(e){}
+            try { carregarFrases(); } catch(e){}
+            if(auth.currentUser.email === "admin@rpgnaruto.com") carregarPainelAdmin();
+        }
+
+        function formatarNum(v) { return Number(v||0).toLocaleString('pt-BR'); }
+
+        function aplicarEscalaPersonalizada(dadosJutsu) {
+            if (!dadosJutsu) return {}; 
+            let dadosFinais = { ...dadosJutsu };
+            try {
+                if (!auth.currentUser) return dadosFinais;
+                const uid = auth.currentUser.uid;
+                if (dadosFinais.escalonamento && typeof dadosFinais.escalonamento === 'object') {
+                    const p = dadosFinais.escalonamento[uid];
+                    if (p) {
+                        if (p.chakra !== undefined) dadosFinais.chakra = p.chakra;
+                        if (p.stamina !== undefined) dadosFinais.stamina = p.stamina;
+                        if (p.dano !== undefined) dadosFinais.dano = p.dano;
+                        if (p.descricao !== undefined) dadosFinais.descricao = p.descricao;
+                    }
+                }
+            } catch (err) { return dadosJutsu; }
+            return dadosFinais;
+        }
+
+        function renderizarIcones(lista, containerId, mapaIcones, titulo) {
+            const container = document.getElementById(containerId); if (!container) return;
+            container.innerHTML = `<div class="elementos-title">${titulo}</div><div class="elementos-list"></div>`;
+            const listDiv = container.querySelector('.elementos-list');
+            if (!lista || lista.length === 0) { container.style.display = 'none'; return; }
+            container.style.display = 'block';
+            lista.forEach(elem => {
+                const iconUrl = mapaIcones[elem.trim().toLowerCase()];
+                if (iconUrl) { const img = document.createElement('img'); img.src = iconUrl; img.className = 'element-icon'; img.title = elem; listDiv.appendChild(img); }
+            });
+        }
+
+        function atualizarInterface(dados) {
+            document.querySelector('.user-info').innerText = dados.apelido || dados.nome || "Ninja";
+            document.getElementById('ryos-text').innerText = formatarNum(dados.ryos);
+            document.getElementById('en-text').innerText = formatarNum(dados.essencia_ninja || 0);
+
+            if(dados.avatar) document.getElementById('header-avatar').src = dados.avatar;
+            if(dados.historiaTexto) document.getElementById('historia-display-text').innerText = dados.historiaTexto;
+            if(dados.historiaImagem) document.getElementById('historia-display-img').src = dados.historiaImagem;
+
+            const nivel = dados.nivel || 1;
+            const xpAtual = dados.xp || 0;
+            const xpMeta = getXpNecessario(nivel);
+
+            const porcentagem = Math.min((xpAtual / xpMeta) * 100, 100);
+
+            document.getElementById('level-display').innerText = "Nível " + nivel;
+            document.getElementById('xp-text-display').innerText = `${xpAtual} / ${xpMeta} XP`;
+            document.getElementById('xp-bar').style.width = porcentagem + "%";
+
+            renderizarIcones(dados.elementos || [], 'dash-elementos', ELEMENTOS_ICONS, 'Naturezas de Chakra');
+            renderizarIcones(dados.kekkei_genkai || [], 'dash-kekkei', KEKKEI_ICONS, 'Kekkei Genkai');
+            renderizarIcones(dados.kekkei_moura || [], 'dash-moura', KEKKEI_MOURA_ICONS, 'Kekkei Moura');
+            renderizarIcones(dados.kekkei_touta || [], 'dash-touta', KEKKEI_TOUTA_ICONS, 'Kekkei Touta');
+
+            const set = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
+            set('dash-nivel', nivel); set('dash-cargo', dados.cargo||"Genin"); set('dash-patente', dados.patente||"Genin"); set('dash-rank', dados.rank||"E"); set('dash-speed-rank', dados.speed_rank||"E"); set('dash-tipo', dados.tipo||"Normal"); set('dash-ryos', formatarNum(dados.ryos));
+            set('dash-jutsus', (dados.meusJutsus || []).length); 
+            
+            let totalItems = 0, totalTools = 0;
+            if(dados.inventario) { for(let id in dados.inventario) { if(globalItensMap[id]) { if(globalItensMap[id].type === 'tool') totalTools += dados.inventario[id]; else totalItems += dados.inventario[id]; } } }
+            set('dash-tools', totalTools); set('dash-items', totalItems);
+
+            set('dash-wins', dados.vitorias||0); set('dash-loses', dados.derrotas||0); set('dash-draws', dados.empates||0);
+            set('dash-vida', dados.vida||100); set('dash-sanidade', dados.sanidade||100);
+            set('dash-chakra', dados.chakra||100); set('dash-stamina', dados.stamina||100); set('dash-controle', dados.controle_chakra||"Baixo");
+            set('dash-forca', dados.forca||10); set('dash-defesa', dados.defesa||10); set('dash-constituicao', dados.constituicao||10);
+            set('dash-destreza', dados.destreza||10); set('dash-intelecto', dados.intelecto||10); set('dash-agilidade', dados.agilidade||10); set('dash-velocidade', dados.velocidade||10);
+        }
+
+        function renderizarBatalha() {
+            const grid = document.getElementById('battle-grid'); if(!grid) return;
+            onSnapshot(collection(db, "users"), (snapshot) => {
+                grid.innerHTML = '';
+                if(snapshot.empty) { grid.innerHTML = '<p>Sem ninjas.</p>'; return; }
+                snapshot.forEach(docSnap => {
+                    const u = docSnap.data(); const uid = docSnap.id;
+                    
+                    const criarLinkMax = (val, max, field) => {
+                        return `<span class="battle-val">${val} / <span style="cursor:pointer; text-decoration:underline;" onclick="window.editarMaximo('${uid}', '${field}')" title="Clique para editar máximo">${max}</span></span>`;
+                    };
+
+                    const card = document.createElement('div'); card.className = 'battle-card';
+                    card.innerHTML = `
+                        <div class="battle-header-info">
+                            <img src="${u.avatar || IMG_PADRAO}" class="battle-avatar">
+                            <div>
+                                <div class="battle-name">${u.nome || "Ninja"}</div>
+                                <div class="battle-char">${u.apelido || "Sem Apelido"} - Nvl ${u.nivel || 1}</div>
+                            </div>
+                        </div>
+                        <div class="battle-stats-wrapper">
+                            ${criarLinhaStatusCustom(uid, 'vida', 'Vida', 'HP', u.vida||0, u.max_vida||100, 'bar-life')}
+                            ${criarLinhaStatusCustom(uid, 'sanidade', 'Sanidade', 'SAN', u.sanidade||0, u.max_sanidade||100, 'bar-sanidade')}
+                            ${criarLinhaStatusCustom(uid, 'stamina', 'Stamina', 'STA', u.stamina||0, u.max_stamina||100, 'bar-stamina')}
+                            ${criarLinhaStatusCustom(uid, 'chakra', 'Chakra', 'CHK', u.chakra||0, u.max_chakra||100, 'bar-chakra')}
+                        </div>`;
+                    grid.appendChild(card);
+                });
+            });
+        }
+
+        function criarLinhaStatusCustom(uid, f, l, a, v, m, c) { 
+            const p=Math.min((v/m)*100,100); 
+            return `
+            <div class="battle-row">
+                <div class="battle-row-header"><span>${l}</span><span>${a}</span></div>
+                <div class="battle-controls">
+                    <div class="battle-actions-row"><div class="battle-mini-btn" onclick="alterarStatus('${uid}','${f}',-5)">-5</div><div class="battle-mini-btn" onclick="alterarStatus('${uid}','${f}',-1)">-1</div></div>
+                    <span class="battle-val">${v} / <span style="cursor:pointer; border-bottom:1px dotted #ccc;" onclick="editarMaximo('${uid}', 'max_${f}')">${m}</span></span>
+                    <div class="battle-actions-row"><div class="battle-mini-btn" onclick="alterarStatus('${uid}','${f}',1)">+1</div><div class="battle-mini-btn" onclick="alterarStatus('${uid}','${f}',5)">+5</div></div>
+                </div>
+                <div class="battle-bar-bg"><div class="battle-bar-fill ${c}" style="width:${p}%;"></div><div class="battle-bar-text">${p.toFixed(0)}%</div></div>
+            </div>`; 
+        }
+
+        window.editarMaximo = async (uid, field) => {
+            const novo = prompt("Novo valor máximo:");
+            if(novo && !isNaN(novo)) {
+                await updateDoc(doc(db, "users", uid), { [field]: parseInt(novo) });
+            }
+        };
+
+        window.alterarStatus = async (targetUid, stat, valor) => { await updateDoc(doc(db, "users", targetUid), { [stat]: increment(valor) }); };
+
+        function gerarTagsBonus(d) {
+            let html = '';
+            if(d.bonus_hp) html += `<span class="stat-tag tag-buff">+${d.bonus_hp} HP</span>`;
+            if(d.bonus_stamina) html += `<span class="stat-tag tag-stamina">+${d.bonus_stamina} STA</span>`;
+            if(d.bonus_chakra) html += `<span class="stat-tag tag-chakra">+${d.bonus_chakra} CHK</span>`;
+            if(d.bonus_forca) html += `<span class="stat-tag tag-attr">+${d.bonus_forca} FOR</span>`;
+            if(d.bonus_defesa) html += `<span class="stat-tag tag-attr">+${d.bonus_defesa} DEF</span>`;
+            if(d.bonus_agilidade) html += `<span class="stat-tag tag-attr">+${d.bonus_agilidade} AGI</span>`;
+            if(d.bonus_velocidade) html += `<span class="stat-tag tag-attr">+${d.bonus_velocidade} VEL</span>`;
+            if(d.bonus_intelecto) html += `<span class="stat-tag tag-attr">+${d.bonus_intelecto} INT</span>`;
+            if(d.bonus_constituicao) html += `<span class="stat-tag tag-attr">+${d.bonus_constituicao} CON</span>`;
+            if(d.bonus_destreza) html += `<span class="stat-tag tag-attr">+${d.bonus_destreza} DES</span>`;
+            return html;
+        }
+
+        // --- CORE FUNCTIONS ---
         function criarCard(containerId, dados, id, tipo, clickFn, qtd = null) {
             const c = document.getElementById(containerId); if(!c) return;
             const div = document.createElement('div'); div.className = 'card'; div.onclick = () => clickFn(id, dados);
@@ -791,31 +1184,41 @@
             div.innerHTML = `<img src="${dados.imagem||IMG_PADRAO}" class="card-img-top"><h4>${dados.nome}</h4><small>${sub}</small>${extra}`;
             c.appendChild(div);
         }
-
         function criarCardLoja(containerId, dados, id, tipo, buyFn, clickFn) {
             const c = document.getElementById(containerId); if(!c) return;
             const div = document.createElement('div'); div.className = 'card'; div.onclick = (e) => { if(!e.target.classList.contains('buy-btn') && !e.target.classList.contains('qtd-input-square')) clickFn(id, dados); };
             let sub = "", buyControlHTML = "", priceHTML = "";
+
             const currency = dados.preco_en ? 'EN' : 'Ryos';
             let finalPrice = currency === 'EN' ? dados.preco_en : dados.preco;
+            
             if (currency === 'Ryos' && dados.preco_promocional && dados.preco_promocional < dados.preco) {
                 finalPrice = dados.preco_promocional;
-                priceHTML = `<p id="price-${id}" class="price-tag"><span style="text-decoration:line-through; color:#999; font-size:0.85em; margin-right:5px;">${formatarNum(dados.preco)}</span><span style="color:var(--primary-color); font-weight:bold;">${formatarNum(finalPrice)} Ryos</span></p>`;
+                priceHTML = `<p id="price-${id}" class="price-tag">
+                    <span style="text-decoration:line-through; color:#999; font-size:0.85em; margin-right:5px;">${formatarNum(dados.preco)}</span>
+                    <span style="color:var(--primary-color); font-weight:bold;">${formatarNum(finalPrice)} Ryos</span>
+                </p>`;
             } else {
                 const colorClass = currency === 'EN' ? 'en-price' : '';
                 priceHTML = `<p id="price-${id}" class="price-tag ${colorClass}">${formatarNum(finalPrice)} ${currency}</p>`;
             }
+
             if(tipo === 'jutsu') sub = "Rank " + dados.rank; else if(tipo === 'ferramenta') sub = dados.dano || "Ferramenta"; else sub = dados.efeito || "Item";
+            
             const bonusTags = gerarTagsBonus(dados);
+
             let isOwned = (tipo === 'jutsu' && currentUserData.meusJutsus && currentUserData.meusJutsus.includes(id));
             const btnClass = currency === 'EN' ? 'buy-btn en-btn' : 'buy-btn';
+
             if(tipo !== 'jutsu') { 
                 buyControlHTML = `<div class="qtd-container-square"><input type="number" id="qtd-${id}" class="qtd-input-square" value="1" min="1" onclick="event.stopPropagation()"></div><button id="btn-buy-${id}" class="${btnClass}" onclick="event.stopPropagation(); comprarMultiplos('${id}', ${finalPrice}, '${dados.nome}', '${tipo}', 'qtd-${id}', '${currency}')">Comprar x1</button>`; 
             } else { 
                 buyControlHTML = isOwned ? `<button class="buy-btn" disabled>Adquirido</button>` : `<button class="${btnClass}" onclick="event.stopPropagation(); comprarJutsu('${id}', ${finalPrice}, '${dados.nome}', '${currency}')">Comprar</button>`; 
             }
+            
             div.innerHTML = `<img src="${dados.imagem||IMG_PADRAO}" class="card-img-top"><h4>${dados.nome}</h4><small>${sub}</small><div class="stats-row">${bonusTags}</div>${priceHTML}${buyControlHTML}`;
             c.appendChild(div);
+            
             if(tipo !== 'jutsu') { 
                 const inp = document.getElementById(`qtd-${id}`); 
                 inp.addEventListener('input', (e) => { 
@@ -830,297 +1233,512 @@
             }
         }
 
-        // --- CARREGAMENTO DE DADOS ---
-
         async function carregarLoja() {
             try {
-                if (!currentUserData) return;
                 const c = document.getElementById('loja-jutsus-grid'); if(!c) return; c.innerHTML = '';
                 const m = currentUserData.meusJutsus || []; const isAdmin = auth.currentUser.email === "admin@rpgnaruto.com";
                 const snap = await getDocs(collection(db, "jutsus"));
+                
                 let lista = [];
                 snap.forEach(d => { try { let i = d.data(); i = aplicarEscalaPersonalizada(i); const p = i.restrito_a || []; if(!isAdmin && p.length > 0 && !p.includes(currentUserData.nome || "")) return; lista.push({id:d.id, ...i}); } catch(e){} });
+                
                 lista = aplicarOrdenacao(lista, ordenacaoAtual);
                 lista.forEach(item => criarCardLoja('loja-jutsus-grid', item, item.id, 'jutsu', null, (id, i) => verDetalhesJutsu(id, i)));
-            } catch(e) { console.error(e); }
+            } catch(e) {}
         }
 
         async function carregarMeusJutsus(l) {
-            try {
-                if (!currentUserData) return;
-                const c = document.getElementById('meus-jutsus-grid'); if(!c) return; c.innerHTML = ''; l = (l || []).filter(id => id); 
-                if(l.length === 0) { c.innerHTML = '<p>Nenhum jutsu aprendido.</p>'; return; }
-                const promises = l.map(async (id) => { try { const s = await getDoc(doc(db, "jutsus", id)); if(s.exists()) { let data = s.data(); try { data = aplicarEscalaPersonalizada(data); } catch(e){} return { id, ...data }; } } catch(e) { return null; } });
-                const resultados = await Promise.all(promises);
-                let lista = resultados.filter(item => item !== null);
-                lista = aplicarOrdenacao(lista, ordenacaoAtual);
-                lista.forEach(item => criarCard('meus-jutsus-grid', item, item.id, 'jutsu', (id, i) => verDetalhesJutsu(id, i)));
-            } catch(e) { console.error(e); }
+            const c = document.getElementById('meus-jutsus-grid'); if(!c) return; c.innerHTML = ''; l = (l || []).filter(id => id); 
+            if(l.length === 0) { c.innerHTML = '<p>Nenhum jutsu aprendido.</p>'; return; }
+            const promises = l.map(async (id) => { try { const s = await getDoc(doc(db, "jutsus", id)); if(s.exists()) { let data = s.data(); try { data = aplicarEscalaPersonalizada(data); } catch(e){} return { id, ...data }; } } catch(e) { return null; } });
+            
+            const resultados = await Promise.all(promises);
+            let lista = resultados.filter(item => item !== null);
+            
+            // Jutsus geralmente não têm preço para ordenar por valor, mas vamos manter a lógica caso tenham, ou ordenar por nome
+            lista = aplicarOrdenacao(lista, ordenacaoAtual);
+            
+            lista.forEach(item => criarCard('meus-jutsus-grid', item, item.id, 'jutsu', (id, i) => verDetalhesJutsu(id, i)));
         }
 
         async function carregarLojaFerramentas() { 
-            try {
-                if (!currentUserData) return;
-                const c = document.getElementById('loja-ferramentas-grid'); if(!c) return; c.innerHTML = ''; 
-                const s = await getDocs(collection(db, "ferramentas")); 
-                let lista = [];
-                s.forEach(d => lista.push({id:d.id, ...d.data()}));
-                lista = aplicarOrdenacao(lista, ordenacaoAtual);
-                lista.forEach(item => criarCardLoja('loja-ferramentas-grid', item, item.id, 'ferramenta', null, (id, i) => verDetalhesFerramenta(id, i)));
-            } catch(e) { console.error(e); }
+            const c = document.getElementById('loja-ferramentas-grid'); if(!c) return; c.innerHTML = ''; 
+            const s = await getDocs(collection(db, "ferramentas")); 
+            let lista = [];
+            s.forEach(d => lista.push({id:d.id, ...d.data()}));
+            
+            lista = aplicarOrdenacao(lista, ordenacaoAtual);
+            lista.forEach(item => criarCardLoja('loja-ferramentas-grid', item, item.id, 'ferramenta', null, (id, i) => verDetalhesFerramenta(id, i)));
         }
 
         async function carregarLojaItens() {
-            try {
-                if (!currentUserData) return;
-                const c = document.getElementById('loja-itens-grid'); if(!c) return; c.innerHTML = '';
-                const s = await getDocs(collection(db, "itens"));
-                let lista = [];
-                s.forEach(d => { 
-                    const i = d.data(); 
-                    let ok=false; 
-                    if(!i.vila || i.vila==='Global') ok=true; 
-                    else if(Array.isArray(i.vila)){if(i.vila.includes(vilaAtual)||i.vila.includes('Global')) ok=true;} 
-                    else if(i.vila===vilaAtual) ok=true; 
-                    if(i.tipo===lojaAtual && ok) lista.push({id:d.id, ...i}); 
-                });
-                if (lista.length === 0) { c.innerHTML = '<p>Nenhum item nesta categoria.</p>'; return; }
-                lista = aplicarOrdenacao(lista, ordenacaoAtual);
-                lista.forEach(item => criarCardLoja('loja-itens-grid', item, item.id, 'item', null, (id, i) => verDetalhesItem(id, i)));
-            } catch(e) { console.error("Erro ao carregar itens:", e); c.innerHTML = '<p>Erro ao carregar itens.</p>'; }
+            const c = document.getElementById('loja-itens-grid'); if(!c) return; c.innerHTML = '';
+            const s = await getDocs(collection(db, "itens"));
+            let lista = [];
+            s.forEach(d => { 
+                const i = d.data(); 
+                let ok=false; 
+                if(!i.vila || i.vila==='Global') ok=true; 
+                else if(Array.isArray(i.vila)){if(i.vila.includes(vilaAtual)||i.vila.includes('Global')) ok=true;} 
+                else if(i.vila===vilaAtual) ok=true; 
+                
+                if(i.tipo===lojaAtual && ok) lista.push({id:d.id, ...i}); 
+            });
+            
+            lista = aplicarOrdenacao(lista, ordenacaoAtual);
+            lista.forEach(item => criarCardLoja('loja-itens-grid', item, item.id, 'item', null, (id, i) => verDetalhesItem(id, i)));
         }
 
         async function carregarInventario() {
-            try {
-                if (!currentUserData) return;
-                const c = document.getElementById('inventario-grid'); if(!c) return; c.innerHTML = '';
-                const inv = currentUserData.inventario || {}; const keys = Object.keys(inv).filter(k => inv[k] > 0);
-                if(keys.length === 0) { c.innerHTML = '<p>Mochila vazia.</p>'; return; }
-                for (const id of keys) {
-                    let info = globalItensMap[id];
-                    if (!info) {
-                        try {
-                            const s1 = await getDoc(doc(db, "itens", id));
-                            if(s1.exists()) { info = {...s1.data(), type: 'item'}; globalItensMap[id] = info; }
-                            else {
-                                const s2 = await getDoc(doc(db, "ferramentas", id));
-                                if(s2.exists()) { info = {...s2.data(), type: 'tool'}; globalItensMap[id] = info; }
-                            }
-                        } catch(e){}
-                    }
-                    if(info) {
-                        criarCard('inventario-grid', info, id, info.type, (id, d) => {
-                           if(info.type === 'tool') verDetalhesFerramenta(id, d); else verDetalhesItem(id, d);
-                        }, inv[id]);
-                    }
+            const c = document.getElementById('inventario-grid'); if(!c) return; c.innerHTML = '';
+            const inv = currentUserData.inventario || {}; const keys = Object.keys(inv).filter(k => inv[k] > 0);
+            if(keys.length === 0) { c.innerHTML = '<p>Mochila vazia.</p>'; return; }
+            for (const id of keys) {
+                let info = globalItensMap[id];
+                if (!info) {
+                    try {
+                        const s1 = await getDoc(doc(db, "itens", id));
+                        if(s1.exists()) { info = {...s1.data(), type: 'item'}; globalItensMap[id] = info; }
+                        else {
+                            const s2 = await getDoc(doc(db, "ferramentas", id));
+                            if(s2.exists()) { info = {...s2.data(), type: 'tool'}; globalItensMap[id] = info; }
+                        }
+                    } catch(e){}
                 }
-            } catch(e) { console.error(e); }
+                if(info) {
+                    criarCard('inventario-grid', info, id, info.type, (id, d) => {
+                       if(info.type === 'tool') verDetalhesFerramenta(id, d); else verDetalhesItem(id, d);
+                    }, inv[id]);
+                }
+            }
         }
-
+        
         async function carregarPersonagens() {
+            const c = document.getElementById('directory-grid'); if(!c) return;
+            c.innerHTML = '<p>Carregando...</p>';
             try {
-                if (!currentUserData) return;
-                const c = document.getElementById('directory-grid'); if(!c) return;
-                c.innerHTML = '<p>Carregando...</p>';
                 const s = await getDocs(collection(db, "users"));
                 c.innerHTML = '';
                 s.forEach(d => { const u = d.data(); const k = document.createElement('div'); k.className = 'card'; k.onclick = () => window.verPerfil(d.id); 
-                k.innerHTML = `<div style="width:60px; height:60px; border-radius:50%; overflow:hidden; margin:0 auto 10px;"><img src="${u.avatar||IMG_PADRAO}" style="width:100%; height:100%; object-fit:cover;"></div><h4>${u.nome}</h4><p>${u.apelido||""}</p><div style="font-size:0.8rem; margin-top:5px; color:#777;"><span style="color:var(--yellow-color);"><i class="fa-solid fa-coins"></i> ${formatarNum(u.ryos)}</span> | <span style="color:var(--en-color);"><i class="fa-regular fa-star"></i> ${formatarNum(u.essencia_ninja||0)}</span></div>${u.id !== auth.currentUser.uid ? `<button class="gift-btn" onclick="event.stopPropagation(); openGiftModal('${d.id}', '${u.nome}')"><i class="fa-solid fa-gift"></i> Presentear</button>` : ''}`; 
+                k.innerHTML = `
+                <div style="width:60px; height:60px; border-radius:50%; overflow:hidden; margin:0 auto 10px;">
+                    <img src="${u.avatar||IMG_PADRAO}" style="width:100%; height:100%; object-fit:cover;">
+                </div>
+                <h4>${u.nome}</h4>
+                <p>${u.apelido||""}</p>
+                <div style="font-size:0.8rem; margin-top:5px; color:#777;">
+                    <span style="color:var(--yellow-color);"><i class="fa-solid fa-coins"></i> ${formatarNum(u.ryos)}</span> | 
+                    <span style="color:var(--en-color);"><i class="fa-regular fa-star"></i> ${formatarNum(u.essencia_ninja||0)}</span>
+                </div>
+                ${u.id !== auth.currentUser.uid ? `<button class="gift-btn" onclick="event.stopPropagation(); openGiftModal('${d.id}', '${u.nome}')"><i class="fa-solid fa-gift"></i> Presentear</button>` : ''}
+                `; 
                 c.appendChild(k); });
-            } catch(e){ console.error(e); c.innerHTML='<p>Erro ao carregar.</p>'; }
+            } catch(e){ c.innerHTML='<p>Erro ao carregar.</p>'; }
         }
-        
-        async function carregarConquistas() {
+
+        window.openGiftModal = (uid, nome) => {
+            currentGiftTarget = uid;
+            document.getElementById('gift-target-name').innerText = nome;
+            document.getElementById('giftModal').style.display = 'flex';
+        };
+
+        window.enviarPresente = async () => {
+            const qtd = parseInt(document.getElementById('gift-amount').value);
+            const tipo = document.getElementById('gift-currency').value;
+            
+            if(!qtd || qtd <= 0) return alert("Digite uma quantidade válida!");
+            if(!currentGiftTarget) return;
+
+            const field = tipo === 'ryos' ? 'ryos' : 'essencia_ninja';
+            const moedaNome = tipo === 'ryos' ? 'Ryos' : 'Essência Ninja';
+
+            if((currentUserData[field] || 0) < qtd) return alert(`Você não tem ${moedaNome} suficiente!`);
+
+            if(!confirm(`Enviar ${qtd} ${moedaNome} para ${document.getElementById('gift-target-name').innerText}?`)) return;
+
             try {
-                if (!currentUserData) return;
-                const c = document.getElementById('conquistas-grid'); if(!c) return;
-                const m = currentUserData.statusConquistas || {};
-                c.innerHTML = '';
-                const s = await getDocs(collection(db, "conquistas"));
-                if(s.empty) { c.innerHTML = '<p>Nenhuma conquista.</p>'; return; }
-                const isAdmin = auth.currentUser.email === "admin@rpgnaruto.com";
-                s.forEach(d => {
-                    const i = d.data(); const p = i.restrito_a || [];
-                    if (!isAdmin && p.length > 0 && !p.includes(currentUserData.nome)) return;
-                    const st = m[d.id]; const k = document.createElement('div'); k.className = 'card jutsu-card-click';
-                    let btn = "";
-                    const r = i.recompensa || 0; const x = i.xp || 0; const en = i.en || 0; 
-                    if(!st) btn = `<button class="mission-btn-start" onclick="event.stopPropagation(); solicitarConquista('${d.id}', this)">Reivindicar</button>`;
-                    else if(st === 'solicitado') btn = `<button class="mission-btn-wait" onclick="event.stopPropagation();">Aguardando Kage</button>`;
-                    else if(st === 'aprovado') btn = `<button class="mission-btn-collect" onclick="event.stopPropagation(); coletarConquista('${d.id}', ${r}, ${x}, ${en}, this)">Coletar</button>`;
-                    else if(st === 'concluido') btn = `<button class="mission-btn-done" onclick="event.stopPropagation();">Concluído</button>`;
-                    let stTxt = !st ? "Disponível" : (st==='solicitado' ? "Pendente" : (st==='aprovado' ? "Aprovado!" : "Concluído"));
-                    k.onclick = () => verDetalhesConquista(d.id, i, st);
-                    let rewardText = `${formatarNum(r)} Ryos`;
-                    if(en > 0) rewardText += ` | <span style="color:var(--en-color);">${en} EN</span>`;
-                    k.innerHTML = `<img src="${i.imagem||IMG_PADRAO}" class="card-img-top"><h4>${i.titulo}</h4><p style="font-weight:bold; color:#777;">${stTxt}</p><small style="color:var(--primary-color)">${rewardText}</small>${btn}`;
-                    c.appendChild(k);
+                // Desconta do remetente
+                await updateDoc(doc(db, "users", auth.currentUser.uid), {
+                    [field]: increment(-qtd)
                 });
-            } catch(e) { console.error(e); }
-        }
+                
+                // Adiciona ao destinatário
+                await updateDoc(doc(db, "users", currentGiftTarget), {
+                    [field]: increment(qtd)
+                });
 
-        async function carregarMissoes() { 
-            try {
-                if (!currentUserData) return;
-                const c = document.getElementById('missoes-grid'); if(!c) return; 
-                const m = currentUserData.statusMissoes || {}; 
-                c.innerHTML = ''; 
-                const s = await getDocs(collection(db, "missoes"));
-                const isAdmin = auth.currentUser.email === "admin@rpgnaruto.com";
-                s.forEach(d => { 
-                    const i = d.data();
-                    let restritos = i.restrito_a;
-                    if (!restritos) restritos = [];
-                    if (typeof restritos === 'string') restritos = [restritos];
-                    const nomePlayer = currentUserData.nome;
-                    const apelidoPlayer = currentUserData.apelido;
-                    if (restritos.length > 0 && !isAdmin) {
-                        const nomeNaLista = restritos.includes(nomePlayer);
-                        const apelidoNaLista = restritos.includes(apelidoPlayer);
-                        if (!nomeNaLista && !apelidoNaLista) return;
-                    }
-                    const st = m[d.id] || 'neutro'; const k = document.createElement('div'); k.className = 'card jutsu-card-click'; 
-                    const rankClass = `rank-${(i.rank||'d').toLowerCase()}`;
-                    const rankHtml = `<span class="rank-tag ${rankClass}">Rank ${i.rank||'D'}</span>`;
-                    const r = i.recompensa || 0; const x = i.xp || 0; const en = i.en || 0; 
-                    k.onclick = () => verDetalhesMissao(d.id, i, st); 
-                    let rewardText = `${x} XP | ${formatarNum(r)} Ryos`;
-                    if(en > 0) rewardText += ` | <span style="color:var(--en-color);">${en} EN</span>`;
-                    k.innerHTML=`${rankHtml}<h4>${i.titulo}</h4><p style="font-size:0.9rem; color:${st==='em_andamento'?'orange':st==='aprovado'?'green':'#777'}; font-weight:bold;">${st==='neutro'?'Disponível':st}</p><small style="color:var(--primary-color)">${rewardText}</small>`; c.appendChild(k); 
-                }); 
-            } catch(e) { console.error(e); }
-        }
+                alert("Presente enviado com sucesso!");
+                document.getElementById('giftModal').style.display = 'none';
+                document.getElementById('gift-amount').value = '';
+            } catch(e) {
+                alert("Erro ao enviar: " + e.message);
+            }
+        };
 
-        async function carregarMentorias() {
-            // Logs para depuração
-            console.log("Iniciando carregamento de mentorias...");
-            const cTurno = document.getElementById('grid-mentorias-turno');
-            const cCards = document.getElementById('grid-mentorias-cards');
-            if(!cTurno || !cCards) return;
 
-            cTurno.innerHTML = '<p>Carregando...</p>';
-            cCards.innerHTML = '<p>Carregando...</p>';
-
-            try {
-                const s = await getDocs(collection(db, "mentores"));
-                cTurno.innerHTML = '';
-                cCards.innerHTML = '';
-
-                if(s.empty) {
-                    cTurno.innerHTML = '<p style="color:#999; font-style:italic;">Nenhum mentor de Turno.</p>';
-                    cCards.innerHTML = '<p style="color:#999; font-style:italic;">Nenhum mentor de Cards.</p>';
-                    return;
+        window.consumirItem = async (id, nome) => { 
+            // 1. Encontra os dados do item no cache global (ou busca se precisar, mas vamos assumir que está no cache já que veio do inventário)
+            let itemData = globalItensMap[id];
+            
+            // Se for ferramenta e tiver custo de stamina
+            if (itemData && itemData.type === 'tool' && itemData.stamina > 0) {
+                if ((currentUserData.stamina || 0) < itemData.stamina) {
+                    return alert(`Stamina insuficiente! Custo: ${itemData.stamina}`);
                 }
                 
-                globalMentores = {}; // Limpa o cache antes de popular
-
-                s.forEach(d => {
-                    const m = d.data();
-                    const id = d.id;
-                    globalMentores[id] = m; // Salva no cache
-                    
-                    // Proteção
-                    if(!m.nome) return; 
-
-                    const card = document.createElement('div');
-                    card.className = 'card jutsu-card-click';
-                    card.onclick = () => abrirModalMentoria(id); // Passa só o ID
-                    
-                    card.innerHTML = `
-                        <img src="${m.imagem || IMG_PADRAO}" class="card-img-top">
-                        <h4>${m.nome}</h4>
-                        <small>Clique para ver ensinamentos</small>
-                    `;
-
-                    const cat = (m.categoria || "").toLowerCase().trim(); 
-
-                    if(cat === 'cards') {
-                        cCards.appendChild(card);
-                    } else {
-                        cTurno.appendChild(card);
-                    }
-                });
-            } catch(e) {
-                console.error("Erro ao carregar mentorias:", e);
-                cTurno.innerHTML = '<p style="color:red">Erro ao carregar (Ver Console).</p>';
-                cCards.innerHTML = '';
+                if(confirm(`Usar 1x ${nome}? (Custa ${itemData.stamina} Stamina)`)) {
+                     await updateDoc(doc(db, "users", auth.currentUser.uid), { 
+                         [`inventario.${id}`]: increment(-1),
+                         stamina: increment(-itemData.stamina) 
+                     });
+                }
+            } else {
+                // Item normal ou ferramenta sem custo
+                if(confirm(`Usar 1x ${nome}?`)) {
+                    await updateDoc(doc(db, "users", auth.currentUser.uid), { [`inventario.${id}`]: increment(-1) }); 
+                }
             }
+        };
+
+        window.comprarJutsu = async (id, p, n, currency) => { 
+            const field = currency === 'EN' ? 'essencia_ninja' : 'ryos';
+            if(!confirm(`Comprar ${n} por ${p} ${currency}?`)) return; 
+            if((currentUserData[field]||0) < p) return alert(`Sem ${currency} suficiente!`); 
+            
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { 
+                [field]: increment(-p), 
+                meusJutsus: arrayUnion(id), 
+                [`maestrias.${id}`]: 0 
+            }); 
+            alert("Comprado!"); 
+        };
+        window.comprarMultiplos = async (id, p, n, t, i, currency) => { 
+            const q = parseInt(document.getElementById(i).value)||1; 
+            if(q<1) return; 
+            const tot=p*q; 
+            const field = currency === 'EN' ? 'essencia_ninja' : 'ryos';
+            
+            if(!confirm(`Comprar ${q}x ${n} por ${tot} ${currency}?`)) return; 
+            if((currentUserData[field]||0) < tot) return alert(`Sem ${currency} suficiente!`); 
+            
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { 
+                [field]: increment(-tot), 
+                [`inventario.${id}`]: increment(q) 
+            }); 
+            alert("Comprado!"); 
+        };
+        
+        window.filtrarLojaPorTipo = (t, b) => { 
+            lojaAtual = t; 
+            document.querySelectorAll('.shop-cat-btn').forEach(x => x.classList.remove('active')); 
+            if(b) b.classList.add('active'); 
+            carregarLojaItens(); 
+        };
+        window.atualizarFiltroVila = () => { vilaAtual = document.getElementById('shop-location').value; carregarLojaItens(); };
+
+        // --- CONQUISTAS ---
+        async function carregarConquistas() {
+            const c = document.getElementById('conquistas-grid'); if(!c) return;
+            const m = currentUserData.statusConquistas || {};
+            const s = await getDocs(collection(db, "conquistas"));
+            c.innerHTML = '';
+            if(s.empty) { c.innerHTML = '<p>Nenhuma conquista.</p>'; return; }
+            const isAdmin = auth.currentUser.email === "admin@rpgnaruto.com";
+
+            s.forEach(d => {
+                const i = d.data();
+                const p = i.restrito_a || [];
+                if (!isAdmin && p.length > 0 && !p.includes(currentUserData.nome)) return;
+
+                const st = m[d.id];
+                const k = document.createElement('div'); k.className = 'card jutsu-card-click';
+                let btn = "";
+                
+                // Preparar valores (Ryos, XP, EN)
+                const r = i.recompensa || 0;
+                const x = i.xp || 0;
+                const en = i.en || 0; 
+
+                if(!st) btn = `<button class="mission-btn-start" onclick="event.stopPropagation(); solicitarConquista('${d.id}', this)">Reivindicar</button>`;
+                else if(st === 'solicitado') btn = `<button class="mission-btn-wait" onclick="event.stopPropagation();">Aguardando Kage</button>`;
+                else if(st === 'aprovado') btn = `<button class="mission-btn-collect" onclick="event.stopPropagation(); coletarConquista('${d.id}', ${r}, ${x}, ${en}, this)">Coletar</button>`;
+                else if(st === 'concluido') btn = `<button class="mission-btn-done" onclick="event.stopPropagation();">Concluído</button>`;
+                
+                let stTxt = !st ? "Disponível" : (st==='solicitado' ? "Pendente" : (st==='aprovado' ? "Aprovado!" : "Concluído"));
+                k.onclick = () => verDetalhesConquista(d.id, i, st);
+                
+                let rewardText = `${formatarNum(r)} Ryos`;
+                if(en > 0) rewardText += ` | <span style="color:var(--en-color);">${en} EN</span>`;
+
+                k.innerHTML = `<img src="${i.imagem||IMG_PADRAO}" class="card-img-top"><h4>${i.titulo}</h4><p style="font-weight:bold; color:#777;">${stTxt}</p><small style="color:var(--primary-color)">${rewardText}</small>${btn}`;
+                c.appendChild(k);
+            });
         }
 
-        async function carregarPainelAdmin() { try { const c = document.getElementById('admin-missoes-grid'); c.innerHTML='Carregando...'; const s = await getDocs(collection(db, "users")); c.innerHTML=''; s.forEach(u=>{ const d=u.data(); const m=d.statusMissoes||{}; const cq=d.statusConquistas||{}; for(const [mid,st] of Object.entries(m)){ if(st==='em_andamento'){ const k=document.createElement('div'); k.className='card'; k.innerHTML=`<h4>${d.nome} (Missão)</h4><p>${mid}</p><button class="mission-btn-collect" onclick="aprovarMissao('${u.id}','${mid}')">Aprovar</button>`; c.appendChild(k); } } for(const [cid,st] of Object.entries(cq)){ if(st==='solicitado'){ const k=document.createElement('div'); k.className='card'; k.innerHTML=`<h4>${d.nome} (Conquista)</h4><p>${cid}</p><button class="mission-btn-collect" onclick="aprovarConquista('${u.id}','${cid}')">Aprovar</button>`; c.appendChild(k); } } }); } catch(e){} }
+        window.verDetalhesConquista = (id, d, st) => {
+            const currentSt = currentUserData.statusConquistas[id];
 
-        async function carregarRankings() { const c = document.getElementById('ranking-container'); if(!c) return; try { const s = await getDocs(collection(db, "users")); let l = []; s.forEach(d => l.push(d.data())); c.innerHTML = ''; renderRank(c, "Nível", l, 'nivel'); renderRank(c, "Ryos", l, 'ryos'); renderRank(c, "Rankeadas", l, 'pontos_rankeada'); renderRank(c, "Torneios", l, 'vitorias_torneio'); renderRank(c, "Amistosos", l, 'pontos_amistoso'); renderRank(c, "Duplas", l, 'vitorias_dupla'); renderRank(c, "Clãs", l, 'vitorias_cla'); renderRank(c, "Missões Rank S", l, 'missoes_concluidas_s'); renderRank(c, "Missões Rank A", l, 'missoes_concluidas_a'); renderRank(c, "Missões Rank B", l, 'missoes_concluidas_b'); renderRank(c, "Missões Rank C", l, 'missoes_concluidas_c'); renderRank(c, "Missões Rank D", l, 'missoes_concluidas_d'); renderRank(c, "Missões Rank E", l, 'missoes_concluidas_e'); } catch (e) {} };
-        
-        async function carregarFrases() { const c = document.getElementById('frases-list-container'); try { onSnapshot(query(collection(db, "frases"), orderBy("data", "desc")), (s) => { c.innerHTML=''; s.forEach(d=>{ const f=d.data(); const k=document.createElement('div'); k.className='frase-item'; const menu = f.uid === auth.currentUser.uid ? `<div class="options-menu-container"><div class="options-btn" onclick="toggleFraseMenu(this); event.stopPropagation();">...</div><div class="options-dropdown"><div class="options-item" onclick="editarFrase('${d.id}','${f.texto}');event.stopPropagation()">Editar</div><div class="options-item danger" onclick="deletarFrase('${d.id}');event.stopPropagation()">Excluir</div></div></div>` : ''; k.onclick=()=>copiarFrase(f.texto); k.innerHTML=`<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor}</div>${menu}`; c.appendChild(k); }); }); } catch(e){} }
+            const r = d.recompensa || 0;
+            const x = d.xp || 0;
+            const en = d.en || 0;
 
-        function renderRank(c,t,l,f) { const s=[...l].sort((a,b)=>(b[f]||0)-(a[f]||0)).slice(0,5); let h=`<div class="ranking-col"><h3>${t}</h3><table class="ranking-table">`; s.forEach((u,i)=>h+=`<tr><td>${i+1}. ${u.nome}</td><td>${formatarNum(u[f])}</td></tr>`); h+='</table></div>'; c.innerHTML+=h; }
+            document.getElementById('conquista-name-modal').innerText = d.titulo;
+            document.getElementById('conquista-desc-modal').innerText = d.descricao;
+            
+            let rewardsHtml = `${formatarNum(r)} Ryos`;
+            if(en > 0) rewardsHtml += ` | <span style="color:var(--en-color); font-weight:bold;">${en} Essência Ninja</span>`;
+            
+            document.getElementById('conquista-reward-modal').innerHTML = rewardsHtml;
+            document.getElementById('conquista-xp-modal').innerText = x;
+            document.getElementById('conquista-img-modal').src = d.imagem||IMG_PADRAO;
+            
+            const a = document.getElementById('conquista-actions-modal'); a.innerHTML = '';
+            
+            if(!currentSt) a.innerHTML = `<button class="mission-btn-start" onclick="solicitarConquista('${id}', this)">Reivindicar</button>`;
+            else if(currentSt === 'solicitado') a.innerHTML = `<button class="mission-btn-wait">Aguardando</button>`;
+            else if(currentSt === 'aprovado') a.innerHTML = `<button class="mission-btn-collect" onclick="coletarConquista('${id}', ${r}, ${x}, ${en}, this)">Coletar</button>`;
+            else a.innerHTML = `<button class="mission-btn-done">Feito</button>`;
+            
+            document.getElementById('conquistaModal').style.display='flex';
+        };
+
+        window.fecharConquistaModal = () => document.getElementById('conquistaModal').style.display='none';
         
-        // --- JANELA GLOBAL (WINDOW) ---
+        window.solicitarConquista = async (id, btn) => {
+            if(btn) { btn.disabled = true; btn.innerText = "Enviando..."; }
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusConquistas.${id}`]: 'solicitado' });
+            alert("Solicitado!");
+        };
+        
+        window.coletarConquista = async (id, r, x, en, btn) => {
+            if(btn && btn.disabled) return;
+            if(btn) { btn.disabled = true; btn.innerText = "Coletando..."; btn.style.display = 'none'; } 
+            
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { 
+                ryos: increment(r), 
+                xp: increment(x),
+                essencia_ninja: increment(en),
+                [`statusConquistas.${id}`]: 'concluido' 
+            });
+            alert(`Recebido: ${r} Ryos, ${x} XP` + (en > 0 ? ` e ${en} EN!` : "!"));
+            document.getElementById('conquistaModal').style.display='none';
+        };
+
+        // --- MISSÕES ---
+        async function carregarMissoes() { const c = document.getElementById('missoes-grid'); if(!c) return; const m = currentUserData.statusMissoes || {}; const s = await getDocs(collection(db, "missoes")); c.innerHTML = ''; s.forEach(d => { const i = d.data(), st = m[d.id] || 'neutro'; const k = document.createElement('div'); k.className = 'card jutsu-card-click'; 
+        
+        const rankClass = `rank-${(i.rank||'d').toLowerCase()}`;
+        const rankHtml = `<span class="rank-tag ${rankClass}">Rank ${i.rank||'D'}</span>`;
+
+        // Preparar valores
+        const r = i.recompensa || 0;
+        const x = i.xp || 0;
+        const en = i.en || 0; 
+
+        k.onclick = () => verDetalhesMissao(d.id, i, st); 
+        
+        let rewardText = `${x} XP | ${formatarNum(r)} Ryos`;
+        if(en > 0) rewardText += ` | <span style="color:var(--en-color);">${en} EN</span>`;
+
+        k.innerHTML=`${rankHtml}<h4>${i.titulo}</h4><p style="font-size:0.9rem; color:${st==='em_andamento'?'orange':st==='aprovado'?'green':'#777'}; font-weight:bold;">${st==='neutro'?'Disponível':st}</p><small style="color:var(--primary-color)">${rewardText}</small>`; c.appendChild(k); }); }
+        
+        window.verDetalhesMissao = (id, d, st) => { 
+            const currentSt = currentUserData.statusMissoes[id] || 'neutro';
+
+            const r = d.recompensa || 0;
+            const x = d.xp || 0;
+            const en = d.en || 0;
+            
+            document.getElementById('missao-name-modal').innerText = d.titulo; 
+            document.getElementById('missao-desc-modal').innerText = d.descricao; 
+            
+            let rewardsHtml = `${formatarNum(r)} Ryos`;
+            if(en > 0) rewardsHtml += ` | <span style="color:var(--en-color); font-weight:bold;">${en} Essência Ninja</span>`;
+            
+            document.getElementById('missao-reward-modal').innerHTML = rewardsHtml; 
+            document.getElementById('missao-xp-modal').innerText = x; 
+            document.getElementById('missao-img-modal').src = d.imagem||IMG_PADRAO; 
+            
+            const a = document.getElementById('missao-actions-modal'); a.innerHTML = ''; 
+            
+            if(currentSt==='neutro') a.innerHTML = `<button class="mission-btn-start" onclick="iniciarMissao('${id}', this)">Aceitar</button>`; 
+            else if(currentSt==='em_andamento') a.innerHTML = `<button class="mission-btn-wait">Em Andamento</button>`; 
+            else if(currentSt==='aprovado') a.innerHTML = `<button class="mission-btn-collect" onclick="coletarRecompensa('${id}', ${r}, ${x}, ${en}, '${d.rank||'D'}', this)">Receber</button>`; 
+            else if(currentSt==='concluido') a.innerHTML = `<button class="mission-btn-done">Concluído</button>`; 
+            
+            document.getElementById('missaoModal').style.display='flex'; 
+        };
+        window.fecharMissaoModal = () => document.getElementById('missaoModal').style.display='none';
+        
+        window.iniciarMissao = async (id, btn) => { 
+            if(btn) { btn.disabled = true; btn.innerText = "Iniciando..."; }
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusMissoes.${id}`]: 'em_andamento' }); 
+            alert("Iniciada!"); 
+        };
+        
+        window.coletarRecompensa = async (id, r, x, en, rank, btn) => { 
+            if(btn && btn.disabled) return;
+            if(btn) { btn.disabled = true; btn.innerText = "Coletando..."; btn.style.display = 'none'; } 
+            
+            const rankKey = `missoes_concluidas_${rank.toLowerCase()}`;
+            
+            await updateDoc(doc(db, "users", auth.currentUser.uid), { 
+                ryos: increment(r), 
+                xp: increment(x),
+                essencia_ninja: increment(en), // Adiciona EN
+                [`statusMissoes.${id}`]: 'concluido',
+                [rankKey]: increment(1) 
+            }); 
+            alert(`Missão cumprida! Ganhou: ${r} Ryos, ${x} XP` + (en > 0 ? ` e ${en} EN!` : "!")); 
+            document.getElementById('missaoModal').style.display='none';
+        };
+
+        // --- FUNÇÕES DE MODAL GENÉRICAS ---
+        function abrirModalSimples(t, d) {
+            let dados = d; if(t === 'jutsu') { try { dados = aplicarEscalaPersonalizada(d); } catch(e){} }
+            document.getElementById(t+'-name-modal').innerText = dados.nome; 
+            document.getElementById(t+'-desc-modal').innerText = dados.descricao||""; 
+            document.getElementById(t+'-price-modal').innerText = "Valor: "+formatarNum(dados.preco)+" Ryos";
+            document.getElementById(t+'-img-modal').src = dados.imagem||IMG_PADRAO;
+            
+            // Exibir Bônus
+            let bonusHtml = gerarTagsBonus(dados);
+            
+            if(t==='jutsu'){ 
+                document.getElementById(t+'-rank-modal').innerText="Rank "+dados.rank; 
+                let h=""; 
+                if(dados.dano) h+=`<span class="jutsu-stat-tag tag-dano">Dano: ${dados.dano}</span>`; 
+                if(dados.chakra) h+=`<span class="jutsu-stat-tag tag-chakra">Chakra: ${dados.chakra}</span>`; 
+                if(dados.stamina) h+=`<span class="jutsu-stat-tag tag-stamina">Stamina: ${dados.stamina}</span>`; 
+                if(dados.bonus) h+=`<span class="jutsu-stat-tag tag-buff">${dados.bonus}</span>`; 
+                h += bonusHtml;
+                document.getElementById('jutsu-stats-row').innerHTML=h; 
+            } else if (t === 'tool') {
+                document.getElementById(t+'-rank-modal').innerText=dados.dano||"Ferramenta";
+                let h = "";
+                
+                // --- DEBUG DE STAMINA ---
+                console.log("ABRINDO TOOL:", dados); 
+                
+                // Conversão agressiva para garantir leitura (Number e String)
+                let custoStamina = 0;
+                if(dados.stamina) custoStamina = Number(dados.stamina);
+                
+                if(custoStamina > 0) {
+                     h += `<span class="jutsu-stat-tag tag-stamina">Stamina: ${custoStamina}</span>`;
+                }
+                
+                h += bonusHtml;
+                document.getElementById('tool-stats-row').innerHTML = h;
+            } else {
+                document.getElementById('item-stats-row').innerHTML = bonusHtml;
+            }
+            
+            if(t==='item') document.getElementById(t+'-rank-modal').innerText = dados.efeito||"Item";
+            document.getElementById(t+'Modal').style.display='flex';
+        }
 
         window.verDetalhesJutsu = (id,d) => abrirModalSimples('jutsu',d); 
         window.verDetalhesFerramenta = (id,d) => abrirModalSimples('tool',d); 
         window.verDetalhesItem = (id,d) => abrirModalSimples('item',d);
+        
         window.fecharJutsuModal = () => document.getElementById('jutsuModal').style.display='none';
         window.fecharToolModal = () => document.getElementById('toolModal').style.display='none';
         window.fecharItemModal = () => document.getElementById('itemModal').style.display='none';
-        window.fecharConquistaModal = () => document.getElementById('conquistaModal').style.display='none';
-        window.fecharMissaoModal = () => document.getElementById('missaoModal').style.display='none';
-        window.fecharProfileModal = () => document.getElementById('profileModal').style.display = 'none';
-        window.closeModal = () => document.getElementById('commentModal').style.display = 'none';
-        window.openEditProfileModal = () => { document.getElementById('editProfileModal').style.display = 'flex'; document.getElementById('edit-name-input').value = currentUserData.nome || ""; document.getElementById('edit-nick-input').value = currentUserData.apelido || ""; document.getElementById('user-menu').classList.remove('show'); };
-        window.closeEditProfileModal = () => document.getElementById('editProfileModal').style.display = 'none';
-        window.openChangePasswordModal = () => { document.getElementById('changePasswordModal').style.display='flex'; document.getElementById('user-menu').classList.remove('show'); };
-        window.closeChangePasswordModal = () => document.getElementById('changePasswordModal').style.display='none';
-        window.toggleMenu = () => document.getElementById('user-menu').classList.toggle('show');
-        window.fazerLogout = () => signOut(auth).then(() => location.reload());
-        window.abrirModalMentoria = (id, mentor) => {
-            currentMentorData = mentor;
-            document.getElementById('mentor-name-modal').innerText = mentor.nome || "Desconhecido";
-            document.getElementById('mentor-img-modal').src = mentor.imagem || IMG_PADRAO;
-            const container = document.getElementById('mentoria-options-container');
-            container.innerHTML = '';
-            if(mentor.ensinos && Array.isArray(mentor.ensinos) && mentor.ensinos.length > 0) {
-                mentor.ensinos.forEach((ensino, index) => {
-                    if(typeof ensino !== 'object' || !ensino.nome) return;
-                    const div = document.createElement('div');
-                    div.className = 'mentoria-option';
-                    div.onclick = () => { const radio = document.getElementById(`ensino-${index}`); if(radio) radio.checked = true; };
-                    const currencyLabel = ensino.moeda === 'essencia_ninja' ? 'EN' : 'Ryos';
-                    const colorClass = ensino.moeda === 'essencia_ninja' ? 'var(--en-color)' : 'var(--primary-color)';
-                    const preco = ensino.preco || 0;
-                    div.innerHTML = `<input type="radio" name="ensino_escolhido" id="ensino-${index}" value="${index}" class="mentoria-radio"><div style="flex:1;"><div style="font-weight:bold;">${ensino.nome}</div><div style="font-size:0.85rem; color:${colorClass}; font-weight:bold;">${formatarNum(preco)} ${currencyLabel}</div></div>`;
-                    container.appendChild(div);
-                });
+        
+        window.verPerfil = async (uid) => {
+            const s = await getDoc(doc(db, "users", uid)); 
+            if(s.exists()) { 
+                const u = s.data(); 
+                
+                // Variáveis para contagem
+                let totalJutsus = (u.meusJutsus || []).length;
+                let totalTools = 0;
+                let totalItems = 0;
+
+                if (u.inventario) {
+                    for (const [id, qtd] of Object.entries(u.inventario)) {
+                        if (globalItensMap[id]) {
+                            if (globalItensMap[id].type === 'tool') {
+                                totalTools += qtd;
+                            } else {
+                                totalItems += qtd;
+                            }
+                        } else {
+                            totalItems += qtd; 
+                        }
+                    }
+                }
+
+                let invHtml = `
+                    <div class="stat-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                        <div class="stat-value" style="font-size:1.5rem;">${totalJutsus}</div>
+                        <div class="stat-label">Jutsus</div>
+                    </div>
+                    <div class="stat-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                        <div class="stat-value" style="font-size:1.5rem;">${totalTools}</div>
+                        <div class="stat-label">Ferramentas</div>
+                    </div>
+                    <div class="stat-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                        <div class="stat-value" style="font-size:1.5rem;">${totalItems}</div>
+                        <div class="stat-label">Itens</div>
+                    </div>
+                `;
+
+                document.getElementById('profile-modal-name').innerText = u.nome; 
+                document.getElementById('profile-modal-char').innerText = u.apelido || ""; 
+                document.getElementById('profile-modal-img').src = u.avatar||IMG_PADRAO; 
+                renderizarIcones(u.elementos || [], 'profile-elementos-container', ELEMENTOS_ICONS, 'Naturezas de Chakra'); 
+                renderizarIcones(u.kekkei_genkai || [], 'profile-kekkei-container', KEKKEI_ICONS, 'Kekkei Genkai'); 
+                renderizarIcones(u.kekkei_moura || [], 'profile-moura-container', KEKKEI_MOURA_ICONS, 'Kekkei Moura'); 
+                renderizarIcones(u.kekkei_touta || [], 'profile-touta-container', KEKKEI_TOUTA_ICONS, 'Kekkei Touta'); 
+
+                const statsContainer = document.getElementById('other-profile-stats'); 
+                statsContainer.innerHTML = `
+                <div class="stats-divider">Geral</div>
+                <div class="stat-card"><div class="stat-value">${u.nivel||1}</div><div class="stat-label">Nível</div></div>
+                <div class="stat-card"><div class="stat-value">${u.cargo||'Genin'}</div><div class="stat-label">Cargo</div></div>
+                <div class="stat-card"><div class="stat-value">${u.patente||'Genin'}</div><div class="stat-label">Patente</div></div>
+                <div class="stat-card"><div class="stat-value">${u.rank||'E'}</div><div class="stat-label">Rank</div></div>
+                <div class="stat-card"><div class="stat-value">${u.speed_rank||"E"}</div><div class="stat-label">Rank Vel.</div></div>
+                <div class="stat-card"><div class="stat-value">${u.tipo||'Normal'}</div><div class="stat-label">Tipo</div></div>
+                
+                <div class="stats-divider">Batalha</div>
+                <div class="stat-card"><div class="stat-value">${u.vitorias||0}</div><div class="stat-label">Vitórias</div></div>
+                <div class="stat-card"><div class="stat-value">${u.empates||0}</div><div class="stat-label">Empates</div></div>
+                <div class="stat-card"><div class="stat-value">${u.loses||0}</div><div class="stat-label">Derrotas</div></div>
+                
+                <div class="stats-divider">Inventário</div>
+                <div style="grid-column: 1 / -1; display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
+                    ${invHtml}
+                </div>
+                
+                <div class="stats-divider">Vitalidade</div>
+                <div class="stat-card"><div class="stat-value">${u.vida||100}</div><div class="stat-label">Vida</div></div>
+                <div class="stat-card"><div class="stat-value">${u.chakra||100}</div><div class="stat-label">Chakra</div></div>
+                <div class="stat-card"><div class="stat-value">${u.stamina||100}</div><div class="stat-label">Stamina</div></div>
+                <div class="stat-card"><div class="stat-value">${u.controle_chakra||"Baixo"}</div><div class="stat-label">Controle</div></div>
+                
+                <div class="stats-divider">Atributos</div>
+                <div class="stat-card"><div class="stat-value">${u.forca||10}</div><div class="stat-label">Força</div></div>
+                <div class="stat-card"><div class="stat-value">${u.defesa||10}</div><div class="stat-label">Defesa</div></div>
+                <div class="stat-card"><div class="stat-value">${u.agilidade||10}</div><div class="stat-label">Agilidade</div></div>
+                <div class="stat-card"><div class="stat-value">${u.velocidade||10}</div><div class="stat-label">Velocidade</div></div>
+                <div class="stat-card"><div class="stat-value">${u.intelecto||10}</div><div class="stat-label">Intelecto</div></div>`; 
+                document.getElementById('profileModal').style.display = 'flex'; 
             } 
-            if (container.innerHTML === '') { container.innerHTML = '<p style="padding:10px; color:#777;">Este mentor não está ensinando nada no momento.</p>'; }
-            document.getElementById('mentoriaModal').style.display = 'flex';
         };
-        window.confirmarMentoria = async () => {
-            const radios = document.getElementsByName('ensino_escolhido');
-            let selectedIndex = -1;
-            for(let i=0; i<radios.length; i++) { if(radios[i].checked) { selectedIndex = parseInt(radios[i].value); break; } }
-            if(selectedIndex === -1) return alert("Selecione algo para aprender!");
-            const ensino = currentMentorData.ensinos[selectedIndex];
-            const field = ensino.moeda === 'essencia_ninja' ? 'essencia_ninja' : 'ryos';
-            const moedaNome = ensino.moeda === 'essencia_ninja' ? 'Essência Ninja' : 'Ryos';
-            if((currentUserData[field] || 0) < ensino.preco) { return alert(`Você não tem ${moedaNome} suficiente!`); }
-            if(!confirm(`Pagar ${formatarNum(ensino.preco)} ${moedaNome} para aprender "${ensino.nome}"?`)) return;
-            try {
-                const btn = document.querySelector('#mentoriaModal .buy-btn'); btn.disabled = true; btn.innerText = "Processando...";
-                await updateDoc(doc(db, "users", auth.currentUser.uid), { [field]: increment(-ensino.preco), aprendizados: arrayUnion(`${currentMentorData.nome} - ${ensino.nome}`) });
-                alert(`Você aprendeu: ${ensino.nome}!`);
-                document.getElementById('mentoriaModal').style.display = 'none';
-            } catch(e) { alert("Erro: " + e.message); } finally { const btn = document.querySelector('#mentoriaModal .buy-btn'); if(btn) { btn.disabled = false; btn.innerText = "Pagar"; } }
-        };
-        window.editarHistoria = async () => { const n=prompt("Texto:",currentUserData.historiaTexto||""); if(n){ const i=prompt("Imagem:",currentUserData.historiaImagem||""); updateDoc(doc(db,"users",auth.currentUser.uid),{historiaTexto:n,historiaImagem:i}).then(location.reload()); } }
-        window.toggleFraseMenu = (el) => { const dropdown = el.nextElementSibling; document.querySelectorAll('.options-dropdown').forEach(d => { if(d !== dropdown) d.classList.remove('active'); }); dropdown.classList.toggle('active'); };
-        window.adicionarFrase = async () => { const t=document.getElementById('novaFraseInput').value; if(t) await addDoc(collection(db,"frases"),{texto:t,autor:currentUserData.nome,uid:auth.currentUser.uid,data:serverTimestamp()}); document.getElementById('novaFraseInput').value=''; }
-        window.editarFrase = async (id, oldText) => { const n = prompt("Editar:", oldText); if(n) await updateDoc(doc(db, "frases", id), { texto: n }); };
-        window.deletarFrase = async (id) => { if(confirm("Excluir?")) await deleteDoc(doc(db, "frases", id)); };
-        window.copiarFrase = (t) => { navigator.clipboard.writeText(t).then(() => { const f=document.getElementById('copyFeedback'); f.style.display='block'; setTimeout(()=>f.style.display='none',2000); }); };
-        window.handleAvatarPreview = async (e) => { if(e.target.files[0]) { newAvatarBase64 = await comprimirImagem(e.target.files[0]); document.getElementById('edit-avatar-preview').src = newAvatarBase64; } };
-        window.salvarPerfil = async () => { const nome = document.getElementById('edit-name-input').value; const apelido = document.getElementById('edit-nick-input').value; const updates = { nome: nome, apelido: apelido, personagem: nome }; if(newAvatarBase64) updates.avatar = newAvatarBase64; await updateDoc(doc(db, "users", auth.currentUser.uid), updates); location.reload(); };
-        window.salvarNovaSenha = async () => { const p = document.getElementById('new-password').value; if(!p || p.length < 6) return alert("Mínimo 6 caracteres"); try { await updatePassword(auth.currentUser, p); alert("Sucesso!"); closeChangePasswordModal(); } catch(e) { alert("Erro: " + e.message); } };
+        window.fecharProfileModal = () => document.getElementById('profileModal').style.display = 'none';
+
+        // --- PAINEL KAGE ---
+        async function carregarPainelAdmin() { try { const c = document.getElementById('admin-missoes-grid'); c.innerHTML='Carregando...'; const s = await getDocs(collection(db, "users")); c.innerHTML=''; s.forEach(u=>{ const d=u.data(); const m=d.statusMissoes||{}; const cq=d.statusConquistas||{}; for(const [mid,st] of Object.entries(m)){ if(st==='em_andamento'){ const k=document.createElement('div'); k.className='card'; k.innerHTML=`<h4>${d.nome} (Missão)</h4><p>${mid}</p><button class="mission-btn-collect" onclick="aprovarMissao('${u.id}','${mid}')">Aprovar</button>`; c.appendChild(k); } } for(const [cid,st] of Object.entries(cq)){ if(st==='solicitado'){ const k=document.createElement('div'); k.className='card'; k.innerHTML=`<h4>${d.nome} (Conquista)</h4><p>${cid}</p><button class="mission-btn-collect" onclick="aprovarConquista('${u.id}','${cid}')">Aprovar</button>`; c.appendChild(k); } } }); } catch(e){} }
+        window.aprovarMissao = async (uid, mid) => { if(confirm("Aprovar?")) await updateDoc(doc(db, "users", uid), { [`statusMissoes.${mid}`]: 'aprovado' }); alert("Feito!"); };
+        window.aprovarConquista = async (uid, cid) => { if(confirm("Aprovar?")) await updateDoc(doc(db, "users", uid), { [`statusConquistas.${cid}`]: 'aprovado' }); alert("Feito!"); };
+
+        // --- OUTROS ---
+        window.handleImageUpload = async (e) => { if(e.target.files[0]) { try { currentImageBase64 = await comprimirImagem(e.target.files[0]); document.getElementById('preview-image').src = currentImageBase64; document.getElementById('preview-container').style.display='block'; } catch(e){} } };
+        window.removeImage = () => { document.getElementById('imageInput').value=''; currentImageBase64=null; document.getElementById('preview-container').style.display='none'; };
+        window.publicarPost = async () => { const t = document.getElementById('postInput').value; if(!t.trim() && !currentImageBase64) return alert("Texto vazio"); const btn=document.querySelector('.btn-post'); btn.innerText="..."; try { await addDoc(collection(db, "posts"), { uid: auth.currentUser.uid, autor: currentUserData.apelido, autorAvatar: currentUserData.avatar, conteudo: t, imagem: currentImageBase64, data: serverTimestamp(), likes: [], savedBy: [], comments: [] }); document.getElementById('postInput').value=''; removeImage(); } catch(e){} finally{btn.innerText="Publicar";} };
         window.renderFeed = (f) => { const c = document.getElementById('feed-container'); if(!c) return; try { onSnapshot(query(collection(db, "posts"), orderBy("data", "desc")), (s) => { c.innerHTML = ''; s.forEach(d => { try { const p = d.data(); if(f==='saved' && !(p.savedBy||[]).includes(auth.currentUser.uid)) return; const isLiked=(p.likes||[]).includes(auth.currentUser.uid); const isSaved=(p.savedBy||[]).includes(auth.currentUser.uid); const div=document.createElement('div'); div.className='post'; div.innerHTML=`<div class="post-header"><div class="user-avatar-post"><img src="${p.autorAvatar||IMG_PADRAO}"></div><div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">${calcularTempo(p.data)}</span></div>${p.uid===auth.currentUser.uid?`<div class="post-menu-container"><div class="post-options-btn" onclick="this.nextElementSibling.classList.toggle('active')">...</div><div class="post-dropdown"><div class="dropdown-item danger" onclick="deletarPost('${d.id}')">Excluir</div></div></div>`:''}</div><div class="post-content">${p.conteudo}</div>${p.imagem?`<img src="${p.imagem}" class="post-image" onclick="verPost('${d.id}')">`:''}<div class="post-actions"><button class="action-btn ${isLiked?'liked':''}" onclick="toggleLike('${d.id}')"><i class="${isLiked?'fa-solid':'fa-regular'} fa-heart"></i> ${(p.likes||[]).length}</button><button class="action-btn" onclick="verPost('${d.id}')"><i class="fa-regular fa-comment"></i> ${(p.comments||[]).length}</button><button class="action-btn ${isSaved?'saved':''}" onclick="toggleSave('${d.id}')" style="margin-left:auto;"><i class="${isSaved?'fa-solid':'fa-regular'} fa-bookmark"></i></button></div>`; c.appendChild(div); } catch(e){} }); }); } catch(e){} };
         window.deletarPost = async (id) => { if(confirm("Apagar?")) await deleteDoc(doc(db, "posts", id)); };
         window.toggleLike = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().likes||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{likes:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{likes:arrayUnion(auth.currentUser.uid)}); };
@@ -1128,6 +1746,26 @@
         window.verPost = async (id) => { currentOpenPostId = id; const s = await getDoc(doc(db, "posts", id)), p = s.data(); document.getElementById('modalPostContent').innerHTML = p.imagem ? `<img src="${p.imagem}" style="width:100%;height:100%;object-fit:contain;">` : `<div style="padding:20px;">${p.conteudo}</div>`; document.getElementById('commentsList').innerHTML = (p.comments||[]).map(c=>`<div><b>${c.autor}</b>: ${c.texto}</div>`).join(''); document.getElementById('commentModal').style.display='flex'; };
         window.submitComment = async () => { const t = document.getElementById('newCommentText').value; if(!t) return; await updateDoc(doc(db, "posts", currentOpenPostId), { comments: arrayUnion({ autor: currentUserData.nome, texto: t }) }); document.getElementById('newCommentText').value = ""; verPost(currentOpenPostId); };
         window.closeModal = () => document.getElementById('commentModal').style.display = 'none';
+
+        window.carregarRankings = async () => { const c = document.getElementById('ranking-container'); if(!c) return; try { const s = await getDocs(collection(db, "users")); let l = []; s.forEach(d => l.push(d.data())); c.innerHTML = ''; renderRank(c, "Nível", l, 'nivel'); renderRank(c, "Ryos", l, 'ryos'); renderRank(c, "Rankeadas", l, 'pontos_rankeada'); renderRank(c, "Torneios", l, 'vitorias_torneio'); renderRank(c, "Amistosos", l, 'pontos_amistoso'); renderRank(c, "Duplas", l, 'vitorias_dupla'); renderRank(c, "Clãs", l, 'vitorias_cla'); renderRank(c, "Missões Rank S", l, 'missoes_concluidas_s'); renderRank(c, "Missões Rank A", l, 'missoes_concluidas_a'); renderRank(c, "Missões Rank B", l, 'missoes_concluidas_b'); renderRank(c, "Missões Rank C", l, 'missoes_concluidas_c'); renderRank(c, "Missões Rank D", l, 'missoes_concluidas_d'); renderRank(c, "Missões Rank E", l, 'missoes_concluidas_e'); } catch (e) {} };
+        function renderRank(c,t,l,f) { const s=[...l].sort((a,b)=>(b[f]||0)-(a[f]||0)).slice(0,5); let h=`<div class="ranking-col"><h3>${t}</h3><table class="ranking-table">`; s.forEach((u,i)=>h+=`<tr><td>${i+1}. ${u.nome}</td><td>${formatarNum(u[f])}</td></tr>`); h+='</table></div>'; c.innerHTML+=h; }
+        window.editarHistoria = async () => { const n=prompt("Texto:",currentUserData.historiaTexto||""); if(n){ const i=prompt("Imagem:",currentUserData.historiaImagem||""); updateDoc(doc(db,"users",auth.currentUser.uid),{historiaTexto:n,historiaImagem:i}).then(reloadData); } }
+        async function carregarFrases() { const c = document.getElementById('frases-list-container'); try { onSnapshot(query(collection(db, "frases"), orderBy("data", "desc")), (s) => { c.innerHTML=''; s.forEach(d=>{ const f=d.data(); const k=document.createElement('div'); k.className='frase-item'; const menu = f.uid === auth.currentUser.uid ? `<div class="options-menu-container"><div class="options-btn" onclick="toggleFraseMenu(this); event.stopPropagation();">...</div><div class="options-dropdown"><div class="options-item" onclick="editarFrase('${d.id}','${f.texto}');event.stopPropagation()">Editar</div><div class="options-item danger" onclick="deletarFrase('${d.id}');event.stopPropagation()">Excluir</div></div></div>` : ''; k.onclick=()=>copiarFrase(f.texto); k.innerHTML=`<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor}</div>${menu}`; c.appendChild(k); }); }); } catch(e){} }
+        window.toggleFraseMenu = (el) => { const dropdown = el.nextElementSibling; document.querySelectorAll('.options-dropdown').forEach(d => { if(d !== dropdown) d.classList.remove('active'); }); dropdown.classList.toggle('active'); };
+        window.adicionarFrase = async () => { const t=document.getElementById('novaFraseInput').value; if(t) await addDoc(collection(db,"frases"),{texto:t,autor:currentUserData.nome,uid:auth.currentUser.uid,data:serverTimestamp()}); document.getElementById('novaFraseInput').value=''; }
+        window.editarFrase = async (id, oldText) => { const n = prompt("Editar:", oldText); if(n) await updateDoc(doc(db, "frases", id), { texto: n }); };
+        window.deletarFrase = async (id) => { if(confirm("Excluir?")) await deleteDoc(doc(db, "frases", id)); };
+        window.copiarFrase = (t) => { navigator.clipboard.writeText(t).then(() => { const f=document.getElementById('copyFeedback'); f.style.display='block'; setTimeout(()=>f.style.display='none',2000); }); };
+        
+        window.toggleMenu = () => document.getElementById('user-menu').classList.toggle('show');
+        window.fazerLogout = () => signOut(auth).then(() => location.reload());
+        window.openEditProfileModal = () => { document.getElementById('editProfileModal').style.display = 'flex'; document.getElementById('edit-name-input').value = currentUserData.nome || ""; document.getElementById('edit-nick-input').value = currentUserData.apelido || ""; document.getElementById('user-menu').classList.remove('show'); };
+        window.closeEditProfileModal = () => document.getElementById('editProfileModal').style.display = 'none';
+        window.handleAvatarPreview = async (e) => { if(e.target.files[0]) { newAvatarBase64 = await comprimirImagem(e.target.files[0]); document.getElementById('edit-avatar-preview').src = newAvatarBase64; } };
+        window.salvarPerfil = async () => { const nome = document.getElementById('edit-name-input').value; const apelido = document.getElementById('edit-nick-input').value; const updates = { nome: nome, apelido: apelido, personagem: nome }; if(newAvatarBase64) updates.avatar = newAvatarBase64; await updateDoc(doc(db, "users", auth.currentUser.uid), updates); location.reload(); };
+        window.openChangePasswordModal = () => { document.getElementById('changePasswordModal').style.display='flex'; document.getElementById('user-menu').classList.remove('show'); };
+        window.closeChangePasswordModal = () => document.getElementById('changePasswordModal').style.display='none';
+        window.salvarNovaSenha = async () => { const p = document.getElementById('new-password').value; if(!p || p.length < 6) return alert("Mínimo 6 caracteres"); try { await updatePassword(auth.currentUser, p); alert("Sucesso!"); closeChangePasswordModal(); } catch(e) { alert("Erro: " + e.message); } };
 
         function comprimirImagem(file) {
             return new Promise((resolve, reject) => {
@@ -1151,3 +1789,6 @@
                 reader.readAsDataURL(file);
             });
         }
+    </script>
+</body>
+</html>
