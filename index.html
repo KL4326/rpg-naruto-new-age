@@ -5,9 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RPG Naruto</title>
     <link rel="icon" href="favicon.png" type="image/png">
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -100,7 +98,12 @@
                 </div>
 
                 <div id="mentorias" class="tab-content">
-                    <h2>Mentorias</h2>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h2>Mentorias</h2>
+                        <div id="admin-mentor-controls" style="display:none;">
+                            <button class="btn-post" onclick="window.abrirModalNovoMentor()">+ Novo Mentor</button>
+                        </div>
+                    </div>
                     
                     <h3 class="section-title">RPG de Turno</h3>
                     <div id="grid-mentorias-turno" class="bucket-grid">
@@ -115,16 +118,10 @@
 
                 <div id="conquistas" class="tab-content">
                     <h2>Conquistas</h2>
-                    
                     <h3 class="section-title">RPG de Turno</h3>
-                    <div id="conquistas-turno-grid" class="bucket-grid">
-                        <p style="color:#777;">Carregando...</p>
-                    </div>
-
+                    <div id="conquistas-turno-grid" class="bucket-grid"><p style="color:#777;">Carregando...</p></div>
                     <h3 class="section-title">RPG de Cards</h3>
-                    <div id="conquistas-cards-grid" class="bucket-grid">
-                        <p style="color:#777;">Carregando...</p>
-                    </div>
+                    <div id="conquistas-cards-grid" class="bucket-grid"><p style="color:#777;">Carregando...</p></div>
                 </div>
 
                 <div id="jutsus" class="tab-content">
@@ -200,16 +197,10 @@
                 
                 <div id="missoes" class="tab-content">
                     <h2>Quadro de Missões</h2>
-                    
                     <h3 class="section-title">RPG de Turno</h3>
-                    <div id="missoes-turno-grid" class="bucket-grid">
-                        <p style="color:#777;">Carregando...</p>
-                    </div>
-
+                    <div id="missoes-turno-grid" class="bucket-grid"><p style="color:#777;">Carregando...</p></div>
                     <h3 class="section-title">RPG de Cards</h3>
-                    <div id="missoes-cards-grid" class="bucket-grid">
-                        <p style="color:#777;">Carregando...</p>
-                    </div>
+                    <div id="missoes-cards-grid" class="bucket-grid"><p style="color:#777;">Carregando...</p></div>
                 </div>
 
                 <div id="rankings" class="tab-content"><h2>Rankings Globais</h2><div class="rankings-wrapper" id="ranking-container"><p>Carregando Rankings...</p></div></div>
@@ -286,6 +277,24 @@
         </main>
     </div>
     
+    <div id="novoMentorModal" class="modal-overlay-comment" style="z-index: 2010;">
+        <div class="modal-content-card">
+            <span class="close-modal" onclick="document.getElementById('novoMentorModal').style.display='none'">&times;</span>
+            <h3>Criar Novo Mentor</h3>
+            <input type="text" id="new-mentor-name" class="edit-input" placeholder="Nome do Mentor">
+            <select id="new-mentor-category" class="filter-select">
+                <option value="turno">RPG de Turno</option>
+                <option value="cards">RPG de Cards</option>
+            </select>
+            <label class="btn-post" style="width:100%; display:block; text-align:center; margin-bottom:10px;">
+                <i class="fa-solid fa-image"></i> Escolher Foto
+                <input type="file" id="new-mentor-img-input" style="display:none;" onchange="window.handleMentorImage(event)">
+            </label>
+            <div id="new-mentor-preview" style="margin-bottom:10px; text-align:center;"></div>
+            <button class="buy-btn" onclick="window.salvarNovoMentor()">Salvar</button>
+        </div>
+    </div>
+
     <div id="giftModal" class="modal-overlay-comment" style="z-index: 2005;">
         <div class="modal-content-card" style="max-width: 320px;">
             <span class="close-modal" onclick="document.getElementById('giftModal').style.display='none'">&times;</span>
@@ -319,9 +328,7 @@
             <h2 id="jutsu-name-modal" style="color:var(--primary-color);"></h2>
             <div id="jutsu-rank-modal" class="jutsu-modal-rank"></div>
             <div id="jutsu-stats-row" class="jutsu-stats-row"></div>
-            <div class="desc-scroll-container">
-                <p id="jutsu-desc-modal"></p>
-            </div>
+            <div class="desc-scroll-container"><p id="jutsu-desc-modal"></p></div>
             <div id="jutsu-price-modal" class="jutsu-modal-price"></div>
         </div>
     </div>
@@ -331,9 +338,7 @@
             <span class="close-modal" onclick="fecharConquistaModal()">&times;</span>
             <img id="conquista-img-modal" src="" class="jutsu-modal-img" style="border-color:#e6b800; height: 150px;">
             <h2 id="conquista-name-modal" style="color: #e6b800;"></h2>
-            <div class="desc-scroll-container">
-                <p id="conquista-desc-modal" style="color: #555; line-height: 1.6;"></p>
-            </div>
+            <div class="desc-scroll-container"><p id="conquista-desc-modal" style="color: #555; line-height: 1.6;"></p></div>
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e6b800; padding-top: 15px;">
                 <div style="font-weight: bold; color: #2ecc71;">XP: <span id="conquista-xp-modal">0</span> | Ryos: <span id="conquista-reward-modal"></span></div>
                 <div id="conquista-actions-modal"></div>
@@ -348,9 +353,7 @@
             <h2 id="tool-name-modal" style="color: #333;"></h2>
             <div id="tool-rank-modal" class="jutsu-modal-rank" style="background-color: #555;"></div>
             <div id="tool-stats-row" class="jutsu-stats-row"></div>
-            <div class="desc-scroll-container">
-                <p id="tool-desc-modal"></p>
-            </div>
+            <div class="desc-scroll-container"><p id="tool-desc-modal"></p></div>
             <div id="tool-price-modal" class="jutsu-modal-price" style="border-color:#555; color:#555;"></div>
         </div>
     </div>
@@ -362,9 +365,7 @@
             <h2 id="item-name-modal" style="color: #333;"></h2>
             <div id="item-rank-modal" class="jutsu-modal-rank" style="background-color: #2ecc71;"></div>
             <div id="item-stats-row" class="jutsu-stats-row"></div>
-            <div class="desc-scroll-container">
-                <p id="item-desc-modal"></p>
-            </div>
+            <div class="desc-scroll-container"><p id="item-desc-modal"></p></div>
             <div id="item-price-modal" class="jutsu-modal-price" style="border-color:#2ecc71; color:#2ecc71;"></div>
         </div>
     </div>
@@ -374,9 +375,7 @@
             <span class="close-modal" onclick="fecharMissaoModal()">&times;</span>
             <img id="missao-img-modal" src="" class="jutsu-modal-img" style="border-color:#e6b800; height: 150px;">
             <h2 id="missao-name-modal" style="color: #e6b800;"></h2>
-            <div class="desc-scroll-container">
-                <p id="missao-desc-modal" style="color: #555; line-height: 1.6;"></p>
-            </div>
+            <div class="desc-scroll-container"><p id="missao-desc-modal" style="color: #555; line-height: 1.6;"></p></div>
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e6b800; padding-top: 15px;">
                 <div style="font-weight: bold; color: #2ecc71;">XP: <span id="missao-xp-modal">0</span> | Ryos: <span id="missao-reward-modal"></span></div>
                 <div id="missao-actions-modal"></div>
