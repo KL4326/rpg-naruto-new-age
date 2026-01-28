@@ -20,13 +20,11 @@
             --danger-color: #ed4956;
             --en-color: #3498db;
             
-            /* CORES DE STATUS */
             --stat-chakra: #2980b9; 
             --stat-stamina: #ff9f43; 
             --stat-dano: #e74c3c;   
             --stat-buff: #9b59b6;   
             
-            /* CORES BATALHA */
             --hp-color: #e74c3c;       
             --sanidade-color: #3498db; 
             --stamina-color: #ff9f43;  
@@ -898,6 +896,7 @@
         let ordenacaoAtual = 'alfabetica';
         let currentGiftTarget = null; 
         let currentMentorData = null;
+        let globalMentores = {}; // NOVO: Cache de mentores para acesso fácil
 
         // CONFIGURAÇÃO DE LEVEL
         function getXpNecessario(nivel) {
@@ -1229,33 +1228,58 @@
         }
 
         async function carregarMentorias() {
+            // Logs para depuração
+            console.log("Iniciando carregamento de mentorias...");
+            const cTurno = document.getElementById('grid-mentorias-turno');
+            const cCards = document.getElementById('grid-mentorias-cards');
+            if(!cTurno || !cCards) return;
+
+            cTurno.innerHTML = '<p>Carregando...</p>';
+            cCards.innerHTML = '<p>Carregando...</p>';
+
             try {
-                if (!currentUserData) return;
-                const cTurno = document.getElementById('grid-mentorias-turno');
-                const cCards = document.getElementById('grid-mentorias-cards');
-                if(!cTurno || !cCards) return;
-                cTurno.innerHTML = '<p>Carregando...</p>';
-                cCards.innerHTML = '<p>Carregando...</p>';
                 const s = await getDocs(collection(db, "mentores"));
                 cTurno.innerHTML = '';
                 cCards.innerHTML = '';
-                if(s.empty) { cTurno.innerHTML = '<p style="color:#999; font-style:italic;">Nenhum mentor.</p>'; cCards.innerHTML = '<p style="color:#999; font-style:italic;">Nenhum mentor.</p>'; return; }
+
+                if(s.empty) {
+                    cTurno.innerHTML = '<p style="color:#999; font-style:italic;">Nenhum mentor de Turno.</p>';
+                    cCards.innerHTML = '<p style="color:#999; font-style:italic;">Nenhum mentor de Cards.</p>';
+                    return;
+                }
+                
+                globalMentores = {}; // Limpa o cache antes de popular
+
                 s.forEach(d => {
                     const m = d.data();
+                    const id = d.id;
+                    globalMentores[id] = m; // Salva no cache
+                    
+                    // Proteção
                     if(!m.nome) return; 
+
                     const card = document.createElement('div');
                     card.className = 'card jutsu-card-click';
-                    card.onclick = () => abrirModalMentoria(d.id, m);
-                    card.innerHTML = `<img src="${m.imagem || IMG_PADRAO}" class="card-img-top"><h4>${m.nome}</h4><small>Clique para ver ensinamentos</small>`;
-                    const cat = (m.categoria || "").toLowerCase().trim();
-                    if(cat === 'cards') { cCards.appendChild(card); } else { cTurno.appendChild(card); }
+                    card.onclick = () => abrirModalMentoria(id); // Passa só o ID
+                    
+                    card.innerHTML = `
+                        <img src="${m.imagem || IMG_PADRAO}" class="card-img-top">
+                        <h4>${m.nome}</h4>
+                        <small>Clique para ver ensinamentos</small>
+                    `;
+
+                    const cat = (m.categoria || "").toLowerCase().trim(); 
+
+                    if(cat === 'cards') {
+                        cCards.appendChild(card);
+                    } else {
+                        cTurno.appendChild(card);
+                    }
                 });
             } catch(e) {
                 console.error("Erro ao carregar mentorias:", e);
-                const cTurno = document.getElementById('grid-mentorias-turno');
-                const cCards = document.getElementById('grid-mentorias-cards');
-                if(cTurno) cTurno.innerHTML = '<p style="color:red">Erro ao carregar.</p>';
-                if(cCards) cCards.innerHTML = '';
+                cTurno.innerHTML = '<p style="color:red">Erro ao carregar (Ver Console).</p>';
+                cCards.innerHTML = '';
             }
         }
 
@@ -1285,38 +1309,58 @@
         window.closeChangePasswordModal = () => document.getElementById('changePasswordModal').style.display='none';
         window.toggleMenu = () => document.getElementById('user-menu').classList.toggle('show');
         window.fazerLogout = () => signOut(auth).then(() => location.reload());
-        window.abrirModalMentoria = (id, mentor) => {
+        
+        window.abrirModalMentoria = (id) => {
+            // Busca do cache global usando o ID
+            const mentor = globalMentores[id];
+            if (!mentor) {
+                console.error("Mentor não encontrado no cache.");
+                return;
+            }
+
             currentMentorData = mentor;
             document.getElementById('mentor-name-modal').innerText = mentor.nome || "Desconhecido";
             document.getElementById('mentor-img-modal').src = mentor.imagem || IMG_PADRAO;
             const container = document.getElementById('mentoria-options-container');
             container.innerHTML = '';
+            
             if(mentor.ensinos && Array.isArray(mentor.ensinos) && mentor.ensinos.length > 0) {
                 mentor.ensinos.forEach((ensino, index) => {
                     if(typeof ensino !== 'object' || !ensino.nome) return;
                     const div = document.createElement('div');
                     div.className = 'mentoria-option';
                     div.onclick = () => { const radio = document.getElementById(`ensino-${index}`); if(radio) radio.checked = true; };
+                    
                     const currencyLabel = ensino.moeda === 'essencia_ninja' ? 'EN' : 'Ryos';
                     const colorClass = ensino.moeda === 'essencia_ninja' ? 'var(--en-color)' : 'var(--primary-color)';
                     const preco = ensino.preco || 0;
+                    
                     div.innerHTML = `<input type="radio" name="ensino_escolhido" id="ensino-${index}" value="${index}" class="mentoria-radio"><div style="flex:1;"><div style="font-weight:bold;">${ensino.nome}</div><div style="font-size:0.85rem; color:${colorClass}; font-weight:bold;">${formatarNum(preco)} ${currencyLabel}</div></div>`;
                     container.appendChild(div);
                 });
             } 
-            if (container.innerHTML === '') { container.innerHTML = '<p style="padding:10px; color:#777;">Este mentor não está ensinando nada no momento.</p>'; }
+            
+            if (container.innerHTML === '') { 
+                container.innerHTML = '<p style="padding:10px; color:#777;">Este mentor não está ensinando nada no momento.</p>'; 
+            }
             document.getElementById('mentoriaModal').style.display = 'flex';
         };
+
         window.confirmarMentoria = async () => {
             const radios = document.getElementsByName('ensino_escolhido');
             let selectedIndex = -1;
             for(let i=0; i<radios.length; i++) { if(radios[i].checked) { selectedIndex = parseInt(radios[i].value); break; } }
+            
             if(selectedIndex === -1) return alert("Selecione algo para aprender!");
+            
             const ensino = currentMentorData.ensinos[selectedIndex];
             const field = ensino.moeda === 'essencia_ninja' ? 'essencia_ninja' : 'ryos';
             const moedaNome = ensino.moeda === 'essencia_ninja' ? 'Essência Ninja' : 'Ryos';
+            
             if((currentUserData[field] || 0) < ensino.preco) { return alert(`Você não tem ${moedaNome} suficiente!`); }
+            
             if(!confirm(`Pagar ${formatarNum(ensino.preco)} ${moedaNome} para aprender "${ensino.nome}"?`)) return;
+            
             try {
                 const btn = document.querySelector('#mentoriaModal .buy-btn'); btn.disabled = true; btn.innerText = "Processando...";
                 await updateDoc(doc(db, "users", auth.currentUser.uid), { [field]: increment(-ensino.preco), aprendizados: arrayUnion(`${currentMentorData.nome} - ${ensino.nome}`) });
@@ -1324,6 +1368,7 @@
                 document.getElementById('mentoriaModal').style.display = 'none';
             } catch(e) { alert("Erro: " + e.message); } finally { const btn = document.querySelector('#mentoriaModal .buy-btn'); if(btn) { btn.disabled = false; btn.innerText = "Pagar"; } }
         };
+
         window.editarHistoria = async () => { const n=prompt("Texto:",currentUserData.historiaTexto||""); if(n){ const i=prompt("Imagem:",currentUserData.historiaImagem||""); updateDoc(doc(db,"users",auth.currentUser.uid),{historiaTexto:n,historiaImagem:i}).then(location.reload()); } }
         window.toggleFraseMenu = (el) => { const dropdown = el.nextElementSibling; document.querySelectorAll('.options-dropdown').forEach(d => { if(d !== dropdown) d.classList.remove('active'); }); dropdown.classList.toggle('active'); };
         window.adicionarFrase = async () => { const t=document.getElementById('novaFraseInput').value; if(t) await addDoc(collection(db,"frases"),{texto:t,autor:currentUserData.nome,uid:auth.currentUser.uid,data:serverTimestamp()}); document.getElementById('novaFraseInput').value=''; }
