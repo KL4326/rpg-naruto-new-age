@@ -151,7 +151,7 @@ window.showTab = (t) => {
             if(t==='loja') carregarLojaItens();
             if(t==='jutsus') {
                 carregarMeusJutsus(currentUserData.meusJutsus); 
-                carregarLoja(); // <--- CORREÇÃO: Faltava chamar a loja aqui
+                carregarLoja(); 
             }
             if(t==='ferramentas') carregarLojaFerramentas(); 
             if(t==='conquistas') carregarConquistas();
@@ -174,7 +174,7 @@ window.mudarOrdenacao = (ordem) => {
     ordenacaoAtual = ordem;
     if(document.getElementById('jutsus').classList.contains('active')) {
         carregarMeusJutsus(currentUserData.meusJutsus);
-        carregarLoja(); // <--- CORREÇÃO: Reordenar loja de jutsus também
+        carregarLoja();
     }
     if(document.getElementById('ferramentas').classList.contains('active')) carregarLojaFerramentas();
     if(document.getElementById('loja').classList.contains('active')) carregarLojaItens();
@@ -214,7 +214,7 @@ async function carregarCacheItens() {
 }
 
 function carregarTudo() {
-    try { carregarLoja(); } catch(e){ console.error(e); } // <--- Carrega loja de jutsus no início
+    try { carregarLoja(); } catch(e){ console.error(e); } 
     try { carregarLojaItens(); } catch(e){ console.error(e); }
     try { carregarMeusJutsus(currentUserData.meusJutsus); } catch(e){ console.error(e); }
     try { carregarLojaFerramentas(); } catch(e){ console.error(e); }
@@ -615,11 +615,17 @@ async function carregarPersonagens() {
 async function carregarConquistas() {
     try {
         if (!currentUserData) return;
-        const c = document.getElementById('conquistas-grid'); if(!c) return;
+        const cTurno = document.getElementById('conquistas-turno-grid'); 
+        const cCards = document.getElementById('conquistas-cards-grid');
+        if(!cTurno || !cCards) return;
+
         const m = currentUserData.statusConquistas || {};
-        c.innerHTML = '';
+        cTurno.innerHTML = '';
+        cCards.innerHTML = '';
+        
         const s = await getDocs(collection(db, "conquistas"));
-        if(s.empty) { c.innerHTML = '<p>Nenhuma conquista.</p>'; return; }
+        if(s.empty) { cTurno.innerHTML = '<p>Nenhuma conquista.</p>'; return; }
+        
         const isAdmin = auth.currentUser.email === "admin@rpgnaruto.com";
         s.forEach(d => {
             const i = d.data(); const p = i.restrito_a || [];
@@ -636,7 +642,9 @@ async function carregarConquistas() {
             let rewardText = `${formatarNum(r)} Ryos`;
             if(en > 0) rewardText += ` | <span style="color:var(--en-color);">${en} EN</span>`;
             k.innerHTML = `<img src="${i.imagem||IMG_PADRAO}" class="card-img-top"><h4>${i.titulo}</h4><p style="font-weight:bold; color:#777;">${stTxt}</p><small style="color:var(--primary-color)">${rewardText}</small>${btn}`;
-            c.appendChild(k);
+            
+            const cat = (i.categoria || "turno").toLowerCase().trim();
+            if(cat.includes('card')) cCards.appendChild(k); else cTurno.appendChild(k);
         });
     } catch(e) { console.error(e); }
 }
@@ -644,9 +652,13 @@ async function carregarConquistas() {
 async function carregarMissoes() { 
     try {
         if (!currentUserData) return;
-        const c = document.getElementById('missoes-grid'); if(!c) return; 
+        const cTurno = document.getElementById('missoes-turno-grid'); 
+        const cCards = document.getElementById('missoes-cards-grid');
+        if(!cTurno || !cCards) return;
+
         const m = currentUserData.statusMissoes || {}; 
-        c.innerHTML = ''; 
+        cTurno.innerHTML = ''; cCards.innerHTML = '';
+
         const s = await getDocs(collection(db, "missoes"));
         const isAdmin = auth.currentUser.email === "admin@rpgnaruto.com";
         s.forEach(d => { 
@@ -668,7 +680,10 @@ async function carregarMissoes() {
             k.onclick = () => verDetalhesMissao(d.id, i, st); 
             let rewardText = `${x} XP | ${formatarNum(r)} Ryos`;
             if(en > 0) rewardText += ` | <span style="color:var(--en-color);">${en} EN</span>`;
-            k.innerHTML=`${rankHtml}<h4>${i.titulo}</h4><p style="font-size:0.9rem; color:${st==='em_andamento'?'orange':st==='aprovado'?'green':'#777'}; font-weight:bold;">${st==='neutro'?'Disponível':st}</p><small style="color:var(--primary-color)">${rewardText}</small>`; c.appendChild(k); 
+            k.innerHTML=`${rankHtml}<h4>${i.titulo}</h4><p style="font-size:0.9rem; color:${st==='em_andamento'?'orange':st==='aprovado'?'green':'#777'}; font-weight:bold;">${st==='neutro'?'Disponível':st}</p><small style="color:var(--primary-color)">${rewardText}</small>`; 
+            
+            const cat = (i.categoria || "turno").toLowerCase().trim();
+            if(cat.includes('card')) cCards.appendChild(k); else cTurno.appendChild(k);
         }); 
     } catch(e) { console.error(e); }
 }
@@ -1047,59 +1062,6 @@ window.openChangePasswordModal = () => { document.getElementById('changePassword
 window.closeChangePasswordModal = () => document.getElementById('changePasswordModal').style.display='none';
 window.toggleMenu = () => document.getElementById('user-menu').classList.toggle('show');
 window.fazerLogout = () => signOut(auth).then(() => location.reload());
-
-window.abrirModalMentoria = (id) => {
-    const mentor = globalMentores[id];
-    if (!mentor) { console.error("Mentor não encontrado no cache."); return; }
-    currentMentorData = mentor;
-    document.getElementById('mentor-name-modal').innerText = mentor.nome || "Desconhecido";
-    document.getElementById('mentor-img-modal').src = mentor.imagem || IMG_PADRAO;
-    const container = document.getElementById('mentoria-options-container');
-    container.innerHTML = '';
-    if(mentor.ensinos && Array.isArray(mentor.ensinos) && mentor.ensinos.length > 0) {
-        mentor.ensinos.forEach((ensino, index) => {
-            if(typeof ensino !== 'object' || !ensino.nome) return;
-            const div = document.createElement('div');
-            div.className = 'mentoria-option';
-            div.onclick = () => { const radio = document.getElementById(`ensino-${index}`); if(radio) radio.checked = true; };
-            const currencyLabel = ensino.moeda === 'essencia_ninja' ? 'EN' : 'Ryos';
-            const colorClass = ensino.moeda === 'essencia_ninja' ? 'var(--en-color)' : 'var(--primary-color)';
-            const preco = ensino.preco || 0;
-            div.innerHTML = `<input type="radio" name="ensino_escolhido" id="ensino-${index}" value="${index}" class="mentoria-radio"><div style="flex:1;"><div style="font-weight:bold;">${ensino.nome}</div><div style="font-size:0.85rem; color:${colorClass}; font-weight:bold;">${formatarNum(preco)} ${currencyLabel}</div></div>`;
-            container.appendChild(div);
-        });
-    } 
-    if (container.innerHTML === '') { container.innerHTML = '<p style="padding:10px; color:#777;">Este mentor não está ensinando nada no momento.</p>'; }
-    document.getElementById('mentoriaModal').style.display = 'flex';
-};
-
-window.confirmarMentoria = async () => {
-    const radios = document.getElementsByName('ensino_escolhido');
-    let selectedIndex = -1;
-    for(let i=0; i<radios.length; i++) { if(radios[i].checked) { selectedIndex = parseInt(radios[i].value); break; } }
-    if(selectedIndex === -1) return alert("Selecione algo para aprender!");
-    const ensino = currentMentorData.ensinos[selectedIndex];
-    const field = ensino.moeda === 'essencia_ninja' ? 'essencia_ninja' : 'ryos';
-    const moedaNome = ensino.moeda === 'essencia_ninja' ? 'Essência Ninja' : 'Ryos';
-    if((currentUserData[field] || 0) < ensino.preco) { return alert(`Você não tem ${moedaNome} suficiente!`); }
-    if(!confirm(`Pagar ${formatarNum(ensino.preco)} ${moedaNome} para aprender "${ensino.nome}"?`)) return;
-    try {
-        const btn = document.querySelector('#mentoriaModal .buy-btn'); btn.disabled = true; btn.innerText = "Processando...";
-        await updateDoc(doc(db, "users", auth.currentUser.uid), { [field]: increment(-ensino.preco), aprendizados: arrayUnion(`${currentMentorData.nome} - ${ensino.nome}`) });
-        alert(`Você aprendeu: ${ensino.nome}!`);
-        document.getElementById('mentoriaModal').style.display = 'none';
-    } catch(e) { alert("Erro: " + e.message); } finally { const btn = document.querySelector('#mentoriaModal .buy-btn'); if(btn) { btn.disabled = false; btn.innerText = "Pagar"; } }
-};
-
-window.editarHistoria = async () => { const n=prompt("Texto:",currentUserData.historiaTexto||""); if(n){ const i=prompt("Imagem:",currentUserData.historiaImagem||""); updateDoc(doc(db,"users",auth.currentUser.uid),{historiaTexto:n,historiaImagem:i}).then(location.reload()); } }
-window.toggleFraseMenu = (el) => { const dropdown = el.nextElementSibling; document.querySelectorAll('.options-dropdown').forEach(d => { if(d !== dropdown) d.classList.remove('active'); }); dropdown.classList.toggle('active'); };
-window.adicionarFrase = async () => { const t=document.getElementById('novaFraseInput').value; if(t) await addDoc(collection(db,"frases"),{texto:t,autor:currentUserData.nome,uid:auth.currentUser.uid,data:serverTimestamp()}); document.getElementById('novaFraseInput').value=''; }
-window.editarFrase = async (id, oldText) => { const n = prompt("Editar:", oldText); if(n) await updateDoc(doc(db, "frases", id), { texto: n }); };
-window.deletarFrase = async (id) => { if(confirm("Excluir?")) await deleteDoc(doc(db, "frases", id)); };
-window.copiarFrase = (t) => { navigator.clipboard.writeText(t).then(() => { const f=document.getElementById('copyFeedback'); f.style.display='block'; setTimeout(()=>f.style.display='none',2000); }); };
-window.handleAvatarPreview = async (e) => { if(e.target.files[0]) { newAvatarBase64 = await comprimirImagem(e.target.files[0]); document.getElementById('edit-avatar-preview').src = newAvatarBase64; } };
-window.salvarPerfil = async () => { const nome = document.getElementById('edit-name-input').value; const apelido = document.getElementById('edit-nick-input').value; const updates = { nome: nome, apelido: apelido, personagem: nome }; if(newAvatarBase64) updates.avatar = newAvatarBase64; await updateDoc(doc(db, "users", auth.currentUser.uid), updates); location.reload(); };
-window.salvarNovaSenha = async () => { const p = document.getElementById('new-password').value; if(!p || p.length < 6) return alert("Mínimo 6 caracteres"); try { await updatePassword(auth.currentUser, p); alert("Sucesso!"); closeChangePasswordModal(); } catch(e) { alert("Erro: " + e.message); } };
 
 async function carregarFrases() { const c = document.getElementById('frases-list-container'); try { onSnapshot(query(collection(db, "frases"), orderBy("data", "desc")), (s) => { c.innerHTML=''; s.forEach(d=>{ const f=d.data(); const k=document.createElement('div'); k.className='frase-item'; const menu = f.uid === auth.currentUser.uid ? `<div class="options-menu-container"><div class="options-btn" onclick="toggleFraseMenu(this); event.stopPropagation();">...</div><div class="options-dropdown"><div class="options-item" onclick="editarFrase('${d.id}','${f.texto}');event.stopPropagation()">Editar</div><div class="options-item danger" onclick="deletarFrase('${d.id}');event.stopPropagation()">Excluir</div></div></div>` : ''; k.onclick=()=>copiarFrase(f.texto); k.innerHTML=`<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor}</div>${menu}`; c.appendChild(k); }); }); } catch(e){} }
 
