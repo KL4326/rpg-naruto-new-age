@@ -2,11 +2,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, addDoc, serverTimestamp, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// --- CONFIGURAÇÃO ---
 const firebaseConfig = { apiKey: "AIzaSyC3HOor32_p5Z-iADm0VgZ279rt1kj8ICg", authDomain: "rpg-naruto-5150a.firebaseapp.com", projectId: "rpg-naruto-5150a", storageBucket: "rpg-naruto-5150a.firebasestorage.app", messagingSenderId: "1007094335306", appId: "1:1007094335306:web:ac96fa96f9494f90fd63b3" };
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// --- VARIÁVEIS GLOBAIS ---
 let currentUserData = null;
 let currentImageBase64 = null;
 let currentOpenPostId = null;
@@ -23,6 +25,7 @@ let newMentorImageBase64 = null;
 
 const IMG_PADRAO = "https://img.freepik.com/vetores-gratis/ilustracao-de-pergaminho-ninja-desenhada-a-mao_23-2151159846.jpg";
 
+// --- LEVEL UP ---
 function getXpNecessario(nivel) {
     if(globalXpTable.length > 0 && nivel <= globalXpTable.length) {
         return globalXpTable[nivel - 1]; 
@@ -71,6 +74,7 @@ function calcularTempo(timestamp) { try { if (!timestamp) return "Desconhecido";
 
 window.toggleMobileMenu = () => { document.querySelector('.sidebar').classList.toggle('mobile-active'); document.querySelector('.sidebar-overlay').classList.toggle('active'); };
 
+// --- AUTH STATE ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         document.getElementById('login-screen').style.display = 'none';
@@ -109,6 +113,7 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
+// --- SISTEMA DE LOGIN ---
 const btnLogin = document.getElementById('btnLogin');
 if (btnLogin) {
     btnLogin.addEventListener('click', () => {
@@ -126,6 +131,7 @@ if (btnLogin) {
 const passInput = document.getElementById('passwordInput');
 if (passInput) passInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('btnLogin').click(); });
 
+// --- NAVEGAÇÃO ---
 window.showTab = (t) => {
     try {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -145,7 +151,10 @@ window.showTab = (t) => {
             if(t==='frases') carregarFrases();
             if(t==='inventario') carregarInventario();
             if(t==='loja') carregarLojaItens();
-            if(t==='jutsus') { carregarMeusJutsus(currentUserData.meusJutsus); carregarLoja(); }
+            if(t==='jutsus') {
+                carregarMeusJutsus(currentUserData.meusJutsus); 
+                carregarLoja(); 
+            }
             if(t==='ferramentas') carregarLojaFerramentas(); 
             if(t==='conquistas') carregarConquistas();
             if(t==='missoes') carregarMissoes();
@@ -165,7 +174,10 @@ window.showTab = (t) => {
 
 window.mudarOrdenacao = (ordem) => {
     ordenacaoAtual = ordem;
-    if(document.getElementById('jutsus').classList.contains('active')) { carregarMeusJutsus(currentUserData.meusJutsus); carregarLoja(); }
+    if(document.getElementById('jutsus').classList.contains('active')) {
+        carregarMeusJutsus(currentUserData.meusJutsus);
+        carregarLoja();
+    }
     if(document.getElementById('ferramentas').classList.contains('active')) carregarLojaFerramentas();
     if(document.getElementById('loja').classList.contains('active')) carregarLojaItens();
 };
@@ -182,6 +194,7 @@ function aplicarOrdenacao(lista, ordem) {
     return novaLista;
 }
 
+// --- FUNÇÕES DE SUPORTE ---
 async function verificarLevelUpAutomatico(dados) {
     let xpAtual = dados.xp || 0;
     let nivelAtual = dados.nivel || 1;
@@ -551,7 +564,7 @@ async function carregarMentorias() {
         const s = await getDocs(collection(db, "mentores"));
         cTurno.innerHTML = '';
         cCards.innerHTML = '';
-        globalMentores = {}; // Limpa cache
+        globalMentores = {}; 
 
         if (s.empty) {
             cTurno.innerHTML = '<p style="color:#999;">Nenhum mentor.</p>';
@@ -561,13 +574,13 @@ async function carregarMentorias() {
 
         s.forEach(d => {
             const m = d.data();
-            globalMentores[d.id] = m; // Salva no cache
+            globalMentores[d.id] = m; 
 
             if (!m.nome) return;
 
             const card = document.createElement('div');
             card.className = 'card jutsu-card-click';
-            // Usa apenas o ID para abrir o modal
+            
             card.onclick = function() { window.abrirModalMentoria(d.id); };
 
             card.innerHTML = `
@@ -656,7 +669,7 @@ window.salvarNovoMentor = async () => {
     if (isPlayer) {
         const uidPlayer = document.getElementById('mentor-player-select').value;
         if (!uidPlayer) return alert("Selecione o jogador!");
-        mentorData.uid_player = uidPlayer; // Linka o mentor ao jogador
+        mentorData.uid_player = uidPlayer; 
     }
 
     const btn = document.querySelector('#novoMentorModal .buy-btn');
@@ -693,13 +706,11 @@ window.confirmarMentoria = async () => {
         btn.disabled = true; 
         btn.innerText = "Processando...";
         
-        // 1. Desconta do aluno
         await updateDoc(doc(db, "users", auth.currentUser.uid), { 
             [field]: increment(-custo), 
             aprendizados: arrayUnion(`${currentMentorData.nome} - ${ensino.nome}`) 
         });
         
-        // 2. Se for Player, paga o mentor
         if (currentMentorData.uid_player) {
             await updateDoc(doc(db, "users", currentMentorData.uid_player), {
                 [field]: increment(custo)
@@ -741,394 +752,120 @@ window.closeChangePasswordModal = () => document.getElementById('changePasswordM
 window.toggleMenu = () => document.getElementById('user-menu').classList.toggle('show');
 window.fazerLogout = () => signOut(auth).then(() => location.reload());
 
-window.abrirModalMentoria = (id) => {
-    const mentor = globalMentores[id];
-    if (!mentor) { console.error("Mentor não encontrado no cache."); return; }
-    currentMentorData = mentor;
-    document.getElementById('mentor-name-modal').innerText = mentor.nome || "Desconhecido";
-    document.getElementById('mentor-img-modal').src = mentor.imagem || IMG_PADRAO;
-    const container = document.getElementById('mentoria-options-container');
-    container.innerHTML = '';
-    if(mentor.ensinos && Array.isArray(mentor.ensinos) && mentor.ensinos.length > 0) {
-        mentor.ensinos.forEach((ensino, index) => {
-            if(typeof ensino !== 'object' || !ensino.nome) return;
-            const div = document.createElement('div');
-            div.className = 'mentoria-option';
-            div.onclick = () => { const radio = document.getElementById(`ensino-${index}`); if(radio) radio.checked = true; };
-            const currencyLabel = ensino.moeda === 'essencia_ninja' ? 'EN' : 'Ryos';
-            const colorClass = ensino.moeda === 'essencia_ninja' ? 'var(--en-color)' : 'var(--primary-color)';
-            const preco = ensino.preco || 0;
-            div.innerHTML = `<input type="radio" name="ensino_escolhido" id="ensino-${index}" value="${index}" class="mentoria-radio"><div style="flex:1;"><div style="font-weight:bold;">${ensino.nome}</div><div style="font-size:0.85rem; color:${colorClass}; font-weight:bold;">${formatarNum(preco)} ${currencyLabel}</div></div>`;
-            container.appendChild(div);
-        });
-    } 
-    if (container.innerHTML === '') { container.innerHTML = '<p style="padding:10px; color:#777;">Este mentor não está ensinando nada no momento.</p>'; }
-    document.getElementById('mentoriaModal').style.display = 'flex';
-};
-
-window.abrirModalNovoMentor = () => {
-    document.getElementById('novoMentorModal').style.display = 'flex';
-};
-
-window.handleMentorImage = async (e) => {
-    if(e.target.files[0]) {
-        try {
-            newMentorImageBase64 = await comprimirImagem(e.target.files[0]);
-            document.getElementById('new-mentor-preview').innerHTML = `<img src="${newMentorImageBase64}" style="width:100px; height:100px; object-fit:cover; border-radius:50%;">`;
-        } catch(err) {
-            alert("Erro na imagem.");
-        }
-    }
-};
-
-window.salvarNovoMentor = async () => {
-    const nome = document.getElementById('new-mentor-name').value;
-    const cat = document.getElementById('new-mentor-category').value;
-    const isPlayer = document.getElementById('check-is-player').checked;
-    
-    if(!nome) return alert("Nome obrigatório");
-    if(!newMentorImageBase64) return alert("Escolha uma imagem");
-
-    let mentorData = {
-        nome: nome,
-        categoria: cat,
-        imagem: newMentorImageBase64,
-        ensinos: [] 
-    };
-
-    if (isPlayer) {
-        const uidPlayer = document.getElementById('mentor-player-select').value;
-        if (!uidPlayer) return alert("Selecione o jogador!");
-        mentorData.uid_player = uidPlayer; // Linka o mentor ao jogador
-    }
-
-    const btn = document.querySelector('#novoMentorModal .buy-btn');
-    btn.innerText = "Salvando...";
-
+// CORRIGIDO: Função verPerfil (agora blindada)
+window.verPerfil = async (uid) => {
     try {
-        await addDoc(collection(db, "mentores"), mentorData);
-        alert("Mentor criado!");
-        document.getElementById('novoMentorModal').style.display = 'none';
-        carregarMentorias();
-    } catch(e) {
-        alert("Erro: " + e.message);
-    } finally {
-        btn.innerText = "Salvar";
-    }
-};
-
-// Funções para criar mentor player
-window.toggleMentorPlayerSelect = async () => {
-    const isPlayer = document.getElementById('check-is-player').checked;
-    const select = document.getElementById('mentor-player-select');
-    const loading = document.getElementById('player-loading-msg');
-    
-    if (isPlayer) {
-        select.style.display = 'block';
-        loading.style.display = 'block';
-        select.innerHTML = '<option value="">Carregando...</option>';
-        
-        try {
-            const snap = await getDocs(collection(db, "users"));
-            select.innerHTML = '<option value="">Selecione um Jogador</option>';
-            snap.forEach(doc => {
-                const u = doc.data();
-                const opt = document.createElement('option');
-                opt.value = doc.id;
-                opt.text = `${u.nome} (${u.apelido})`;
-                select.appendChild(opt);
-            });
-        } catch(e) {
-            alert("Erro ao carregar jogadores.");
-        } finally {
-            loading.style.display = 'none';
-        }
-    } else {
-        select.style.display = 'none';
-        loading.style.display = 'none';
-    }
-};
-
-async function carregarPersonagens() {
-    try {
-        if (!currentUserData) return;
-        const c = document.getElementById('directory-grid'); if(!c) return;
-        c.innerHTML = '<p>Carregando...</p>';
-        const s = await getDocs(collection(db, "users"));
-        c.innerHTML = '';
-        s.forEach(d => { const u = d.data(); const k = document.createElement('div'); k.className = 'card'; k.onclick = () => window.verPerfil(d.id); 
-        k.innerHTML = `<div style="width:60px; height:60px; border-radius:50%; overflow:hidden; margin:0 auto 10px;"><img src="${u.avatar||IMG_PADRAO}" style="width:100%; height:100%; object-fit:cover;"></div><h4>${u.nome}</h4><p>${u.apelido||""}</p><div style="font-size:0.8rem; margin-top:5px; color:#777;"><span style="color:var(--yellow-color);"><i class="fa-solid fa-coins"></i> ${formatarNum(u.ryos)}</span> | <span style="color:var(--en-color);"><i class="fa-regular fa-star"></i> ${formatarNum(u.essencia_ninja||0)}</span></div>${u.id !== auth.currentUser.uid ? `<button class="gift-btn" onclick="event.stopPropagation(); openGiftModal('${d.id}', '${u.nome}')"><i class="fa-solid fa-gift"></i> Presentear</button>` : ''}`; 
-        c.appendChild(k); });
-    } catch(e){ console.error(e); c.innerHTML='<p>Erro ao carregar.</p>'; }
-}
-
-async function carregarConquistas() {
-    try {
-        if (!currentUserData) return;
-        const cTurno = document.getElementById('conquistas-turno-grid'); 
-        const cCards = document.getElementById('conquistas-cards-grid');
-        if(!cTurno || !cCards) return;
-
-        const m = currentUserData.statusConquistas || {};
-        cTurno.innerHTML = ''; cCards.innerHTML = '';
-        
-        const s = await getDocs(collection(db, "conquistas"));
-        if(s.empty) { cTurno.innerHTML = '<p>Nenhuma conquista.</p>'; return; }
-        
-        const isAdmin = auth.currentUser.email === "admin@rpgnaruto.com";
-        s.forEach(d => {
-            const i = d.data(); const p = i.restrito_a || [];
-            if (!isAdmin && p.length > 0 && !p.includes(currentUserData.nome)) return;
-            const st = m[d.id]; const k = document.createElement('div'); k.className = 'card jutsu-card-click';
-            let btn = "";
-            const r = i.recompensa || 0; const x = i.xp || 0; const en = i.en || 0; 
-            if(!st) btn = `<button class="mission-btn-start" onclick="event.stopPropagation(); solicitarConquista('${d.id}', this)">Reivindicar</button>`;
-            else if(st === 'solicitado') btn = `<button class="mission-btn-wait" onclick="event.stopPropagation();">Aguardando Kage</button>`;
-            else if(st === 'aprovado') btn = `<button class="mission-btn-collect" onclick="event.stopPropagation(); coletarConquista('${d.id}', ${r}, ${x}, ${en}, this)">Coletar</button>`;
-            else if(st === 'concluido') btn = `<button class="mission-btn-done" onclick="event.stopPropagation();">Concluído</button>`;
-            let stTxt = !st ? "Disponível" : (st==='solicitado' ? "Pendente" : (st==='aprovado' ? "Aprovado!" : "Concluído"));
-            k.onclick = () => verDetalhesConquista(d.id, i, st);
-            let rewardText = `${formatarNum(r)} Ryos`;
-            if(en > 0) rewardText += ` | <span style="color:var(--en-color);">${en} EN</span>`;
-            k.innerHTML = `<img src="${i.imagem||IMG_PADRAO}" class="card-img-top"><h4>${i.titulo}</h4><p style="font-weight:bold; color:#777;">${stTxt}</p><small style="color:var(--primary-color)">${rewardText}</small>${btn}`;
-            
-            const cat = (i.categoria || "turno").toLowerCase().trim();
-            if(cat.includes('card')) cCards.appendChild(k); else cTurno.appendChild(k);
-        });
-    } catch(e) { console.error(e); }
-}
-
-async function carregarMissoes() { 
-    try {
-        if (!currentUserData) return;
-        const cTurno = document.getElementById('missoes-turno-grid'); 
-        const cCards = document.getElementById('missoes-cards-grid');
-        if(!cTurno || !cCards) return;
-
-        const m = currentUserData.statusMissoes || {}; 
-        cTurno.innerHTML = ''; cCards.innerHTML = '';
-
-        const s = await getDocs(collection(db, "missoes"));
-        const isAdmin = auth.currentUser.email === "admin@rpgnaruto.com";
-        s.forEach(d => { 
-            const i = d.data();
-            let restritos = i.restrito_a;
-            if (!restritos) restritos = [];
-            if (typeof restritos === 'string') restritos = [restritos];
-            const nomePlayer = currentUserData.nome;
-            const apelidoPlayer = currentUserData.apelido;
-            if (restritos.length > 0 && !isAdmin) {
-                const nomeNaLista = restritos.includes(nomePlayer);
-                const apelidoNaLista = restritos.includes(apelidoPlayer);
-                if (!nomeNaLista && !apelidoNaLista) return;
+        const s = await getDoc(doc(db, "users", uid)); 
+        if(s.exists()) { 
+            const u = s.data(); 
+            let totalJutsus = (u.meusJutsus || []).length;
+            let totalTools = 0;
+            let totalItems = 0;
+            if (u.inventario) {
+                for (const [id, qtd] of Object.entries(u.inventario)) {
+                    const itemInfo = globalItensMap[id];
+                    if (itemInfo) {
+                        if (itemInfo.type === 'tool') totalTools += qtd;
+                        else totalItems += qtd;
+                    } else {
+                        totalItems += qtd; 
+                    }
+                }
             }
-            const st = m[d.id] || 'neutro'; const k = document.createElement('div'); k.className = 'card jutsu-card-click'; 
-            const rankClass = `rank-${(i.rank||'d').toLowerCase()}`;
-            const rankHtml = `<span class="rank-tag ${rankClass}">Rank ${i.rank||'D'}</span>`;
-            const r = i.recompensa || 0; const x = i.xp || 0; const en = i.en || 0; 
-            k.onclick = () => verDetalhesMissao(d.id, i, st); 
-            let rewardText = `${x} XP | ${formatarNum(r)} Ryos`;
-            if(en > 0) rewardText += ` | <span style="color:var(--en-color);">${en} EN</span>`;
-            k.innerHTML=`${rankHtml}<h4>${i.titulo}</h4><p style="font-size:0.9rem; color:${st==='em_andamento'?'orange':st==='aprovado'?'green':'#777'}; font-weight:bold;">${st==='neutro'?'Disponível':st}</p><small style="color:var(--primary-color)">${rewardText}</small>`; 
+
+            document.getElementById('profile-modal-name').innerText = u.nome; 
+            document.getElementById('profile-modal-char').innerText = u.apelido || ""; 
+            document.getElementById('profile-modal-img').src = u.avatar || IMG_PADRAO; 
             
-            const cat = (i.categoria || "turno").toLowerCase().trim();
-            if(cat.includes('card')) cCards.appendChild(k); else cTurno.appendChild(k);
-        }); 
-    } catch(e) { console.error(e); }
-}
+            renderizarIcones(u.elementos || [], 'profile-elementos-container', ELEMENTOS_ICONS, 'Naturezas de Chakra'); 
+            renderizarIcones(u.kekkei_genkai || [], 'profile-kekkei-container', KEKKEI_ICONS, 'Kekkei Genkai'); 
+            renderizarIcones(u.kekkei_moura || [], 'profile-moura-container', KEKKEI_MOURA_ICONS, 'Kekkei Moura'); 
+            renderizarIcones(u.kekkei_touta || [], 'profile-touta-container', KEKKEI_TOUTA_ICONS, 'Kekkei Touta'); 
 
-async function carregarRankings() { const c = document.getElementById('ranking-container'); if(!c) return; try { const s = await getDocs(collection(db, "users")); let l = []; s.forEach(d => l.push(d.data())); c.innerHTML = ''; renderRank(c, "Nível", l, 'nivel'); renderRank(c, "Ryos", l, 'ryos'); renderRank(c, "Rankeadas", l, 'pontos_rankeada'); renderRank(c, "Torneios", l, 'vitorias_torneio'); renderRank(c, "Amistosos", l, 'pontos_amistoso'); renderRank(c, "Duplas", l, 'vitorias_dupla'); renderRank(c, "Clãs", l, 'vitorias_cla'); renderRank(c, "Missões Rank S", l, 'missoes_concluidas_s'); renderRank(c, "Missões Rank A", l, 'missoes_concluidas_a'); renderRank(c, "Missões Rank B", l, 'missoes_concluidas_b'); renderRank(c, "Missões Rank C", l, 'missoes_concluidas_c'); renderRank(c, "Missões Rank D", l, 'missoes_concluidas_d'); renderRank(c, "Missões Rank E", l, 'missoes_concluidas_e'); } catch (e) {} };
-function renderRank(c,t,l,f) { const s=[...l].sort((a,b)=>(b[f]||0)-(a[f]||0)).slice(0,5); let h=`<div class="ranking-col"><h3>${t}</h3><table class="ranking-table">`; s.forEach((u,i)=>h+=`<tr><td>${i+1}. ${u.nome}</td><td>${formatarNum(u[f])}</td></tr>`); h+='</table></div>'; c.innerHTML+=h; }
+            let invHtml = `
+                <div class="stat-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center;"><div class="stat-value" style="font-size:1.5rem;">${totalJutsus}</div><div class="stat-label">Jutsus</div></div>
+                <div class="stat-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center;"><div class="stat-value" style="font-size:1.5rem;">${totalTools}</div><div class="stat-label">Ferramentas</div></div>
+                <div class="stat-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center;"><div class="stat-value" style="font-size:1.5rem;">${totalItems}</div><div class="stat-label">Itens</div></div>`;
 
-window.verDetalhesJutsu = (id,d) => abrirModalSimples('jutsu',d); 
-window.verDetalhesFerramenta = (id,d) => abrirModalSimples('tool',d); 
-window.verDetalhesItem = (id,d) => abrirModalSimples('item',d);
-window.fecharJutsuModal = () => document.getElementById('jutsuModal').style.display='none';
-window.fecharToolModal = () => document.getElementById('toolModal').style.display='none';
-window.fecharItemModal = () => document.getElementById('itemModal').style.display='none';
-window.fecharConquistaModal = () => document.getElementById('conquistaModal').style.display='none';
-window.fecharMissaoModal = () => document.getElementById('missaoModal').style.display='none';
+            const statsContainer = document.getElementById('other-profile-stats'); 
+            statsContainer.innerHTML = `
+            <div class="stats-divider">Geral</div>
+            <div class="stat-card"><div class="stat-value">${u.nivel||1}</div><div class="stat-label">Nível</div></div>
+            <div class="stat-card"><div class="stat-value">${u.cargo||'Genin'}</div><div class="stat-label">Cargo</div></div>
+            <div class="stat-card"><div class="stat-value">${u.patente||'Genin'}</div><div class="stat-label">Patente</div></div>
+            <div class="stat-card"><div class="stat-value">${u.rank||'E'}</div><div class="stat-label">Rank</div></div>
+            <div class="stat-card"><div class="stat-value">${u.speed_rank||"E"}</div><div class="stat-label">Rank Vel.</div></div>
+            <div class="stat-card"><div class="stat-value">${u.tipo||'Normal'}</div><div class="stat-label">Tipo</div></div>
+            <div class="stats-divider">Batalha</div>
+            <div class="stat-card"><div class="stat-value">${u.vitorias||0}</div><div class="stat-label">Vitórias</div></div>
+            <div class="stat-card"><div class="stat-value">${u.empates||0}</div><div class="stat-label">Empates</div></div>
+            <div class="stat-card"><div class="stat-value">${u.derrotas||0}</div><div class="stat-label">Derrotas</div></div>
+            <div class="stats-divider">Inventário</div>
+            <div style="grid-column: 1 / -1; display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">${invHtml}</div>
+            <div class="stats-divider">Vitalidade</div>
+            <div class="stat-card"><div class="stat-value">${u.vida||100}</div><div class="stat-label">Vida</div></div>
+            <div class="stat-card"><div class="stat-value">${u.chakra||100}</div><div class="stat-label">Chakra</div></div>
+            <div class="stat-card"><div class="stat-value">${u.stamina||100}</div><div class="stat-label">Stamina</div></div>
+            <div class="stat-card"><div class="stat-value">${u.controle_chakra||"Baixo"}</div><div class="stat-label">Controle</div></div>
+            <div class="stats-divider">Atributos</div>
+            <div class="stat-card"><div class="stat-value">${u.forca||10}</div><div class="stat-label">Força</div></div>
+            <div class="stat-card"><div class="stat-value">${u.defesa||10}</div><div class="stat-label">Defesa</div></div>
+            <div class="stat-card"><div class="stat-value">${u.agilidade||10}</div><div class="stat-label">Agilidade</div></div>
+            <div class="stat-card"><div class="stat-value">${u.velocidade||10}</div><div class="stat-label">Velocidade</div></div>
+            <div class="stat-card"><div class="stat-value">${u.intelecto||10}</div><div class="stat-label">Intelecto</div></div>`; 
+            
+            document.getElementById('profileModal').style.display = 'flex'; 
+        } 
+    } catch(e) { console.error("Erro ao abrir perfil:", e); alert("Erro ao carregar perfil."); }
+};
 window.fecharProfileModal = () => document.getElementById('profileModal').style.display = 'none';
-window.closeModal = () => document.getElementById('commentModal').style.display = 'none';
 
-window.openGiftModal = (uid, nome) => {
-    currentGiftTarget = uid;
-    document.getElementById('gift-target-name').innerText = nome;
-    document.getElementById('giftModal').style.display = 'flex';
+// --- CORRIGIDO: Painel Kage (Função de Aprovação Global) ---
+window.aprovarMissao = async (uid, mid) => { 
+    if(confirm("Aprovar missão?")) {
+        try { await updateDoc(doc(db, "users", uid), { [`statusMissoes.${mid}`]: 'aprovado' }); 
+        alert("Missão aprovada!"); carregarPainelAdmin(); } catch(e) { alert("Erro ao aprovar: " + e.message); }
+    }
 };
-
-window.enviarPresente = async () => {
-    const qtd = parseInt(document.getElementById('gift-amount').value);
-    const tipo = document.getElementById('gift-currency').value;
-    if(!qtd || qtd <= 0) return alert("Digite uma quantidade válida!");
-    if(!currentGiftTarget) return;
-    const field = tipo === 'ryos' ? 'ryos' : 'essencia_ninja';
-    const moedaNome = tipo === 'ryos' ? 'Ryos' : 'Essência Ninja';
-    if((currentUserData[field] || 0) < qtd) return alert(`Você não tem ${moedaNome} suficiente!`);
-    if(!confirm(`Enviar ${qtd} ${moedaNome} para ${document.getElementById('gift-target-name').innerText}?`)) return;
+window.aprovarConquista = async (uid, cid) => { 
+    if(confirm("Aprovar conquista?")) {
+        try { await updateDoc(doc(db, "users", uid), { [`statusConquistas.${cid}`]: 'aprovado' }); 
+        alert("Conquista aprovada!"); carregarPainelAdmin(); } catch(e) { alert("Erro ao aprovar: " + e.message); }
+    }
+};
+async function carregarPainelAdmin() { 
+    const c = document.getElementById('admin-missoes-grid'); if(!c) return;
+    c.innerHTML='<p>Carregando solicitações...</p>'; 
     try {
-        await updateDoc(doc(db, "users", auth.currentUser.uid), { [field]: increment(-qtd) });
-        await updateDoc(doc(db, "users", currentGiftTarget), { [field]: increment(qtd) });
-        alert("Presente enviado com sucesso!");
-        document.getElementById('giftModal').style.display = 'none';
-        document.getElementById('gift-amount').value = '';
-    } catch(e) { alert("Erro ao enviar: " + e.message); }
-};
-
-window.consumirItem = async (id, nome) => { 
-    let itemData = globalItensMap[id];
-    if (itemData && itemData.type === 'tool' && itemData.stamina > 0) {
-        if ((currentUserData.stamina || 0) < itemData.stamina) return alert(`Stamina insuficiente! Custo: ${itemData.stamina}`);
-        if(confirm(`Usar 1x ${nome}? (Custa ${itemData.stamina} Stamina)`)) {
-            await updateDoc(doc(db, "users", auth.currentUser.uid), { 
-                [`inventario.${id}`]: increment(-1),
-                stamina: increment(-itemData.stamina) 
-            });
-        }
-    } else {
-        if(confirm(`Usar 1x ${nome}?`)) {
-            await updateDoc(doc(db, "users", auth.currentUser.uid), { [`inventario.${id}`]: increment(-1) }); 
-        }
-    }
-};
-
-window.comprarJutsu = async (id, p, n, currency) => { 
-    const field = currency === 'EN' ? 'essencia_ninja' : 'ryos';
-    if(!confirm(`Comprar ${n} por ${p} ${currency}?`)) return; 
-    if((currentUserData[field]||0) < p) return alert(`Sem ${currency} suficiente!`); 
-    await updateDoc(doc(db, "users", auth.currentUser.uid), { 
-        [field]: increment(-p), 
-        meusJutsus: arrayUnion(id), 
-        [`maestrias.${id}`]: 0 
-    }); 
-    alert("Comprado!"); 
-};
-window.comprarMultiplos = async (id, p, n, t, i, currency) => { 
-    const q = parseInt(document.getElementById(i).value)||1; 
-    if(q<1) return; const tot=p*q; 
-    const field = currency === 'EN' ? 'essencia_ninja' : 'ryos';
-    if(!confirm(`Comprar ${q}x ${n} por ${tot} ${currency}?`)) return; 
-    if((currentUserData[field]||0) < tot) return alert(`Sem ${currency} suficiente!`); 
-    await updateDoc(doc(db, "users", auth.currentUser.uid), { 
-        [field]: increment(-tot), 
-        [`inventario.${id}`]: increment(q) 
-    }); 
-    alert("Comprado!"); 
-};
-window.filtrarLojaPorTipo = (t, b) => { 
-    lojaAtual = t; 
-    document.querySelectorAll('.shop-cat-btn').forEach(x => x.classList.remove('active')); 
-    if(b) b.classList.add('active'); 
-    carregarLojaItens(); 
-};
-window.atualizarFiltroVila = () => { vilaAtual = document.getElementById('shop-location').value; carregarLojaItens(); };
-
-window.verDetalhesConquista = (id, d, st) => {
-    document.getElementById('conquista-name-modal').innerText = d.titulo;
-    document.getElementById('conquista-desc-modal').innerText = d.descricao;
-    let rewardsHtml = `${formatarNum(d.recompensa)} Ryos`;
-    if(d.en > 0) rewardsHtml += ` | <span style="color:var(--en-color); font-weight:bold;">${d.en} Essência Ninja</span>`;
-    document.getElementById('conquista-reward-modal').innerHTML = rewardsHtml;
-    document.getElementById('conquista-xp-modal').innerText = d.xp || 0;
-    document.getElementById('conquista-img-modal').src = d.imagem||IMG_PADRAO;
-    const a = document.getElementById('conquista-actions-modal'); a.innerHTML = '';
-    if(!st) a.innerHTML = `<button class="mission-btn-start" onclick="window.solicitarConquista('${id}', this)">Reivindicar</button>`;
-    else if(st === 'solicitado') a.innerHTML = `<button class="mission-btn-wait">Aguardando</button>`;
-    else if(st === 'aprovado') a.innerHTML = `<button class="mission-btn-collect" onclick="window.coletarConquista('${id}', ${d.recompensa}, ${d.xp}, ${d.en}, this)">Coletar</button>`;
-    else a.innerHTML = `<button class="mission-btn-done">Feito</button>`;
-    document.getElementById('conquistaModal').style.display='flex';
-};
-
-window.solicitarConquista = async (id, btn) => {
-    if(btn) { btn.disabled = true; btn.innerText = "Enviando..."; }
-    await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusConquistas.${id}`]: 'solicitado' });
-    alert("Solicitado!");
-};
-window.coletarConquista = async (id, r, x, en, btn) => {
-    if(btn && btn.disabled) return;
-    if(btn) { btn.disabled = true; btn.innerText = "Coletando..."; btn.style.display = 'none'; } 
-    await updateDoc(doc(db, "users", auth.currentUser.uid), { 
-        ryos: increment(r), 
-        xp: increment(x),
-        essencia_ninja: increment(en),
-        [`statusConquistas.${id}`]: 'concluido' 
-    });
-    alert(`Recebido: ${r} Ryos, ${x} XP` + (en > 0 ? ` e ${en} EN!` : "!"));
-    document.getElementById('conquistaModal').style.display='none';
-};
-
-window.verDetalhesMissao = (id, d, st) => { 
-    document.getElementById('missao-name-modal').innerText = d.titulo; 
-    document.getElementById('missao-desc-modal').innerText = d.descricao; 
-    let rewardsHtml = `${formatarNum(d.recompensa)} Ryos`;
-    if(d.en > 0) rewardsHtml += ` | <span style="color:var(--en-color); font-weight:bold;">${d.en} Essência Ninja</span>`;
-    document.getElementById('missao-reward-modal').innerHTML = rewardsHtml; 
-    document.getElementById('missao-xp-modal').innerText = d.xp || 0; 
-    document.getElementById('missao-img-modal').src = d.imagem||IMG_PADRAO; 
-    const a = document.getElementById('missao-actions-modal'); a.innerHTML = ''; 
-    if(st==='neutro') a.innerHTML = `<button class="mission-btn-start" onclick="window.iniciarMissao('${id}', this)">Aceitar</button>`; 
-    else if(st==='em_andamento') a.innerHTML = `<button class="mission-btn-wait">Em Andamento</button>`; 
-    else if(st==='aprovado') a.innerHTML = `<button class="mission-btn-collect" onclick="window.coletarRecompensa('${id}', ${d.recompensa}, ${d.xp}, ${d.en}, '${d.rank||'D'}', this)">Receber</button>`; 
-    else if(st==='concluido') a.innerHTML = `<button class="mission-btn-done">Concluído</button>`; 
-    document.getElementById('missaoModal').style.display='flex'; 
-};
-window.iniciarMissao = async (id, btn) => { 
-    if(btn) { btn.disabled = true; btn.innerText = "Iniciando..."; }
-    await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusMissoes.${id}`]: 'em_andamento' }); 
-    alert("Iniciada!"); 
-};
-window.coletarRecompensa = async (id, r, x, en, rank, btn) => { 
-    if(btn && btn.disabled) return;
-    if(btn) { btn.disabled = true; btn.innerText = "Coletando..."; btn.style.display = 'none'; } 
-    const rankKey = `missoes_concluidas_${rank.toLowerCase()}`;
-    await updateDoc(doc(db, "users", auth.currentUser.uid), { 
-        ryos: increment(r), 
-        xp: increment(x),
-        essencia_ninja: increment(en), // Adiciona EN
-        [`statusMissoes.${id}`]: 'concluido',
-        [rankKey]: increment(1) 
-    }); 
-    alert(`Missão cumprida! Ganhou: ${r} Ryos, ${x} XP` + (en > 0 ? ` e ${en} EN!` : "!")); 
-    document.getElementById('missaoModal').style.display='none';
-};
-
-function abrirModalSimples(t, d) {
-    let dados = d; if(t === 'jutsu') { try { dados = aplicarEscalaPersonalizada(d); } catch(e){} }
-    document.getElementById(t+'-name-modal').innerText = dados.nome; 
-    document.getElementById(t+'-desc-modal').innerText = dados.descricao||""; 
-    document.getElementById(t+'-price-modal').innerText = "Valor: "+formatarNum(dados.preco)+" Ryos";
-    document.getElementById(t+'-img-modal').src = dados.imagem||IMG_PADRAO;
-    let bonusHtml = gerarTagsBonus(dados);
-    if(t==='jutsu'){ 
-        document.getElementById(t+'-rank-modal').innerText="Rank "+dados.rank; 
-        let h=""; 
-        if(dados.dano) h+=`<span class="jutsu-stat-tag tag-dano">Dano: ${dados.dano}</span>`; 
-        if(dados.chakra) h+=`<span class="jutsu-stat-tag tag-chakra">Chakra: ${dados.chakra}</span>`; 
-        if(dados.stamina) h+=`<span class="jutsu-stat-tag tag-stamina">Stamina: ${dados.stamina}</span>`; 
-        if(dados.bonus) h+=`<span class="jutsu-stat-tag tag-buff">${dados.bonus}</span>`; 
-        h += bonusHtml;
-        document.getElementById('jutsu-stats-row').innerHTML=h; 
-    } else if (t === 'tool') {
-        document.getElementById(t+'-rank-modal').innerText=dados.dano||"Ferramenta";
-        let h = "";
-        let custoStamina = 0;
-        if(dados.stamina) custoStamina = Number(dados.stamina);
-        if(custoStamina > 0) { h += `<span class="jutsu-stat-tag tag-stamina">Stamina: ${custoStamina}</span>`; }
-        h += bonusHtml;
-        document.getElementById('tool-stats-row').innerHTML = h;
-    } else {
-        document.getElementById('item-stats-row').innerHTML = bonusHtml;
-    }
-    if(t==='item') document.getElementById(t+'-rank-modal').innerText = dados.efeito||"Item";
-    document.getElementById(t+'Modal').style.display='flex';
+        const s = await getDocs(collection(db, "users")); c.innerHTML=''; let hasItems = false;
+        s.forEach(u => { 
+            const d = u.data(); 
+            const m = d.statusMissoes || {}; 
+            const cq = d.statusConquistas || {}; 
+            if(m && typeof m === 'object') {
+                for(const [mid, st] of Object.entries(m)) { 
+                    if(st === 'em_andamento') { 
+                        hasItems = true;
+                        const k = document.createElement('div'); k.className = 'card'; 
+                        k.innerHTML = `<h4>${d.nome || "Desconhecido"} (Missão)</h4><p style="font-size:0.8rem">${mid}</p><button class="mission-btn-collect" onclick="window.aprovarMissao('${u.id}','${mid}')">Aprovar</button>`; 
+                        c.appendChild(k); 
+                    } 
+                }
+            }
+            if(cq && typeof cq === 'object') {
+                for(const [cid, st] of Object.entries(cq)) { 
+                    if(st === 'solicitado') { 
+                        hasItems = true;
+                        const k = document.createElement('div'); k.className = 'card'; 
+                        k.innerHTML = `<h4>${d.nome || "Desconhecido"} (Conquista)</h4><p style="font-size:0.8rem">${cid}</p><button class="mission-btn-collect" onclick="window.aprovarConquista('${u.id}','${cid}')">Aprovar</button>`; 
+                        c.appendChild(k); 
+                    } 
+                } 
+            }
+        }); 
+        if (!hasItems) c.innerHTML = '<p style="color:#777; font-style:italic;">Nenhuma solicitação pendente.</p>';
+    } catch(e) { console.error("Erro admin:", e); c.innerHTML = '<p>Erro ao carregar painel.</p>'; } 
 }
-
-window.openEditProfileModal = () => { document.getElementById('editProfileModal').style.display = 'flex'; document.getElementById('edit-name-input').value = currentUserData.nome || ""; document.getElementById('edit-nick-input').value = currentUserData.apelido || ""; document.getElementById('user-menu').classList.remove('show'); };
-window.closeEditProfileModal = () => document.getElementById('editProfileModal').style.display = 'none';
-window.openChangePasswordModal = () => { document.getElementById('changePasswordModal').style.display='flex'; document.getElementById('user-menu').classList.remove('show'); };
-window.closeChangePasswordModal = () => document.getElementById('changePasswordModal').style.display='none';
-window.toggleMenu = () => document.getElementById('user-menu').classList.toggle('show');
-window.fazerLogout = () => signOut(auth).then(() => location.reload());
 
 async function carregarFrases() { const c = document.getElementById('frases-list-container'); try { onSnapshot(query(collection(db, "frases"), orderBy("data", "desc")), (s) => { c.innerHTML=''; s.forEach(d=>{ const f=d.data(); const k=document.createElement('div'); k.className='frase-item'; const menu = f.uid === auth.currentUser.uid ? `<div class="options-menu-container"><div class="options-btn" onclick="toggleFraseMenu(this); event.stopPropagation();">...</div><div class="options-dropdown"><div class="options-item" onclick="editarFrase('${d.id}','${f.texto}');event.stopPropagation()">Editar</div><div class="options-item danger" onclick="deletarFrase('${d.id}');event.stopPropagation()">Excluir</div></div></div>` : ''; k.onclick=()=>copiarFrase(f.texto); k.innerHTML=`<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor}</div>${menu}`; c.appendChild(k); }); }); } catch(e){} }
 
