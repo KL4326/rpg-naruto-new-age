@@ -104,16 +104,10 @@
                             <button class="btn-post" onclick="window.abrirModalNovoMentor()">+ Novo Mentor</button>
                         </div>
                     </div>
-                    
                     <h3 class="section-title">RPG de Turno</h3>
-                    <div id="grid-mentorias-turno" class="bucket-grid">
-                        <p style="color:#777;">Carregando mentores...</p>
-                    </div>
-
+                    <div id="grid-mentorias-turno" class="bucket-grid"><p style="color:#777;">Carregando mentores...</p></div>
                     <h3 class="section-title">RPG de Cards</h3>
-                    <div id="grid-mentorias-cards" class="bucket-grid">
-                        <p style="color:#777;">Carregando mentores...</p>
-                    </div>
+                    <div id="grid-mentorias-cards" class="bucket-grid"><p style="color:#777;">Carregando mentores...</p></div>
                 </div>
 
                 <div id="conquistas" class="tab-content">
@@ -212,14 +206,12 @@
                         <div class="level-info"><span id="level-display">Nível 1</span><span id="xp-text-display">0 / 500 XP</span></div>
                         <div class="xp-bar-bg"><div class="xp-bar-fill" id="xp-bar"></div><div class="xp-text">Progresso</div></div>
                     </div>
-                    
                     <div class="powers-wrapper">
                         <div class="elementos-container" id="dash-elementos" style="display:none;"></div>
                         <div class="elementos-container" id="dash-kekkei" style="display:none;"></div>
                         <div class="elementos-container" id="dash-moura" style="display:none;"></div>
                         <div class="elementos-container" id="dash-touta" style="display:none;"></div>
                     </div>
-
                     <div class="profile-stats-grid">
                         <div class="stats-divider">Geral</div>
                         <div class="stat-card"><div class="stat-value" id="dash-nivel">1</div><div class="stat-label">Nível</div></div>
@@ -281,11 +273,20 @@
         <div class="modal-content-card">
             <span class="close-modal" onclick="document.getElementById('novoMentorModal').style.display='none'">&times;</span>
             <h3>Criar Novo Mentor</h3>
-            <input type="text" id="new-mentor-name" class="edit-input" placeholder="Nome do Mentor">
+            <input type="text" id="new-mentor-name" class="edit-input" placeholder="Nome do Mentor (NPC ou Player)">
             <select id="new-mentor-category" class="filter-select">
                 <option value="turno">RPG de Turno</option>
                 <option value="cards">RPG de Cards</option>
             </select>
+            
+            <div style="margin: 10px 0; text-align: left;">
+                <label style="cursor:pointer; font-weight:bold; display:flex; align-items:center;">
+                    <input type="checkbox" id="check-is-player" onchange="window.toggleMentorPlayerSelect()" style="margin-right:8px; transform:scale(1.2);"> É um Jogador Real?
+                </label>
+                <select id="mentor-player-select" class="filter-select" style="display:none; margin-top:5px;"></select>
+                <p id="player-loading-msg" style="display:none; font-size:0.8rem; color:#777;">Carregando jogadores...</p>
+            </div>
+
             <label class="btn-post" style="width:100%; display:block; text-align:center; margin-bottom:10px;">
                 <i class="fa-solid fa-image"></i> Escolher Foto
                 <input type="file" id="new-mentor-img-input" style="display:none;" onchange="window.handleMentorImage(event)">
