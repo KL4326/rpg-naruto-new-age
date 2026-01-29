@@ -2,13 +2,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, addDoc, serverTimestamp, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// --- CONFIGURAÇÃO ---
 const firebaseConfig = { apiKey: "AIzaSyC3HOor32_p5Z-iADm0VgZ279rt1kj8ICg", authDomain: "rpg-naruto-5150a.firebaseapp.com", projectId: "rpg-naruto-5150a", storageBucket: "rpg-naruto-5150a.firebasestorage.app", messagingSenderId: "1007094335306", appId: "1:1007094335306:web:ac96fa96f9494f90fd63b3" };
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// --- VARIÁVEIS GLOBAIS ---
 let currentUserData = null;
 let currentImageBase64 = null;
 let currentOpenPostId = null;
@@ -25,7 +23,6 @@ let newMentorImageBase64 = null;
 
 const IMG_PADRAO = "https://img.freepik.com/vetores-gratis/ilustracao-de-pergaminho-ninja-desenhada-a-mao_23-2151159846.jpg";
 
-// --- LEVEL UP ---
 function getXpNecessario(nivel) {
     if(globalXpTable.length > 0 && nivel <= globalXpTable.length) {
         return globalXpTable[nivel - 1]; 
@@ -42,7 +39,7 @@ const ELEMENTOS_ICONS = {
     "yin": "data:image/jpeg;base64,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",
     "yang": "data:image/png;base64,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",
     "yin_yang": "data:image/jpeg;base64,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"
-        };;
+        };
 const KEKKEI_ICONS = {
     "sharingan": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQsaFL3vRwLEqONbFnsr_tskXDVuf9C7F03HQ&s",
     "byakugan": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR8dibOxYWvh_iAG7J4BJ6u1ziT2vSb0PpWdg&s",
@@ -74,11 +71,11 @@ function calcularTempo(timestamp) { try { if (!timestamp) return "Desconhecido";
 
 window.toggleMobileMenu = () => { document.querySelector('.sidebar').classList.toggle('mobile-active'); document.querySelector('.sidebar-overlay').classList.toggle('active'); };
 
-// --- AUTH STATE ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('app-container').style.display = 'flex';
+        
         if(user.email === "admin@rpgnaruto.com") document.getElementById('btn-admin-panel').style.display = 'flex';
         
         await carregarConfiguracoes();
@@ -112,7 +109,6 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-// --- SISTEMA DE LOGIN ---
 const btnLogin = document.getElementById('btnLogin');
 if (btnLogin) {
     btnLogin.addEventListener('click', () => {
@@ -130,92 +126,6 @@ if (btnLogin) {
 const passInput = document.getElementById('passwordInput');
 if (passInput) passInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('btnLogin').click(); });
 
-
-// --- FUNÇÕES ADMIN E PAINEL KAGE (CORRIGIDAS) ---
-
-window.aprovarMissao = async (uid, mid) => { 
-    if(confirm("Aprovar missão?")) {
-        try {
-            await updateDoc(doc(db, "users", uid), { [`statusMissoes.${mid}`]: 'aprovado' }); 
-            alert("Missão aprovada!"); 
-            carregarPainelAdmin(); 
-        } catch(e) { alert("Erro ao aprovar: " + e.message); }
-    }
-};
-
-window.aprovarConquista = async (uid, cid) => { 
-    if(confirm("Aprovar conquista?")) {
-        try {
-            await updateDoc(doc(db, "users", uid), { [`statusConquistas.${cid}`]: 'aprovado' }); 
-            alert("Conquista aprovada!"); 
-            carregarPainelAdmin(); 
-        } catch(e) { alert("Erro ao aprovar: " + e.message); }
-    }
-};
-
-async function carregarPainelAdmin() { 
-    const c = document.getElementById('admin-missoes-grid'); 
-    if(!c) return;
-    
-    c.innerHTML='<p>Carregando solicitações...</p>'; 
-    
-    try {
-        const s = await getDocs(collection(db, "users")); 
-        c.innerHTML=''; 
-        let hasItems = false;
-
-        s.forEach(u => { 
-            const d = u.data(); 
-            // Proteção contra dados nulos
-            const m = d.statusMissoes || {}; 
-            const cq = d.statusConquistas || {}; 
-            
-            // Loop de Missões
-            if(m && typeof m === 'object') {
-                for(const [mid, st] of Object.entries(m)) { 
-                    if(st === 'em_andamento') { 
-                        hasItems = true;
-                        const k = document.createElement('div'); 
-                        k.className = 'card'; 
-                        k.innerHTML = `
-                            <h4>${d.nome || "Desconhecido"} (Missão)</h4>
-                            <p style="font-size:0.8rem">${mid}</p>
-                            <button class="mission-btn-collect" onclick="window.aprovarMissao('${u.id}','${mid}')">Aprovar</button>
-                        `; 
-                        c.appendChild(k); 
-                    } 
-                }
-            }
-            
-            // Loop de Conquistas
-            if(cq && typeof cq === 'object') {
-                for(const [cid, st] of Object.entries(cq)) { 
-                    if(st === 'solicitado') { 
-                        hasItems = true;
-                        const k = document.createElement('div'); 
-                        k.className = 'card'; 
-                        k.innerHTML = `
-                            <h4>${d.nome || "Desconhecido"} (Conquista)</h4>
-                            <p style="font-size:0.8rem">${cid}</p>
-                            <button class="mission-btn-collect" onclick="window.aprovarConquista('${u.id}','${cid}')">Aprovar</button>
-                        `; 
-                        c.appendChild(k); 
-                    } 
-                } 
-            }
-        }); 
-        
-        if (!hasItems) {
-            c.innerHTML = '<p style="color:#777; font-style:italic;">Nenhuma solicitação pendente.</p>';
-        }
-
-    } catch(e) {
-        console.error("Erro admin:", e);
-        c.innerHTML = '<p>Erro ao carregar painel.</p>';
-    } 
-}
-
-// --- NAVEGAÇÃO ---
 window.showTab = (t) => {
     try {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -235,10 +145,7 @@ window.showTab = (t) => {
             if(t==='frases') carregarFrases();
             if(t==='inventario') carregarInventario();
             if(t==='loja') carregarLojaItens();
-            if(t==='jutsus') {
-                carregarMeusJutsus(currentUserData.meusJutsus); 
-                carregarLoja(); 
-            }
+            if(t==='jutsus') { carregarMeusJutsus(currentUserData.meusJutsus); carregarLoja(); }
             if(t==='ferramentas') carregarLojaFerramentas(); 
             if(t==='conquistas') carregarConquistas();
             if(t==='missoes') carregarMissoes();
@@ -258,10 +165,7 @@ window.showTab = (t) => {
 
 window.mudarOrdenacao = (ordem) => {
     ordenacaoAtual = ordem;
-    if(document.getElementById('jutsus').classList.contains('active')) {
-        carregarMeusJutsus(currentUserData.meusJutsus);
-        carregarLoja();
-    }
+    if(document.getElementById('jutsus').classList.contains('active')) { carregarMeusJutsus(currentUserData.meusJutsus); carregarLoja(); }
     if(document.getElementById('ferramentas').classList.contains('active')) carregarLojaFerramentas();
     if(document.getElementById('loja').classList.contains('active')) carregarLojaItens();
 };
@@ -278,7 +182,6 @@ function aplicarOrdenacao(lista, ordem) {
     return novaLista;
 }
 
-// --- FUNÇÕES DE SUPORTE ---
 async function verificarLevelUpAutomatico(dados) {
     let xpAtual = dados.xp || 0;
     let nivelAtual = dados.nivel || 1;
@@ -300,16 +203,16 @@ async function carregarCacheItens() {
 }
 
 function carregarTudo() {
-    try { carregarLoja(); } catch(e){ console.error(e); } 
-    try { carregarLojaItens(); } catch(e){ console.error(e); }
-    try { carregarMeusJutsus(currentUserData.meusJutsus); } catch(e){ console.error(e); }
-    try { carregarLojaFerramentas(); } catch(e){ console.error(e); }
-    try { carregarInventario(); } catch(e){ console.error(e); }
-    try { carregarMissoes(); } catch(e){ console.error(e); }
-    try { carregarConquistas(); } catch(e){ console.error(e); }
-    try { carregarRankings(); } catch(e){ console.error(e); }
-    try { carregarFrases(); } catch(e){ console.error(e); }
-    try { carregarMentorias(); } catch(e){ console.error(e); }
+    try { carregarLoja(); } catch(e){}
+    try { carregarLojaItens(); } catch(e){}
+    try { carregarMeusJutsus(currentUserData.meusJutsus); } catch(e){}
+    try { carregarLojaFerramentas(); } catch(e){}
+    try { carregarInventario(); } catch(e){}
+    try { carregarMissoes(); } catch(e){}
+    try { carregarConquistas(); } catch(e){}
+    try { carregarRankings(); } catch(e){}
+    try { carregarFrases(); } catch(e){}
+    try { carregarMentorias(); } catch(e){}
 }
 
 function formatarNum(v) { return Number(v||0).toLocaleString('pt-BR'); }
@@ -518,7 +421,7 @@ async function carregarLoja() {
     try {
         if (!currentUserData) return;
         const c = document.getElementById('loja-jutsus-grid'); if(!c) return; 
-        c.innerHTML = '<p>Carregando jutsus...</p>'; // Feedback visual
+        c.innerHTML = '<p>Carregando jutsus...</p>';
         
         const m = currentUserData.meusJutsus || []; 
         const isAdmin = auth.currentUser.email === "admin@rpgnaruto.com";
@@ -535,13 +438,12 @@ async function carregarLoja() {
             } catch(e){} 
         });
         
-        c.innerHTML = ''; // Limpa antes de popular
+        c.innerHTML = '';
         if (lista.length === 0) c.innerHTML = '<p>Nenhum jutsu disponível.</p>';
         
         lista = aplicarOrdenacao(lista, ordenacaoAtual);
         lista.forEach(item => criarCardLoja('loja-jutsus-grid', item, item.id, 'jutsu', null, (id, i) => verDetalhesJutsu(id, i)));
     } catch(e) { 
-        console.error("Erro loja jutsus:", e);
         const c = document.getElementById('loja-jutsus-grid'); 
         if(c) c.innerHTML = '<p>Erro ao carregar.</p>';
     }
@@ -642,8 +544,7 @@ async function carregarMentorias() {
     cCards.innerHTML = '<p>Carregando...</p>';
 
     if(auth.currentUser.email === "admin@rpgnaruto.com") {
-        const btn = document.getElementById('admin-mentor-controls');
-        if(btn) btn.style.display = 'block';
+        document.getElementById('admin-mentor-controls').style.display = 'block';
     }
 
     try {
@@ -694,6 +595,38 @@ window.abrirModalNovoMentor = () => {
     document.getElementById('novoMentorModal').style.display = 'flex';
 };
 
+// Funções para criar mentor player
+window.toggleMentorPlayerSelect = async () => {
+    const isPlayer = document.getElementById('check-is-player').checked;
+    const select = document.getElementById('mentor-player-select');
+    const loading = document.getElementById('player-loading-msg');
+    
+    if (isPlayer) {
+        select.style.display = 'block';
+        loading.style.display = 'block';
+        select.innerHTML = '<option value="">Carregando...</option>';
+        
+        try {
+            const snap = await getDocs(collection(db, "users"));
+            select.innerHTML = '<option value="">Selecione um Jogador</option>';
+            snap.forEach(doc => {
+                const u = doc.data();
+                const opt = document.createElement('option');
+                opt.value = doc.id;
+                opt.text = `${u.nome} (${u.apelido})`;
+                select.appendChild(opt);
+            });
+        } catch(e) {
+            alert("Erro ao carregar jogadores.");
+        } finally {
+            loading.style.display = 'none';
+        }
+    } else {
+        select.style.display = 'none';
+        loading.style.display = 'none';
+    }
+};
+
 window.handleMentorImage = async (e) => {
     if(e.target.files[0]) {
         try {
@@ -708,20 +641,29 @@ window.handleMentorImage = async (e) => {
 window.salvarNovoMentor = async () => {
     const nome = document.getElementById('new-mentor-name').value;
     const cat = document.getElementById('new-mentor-category').value;
+    const isPlayer = document.getElementById('check-is-player').checked;
     
     if(!nome) return alert("Nome obrigatório");
     if(!newMentorImageBase64) return alert("Escolha uma imagem");
+
+    let mentorData = {
+        nome: nome,
+        categoria: cat,
+        imagem: newMentorImageBase64,
+        ensinos: [] 
+    };
+
+    if (isPlayer) {
+        const uidPlayer = document.getElementById('mentor-player-select').value;
+        if (!uidPlayer) return alert("Selecione o jogador!");
+        mentorData.uid_player = uidPlayer; // Linka o mentor ao jogador
+    }
 
     const btn = document.querySelector('#novoMentorModal .buy-btn');
     btn.innerText = "Salvando...";
 
     try {
-        await addDoc(collection(db, "mentores"), {
-            nome: nome,
-            categoria: cat,
-            imagem: newMentorImageBase64,
-            ensinos: [] 
-        });
+        await addDoc(collection(db, "mentores"), mentorData);
         alert("Mentor criado!");
         document.getElementById('novoMentorModal').style.display = 'none';
         carregarMentorias();
@@ -729,6 +671,181 @@ window.salvarNovoMentor = async () => {
         alert("Erro: " + e.message);
     } finally {
         btn.innerText = "Salvar";
+    }
+};
+
+window.confirmarMentoria = async () => {
+    const radios = document.getElementsByName('ensino_escolhido');
+    let selectedIndex = -1;
+    for(let i=0; i<radios.length; i++) { if(radios[i].checked) { selectedIndex = parseInt(radios[i].value); break; } }
+    if(selectedIndex === -1) return alert("Selecione algo para aprender!");
+    
+    const ensino = currentMentorData.ensinos[selectedIndex];
+    const field = ensino.moeda === 'essencia_ninja' ? 'essencia_ninja' : 'ryos';
+    const custo = ensino.preco || 0;
+    
+    if((currentUserData[field] || 0) < custo) { return alert(`Saldo insuficiente!`); }
+    
+    if(!confirm(`Pagar ${formatarNum(custo)} para aprender "${ensino.nome}"?`)) return;
+    
+    try {
+        const btn = document.querySelector('#mentoriaModal .buy-btn'); 
+        btn.disabled = true; 
+        btn.innerText = "Processando...";
+        
+        // 1. Desconta do aluno
+        await updateDoc(doc(db, "users", auth.currentUser.uid), { 
+            [field]: increment(-custo), 
+            aprendizados: arrayUnion(`${currentMentorData.nome} - ${ensino.nome}`) 
+        });
+        
+        // 2. Se for Player, paga o mentor
+        if (currentMentorData.uid_player) {
+            await updateDoc(doc(db, "users", currentMentorData.uid_player), {
+                [field]: increment(custo)
+            });
+        }
+        
+        alert(`Você aprendeu: ${ensino.nome}!`);
+        document.getElementById('mentoriaModal').style.display = 'none';
+    } catch(e) { 
+        alert("Erro: " + e.message); 
+    } finally { 
+        const btn = document.querySelector('#mentoriaModal .buy-btn'); 
+        if(btn) { btn.disabled = false; btn.innerText = "Pagar"; } 
+    }
+};
+
+window.editarHistoria = async () => { const n=prompt("Texto:",currentUserData.historiaTexto||""); if(n){ const i=prompt("Imagem:",currentUserData.historiaImagem||""); updateDoc(doc(db,"users",auth.currentUser.uid),{historiaTexto:n,historiaImagem:i}).then(location.reload()); } }
+window.toggleFraseMenu = (el) => { const dropdown = el.nextElementSibling; document.querySelectorAll('.options-dropdown').forEach(d => { if(d !== dropdown) d.classList.remove('active'); }); dropdown.classList.toggle('active'); };
+window.adicionarFrase = async () => { const t=document.getElementById('novaFraseInput').value; if(t) await addDoc(collection(db,"frases"),{texto:t,autor:currentUserData.nome,uid:auth.currentUser.uid,data:serverTimestamp()}); document.getElementById('novaFraseInput').value=''; }
+window.editarFrase = async (id, oldText) => { const n = prompt("Editar:", oldText); if(n) await updateDoc(doc(db, "frases", id), { texto: n }); };
+window.deletarFrase = async (id) => { if(confirm("Excluir?")) await deleteDoc(doc(db, "frases", id)); };
+window.copiarFrase = (t) => { navigator.clipboard.writeText(t).then(() => { const f=document.getElementById('copyFeedback'); f.style.display='block'; setTimeout(()=>f.style.display='none',2000); }); };
+window.handleAvatarPreview = async (e) => { if(e.target.files[0]) { newAvatarBase64 = await comprimirImagem(e.target.files[0]); document.getElementById('edit-avatar-preview').src = newAvatarBase64; } };
+window.salvarPerfil = async () => { const nome = document.getElementById('edit-name-input').value; const apelido = document.getElementById('edit-nick-input').value; const updates = { nome: nome, apelido: apelido, personagem: nome }; if(newAvatarBase64) updates.avatar = newAvatarBase64; await updateDoc(doc(db, "users", auth.currentUser.uid), updates); location.reload(); };
+window.salvarNovaSenha = async () => { const p = document.getElementById('new-password').value; if(!p || p.length < 6) return alert("Mínimo 6 caracteres"); try { await updatePassword(auth.currentUser, p); alert("Sucesso!"); closeChangePasswordModal(); } catch(e) { alert("Erro: " + e.message); } };
+
+window.renderFeed = (f) => { const c = document.getElementById('feed-container'); if(!c) return; try { onSnapshot(query(collection(db, "posts"), orderBy("data", "desc")), (s) => { c.innerHTML = ''; s.forEach(d => { try { const p = d.data(); if(f==='saved' && !(p.savedBy||[]).includes(auth.currentUser.uid)) return; const isLiked=(p.likes||[]).includes(auth.currentUser.uid); const isSaved=(p.savedBy||[]).includes(auth.currentUser.uid); const div=document.createElement('div'); div.className='post'; div.innerHTML=`<div class="post-header"><div class="user-avatar-post"><img src="${p.autorAvatar||IMG_PADRAO}"></div><div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">${calcularTempo(p.data)}</span></div>${p.uid===auth.currentUser.uid?`<div class="post-menu-container"><div class="post-options-btn" onclick="this.nextElementSibling.classList.toggle('active')">...</div><div class="post-dropdown"><div class="dropdown-item danger" onclick="deletarPost('${d.id}')">Excluir</div></div></div>`:''}</div><div class="post-content">${p.conteudo}</div>${p.imagem?`<img src="${p.imagem}" class="post-image" onclick="verPost('${d.id}')">`:''}<div class="post-actions"><button class="action-btn ${isLiked?'liked':''}" onclick="toggleLike('${d.id}')"><i class="${isLiked?'fa-solid':'fa-regular'} fa-heart"></i> ${(p.likes||[]).length}</button><button class="action-btn" onclick="verPost('${d.id}')"><i class="fa-regular fa-comment"></i> ${(p.comments||[]).length}</button><button class="action-btn ${isSaved?'saved':''}" onclick="toggleSave('${d.id}')" style="margin-left:auto;"><i class="${isSaved?'fa-solid':'fa-regular'} fa-bookmark"></i></button></div>`; c.appendChild(div); } catch(e){} }); }); } catch(e){} };
+window.deletarPost = async (id) => { if(confirm("Apagar?")) await deleteDoc(doc(db, "posts", id)); };
+window.toggleLike = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().likes||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{likes:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{likes:arrayUnion(auth.currentUser.uid)}); };
+window.toggleSave = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().savedBy||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{savedBy:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{savedBy:arrayUnion(auth.currentUser.uid)}); };
+window.verPost = async (id) => { currentOpenPostId = id; const s = await getDoc(doc(db, "posts", id)), p = s.data(); document.getElementById('modalPostContent').innerHTML = p.imagem ? `<img src="${p.imagem}" style="width:100%;height:100%;object-fit:contain;">` : `<div style="padding:20px;">${p.conteudo}</div>`; document.getElementById('commentsList').innerHTML = (p.comments||[]).map(c=>`<div><b>${c.autor}</b>: ${c.texto}</div>`).join(''); document.getElementById('commentModal').style.display='flex'; };
+window.submitComment = async () => { const t = document.getElementById('newCommentText').value; if(!t) return; await updateDoc(doc(db, "posts", currentOpenPostId), { comments: arrayUnion({ autor: currentUserData.nome, texto: t }) }); document.getElementById('newCommentText').value = ""; verPost(currentOpenPostId); };
+window.closeModal = () => document.getElementById('commentModal').style.display = 'none';
+
+window.openEditProfileModal = () => { document.getElementById('editProfileModal').style.display = 'flex'; document.getElementById('edit-name-input').value = currentUserData.nome || ""; document.getElementById('edit-nick-input').value = currentUserData.apelido || ""; document.getElementById('user-menu').classList.remove('show'); };
+window.closeEditProfileModal = () => document.getElementById('editProfileModal').style.display = 'none';
+window.openChangePasswordModal = () => { document.getElementById('changePasswordModal').style.display='flex'; document.getElementById('user-menu').classList.remove('show'); };
+window.closeChangePasswordModal = () => document.getElementById('changePasswordModal').style.display='none';
+window.toggleMenu = () => document.getElementById('user-menu').classList.toggle('show');
+window.fazerLogout = () => signOut(auth).then(() => location.reload());
+
+window.abrirModalMentoria = (id) => {
+    const mentor = globalMentores[id];
+    if (!mentor) { console.error("Mentor não encontrado no cache."); return; }
+    currentMentorData = mentor;
+    document.getElementById('mentor-name-modal').innerText = mentor.nome || "Desconhecido";
+    document.getElementById('mentor-img-modal').src = mentor.imagem || IMG_PADRAO;
+    const container = document.getElementById('mentoria-options-container');
+    container.innerHTML = '';
+    if(mentor.ensinos && Array.isArray(mentor.ensinos) && mentor.ensinos.length > 0) {
+        mentor.ensinos.forEach((ensino, index) => {
+            if(typeof ensino !== 'object' || !ensino.nome) return;
+            const div = document.createElement('div');
+            div.className = 'mentoria-option';
+            div.onclick = () => { const radio = document.getElementById(`ensino-${index}`); if(radio) radio.checked = true; };
+            const currencyLabel = ensino.moeda === 'essencia_ninja' ? 'EN' : 'Ryos';
+            const colorClass = ensino.moeda === 'essencia_ninja' ? 'var(--en-color)' : 'var(--primary-color)';
+            const preco = ensino.preco || 0;
+            div.innerHTML = `<input type="radio" name="ensino_escolhido" id="ensino-${index}" value="${index}" class="mentoria-radio"><div style="flex:1;"><div style="font-weight:bold;">${ensino.nome}</div><div style="font-size:0.85rem; color:${colorClass}; font-weight:bold;">${formatarNum(preco)} ${currencyLabel}</div></div>`;
+            container.appendChild(div);
+        });
+    } 
+    if (container.innerHTML === '') { container.innerHTML = '<p style="padding:10px; color:#777;">Este mentor não está ensinando nada no momento.</p>'; }
+    document.getElementById('mentoriaModal').style.display = 'flex';
+};
+
+window.abrirModalNovoMentor = () => {
+    document.getElementById('novoMentorModal').style.display = 'flex';
+};
+
+window.handleMentorImage = async (e) => {
+    if(e.target.files[0]) {
+        try {
+            newMentorImageBase64 = await comprimirImagem(e.target.files[0]);
+            document.getElementById('new-mentor-preview').innerHTML = `<img src="${newMentorImageBase64}" style="width:100px; height:100px; object-fit:cover; border-radius:50%;">`;
+        } catch(err) {
+            alert("Erro na imagem.");
+        }
+    }
+};
+
+window.salvarNovoMentor = async () => {
+    const nome = document.getElementById('new-mentor-name').value;
+    const cat = document.getElementById('new-mentor-category').value;
+    const isPlayer = document.getElementById('check-is-player').checked;
+    
+    if(!nome) return alert("Nome obrigatório");
+    if(!newMentorImageBase64) return alert("Escolha uma imagem");
+
+    let mentorData = {
+        nome: nome,
+        categoria: cat,
+        imagem: newMentorImageBase64,
+        ensinos: [] 
+    };
+
+    if (isPlayer) {
+        const uidPlayer = document.getElementById('mentor-player-select').value;
+        if (!uidPlayer) return alert("Selecione o jogador!");
+        mentorData.uid_player = uidPlayer; // Linka o mentor ao jogador
+    }
+
+    const btn = document.querySelector('#novoMentorModal .buy-btn');
+    btn.innerText = "Salvando...";
+
+    try {
+        await addDoc(collection(db, "mentores"), mentorData);
+        alert("Mentor criado!");
+        document.getElementById('novoMentorModal').style.display = 'none';
+        carregarMentorias();
+    } catch(e) {
+        alert("Erro: " + e.message);
+    } finally {
+        btn.innerText = "Salvar";
+    }
+};
+
+// Funções para criar mentor player
+window.toggleMentorPlayerSelect = async () => {
+    const isPlayer = document.getElementById('check-is-player').checked;
+    const select = document.getElementById('mentor-player-select');
+    const loading = document.getElementById('player-loading-msg');
+    
+    if (isPlayer) {
+        select.style.display = 'block';
+        loading.style.display = 'block';
+        select.innerHTML = '<option value="">Carregando...</option>';
+        
+        try {
+            const snap = await getDocs(collection(db, "users"));
+            select.innerHTML = '<option value="">Selecione um Jogador</option>';
+            snap.forEach(doc => {
+                const u = doc.data();
+                const opt = document.createElement('option');
+                opt.value = doc.id;
+                opt.text = `${u.nome} (${u.apelido})`;
+                select.appendChild(opt);
+            });
+        } catch(e) {
+            alert("Erro ao carregar jogadores.");
+        } finally {
+            loading.style.display = 'none';
+        }
+    } else {
+        select.style.display = 'none';
+        loading.style.display = 'none';
     }
 };
 
@@ -1012,109 +1129,6 @@ window.openChangePasswordModal = () => { document.getElementById('changePassword
 window.closeChangePasswordModal = () => document.getElementById('changePasswordModal').style.display='none';
 window.toggleMenu = () => document.getElementById('user-menu').classList.toggle('show');
 window.fazerLogout = () => signOut(auth).then(() => location.reload());
-
-window.abrirModalMentoria = (id) => {
-    const mentor = globalMentores[id];
-    if (!mentor) { console.error("Mentor não encontrado no cache."); return; }
-    currentMentorData = mentor;
-    document.getElementById('mentor-name-modal').innerText = mentor.nome || "Desconhecido";
-    document.getElementById('mentor-img-modal').src = mentor.imagem || IMG_PADRAO;
-    const container = document.getElementById('mentoria-options-container');
-    container.innerHTML = '';
-    if(mentor.ensinos && Array.isArray(mentor.ensinos) && mentor.ensinos.length > 0) {
-        mentor.ensinos.forEach((ensino, index) => {
-            if(typeof ensino !== 'object' || !ensino.nome) return;
-            const div = document.createElement('div');
-            div.className = 'mentoria-option';
-            div.onclick = () => { const radio = document.getElementById(`ensino-${index}`); if(radio) radio.checked = true; };
-            const currencyLabel = ensino.moeda === 'essencia_ninja' ? 'EN' : 'Ryos';
-            const colorClass = ensino.moeda === 'essencia_ninja' ? 'var(--en-color)' : 'var(--primary-color)';
-            const preco = ensino.preco || 0;
-            div.innerHTML = `<input type="radio" name="ensino_escolhido" id="ensino-${index}" value="${index}" class="mentoria-radio"><div style="flex:1;"><div style="font-weight:bold;">${ensino.nome}</div><div style="font-size:0.85rem; color:${colorClass}; font-weight:bold;">${formatarNum(preco)} ${currencyLabel}</div></div>`;
-            container.appendChild(div);
-        });
-    } 
-    if (container.innerHTML === '') { container.innerHTML = '<p style="padding:10px; color:#777;">Este mentor não está ensinando nada no momento.</p>'; }
-    document.getElementById('mentoriaModal').style.display = 'flex';
-};
-
-window.abrirModalNovoMentor = () => {
-    document.getElementById('novoMentorModal').style.display = 'flex';
-};
-
-window.handleMentorImage = async (e) => {
-    if(e.target.files[0]) {
-        try {
-            newMentorImageBase64 = await comprimirImagem(e.target.files[0]);
-            document.getElementById('new-mentor-preview').innerHTML = `<img src="${newMentorImageBase64}" style="width:100px; height:100px; object-fit:cover; border-radius:50%;">`;
-        } catch(err) {
-            alert("Erro na imagem.");
-        }
-    }
-};
-
-window.salvarNovoMentor = async () => {
-    const nome = document.getElementById('new-mentor-name').value;
-    const cat = document.getElementById('new-mentor-category').value;
-    
-    if(!nome) return alert("Nome obrigatório");
-    if(!newMentorImageBase64) return alert("Escolha uma imagem");
-
-    const btn = document.querySelector('#novoMentorModal .buy-btn');
-    btn.innerText = "Salvando...";
-
-    try {
-        await addDoc(collection(db, "mentores"), {
-            nome: nome,
-            categoria: cat,
-            imagem: newMentorImageBase64,
-            ensinos: [] 
-        });
-        alert("Mentor criado!");
-        document.getElementById('novoMentorModal').style.display = 'none';
-        carregarMentorias();
-    } catch(e) {
-        alert("Erro: " + e.message);
-    } finally {
-        btn.innerText = "Salvar";
-    }
-};
-
-window.confirmarMentoria = async () => {
-    const radios = document.getElementsByName('ensino_escolhido');
-    let selectedIndex = -1;
-    for(let i=0; i<radios.length; i++) { if(radios[i].checked) { selectedIndex = parseInt(radios[i].value); break; } }
-    if(selectedIndex === -1) return alert("Selecione algo para aprender!");
-    const ensino = currentMentorData.ensinos[selectedIndex];
-    const field = ensino.moeda === 'essencia_ninja' ? 'essencia_ninja' : 'ryos';
-    const moedaNome = ensino.moeda === 'essencia_ninja' ? 'Essência Ninja' : 'Ryos';
-    if((currentUserData[field] || 0) < ensino.preco) { return alert(`Você não tem ${moedaNome} suficiente!`); }
-    if(!confirm(`Pagar ${formatarNum(ensino.preco)} ${moedaNome} para aprender "${ensino.nome}"?`)) return;
-    try {
-        const btn = document.querySelector('#mentoriaModal .buy-btn'); btn.disabled = true; btn.innerText = "Processando...";
-        await updateDoc(doc(db, "users", auth.currentUser.uid), { [field]: increment(-ensino.preco), aprendizados: arrayUnion(`${currentMentorData.nome} - ${ensino.nome}`) });
-        alert(`Você aprendeu: ${ensino.nome}!`);
-        document.getElementById('mentoriaModal').style.display = 'none';
-    } catch(e) { alert("Erro: " + e.message); } finally { const btn = document.querySelector('#mentoriaModal .buy-btn'); if(btn) { btn.disabled = false; btn.innerText = "Pagar"; } }
-};
-
-window.editarHistoria = async () => { const n=prompt("Texto:",currentUserData.historiaTexto||""); if(n){ const i=prompt("Imagem:",currentUserData.historiaImagem||""); updateDoc(doc(db,"users",auth.currentUser.uid),{historiaTexto:n,historiaImagem:i}).then(location.reload()); } }
-window.toggleFraseMenu = (el) => { const dropdown = el.nextElementSibling; document.querySelectorAll('.options-dropdown').forEach(d => { if(d !== dropdown) d.classList.remove('active'); }); dropdown.classList.toggle('active'); };
-window.adicionarFrase = async () => { const t=document.getElementById('novaFraseInput').value; if(t) await addDoc(collection(db,"frases"),{texto:t,autor:currentUserData.nome,uid:auth.currentUser.uid,data:serverTimestamp()}); document.getElementById('novaFraseInput').value=''; }
-window.editarFrase = async (id, oldText) => { const n = prompt("Editar:", oldText); if(n) await updateDoc(doc(db, "frases", id), { texto: n }); };
-window.deletarFrase = async (id) => { if(confirm("Excluir?")) await deleteDoc(doc(db, "frases", id)); };
-window.copiarFrase = (t) => { navigator.clipboard.writeText(t).then(() => { const f=document.getElementById('copyFeedback'); f.style.display='block'; setTimeout(()=>f.style.display='none',2000); }); };
-window.handleAvatarPreview = async (e) => { if(e.target.files[0]) { newAvatarBase64 = await comprimirImagem(e.target.files[0]); document.getElementById('edit-avatar-preview').src = newAvatarBase64; } };
-window.salvarPerfil = async () => { const nome = document.getElementById('edit-name-input').value; const apelido = document.getElementById('edit-nick-input').value; const updates = { nome: nome, apelido: apelido, personagem: nome }; if(newAvatarBase64) updates.avatar = newAvatarBase64; await updateDoc(doc(db, "users", auth.currentUser.uid), updates); location.reload(); };
-window.salvarNovaSenha = async () => { const p = document.getElementById('new-password').value; if(!p || p.length < 6) return alert("Mínimo 6 caracteres"); try { await updatePassword(auth.currentUser, p); alert("Sucesso!"); closeChangePasswordModal(); } catch(e) { alert("Erro: " + e.message); } };
-
-window.renderFeed = (f) => { const c = document.getElementById('feed-container'); if(!c) return; try { onSnapshot(query(collection(db, "posts"), orderBy("data", "desc")), (s) => { c.innerHTML = ''; s.forEach(d => { try { const p = d.data(); if(f==='saved' && !(p.savedBy||[]).includes(auth.currentUser.uid)) return; const isLiked=(p.likes||[]).includes(auth.currentUser.uid); const isSaved=(p.savedBy||[]).includes(auth.currentUser.uid); const div=document.createElement('div'); div.className='post'; div.innerHTML=`<div class="post-header"><div class="user-avatar-post"><img src="${p.autorAvatar||IMG_PADRAO}"></div><div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">${calcularTempo(p.data)}</span></div>${p.uid===auth.currentUser.uid?`<div class="post-menu-container"><div class="post-options-btn" onclick="this.nextElementSibling.classList.toggle('active')">...</div><div class="post-dropdown"><div class="dropdown-item danger" onclick="deletarPost('${d.id}')">Excluir</div></div></div>`:''}</div><div class="post-content">${p.conteudo}</div>${p.imagem?`<img src="${p.imagem}" class="post-image" onclick="verPost('${d.id}')">`:''}<div class="post-actions"><button class="action-btn ${isLiked?'liked':''}" onclick="toggleLike('${d.id}')"><i class="${isLiked?'fa-solid':'fa-regular'} fa-heart"></i> ${(p.likes||[]).length}</button><button class="action-btn" onclick="verPost('${d.id}')"><i class="fa-regular fa-comment"></i> ${(p.comments||[]).length}</button><button class="action-btn ${isSaved?'saved':''}" onclick="toggleSave('${d.id}')" style="margin-left:auto;"><i class="${isSaved?'fa-solid':'fa-regular'} fa-bookmark"></i></button></div>`; c.appendChild(div); } catch(e){} }); }); } catch(e){} };
-window.deletarPost = async (id) => { if(confirm("Apagar?")) await deleteDoc(doc(db, "posts", id)); };
-window.toggleLike = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().likes||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{likes:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{likes:arrayUnion(auth.currentUser.uid)}); };
-window.toggleSave = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().savedBy||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{savedBy:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{savedBy:arrayUnion(auth.currentUser.uid)}); };
-window.verPost = async (id) => { currentOpenPostId = id; const s = await getDoc(doc(db, "posts", id)), p = s.data(); document.getElementById('modalPostContent').innerHTML = p.imagem ? `<img src="${p.imagem}" style="width:100%;height:100%;object-fit:contain;">` : `<div style="padding:20px;">${p.conteudo}</div>`; document.getElementById('commentsList').innerHTML = (p.comments||[]).map(c=>`<div><b>${c.autor}</b>: ${c.texto}</div>`).join(''); document.getElementById('commentModal').style.display='flex'; };
-window.submitComment = async () => { const t = document.getElementById('newCommentText').value; if(!t) return; await updateDoc(doc(db, "posts", currentOpenPostId), { comments: arrayUnion({ autor: currentUserData.nome, texto: t }) }); document.getElementById('newCommentText').value = ""; verPost(currentOpenPostId); };
-window.closeModal = () => document.getElementById('commentModal').style.display = 'none';
 
 async function carregarFrases() { const c = document.getElementById('frases-list-container'); try { onSnapshot(query(collection(db, "frases"), orderBy("data", "desc")), (s) => { c.innerHTML=''; s.forEach(d=>{ const f=d.data(); const k=document.createElement('div'); k.className='frase-item'; const menu = f.uid === auth.currentUser.uid ? `<div class="options-menu-container"><div class="options-btn" onclick="toggleFraseMenu(this); event.stopPropagation();">...</div><div class="options-dropdown"><div class="options-item" onclick="editarFrase('${d.id}','${f.texto}');event.stopPropagation()">Editar</div><div class="options-item danger" onclick="deletarFrase('${d.id}');event.stopPropagation()">Excluir</div></div></div>` : ''; k.onclick=()=>copiarFrase(f.texto); k.innerHTML=`<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor}</div>${menu}`; c.appendChild(k); }); }); } catch(e){} }
 
