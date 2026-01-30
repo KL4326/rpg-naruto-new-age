@@ -4,13 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RPG Naruto</title>
-    <link rel="icon" href="favicon.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div id="copyFeedback" style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:white; padding:10px 20px; border-radius:20px; z-index:3000; display:none;">Frase copiada!</div>
+    <div id="copyFeedback" style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:white; padding:10px 20px; border-radius:20px; z-index:3000; display:none;">Copiado!</div>
 
     <div id="login-screen" class="login-overlay">
         <div class="login-box">
@@ -18,7 +17,7 @@
             <input type="email" id="emailInput" placeholder="E-mail">
             <input type="password" id="passwordInput" placeholder="Senha">
             <button id="btnLogin">Entrar</button>
-            <p style="font-size: 12px; margin-top: 15px; color:#777;">Não possui uma conta? Fale com o administrador.</p>
+            <p style="font-size: 12px; margin-top: 15px; color:#777;">Não tem conta? Fale com o Admin.</p>
             <p id="msgError" style="color: red; font-size: 12px; margin-top: 10px;"></p>
         </div>
     </div>
@@ -38,7 +37,7 @@
                 <button id="side-btn-personagens" onclick="showTab('personagens')"><i class="fa-solid fa-users"></i> Personagens</button>
                 <button id="side-btn-loja" onclick="showTab('loja')"><i class="fa-solid fa-store"></i> Loja</button>
                 <button id="side-btn-rankings" onclick="showTab('rankings')"><i class="fa-solid fa-trophy"></i> Rankings</button>
-                <button id="btn-admin-panel" onclick="showTab('admin-panel')"><i class="fa-solid fa-user-shield"></i> Painel Kage</button>
+                <button id="btn-admin-panel" onclick="showTab('admin-panel')" style="color: #ed4956;"><i class="fa-solid fa-user-shield"></i> Painel Kage</button>
             </nav>
         </aside>
 
@@ -61,12 +60,10 @@
                         <img id="header-avatar" src="https://placehold.co/40x40/orange/white?text=N" alt="Avatar">
                     </div>
                     <div id="user-menu" class="dropdown-menu">
-                        <div class="user-info" style="padding:10px 15px; font-weight:bold; border-bottom:1px solid var(--border-color);">...</div>
-                        <div class="dropdown-item" onclick="openEditProfileModal()"><i class="fa-solid fa-user-pen"></i> Perfil e Personagem</div>
-                        <div class="dropdown-item" onclick="openChangePasswordModal()"><i class="fa-solid fa-lock"></i> Alterar Senha</div>
-                        <div class="dropdown-item" onclick="renderFeed('saved')"><i class="fa-regular fa-bookmark"></i> Salvos</div>
-                        <div class="dropdown-item" onclick="renderFeed('all')"><i class="fa-solid fa-globe"></i> Feed Geral</div>
-                        <div class="dropdown-item" onclick="fazerLogout()" style="color:var(--danger-color);"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sair</div>
+                        <div class="user-info" style="padding:10px 15px; font-weight:bold; border-bottom:1px solid #dbdbdb;">...</div>
+                        <div class="dropdown-item" onclick="openEditProfileModal()"><i class="fa-solid fa-user-pen"></i> Perfil</div>
+                        <div class="dropdown-item" onclick="openChangePasswordModal()"><i class="fa-solid fa-lock"></i> Senha</div>
+                        <div class="dropdown-item" onclick="fazerLogout()" style="color:#ed4956;"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sair</div>
                     </div>
                 </div>
             </header>
@@ -80,42 +77,38 @@
                             <button onclick="removeImage()" style="position:absolute; top:5px; right:5px; background:rgba(0,0,0,0.6); color:white; border:none; border-radius:50%; width:25px; height:25px;">×</button>
                         </div>
                         <div class="post-tools">
-                            <label for="imageInput" style="cursor:pointer; color:var(--primary-color); font-weight:600; display:flex; align-items:center; gap:5px;" class="upload-btn">
-                                <i class="fa-regular fa-image"></i> Foto/Vídeo
+                            <label for="imageInput" style="cursor:pointer; color:#ff5e00; font-weight:600; display:flex; align-items:center; gap:5px;">
+                                <i class="fa-regular fa-image"></i> Foto
                             </label>
                             <input type="file" id="imageInput" accept="image/*" onchange="handleImageUpload(event)" style="display:none;">
                             <button class="btn-post" onclick="publicarPost()">Publicar</button>
                         </div>
                     </div>
-                    <div id="feed-container"><p style="text-align:center; color:#777; padding:20px;">Carregando feed...</p></div>
+                    <div id="feed-container"><p style="text-align:center; color:#777; padding:20px;">Carregando...</p></div>
                 </div>
 
                 <div id="batalha" class="tab-content">
-                    <h2 style="margin-bottom:15px;">Painel de Batalha</h2>
-                    <div class="battle-grid" id="battle-grid">
-                        <p style="color:#777;">Carregando lutadores...</p>
-                    </div>
+                    <h2 style="margin-bottom:15px;">Batalha</h2>
+                    <div class="battle-grid" id="battle-grid"><p>Carregando...</p></div>
                 </div>
 
                 <div id="mentorias" class="tab-content">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
                         <h2>Mentorias</h2>
-                        <div id="admin-mentor-controls" style="display:none;">
-                            <button class="btn-post" onclick="window.abrirModalNovoMentor()">+ Novo Mentor</button>
-                        </div>
+                        <div id="admin-mentor-controls" style="display:none;"><button class="btn-post" onclick="window.abrirModalNovoMentor()">+ Mentor</button></div>
                     </div>
                     <h3 class="section-title">RPG de Turno</h3>
-                    <div id="grid-mentorias-turno" class="bucket-grid"><p style="color:#777;">Carregando mentores...</p></div>
+                    <div id="grid-mentorias-turno" class="bucket-grid"><p>Carregando...</p></div>
                     <h3 class="section-title">RPG de Cards</h3>
-                    <div id="grid-mentorias-cards" class="bucket-grid"><p style="color:#777;">Carregando mentores...</p></div>
+                    <div id="grid-mentorias-cards" class="bucket-grid"><p>Carregando...</p></div>
                 </div>
 
                 <div id="conquistas" class="tab-content">
                     <h2>Conquistas</h2>
                     <h3 class="section-title">RPG de Turno</h3>
-                    <div id="conquistas-turno-grid" class="bucket-grid"><p style="color:#777;">Carregando...</p></div>
+                    <div id="conquistas-turno-grid" class="bucket-grid"><p>Carregando...</p></div>
                     <h3 class="section-title">RPG de Cards</h3>
-                    <div id="conquistas-cards-grid" class="bucket-grid"><p style="color:#777;">Carregando...</p></div>
+                    <div id="conquistas-cards-grid" class="bucket-grid"><p>Carregando...</p></div>
                 </div>
 
                 <div id="jutsus" class="tab-content">
@@ -128,13 +121,13 @@
                         </select>
                     </div>
                     <div class="bucket-grid" id="meus-jutsus-grid"><p>Carregando...</p></div>
-                    <hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;">
+                    <hr style="margin:20px 0; border:0; border-top:1px solid #dbdbdb;">
                     <h3>Loja de Jutsus</h3>
                     <div class="bucket-grid" id="loja-jutsus-grid"><p>Carregando...</p></div>
                 </div>
 
                 <div id="ferramentas" class="tab-content">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                         <h3>Loja de Ferramentas</h3>
                         <select class="filter-select" style="width:auto;" onchange="window.mudarOrdenacao(this.value)">
                             <option value="alfabetica">A-Z</option>
@@ -144,7 +137,7 @@
                     </div>
                     <div class="bucket-grid" id="loja-ferramentas-grid"><p>Carregando...</p></div>
                 </div>
-                
+
                 <div id="loja" class="tab-content">
                       <div class="shop-header">
                         <h3 style="margin-bottom:10px;">Localização Atual</h3>
@@ -171,37 +164,40 @@
                             <button class="shop-cat-btn" onclick="filtrarLojaPorTipo('biblioteca', this)">Biblioteca</button>
                         </div>
                     </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                        <h3>Itens à Venda</h3>
-                        <select class="filter-select" style="width:auto;" onchange="window.mudarOrdenacao(this.value)">
-                            <option value="alfabetica">A-Z</option>
-                            <option value="menor_valor">Menor Valor</option>
-                            <option value="maior_valor">Maior Valor</option>
-                        </select>
-                    </div>
+                    <h3>Itens à Venda</h3>
                     <div class="bucket-grid" id="loja-itens-grid"><p>Carregando...</p></div>
                 </div>
 
                 <div id="inventario" class="tab-content">
-                    <h2>Meu Inventário</h2>
-                    <div class="bucket-grid" id="inventario-grid"><p>Carregando itens...</p></div>
+                    <h2>Inventário</h2>
+                    <div class="bucket-grid" id="inventario-grid"><p>Carregando...</p></div>
                 </div>
 
-                <div id="personagens" class="tab-content"><h2>Diretório de Ninjas</h2><div class="bucket-grid" id="directory-grid"><p>Carregando...</p></div></div>
-                
+                <div id="personagens" class="tab-content">
+                    <h2>Ninjas</h2>
+                    <div class="bucket-grid" id="directory-grid"><p>Carregando...</p></div>
+                </div>
+
                 <div id="missoes" class="tab-content">
-                    <h2>Quadro de Missões</h2>
+                    <h2>Missões</h2>
                     <h3 class="section-title">RPG de Turno</h3>
-                    <div id="missoes-turno-grid" class="bucket-grid"><p style="color:#777;">Carregando...</p></div>
+                    <div id="missoes-turno-grid" class="bucket-grid"><p>Carregando...</p></div>
                     <h3 class="section-title">RPG de Cards</h3>
-                    <div id="missoes-cards-grid" class="bucket-grid"><p style="color:#777;">Carregando...</p></div>
+                    <div id="missoes-cards-grid" class="bucket-grid"><p>Carregando...</p></div>
                 </div>
 
-                <div id="rankings" class="tab-content"><h2>Rankings Globais</h2><div class="rankings-wrapper" id="ranking-container"><p>Carregando Rankings...</p></div></div>
-                <div id="admin-panel" class="tab-content"><h2>Painel Kage</h2><div class="bucket-grid" id="admin-missoes-grid"><p>Carregando...</p></div></div>
-                
+                <div id="rankings" class="tab-content">
+                    <h2>Rankings</h2>
+                    <div class="rankings-wrapper" id="ranking-container"><p>Carregando...</p></div>
+                </div>
+
+                <div id="admin-panel" class="tab-content">
+                    <h2>Painel Kage</h2>
+                    <div class="bucket-grid" id="admin-missoes-grid"><p>Carregando...</p></div>
+                </div>
+
                 <div id="dashboard" class="tab-content">
-                    <h2>Estatísticas do Ninja</h2>
+                    <h2>Status</h2>
                     <div class="level-container">
                         <div class="level-info"><span id="level-display">Nível 1</span><span id="xp-text-display">0 / 500 XP</span></div>
                         <div class="xp-bar-bg"><div class="xp-bar-fill" id="xp-bar"></div><div class="xp-text">Progresso</div></div>
@@ -212,81 +208,49 @@
                         <div class="elementos-container" id="dash-moura" style="display:none;"></div>
                         <div class="elementos-container" id="dash-touta" style="display:none;"></div>
                     </div>
-                    <div class="profile-stats-grid">
-                        <div class="stats-divider">Geral</div>
-                        <div class="stat-card"><div class="stat-value" id="dash-nivel">1</div><div class="stat-label">Nível</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-cargo">Genin</div><div class="stat-label">Cargo</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-patente">Genin</div><div class="stat-label">Patente</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-rank">E</div><div class="stat-label">Rank</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-speed-rank">E</div><div class="stat-label">Rank Vel.</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-tipo">Normal</div><div class="stat-label">Tipo</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-ryos">0</div><div class="stat-label">Ryos</div></div>
-                        <div class="stats-divider">Batalha</div>
-                        <div class="stat-card"><div class="stat-value" id="dash-wins">0</div><div class="stat-label">Vitórias</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-draws">0</div><div class="stat-label">Empates</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-derrotas">0</div><div class="stat-label">Derrotas</div></div>
-                        <div class="stats-divider">Inventário</div>
-                        <div class="stat-card"><div class="stat-value" id="dash-jutsus">0</div><div class="stat-label">Jutsus</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-tools">0</div><div class="stat-label">Ferramentas</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-items">0</div><div class="stat-label">Itens</div></div>
-                        <div class="stats-divider">Vitalidade</div>
-                        <div class="stat-card"><div class="stat-value" id="dash-vida">100</div><div class="stat-label">Vida</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-sanidade">100</div><div class="stat-label">Sanidade</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-chakra">100</div><div class="stat-label">Chakra</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-stamina">100</div><div class="stat-label">Stamina</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-controle">Baixo</div><div class="stat-label">Controle Chakra</div></div>
-                        <div class="stats-divider">Atributos</div>
-                        <div class="stat-card"><div class="stat-value" id="dash-forca">10</div><div class="stat-label">Força</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-defesa">10</div><div class="stat-label">Defesa</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-constituicao">10</div><div class="stat-label">Constituição</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-destreza">10</div><div class="stat-label">Destreza</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-intelecto">10</div><div class="stat-label">Intelecto</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-agilidade">10</div><div class="stat-label">Agilidade</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-velocidade">10</div><div class="stat-label">Velocidade</div></div>
-                    </div>
+                    <div class="profile-stats-grid" id="dash-stats-grid">
+                        </div>
                 </div>
                 
                 <div id="historia" class="tab-content">
                     <div class="historia-container">
                         <div class="historia-img-container">
-                            <img id="historia-display-img" src="https://img.freepik.com/vetores-gratis/fundo-de-paisagem-de-anime-de-design-plano_23-2149275367.jpg">
-                            <button class="btn-edit-historia" onclick="window.editarHistoria()"><i class="fa-solid fa-pen"></i> Editar História</button>
+                            <img id="historia-display-img" src="https://placehold.co/800x300/333/fff?text=Historia">
+                            <button class="btn-edit-historia" onclick="window.editarHistoria()"><i class="fa-solid fa-pen"></i> Editar</button>
                         </div>
                         <hr class="historia-divider">
-                        <div class="historia-text-content" id="historia-display-text">A história do seu ninja aparecerá aqui.</div>
+                        <div class="historia-text-content" id="historia-display-text">Sua história aparecerá aqui.</div>
                     </div>
                 </div>
 
                 <div id="frases" class="tab-content">
-                    <h2>Frases Marcantes</h2>
+                    <h2>Frases</h2>
                     <div class="frase-input-area">
-                        <input type="text" id="novaFraseInput" placeholder="Digite uma frase icônica...">
+                        <input type="text" id="novaFraseInput" placeholder="Frase icônica...">
                         <button class="btn-post" onclick="window.adicionarFrase()">Adicionar</button>
                     </div>
-                    <div class="frases-list" id="frases-list-container"><p style="color:#777; text-align:center;">Carregando frases...</p></div>
+                    <div class="frases-list" id="frases-list-container"><p>Carregando...</p></div>
                 </div>
             </div>
         </main>
     </div>
-    
+
     <div id="novoMentorModal" class="modal-overlay-comment" style="z-index: 2010;">
         <div class="modal-content-card">
             <span class="close-modal" onclick="document.getElementById('novoMentorModal').style.display='none'">&times;</span>
-            <h3>Criar Novo Mentor</h3>
-            <input type="text" id="new-mentor-name" class="edit-input" placeholder="Nome do Mentor (NPC ou Player)">
+            <h3>Criar Mentor</h3>
+            <input type="text" id="new-mentor-name" class="edit-input" placeholder="Nome">
             <select id="new-mentor-category" class="filter-select">
                 <option value="turno">RPG de Turno</option>
                 <option value="cards">RPG de Cards</option>
             </select>
-            
             <div style="margin: 10px 0; text-align: left;">
                 <label style="cursor:pointer; font-weight:bold; display:flex; align-items:center;">
-                    <input type="checkbox" id="check-is-player" onchange="window.toggleMentorPlayerSelect()" style="margin-right:8px; transform:scale(1.2);"> É um Jogador Real?
+                    <input type="checkbox" id="check-is-player" onchange="window.toggleMentorPlayerSelect()" style="margin-right:8px; transform:scale(1.2);"> É Jogador?
                 </label>
                 <select id="mentor-player-select" class="filter-select" style="display:none; margin-top:5px;"></select>
-                <p id="player-loading-msg" style="display:none; font-size:0.8rem; color:#777;">Carregando jogadores...</p>
+                <p id="player-loading-msg" style="display:none; font-size:0.8rem; color:#777;">Carregando...</p>
             </div>
-
             <label class="btn-post" style="width:100%; display:block; text-align:center; margin-bottom:10px;">
                 <i class="fa-solid fa-image"></i> Escolher Foto
                 <input type="file" id="new-mentor-img-input" style="display:none;" onchange="window.handleMentorImage(event)">
@@ -299,15 +263,13 @@
     <div id="giftModal" class="modal-overlay-comment" style="z-index: 2005;">
         <div class="modal-content-card" style="max-width: 320px;">
             <span class="close-modal" onclick="document.getElementById('giftModal').style.display='none'">&times;</span>
-            <h3 style="color:var(--primary-color); margin-bottom:15px;">Presentear <span id="gift-target-name"></span></h3>
-            <label style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">Moeda:</label>
+            <h3 style="color:#ff5e00; margin-bottom:15px;">Presentear <span id="gift-target-name"></span></h3>
             <select id="gift-currency" class="filter-select">
                 <option value="ryos">Ryos</option>
                 <option value="essencia_ninja">Essência Ninja</option>
             </select>
-            <label style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">Quantidade:</label>
             <input type="number" id="gift-amount" class="edit-input" placeholder="Valor" min="1">
-            <button class="buy-btn" onclick="enviarPresente()">Enviar Presente</button>
+            <button class="buy-btn" onclick="enviarPresente()">Enviar</button>
         </div>
     </div>
     
@@ -315,8 +277,8 @@
         <div class="modal-content-card" style="max-width: 350px;">
             <span class="close-modal" onclick="document.getElementById('mentoriaModal').style.display='none'">&times;</span>
             <img id="mentor-img-modal" src="" class="jutsu-modal-img">
-            <h2 id="mentor-name-modal" style="color:var(--primary-color);"></h2>
-            <h4 style="margin: 15px 0 10px; color: #555;">O que você quer aprender?</h4>
+            <h2 id="mentor-name-modal" style="color:#ff5e00;"></h2>
+            <h4 style="margin: 15px 0 10px; color: #555;">Ensinamentos:</h4>
             <div id="mentoria-options-container" style="text-align:left; max-height: 200px; overflow-y: auto; margin-bottom: 15px;"></div>
             <button class="buy-btn" onclick="confirmarMentoria()">Pagar</button>
         </div>
@@ -326,7 +288,7 @@
         <div class="modal-content-card">
             <span class="close-modal" onclick="fecharJutsuModal()">&times;</span>
             <img id="jutsu-img-modal" src="" class="jutsu-modal-img">
-            <h2 id="jutsu-name-modal" style="color:var(--primary-color);"></h2>
+            <h2 id="jutsu-name-modal" style="color:#ff5e00;"></h2>
             <div id="jutsu-rank-modal" class="jutsu-modal-rank"></div>
             <div id="jutsu-stats-row" class="jutsu-stats-row"></div>
             <div class="desc-scroll-container"><p id="jutsu-desc-modal"></p></div>
@@ -339,7 +301,7 @@
             <span class="close-modal" onclick="fecharConquistaModal()">&times;</span>
             <img id="conquista-img-modal" src="" class="jutsu-modal-img" style="border-color:#e6b800; height: 150px;">
             <h2 id="conquista-name-modal" style="color: #e6b800;"></h2>
-            <div class="desc-scroll-container"><p id="conquista-desc-modal" style="color: #555; line-height: 1.6;"></p></div>
+            <div class="desc-scroll-container"><p id="conquista-desc-modal"></p></div>
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e6b800; padding-top: 15px;">
                 <div style="font-weight: bold; color: #2ecc71;">XP: <span id="conquista-xp-modal">0</span> | Ryos: <span id="conquista-reward-modal"></span></div>
                 <div id="conquista-actions-modal"></div>
@@ -376,7 +338,7 @@
             <span class="close-modal" onclick="fecharMissaoModal()">&times;</span>
             <img id="missao-img-modal" src="" class="jutsu-modal-img" style="border-color:#e6b800; height: 150px;">
             <h2 id="missao-name-modal" style="color: #e6b800;"></h2>
-            <div class="desc-scroll-container"><p id="missao-desc-modal" style="color: #555; line-height: 1.6;"></p></div>
+            <div class="desc-scroll-container"><p id="missao-desc-modal"></p></div>
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #e6b800; padding-top: 15px;">
                 <div style="font-weight: bold; color: #2ecc71;">XP: <span id="missao-xp-modal">0</span> | Ryos: <span id="missao-reward-modal"></span></div>
                 <div id="missao-actions-modal"></div>
@@ -387,7 +349,11 @@
     <div class="modal-overlay-comment" id="profileModal" style="z-index: 2002;">
         <div class="modal-content-profile">
             <span class="close-modal" onclick="fecharProfileModal()" style="color: white; top: 15px; right: 15px;">&times;</span>
-            <div class="profile-header"><div class="profile-avatar-large"><img src="" id="profile-modal-img"></div><h2 id="profile-modal-name" style="color:white;"></h2><p id="profile-modal-char" style="opacity:0.9;"></p></div>
+            <div class="profile-header">
+                <div class="profile-avatar-large"><img src="" id="profile-modal-img"></div>
+                <h2 id="profile-modal-name" style="color:white;"></h2>
+                <p id="profile-modal-char" style="opacity:0.9;"></p>
+            </div>
             <div class="profile-body">
                 <div class="powers-wrapper">
                     <div class="elementos-container" id="profile-elementos-container" style="display:none;"></div>
