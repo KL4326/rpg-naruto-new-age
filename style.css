@@ -1,52 +1,25 @@
-/* --- VARIÁVEIS GLOBAIS --- */
 :root {
-    --bg-color: #fafafa; 
-    --sidebar-bg: #ffffff; 
-    --text-color: #262626; 
-    --primary-color: #ff5e00;
-    --card-bg: #ffffff; 
-    --border-color: #dbdbdb; 
-    --green-color: #2ecc71; 
-    --yellow-color: #f1c40f;
-    --danger-color: #ed4956; 
-    --en-color: #3498db;
-    
-    /* Cores de Status e Barras */
-    --stat-chakra: #2980b9; 
-    --stat-stamina: #ff9f43; 
-    --stat-dano: #e74c3c;   
-    --stat-buff: #9b59b6;   
-    
-    --hp-color: #e74c3c;       
-    --sanidade-color: #3498db; 
-    --stamina-color: #ff9f43;  
-    --chakra-color: #2980b9;   
+    --bg-color: #fafafa; --sidebar-bg: #ffffff; --text-color: #262626; --primary-color: #ff5e00;
+    --card-bg: #ffffff; --border-color: #dbdbdb; --green-color: #2ecc71; --yellow-color: #f1c40f;
+    --danger-color: #ed4956; --en-color: #3498db;
+    --stat-chakra: #2980b9; --stat-stamina: #ff9f43; --stat-dano: #e74c3c; --stat-buff: #9b59b6;
+    --hp-color: #e74c3c; --sanidade-color: #3498db; --stamina-color: #ff9f43; --chakra-color: #2980b9;
 }
-
-body.dark-mode { 
-    --bg-color: #000000; 
-    --sidebar-bg: #000000; 
-    --text-color: #f5f5f5; 
-    --card-bg: #121212; 
-    --border-color: #363636; 
-}
-
+body.dark-mode { --bg-color: #000000; --sidebar-bg: #000000; --text-color: #f5f5f5; --card-bg: #121212; --border-color: #363636; }
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
 body { background-color: var(--bg-color); color: var(--text-color); height: 100vh; overflow: hidden; }
 
-/* --- COMPONENTES GERAIS --- */
+/* Componentes */
 .rank-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-weight: bold; color: white; font-size: 0.75rem; margin-right: 5px; vertical-align: middle; text-transform: uppercase; }
 .rank-s { background-color: #000; border: 1px solid #ed4956; color: #ed4956; box-shadow: 0 0 5px #ed4956; }
 .rank-a { background-color: #ed4956; } .rank-b { background-color: #2980b9; } .rank-c { background-color: #2ecc71; }
 .rank-d { background-color: #f1c40f; color: black; } .rank-e { background-color: #95a5a6; }
 
-/* Login */
 .login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 999; display: flex; justify-content: center; align-items: center; padding: 20px; }
 .login-box { background: white; padding: 30px; border-radius: 10px; width: 100%; max-width: 320px; text-align: center; }
 .login-box input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; font-size: 16px; }
 .login-box button { background: var(--primary-color); color: white; border: none; padding: 12px; width: 100%; cursor: pointer; border-radius: 5px; font-weight: bold; font-size: 16px; }
 
-/* Layout App */
 #app-container { display: flex; height: 100vh; position: relative; }
 .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 998; opacity: 0; transition: opacity 0.3s; }
 .sidebar-overlay.active { display: block; opacity: 1; }
@@ -55,7 +28,6 @@ body { background-color: var(--bg-color); color: var(--text-color); height: 100v
 .sidebar button { background: none; border: none; color: var(--text-color); width: 100%; text-align: left; padding: 12px 15px; cursor: pointer; border-radius: 8px; transition: 0.2s; display: flex; align-items: center; gap: 15px; margin-bottom: 5px; font-size: 1rem; }
 .sidebar button:hover { background-color: rgba(0,0,0,0.05); }
 .sidebar button.active { background-color: rgba(255, 94, 0, 0.1); font-weight: bold; color: var(--primary-color); border-left: 4px solid var(--primary-color); }
-#btn-admin-panel { display: none; color: #ed4956; font-weight: bold; }
 
 .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; width: 100%; }
 header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; padding: 0 15px; flex-shrink: 0; z-index: 10; }
@@ -79,56 +51,24 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 .tab-content { display: none; animation: fadeIn 0.3s; }
 .tab-content.active { display: block; }
 
-/* --- ESTILOS DE DASHBOARD E STATUS (CORRIGIDO) --- */
 .powers-wrapper { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; }
-.elementos-container { flex: 1; min-width: 120px; background: var(--card-bg); border-radius: 10px; border: 1px solid var(--border-color); padding: 10px; text-align: center; }
+.elementos-container { flex: 1; min-width: 100px; background: var(--card-bg); border-radius: 10px; border: 1px solid var(--border-color); padding: 10px; text-align: center; }
 .elementos-title { font-size: 0.85rem; font-weight: bold; color: #777; margin-bottom: 8px; text-transform: uppercase; }
 .elementos-list { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
 .element-icon { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color); padding: 2px; background: #fff; }
 
-.profile-stats-grid { 
-    display: grid; 
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); 
-    gap: 10px; 
-    margin-bottom: 30px; 
-}
-.stat-card { 
-    background: var(--card-bg); 
-    border: 1px solid var(--border-color); 
-    border-radius: 10px; 
-    padding: 10px; 
-    text-align: center; 
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-}
-.stat-value { 
-    font-size: 1.2rem; 
-    font-weight: bold; 
-    color: var(--primary-color); 
-}
-.stat-label { 
-    font-size: 0.75rem; 
-    color: #777; 
-    margin-top: 3px; 
-    text-transform: uppercase; 
-    font-weight: bold; 
-}
-.stats-divider { 
-    grid-column: 1 / -1; 
-    font-weight: bold; 
-    color: var(--text-color); 
-    margin: 20px 0 5px 0; 
-    border-bottom: 2px solid var(--border-color); 
-    padding-bottom: 5px; 
-}
+.profile-stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; margin-bottom: 30px; }
+.stat-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+.stat-value { font-size: 1.2rem; font-weight: bold; color: var(--primary-color); }
+.stat-label { font-size: 0.75rem; color: #777; margin-top: 3px; text-transform: uppercase; font-weight: bold; }
+.stats-divider { grid-column: 1 / -1; font-weight: bold; color: var(--text-color); margin: 20px 0 5px 0; border-bottom: 2px solid var(--border-color); padding-bottom: 5px; }
 
-/* Barra de XP */
 .level-container { background: var(--card-bg); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color); margin-bottom: 20px; }
 .level-info { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; color: var(--text-color); }
 .xp-bar-bg { width: 100%; height: 22px; background: #ddd; border-radius: 10px; overflow: hidden; position: relative; border: 1px solid rgba(0,0,0,0.1); }
 .xp-bar-fill { height: 100%; background: linear-gradient(90deg, #ff9100, #ff5e00); width: 0%; transition: width 0.5s ease-in-out; position: absolute; top: 0; left: 0; z-index: 1; }
 .xp-text { position: absolute; width: 100%; text-align: center; top: 0; left: 0; font-size: 0.75rem; color: #333; line-height: 22px; font-weight: bold; text-shadow: 0 0 2px rgba(255,255,255,0.8); z-index: 2; }
 
-/* --- LOJA E CARDS --- */
 .bucket-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; margin-top: 20px; }
 .card { background: var(--card-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); text-align: center; cursor: pointer; transition: 0.2s; overflow: hidden; position: relative; display: flex; flex-direction: column; }
 .card:hover { transform: translateY(-2px); border-color: var(--primary-color); }
@@ -136,7 +76,6 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 .card h4 { margin-bottom: 5px; font-size: 1rem; }
 .card small { display: block; margin-bottom: 8px; color: #777; }
 
-/* Botões */
 .buy-btn, .mission-btn-start, .mission-btn-collect { background-color: var(--primary-color); color: white; border: none; padding: 10px; width: 100%; border-radius: 5px; font-weight: bold; margin-top: auto; font-size: 1rem; cursor: pointer; transition: background 0.2s; text-align: center; }
 .buy-btn:hover { background-color: #e05200; }
 .buy-btn:disabled { background-color: #ccc; cursor: not-allowed; }
@@ -148,8 +87,8 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 .mission-btn-wait { background-color: var(--yellow-color); color: #333; width: 100%; border: none; padding: 10px; border-radius: 5px; font-weight: bold; margin-top: 5px; cursor: not-allowed; }
 .mission-btn-done { background-color: #ccc; color: #666; width: 100%; border: none; padding: 10px; border-radius: 5px; font-weight: bold; margin-top: 5px; cursor: not-allowed; }
 .buy-btn.en-btn { background-color: var(--en-color); }
+.buy-btn.en-btn:hover { background-color: #2980b9; }
 
-/* Quantidades */
 .qtd-container-square { display: flex; justify-content: center; margin: 10px 0 8px 0; width: 100%; }
 .qtd-input-square { width: 45px; height: 45px; text-align: center; font-size: 1.2rem; font-weight: bold; border: 2px solid var(--border-color); border-radius: 8px; background: var(--bg-color); color: var(--text-color); padding: 0; -moz-appearance: textfield; }
 .qtd-input-square:focus { border-color: var(--primary-color); outline: none; }
@@ -160,7 +99,6 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 .btn-minus { background: var(--danger-color); color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
 .maestria-display { display: block; font-size: 0.85rem; color: var(--yellow-color); font-weight: bold; margin-top: 4px; text-shadow: 0 0 1px rgba(0,0,0,0.1); }
 
-/* Filtros Loja */
 .filter-select { width: 100%; padding: 8px; border: 1px solid var(--border-color); border-radius: 5px; font-size: 0.9rem; background: var(--bg-color); color: var(--text-color); margin-bottom: 10px; }
 .shop-header { margin-bottom: 20px; background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); }
 .shop-location-select { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; font-size: 1rem; margin-bottom: 10px; background: var(--bg-color); color: var(--text-color); }
@@ -168,14 +106,12 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 .shop-cat-btn { padding: 8px 15px; border: 1px solid var(--border-color); background: var(--bg-color); border-radius: 20px; cursor: pointer; white-space: nowrap; font-weight: 500; color: var(--text-color); transition: 0.2s; }
 .shop-cat-btn.active { background: var(--primary-color); color: white; border-color: var(--primary-color); }
 
-/* Tags de Batalha/Status */
 .stats-row { display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; margin: 5px 0; }
 .stat-tag { padding: 3px 8px; border-radius: 10px; color: white; font-weight: bold; font-size: 0.7rem; }
 .tag-dano { background-color: var(--stat-dano); } .tag-chakra { background-color: var(--stat-chakra); }
 .tag-stamina { background-color: var(--stat-stamina); } .tag-buff { background-color: var(--stat-buff); }
 .tag-attr { background-color: #34495e; }
 
-/* Batalha */
 .battle-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
 .battle-card { background: #1a1a1a; color: white; border-radius: 15px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); border: 1px solid #333; }
 .battle-header-info { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; }
@@ -194,7 +130,6 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 .battle-mini-btn { background: #333; border: 1px solid #444; color: #ccc; width: 25px; height: 25px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; }
 .battle-mini-btn:hover { background: #555; color: white; }
 
-/* Feed */
 .create-post { background: var(--card-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border-color); }
 .create-post textarea { width: 100%; padding: 10px; border: none; outline: none; background: transparent; color: var(--text-color); resize: none; font-size: 1rem; }
 .post-tools { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 10px; margin-top: 10px; }
@@ -223,14 +158,12 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 .action-btn.liked { color: var(--danger-color); }
 .edit-textarea { width: 100%; border: 1px solid var(--primary-color); border-radius: 4px; padding: 10px; margin: 10px 0; }
 
-/* Rankings */
 .rankings-wrapper { display: flex; gap: 20px; flex-wrap: wrap; padding-bottom: 20px; }
 .ranking-col { flex: 1 1 300px; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; }
 .ranking-col h3 { color: var(--primary-color); text-align: center; margin-bottom: 15px; border-bottom: 2px solid var(--primary-color); font-size: 1.1rem; }
 .ranking-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .ranking-table td { padding: 8px; border-bottom: 1px solid var(--border-color); }
 
-/* Modais */
 .modal-overlay-comment { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(2px); }
 .close-modal { position: sticky; top: 10px; float: right; margin-bottom: -40px; font-size: 2rem; color: #333; cursor: pointer; z-index: 2005; background: rgba(255, 255, 255, 0.9); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.3); text-shadow: none; transition: 0.2s; }
 .close-modal:hover { color: var(--danger-color); transform: scale(1.1); background: #fff; }
@@ -242,7 +175,6 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 .jutsu-stat-tag { padding: 4px 12px; border-radius: 15px; color: white; font-weight: bold; font-size: 0.8rem; margin: 2px; }
 .desc-scroll-container { max-height: 150px; overflow-y: auto; text-align: left; margin: 10px 0; padding: 5px; border: 1px solid transparent; scrollbar-width: thin; }
 
-/* Perfil Modal */
 .modal-content-profile { background: var(--card-bg); width: 90%; max-width: 800px; max-height: 90vh; border-radius: 15px; overflow-y: auto; position: relative; border: 1px solid var(--border-color); }
 .profile-header { background: linear-gradient(to right, #ff5e00, #ff9100); padding: 40px 20px; text-align: center; color: white; }
 .profile-avatar-large { width: 100px; height: 100px; border-radius: 50%; border: 4px solid white; margin: 0 auto 15px auto; overflow: hidden; background: #fff; }
@@ -251,7 +183,6 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 .profile-char { font-size: 1.1rem; opacity: 0.9; }
 .profile-body { padding: 20px; }
 
-/* Comentários */
 .modal-content-comment { background: var(--card-bg); width: 90%; max-width: 900px; height: 80vh; border-radius: 4px; display: flex; overflow: hidden; position: relative; }
 .modal-left { flex: 1.5; background: #000; display: flex; align-items: center; justify-content: center; }
 .modal-left img { max-width: 100%; max-height: 100%; object-fit: contain; }
@@ -262,14 +193,11 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 .edit-input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 5px; }
 .edit-avatar-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color); margin: 10px auto; display: block; }
 
-/* História */
 .historia-container { width: 100%; max-width: 800px; margin: 0 auto; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; position: relative; }
 .historia-img-container { width: 100%; height: 300px; background-color: #000; position: relative; }
 .historia-img-container img { width: 100%; height: 100%; object-fit: cover; }
 .historia-divider { height: 4px; background-color: #dbdbdb; border: none; margin: 0; }
 .historia-text-content { padding: 30px; line-height: 1.8; font-size: 1.1rem; color: var(--text-color); white-space: pre-wrap; }
-
-/* Frases */
 .frase-input-area { background: var(--card-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px; display: flex; gap: 10px; align-items: center; width: 100%; }
 .frase-input-area input { flex-grow: 1; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; outline: none; min-width: 0; }
 .frases-list { display: flex; flex-direction: column; gap: 10px; }
@@ -278,7 +206,6 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 .frase-content { font-size: 1.1rem; font-style: italic; color: var(--text-color); flex: 1; padding-right: 30px; }
 .frase-author { font-size: 0.85rem; color: var(--primary-color); font-weight: bold; margin-top: 5px; }
 
-/* MENTORIAS */
 .section-title { border-bottom: 2px solid #ccc; padding-bottom: 5px; margin-top: 25px; margin-bottom: 15px; color: var(--text-color); font-size: 1.1rem; font-weight: bold; }
 .mentoria-option { background: var(--bg-color); border: 1px solid var(--border-color); padding: 10px; border-radius: 6px; margin-bottom: 8px; display: flex; align-items: center; cursor: pointer; transition: 0.2s; }
 .mentoria-option:hover { border-color: var(--primary-color); background-color: rgba(0,0,0,0.02); }
