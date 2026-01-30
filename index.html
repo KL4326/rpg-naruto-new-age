@@ -10,7 +10,7 @@
 </head>
 <body>
 
-    <div id="copyFeedback" style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:white; padding:10px 20px; border-radius:20px; z-index:3000; display:none;">Frase copiada!</div>
+    <div id="copyFeedback" style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:white; padding:10px 20px; border-radius:20px; z-index:3000; display:none;">Copiado!</div>
 
     <div id="login-screen" class="login-overlay">
         <div class="login-box">
@@ -104,10 +104,16 @@
                             <button class="btn-post" onclick="window.abrirModalNovoMentor()">+ Novo Mentor</button>
                         </div>
                     </div>
+                    
                     <h3 class="section-title">RPG de Turno</h3>
-                    <div id="grid-mentorias-turno" class="bucket-grid"><p style="color:#777;">Carregando mentores...</p></div>
+                    <div id="grid-mentorias-turno" class="bucket-grid">
+                        <p style="color:#777;">Carregando mentores...</p>
+                    </div>
+
                     <h3 class="section-title">RPG de Cards</h3>
-                    <div id="grid-mentorias-cards" class="bucket-grid"><p style="color:#777;">Carregando mentores...</p></div>
+                    <div id="grid-mentorias-cards" class="bucket-grid">
+                        <p style="color:#777;">Carregando mentores...</p>
+                    </div>
                 </div>
 
                 <div id="conquistas" class="tab-content">
@@ -206,12 +212,14 @@
                         <div class="level-info"><span id="level-display">Nível 1</span><span id="xp-text-display">0 / 500 XP</span></div>
                         <div class="xp-bar-bg"><div class="xp-bar-fill" id="xp-bar"></div><div class="xp-text">Progresso</div></div>
                     </div>
+                    
                     <div class="powers-wrapper">
                         <div class="elementos-container" id="dash-elementos" style="display:none;"></div>
                         <div class="elementos-container" id="dash-kekkei" style="display:none;"></div>
                         <div class="elementos-container" id="dash-moura" style="display:none;"></div>
                         <div class="elementos-container" id="dash-touta" style="display:none;"></div>
                     </div>
+
                     <div class="profile-stats-grid">
                         <div class="stats-divider">Geral</div>
                         <div class="stat-card"><div class="stat-value" id="dash-nivel">1</div><div class="stat-label">Nível</div></div>
