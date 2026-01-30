@@ -67,9 +67,47 @@ const KEKKEI_TOUTA_ICONS = {
     "estilo_poeira": "data:image/jpeg;base64,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ZkE3PxAKFk1TH0x2srxsifqltPco5pjiEkNMNmcpkeIy4cQ2xJy8x3cVlxDSimikdG5znFu45G3APNe/FRzSjHYamFjI892yB5zNtuykc/dSqvLlEzHT2yzHjMRPbJq60Klxes2THbOKLK+aXddjCTYNHK42NuTcV9U4Fg0FFTR0tLGI44xYAcSeVzjyuPKVS/qZ/wA7iXyKX/mVXuui54iIgIiICIiAiIgIiIChWtTQ2bF6OGnhljiMU4mJlzWIyObYZQd/slNUQfPfUCru3KX6pPQofp9q/qcHMJnfFKyfMGviJ3Oba7SHWPAgr60VL+qW9zYf32o8liCA6CVr3wPY92YROa1t+IaQd1+bduUra9VtozjkdK2QPa92ctIyAbrA8bkc6kNJphTve1hEjMxtmeG2HxkHcFguqy5TMQ31W48YiZ7S1r1la9aLXrIHrMvboevdotQSL3aINraLwvWttF4ZEGcvWNz1hL1+HPQftz1wdL658VI4xuylzmx3HEA3vbmO7isWJaVQQymOz3lu4mMAgHmuTxXA0i0iiqYNmxkgOdrrvDbWAPMe6r66suUTMdKbLMeMxE9vxoNodUYvUup6d0bNnGZXvlJs1twBuG8kkhTzqBV3blL9UnoT1NnXCs+at841fQi6Lnq51T6vZ8HfVOmmhlFQ2EDZB3sSwvvfMB2QVjIiAiIgIiICIiAiIgIiICIiAoRrP0DdjMdMxtQ2n/B3yPu6IvzZg0chFuCm6IKI/wAvsn7SZ9lPTUL1hatKrCAyUvFTA+zTNGwt2cnYvbc27hvvX1WsFdRxzxPhmY2SORpY5jxcOaeQhB8h4NpTJBHs3s2obbLd+UtHNexuObmXRGnP7v8Azv7Va0+oSgL3FlVVMaXEhtmHKCdwuRcrH1AaLt2q8GP0KqacJncwti7OI1Equ9fX7t/O/tXvr7/dv539qtDqA0XbtV4MfoTqA0XbtV4MfoXn+PX4e+vZ5Vf6+/3b+d/avPX1+7fzv7VaPUBou3arwY/QnUBou3arwY/Qn+PX4PXs8qtOnP7v/O/tWpiOmEkkZZHHsi7cXiTMQ3ly7hY91W71AaLt2q8GP0INQNF25VeDH6F7FFcfs8m/Of3VPoDoJU4vO5kX4qKP85O9pLWG25oG7M481+G9WD/l9k/aTPsp6aujAsGgoqaOlpYxHHGLADiTyuceVx5St9WqldastWj8HqZpnVTagTRCLK2EsynMHXvmN+CsVEQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREH/2Q=="
         };
 
-function calcularTempo(timestamp) { try { if (!timestamp) return "Desconhecido"; let date = (typeof timestamp.toDate === 'function') ? timestamp.toDate() : new Date(timestamp); if (isNaN(date.getTime())) return "-"; return date.toLocaleDateString('pt-BR'); } catch (e) { return "-"; } }
+function calcularTempo(timestamp) { 
+    try { 
+        if (!timestamp) return "Agora mesmo"; 
+        let date = (typeof timestamp.toDate === 'function') ? timestamp.toDate() : new Date(timestamp); 
+        return date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}); 
+    } catch (e) { return "-"; } 
+}
 
 window.toggleMobileMenu = () => { document.querySelector('.sidebar').classList.toggle('mobile-active'); document.querySelector('.sidebar-overlay').classList.toggle('active'); };
+
+// --- CORREÇÃO DO FEED (CARREGAMENTO INFINITO) ---
+window.renderFeed = (f) => { 
+    const c = document.getElementById('feed-container'); if(!c) return; 
+    c.innerHTML = '<p style="text-align:center; padding:20px; color:#777;">Invocando publicações...</p>';
+    try { 
+        const q = query(collection(db, "posts"), orderBy("data", "desc"));
+        onSnapshot(q, (s) => { 
+            c.innerHTML = ''; 
+            if(s.empty) { c.innerHTML = '<p style="text-align:center; padding:20px; color:#777;">Nenhuma postagem no mural.</p>'; return; }
+            s.forEach(d => { 
+                const p = d.data(); 
+                if(f==='saved' && !(p.savedBy||[]).includes(auth.currentUser.uid)) return;
+                const isLiked=(p.likes||[]).includes(auth.currentUser.uid);
+                const isSaved=(p.savedBy||[]).includes(auth.currentUser.uid);
+                const div=document.createElement('div'); div.className='post'; 
+                div.innerHTML=`<div class="post-header"><div class="user-avatar-post"><img src="${p.autorAvatar||IMG_PADRAO}"></div><div class="post-info"><span class="post-author">${p.autor}</span><span class="post-time">${calcularTempo(p.data)}</span></div>${p.uid===auth.currentUser.uid?`<div class="post-menu-container"><div class="post-options-btn" onclick="this.nextElementSibling.classList.toggle('active')">...</div><div class="post-dropdown"><div class="dropdown-item danger" onclick="window.deletarPost('${d.id}')">Excluir</div></div></div>`:''}</div><div class="post-content">${p.conteudo}</div>${p.imagem?`<img src="${p.imagem}" class="post-image" onclick="window.verPost('${d.id}')">`:''}<div class="post-actions"><button class="action-btn ${isLiked?'liked':''}" onclick="window.toggleLike('${d.id}')"><i class="${isLiked?'fa-solid':'fa-regular'} fa-heart"></i> ${(p.likes||[]).length}</button><button class="action-btn" onclick="window.verPost('${d.id}')"><i class="fa-regular fa-comment"></i> ${(p.comments||[]).length}</button><button class="action-btn ${isSaved?'saved':''}" onclick="window.toggleSave('${d.id}')" style="margin-left:auto;"><i class="${isSaved?'fa-solid':'fa-regular'} fa-bookmark"></i></button></div>`; 
+                c.appendChild(div); 
+            }); 
+        }, (err) => {
+            console.error("Erro no Feed:", err);
+            c.innerHTML = '<p style="color:red; padding:20px;">Erro de índice. Verifique o console (F12) para o link de ativação.</p>';
+        }); 
+    } catch(e){ console.error(e); } 
+};
+
+onSnapshot(doc(db, "users", auth.currentUser?.uid || "default"), (docSnap) => {
+    if (docSnap.exists()) {
+        currentUserData = docSnap.data();
+        atualizarInterface(currentUserData);
+    }
+});
 
 onAuthStateChanged(auth, async (user) => {
     if (user) {
@@ -100,8 +138,7 @@ onAuthStateChanged(auth, async (user) => {
             }
         });
         
-        carregarTudo();
-        setTimeout(() => { try { window.renderFeed('all'); } catch(e) {} }, 800); 
+        setTimeout(() => { if(typeof window.renderFeed === 'function') window.renderFeed('all'); }, 800); 
 
     } else {
         document.getElementById('login-screen').style.display = 'flex';
@@ -117,15 +154,13 @@ if (btnLogin) {
         if(!e || !s) return alert("Preencha e-mail e senha!");
         btnLogin.innerText = "Carregando...";
         signInWithEmailAndPassword(auth, e, s).catch((err) => {
-            console.error(err);
             btnLogin.innerText = "Entrar";
             alert("Erro: " + err.message);
         });
     });
 }
-const passInput = document.getElementById('passwordInput');
-if (passInput) passInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') document.getElementById('btnLogin').click(); });
 
+// --- CORREÇÃO AQUI: Verificação de tipo em showTab ---
 window.showTab = (t) => {
     try {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -140,9 +175,13 @@ window.showTab = (t) => {
         if(btnSide) btnSide.classList.add('active');
 
         if(currentUserData) {
-            if(t==='feed') window.renderFeed('all');
+            // Chamada segura do Feed
+            if(t==='feed') {
+                if(typeof window.renderFeed === 'function') {
+                    window.renderFeed('all');
+                }
+            }
             if(t==='personagens') carregarPersonagens();
-            if(t==='frases') carregarFrases();
             if(t==='inventario') carregarInventario();
             if(t==='loja') carregarLojaItens();
             if(t==='jutsus') { carregarMeusJutsus(currentUserData.meusJutsus); carregarLoja(); }
@@ -948,66 +987,251 @@ window.abrirModalMentoria = (id) => {
     document.getElementById('mentoriaModal').style.display = 'flex';
 };
 
-window.confirmarMentoria = async () => {
-    const radios = document.getElementsByName('ensino_escolhido');
-    let selectedIndex = -1;
-    for(let i=0; i<radios.length; i++) { if(radios[i].checked) { selectedIndex = parseInt(radios[i].value); break; } }
-    if(selectedIndex === -1) return alert("Selecione algo para aprender!");
-    const ensino = currentMentorData.ensinos[selectedIndex];
-    const field = ensino.moeda === 'essencia_ninja' ? 'essencia_ninja' : 'ryos';
-    const moedaNome = ensino.moeda === 'essencia_ninja' ? 'Essência Ninja' : 'Ryos';
-    if((currentUserData[field] || 0) < ensino.preco) { return alert(`Você não tem ${moedaNome} suficiente!`); }
-    if(!confirm(`Pagar ${formatarNum(ensino.preco)} ${moedaNome} para aprender "${ensino.nome}"?`)) return;
-    try {
-        const btn = document.querySelector('#mentoriaModal .buy-btn'); btn.disabled = true; btn.innerText = "Processando...";
-        await updateDoc(doc(db, "users", auth.currentUser.uid), { [field]: increment(-ensino.preco), aprendizados: arrayUnion(`${currentMentorData.nome} - ${ensino.nome}`) });
-        
-        // --- NOVO: Pagar o jogador se o mentor for player ---
-        if (currentMentorData.uid_player) {
-            await updateDoc(doc(db, "users", currentMentorData.uid_player), {
-                [field]: increment(ensino.preco)
-            });
-        }
-        
-        alert(`Você aprendeu: ${ensino.nome}!`);
-        document.getElementById('mentoriaModal').style.display = 'none';
-    } catch(e) { alert("Erro: " + e.message); } finally { const btn = document.querySelector('#mentoriaModal .buy-btn'); if(btn) { btn.disabled = false; btn.innerText = "Pagar"; } }
+window.abrirModalNovoMentor = () => {
+    document.getElementById('novoMentorModal').style.display = 'flex';
 };
 
-window.editarHistoria = async () => { const n=prompt("Texto:",currentUserData.historiaTexto||""); if(n){ const i=prompt("Imagem:",currentUserData.historiaImagem||""); updateDoc(doc(db,"users",auth.currentUser.uid),{historiaTexto:n,historiaImagem:i}).then(location.reload()); } }
-window.toggleFraseMenu = (el) => { const dropdown = el.nextElementSibling; document.querySelectorAll('.options-dropdown').forEach(d => { if(d !== dropdown) d.classList.remove('active'); }); dropdown.classList.toggle('active'); };
-window.adicionarFrase = async () => { const t=document.getElementById('novaFraseInput').value; if(t) await addDoc(collection(db,"frases"),{texto:t,autor:currentUserData.nome,uid:auth.currentUser.uid,data:serverTimestamp()}); document.getElementById('novaFraseInput').value=''; }
-window.editarFrase = async (id, oldText) => { const n = prompt("Editar:", oldText); if(n) await updateDoc(doc(db, "frases", id), { texto: n }); };
-window.deletarFrase = async (id) => { if(confirm("Excluir?")) await deleteDoc(doc(db, "frases", id)); };
-window.copiarFrase = (t) => { navigator.clipboard.writeText(t).then(() => { const f=document.getElementById('copyFeedback'); f.style.display='block'; setTimeout(()=>f.style.display='none',2000); }); };
-window.handleAvatarPreview = async (e) => { if(e.target.files[0]) { newAvatarBase64 = await comprimirImagem(e.target.files[0]); document.getElementById('edit-avatar-preview').src = newAvatarBase64; } };
-window.salvarPerfil = async () => { const nome = document.getElementById('edit-name-input').value; const apelido = document.getElementById('edit-nick-input').value; const updates = { nome: nome, apelido: apelido, personagem: nome }; if(newAvatarBase64) updates.avatar = newAvatarBase64; await updateDoc(doc(db, "users", auth.currentUser.uid), updates); location.reload(); };
-window.salvarNovaSenha = async () => { const p = document.getElementById('new-password').value; if(!p || p.length < 6) return alert("Mínimo 6 caracteres"); try { await updatePassword(auth.currentUser, p); alert("Sucesso!"); closeChangePasswordModal(); } catch(e) { alert("Erro: " + e.message); } };
+window.handleMentorImage = async (e) => {
+    if(e.target.files[0]) {
+        try {
+            newMentorImageBase64 = await comprimirImagem(e.target.files[0]);
+            document.getElementById('new-mentor-preview').innerHTML = `<img src="${newMentorImageBase64}" style="width:100px; height:100px; object-fit:cover; border-radius:50%;">`;
+        } catch(err) {
+            alert("Erro na imagem.");
+        }
+    }
+};
 
-async function carregarFrases() { const c = document.getElementById('frases-list-container'); try { onSnapshot(query(collection(db, "frases"), orderBy("data", "desc")), (s) => { c.innerHTML=''; s.forEach(d=>{ const f=d.data(); const k=document.createElement('div'); k.className='frase-item'; const menu = f.uid === auth.currentUser.uid ? `<div class="options-menu-container"><div class="options-btn" onclick="toggleFraseMenu(this); event.stopPropagation();">...</div><div class="options-dropdown"><div class="options-item" onclick="editarFrase('${d.id}','${f.texto}');event.stopPropagation()">Editar</div><div class="options-item danger" onclick="deletarFrase('${d.id}');event.stopPropagation()">Excluir</div></div></div>` : ''; k.onclick=()=>copiarFrase(f.texto); k.innerHTML=`<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor}</div>${menu}`; c.appendChild(k); }); }); } catch(e){} }
+window.salvarNovoMentor = async () => {
+    const nome = document.getElementById('new-mentor-name').value;
+    const cat = document.getElementById('new-mentor-category').value;
+    const isPlayer = document.getElementById('check-is-player').checked;
+    
+    if(!nome) return alert("Nome obrigatório");
+    if(!newMentorImageBase64) return alert("Escolha uma imagem");
 
-function comprimirImagem(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const img = new Image();
-            img.src = event.target.result;
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 600;
-                const scaleSize = MAX_WIDTH / img.width;
-                canvas.width = MAX_WIDTH;
-                canvas.height = img.height * scaleSize;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                resolve(canvas.toDataURL('image/jpeg', 0.7));
-            };
-            img.onerror = () => reject("Erro ao carregar imagem.");
-        };
-        reader.onerror = () => reject("Erro ao ler arquivo.");
-        reader.readAsDataURL(file);
-    });
+    let mentorData = {
+        nome: nome,
+        categoria: cat,
+        imagem: newMentorImageBase64,
+        ensinos: [] 
+    };
+
+    if (isPlayer) {
+        const uidPlayer = document.getElementById('mentor-player-select').value;
+        if (!uidPlayer) return alert("Selecione o jogador!");
+        mentorData.uid_player = uidPlayer; // Linka o mentor ao jogador
+    }
+
+    const btn = document.querySelector('#novoMentorModal .buy-btn');
+    btn.innerText = "Salvando...";
+
+    try {
+        await addDoc(collection(db, "mentores"), mentorData);
+        alert("Mentor criado!");
+        document.getElementById('novoMentorModal').style.display = 'none';
+        carregarMentorias();
+    } catch(e) {
+        alert("Erro: " + e.message);
+    } finally {
+        btn.innerText = "Salvar";
+    }
+};
+
+// Funções para criar mentor player
+window.toggleMentorPlayerSelect = async () => {
+    const isPlayer = document.getElementById('check-is-player').checked;
+    const select = document.getElementById('mentor-player-select');
+    const loading = document.getElementById('player-loading-msg');
+    
+    if (isPlayer) {
+        select.style.display = 'block';
+        loading.style.display = 'block';
+        select.innerHTML = '<option value="">Carregando...</option>';
+        
+        try {
+            const snap = await getDocs(collection(db, "users"));
+            select.innerHTML = '<option value="">Selecione um Jogador</option>';
+            snap.forEach(doc => {
+                const u = doc.data();
+                const opt = document.createElement('option');
+                opt.value = doc.id;
+                opt.text = `${u.nome} (${u.apelido})`;
+                select.appendChild(opt);
+            });
+        } catch(e) {
+            alert("Erro ao carregar jogadores.");
+        } finally {
+            loading.style.display = 'none';
+        }
+    } else {
+        select.style.display = 'none';
+        loading.style.display = 'none';
+    }
+};
+
+async function carregarPersonagens() {
+    try {
+        if (!currentUserData) return;
+        const c = document.getElementById('directory-grid'); if(!c) return;
+        c.innerHTML = '<p>Carregando...</p>';
+        const s = await getDocs(collection(db, "users"));
+        c.innerHTML = '';
+        if(s.empty) { c.innerHTML = '<p>Ninguém aqui.</p>'; return; }
+        
+        s.forEach(d => { 
+            const u = d.data(); 
+            if(!u) return; // Skip broken users
+            
+            const k = document.createElement('div'); k.className = 'card'; 
+            k.onclick = () => window.verPerfil(d.id); 
+            k.innerHTML = `<div style="width:60px; height:60px; border-radius:50%; overflow:hidden; margin:0 auto 10px;"><img src="${u.avatar||IMG_PADRAO}" style="width:100%; height:100%; object-fit:cover;"></div><h4>${u.nome}</h4><p>${u.apelido||""}</p><div style="font-size:0.8rem; margin-top:5px; color:#777;"><span style="color:var(--yellow-color);"><i class="fa-solid fa-coins"></i> ${formatarNum(u.ryos)}</span></div>${(auth.currentUser && d.id !== auth.currentUser.uid) ? `<button class="gift-btn" onclick="event.stopPropagation(); window.openGiftModal('${d.id}', '${u.nome}')"><i class="fa-solid fa-gift"></i> Presentear</button>` : ''}`; 
+            c.appendChild(k); 
+        });
+    } catch(e){ c.innerHTML='<p>Erro.</p>'; }
 }
+
+async function carregarConquistas() {
+    try {
+        if (!currentUserData) return;
+        const cTurno = document.getElementById('conquistas-turno-grid'); 
+        const cCards = document.getElementById('conquistas-cards-grid');
+        if(!cTurno || !cCards) return;
+
+        const m = currentUserData.statusConquistas || {};
+        cTurno.innerHTML = ''; cCards.innerHTML = '';
+        
+        const s = await getDocs(collection(db, "conquistas"));
+        if(s.empty) { cTurno.innerHTML = '<p>Nenhuma conquista.</p>'; return; }
+        
+        const isAdmin = auth.currentUser.email === "admin@rpgnaruto.com";
+        s.forEach(d => {
+            const i = d.data(); if(!i) return;
+
+            const p = i.restrito_a || [];
+            if (!isAdmin && p.length > 0 && !p.includes(currentUserData.nome)) return;
+            
+            const st = m[d.id]; 
+            const k = document.createElement('div'); k.className = 'card jutsu-card-click';
+            let btn = "";
+            const r = i.recompensa || 0; const x = i.xp || 0; const en = i.en || 0; 
+            
+            if(!st) btn = `<button class="mission-btn-start" onclick="event.stopPropagation(); window.solicitarConquista('${d.id}', this)">Reivindicar</button>`;
+            else if(st === 'solicitado') btn = `<button class="mission-btn-wait" onclick="event.stopPropagation();">Aguardando</button>`;
+            else if(st === 'aprovado') btn = `<button class="mission-btn-collect" onclick="event.stopPropagation(); window.coletarConquista('${d.id}', ${r}, ${x}, ${en}, this)">Coletar</button>`;
+            else if(st === 'concluido') btn = `<button class="mission-btn-done" onclick="event.stopPropagation();">Concluído</button>`;
+            
+            k.onclick = () => window.verDetalhesConquista(d.id, i, st);
+            k.innerHTML = `<img src="${i.imagem||IMG_PADRAO}" class="card-img-top"><h4>${i.titulo}</h4><small style="color:var(--primary-color)">${formatarNum(r)} Ryos</small>${btn}`;
+            
+            const cat = (i.categoria || "turno").toLowerCase().trim();
+            if(cat.includes('card')) cCards.appendChild(k); else cTurno.appendChild(k);
+        });
+
+        if(cTurno.innerHTML === '') cTurno.innerHTML = '<p style="color:#777;">Vazio.</p>';
+        if(cCards.innerHTML === '') cCards.innerHTML = '<p style="color:#777;">Vazio.</p>';
+
+    } catch(e) { 
+        cTurno.innerHTML = '<p>Erro.</p>';
+        cCards.innerHTML = '<p>Erro.</p>';
+    } 
+}
+
+async function carregarMissoes() { 
+    try {
+        if (!currentUserData) return;
+        const cTurno = document.getElementById('missoes-turno-grid'); 
+        const cCards = document.getElementById('missoes-cards-grid');
+        if(!cTurno || !cCards) return;
+
+        const m = currentUserData.statusMissoes || {}; 
+        cTurno.innerHTML = ''; cCards.innerHTML = '';
+
+        const s = await getDocs(collection(db, "missoes"));
+        const isAdmin = auth.currentUser.email === "admin@rpgnaruto.com";
+        s.forEach(d => { 
+            const i = d.data();
+            if(!i) return;
+
+            let restritos = i.restrito_a || [];
+            if (typeof restritos === 'string') restritos = [restritos];
+            if (restritos.length > 0 && !isAdmin) {
+                if (!restritos.includes(currentUserData.nome) && !restritos.includes(currentUserData.apelido)) return;
+            }
+            const st = m[d.id] || 'neutro'; const k = document.createElement('div'); k.className = 'card jutsu-card-click'; 
+            const r = i.recompensa || 0; const x = i.xp || 0; const en = i.en || 0; 
+            k.onclick = () => window.verDetalhesMissao(d.id, i, st); 
+            k.innerHTML=`<span class="rank-tag rank-${(i.rank||'D').toLowerCase()}">Rank ${i.rank||'D'}</span><h4>${i.titulo}</h4><p style="font-size:0.8rem; color:${st==='em_andamento'?'orange':st==='aprovado'?'green':'#777'};">${st==='neutro'?'Disponível':st}</p><small style="color:var(--primary-color)">${x} XP | ${formatarNum(r)} Ryos</small>`; 
+            
+            const cat = (i.categoria || "turno").toLowerCase().trim();
+            if(cat.includes('card')) cCards.appendChild(k); else cTurno.appendChild(k);
+        }); 
+        
+        if(cTurno.innerHTML === '') cTurno.innerHTML = '<p style="color:#777;">Vazio.</p>';
+        if(cCards.innerHTML === '') cCards.innerHTML = '<p style="color:#777;">Vazio.</p>';
+    } catch(e) { 
+        cTurno.innerHTML = '<p>Erro.</p>'; cCards.innerHTML = '<p>Erro.</p>';
+    } 
+}
+
+// --- ADMIN PANEL ---
+async function carregarPainelAdmin() { 
+    const c = document.getElementById('admin-missoes-grid'); if(!c) return;
+    c.innerHTML='<p>Carregando...</p>'; 
+    try {
+        const s = await getDocs(collection(db, "users")); 
+        c.innerHTML=''; 
+        let hasItems = false;
+        s.forEach(u => { 
+            const d = u.data(); 
+            if(!d) return; 
+            const m = d.statusMissoes || {}; 
+            const cq = d.statusConquistas || {}; 
+            
+            // Missões
+            if(m) {
+                for(const [mid, st] of Object.entries(m)) { 
+                    if(st === 'em_andamento') { 
+                        hasItems = true;
+                        const k = document.createElement('div'); k.className = 'card'; 
+                        k.innerHTML = `<h4>${d.nome || "Ninja"} (Missão)</h4><p style="font-size:0.8rem">${mid}</p><button class="mission-btn-collect" onclick="window.aprovarMissao('${u.id}','${mid}')">Aprovar</button>`; 
+                        c.appendChild(k); 
+                    } 
+                }
+            }
+            // Conquistas
+            if(cq) {
+                for(const [cid, st] of Object.entries(cq)) { 
+                    if(st === 'solicitado') { 
+                        hasItems = true;
+                        const k = document.createElement('div'); k.className = 'card'; 
+                        k.innerHTML = `<h4>${d.nome || "Ninja"} (Conquista)</h4><p style="font-size:0.8rem">${cid}</p><button class="mission-btn-collect" onclick="window.aprovarConquista('${u.id}','${cid}')">Aprovar</button>`; 
+                        c.appendChild(k); 
+                    } 
+                } 
+            }
+        }); 
+        if (!hasItems) c.innerHTML = '<p style="color:#777;">Nenhuma solicitação.</p>';
+    } catch(e) { c.innerHTML = '<p>Erro no painel.</p>'; console.error(e); } 
+}
+
+window.aprovarMissao = async (uid, mid) => { 
+    if(confirm("Aprovar missão?")) {
+        try { await updateDoc(doc(db, "users", uid), { [`statusMissoes.${mid}`]: 'aprovado' }); alert("Aprovado!"); carregarPainelAdmin(); } 
+        catch(e){ alert("Erro: "+e.message); }
+    }
+};
+window.aprovarConquista = async (uid, cid) => { 
+    if(confirm("Aprovar conquista?")) {
+        try { await updateDoc(doc(db, "users", uid), { [`statusConquistas.${cid}`]: 'aprovado' }); alert("Aprovado!"); carregarPainelAdmin(); } 
+        catch(e){ alert("Erro: "+e.message); }
+    }
+};
+
+// --- FUNÇÕES DE DETALHES E MODAIS (GLOBAL) ---
+window.verDetalhesJutsu = (id, d) => abrirModalSimples('jutsu', d);
+window.verDetalhesFerramenta = (id, d) => abrirModalSimples('tool', d);
+window.verDetalhesItem = (id, d) => abrirModalSimples('item', d);
 
 // --- CORRIGIDO: Função verPerfil (Blindada contra itens deletados) ---
 window.verPerfil = async (uid) => {
@@ -1088,70 +1312,55 @@ window.verPerfil = async (uid) => {
     }
 };
 
-// --- CORRIGIDO: Painel Kage (Blindado contra dados nulos) ---
-async function carregarPainelAdmin() { 
-    const c = document.getElementById('admin-missoes-grid'); 
-    if(!c) return;
-    
-    c.innerHTML='<p>Carregando solicitações...</p>'; 
-    
-    try {
-        const s = await getDocs(collection(db, "users")); 
-        c.innerHTML=''; 
-        let hasItems = false;
+window.fecharJutsuModal = () => document.getElementById('jutsuModal').style.display='none';
+window.fecharToolModal = () => document.getElementById('toolModal').style.display='none';
+window.fecharItemModal = () => document.getElementById('itemModal').style.display='none';
+window.fecharConquistaModal = () => document.getElementById('conquistaModal').style.display='none';
+window.fecharMissaoModal = () => document.getElementById('missaoModal').style.display='none';
+window.fecharProfileModal = () => document.getElementById('profileModal').style.display = 'none';
+window.closeModal = () => document.getElementById('commentModal').style.display = 'none';
 
-        s.forEach(u => { 
-            const d = u.data(); 
-            // Proteção se o user não tiver os objetos
-            const m = d.statusMissoes || {}; 
-            const cq = d.statusConquistas || {}; 
-            
-            for(const [mid, st] of Object.entries(m)) { 
-                if(st === 'em_andamento') { 
-                    hasItems = true;
-                    const k = document.createElement('div'); 
-                    k.className = 'card'; 
-                    k.innerHTML = `<h4>${d.nome || "Desconhecido"} (Missão)</h4><p style="font-size:0.8rem">${mid}</p><button class="mission-btn-collect" onclick="window.aprovarMissao('${u.id}','${mid}')">Aprovar</button>`; 
-                    c.appendChild(k); 
-                } 
-            } 
-            
-            for(const [cid, st] of Object.entries(cq)) { 
-                if(st === 'solicitado') { 
-                    hasItems = true;
-                    const k = document.createElement('div'); 
-                    k.className = 'card'; 
-                    k.innerHTML = `<h4>${d.nome || "Desconhecido"} (Conquista)</h4><p style="font-size:0.8rem">${cid}</p><button class="mission-btn-collect" onclick="window.aprovarConquista('${u.id}','${cid}')">Aprovar</button>`; 
-                    c.appendChild(k); 
-                } 
-            } 
-        }); 
-        
-        if (!hasItems) c.innerHTML = '<p style="color:#777; font-style:italic;">Nenhuma solicitação pendente.</p>';
+window.openGiftModal = (uid, nome) => { currentGiftTarget = uid; document.getElementById('gift-target-name').innerText = nome; document.getElementById('giftModal').style.display = 'flex'; };
+window.enviarPresente = async () => { const qtd = parseInt(document.getElementById('gift-amount').value); const tipo = document.getElementById('gift-currency').value; if(!qtd || qtd <= 0) return alert("Valor inválido!"); if(!currentGiftTarget) return; const field = tipo === 'ryos' ? 'ryos' : 'essencia_ninja'; if((currentUserData[field] || 0) < qtd) return alert(`Saldo insuficiente!`); if(!confirm(`Enviar ${qtd}?`)) return; try { await updateDoc(doc(db, "users", auth.currentUser.uid), { [field]: increment(-qtd) }); await updateDoc(doc(db, "users", currentGiftTarget), { [field]: increment(qtd) }); alert("Enviado!"); document.getElementById('giftModal').style.display = 'none'; } catch(e) { alert("Erro: " + e.message); } };
 
-    } catch(e) {
-        console.error("Erro admin:", e);
-        c.innerHTML = '<p>Erro ao carregar painel.</p>';
-    } 
+window.consumirItem = async (id, nome) => { let itemData = globalItensMap[id]; if (itemData && itemData.type === 'tool' && itemData.stamina > 0) { if ((currentUserData.stamina || 0) < itemData.stamina) return alert(`Sem Stamina!`); if(confirm(`Usar 1x ${nome}?`)) { await updateDoc(doc(db, "users", auth.currentUser.uid), { [`inventario.${id}`]: increment(-1), stamina: increment(-itemData.stamina) }); } } else { if(confirm(`Usar 1x ${nome}?`)) { await updateDoc(doc(db, "users", auth.currentUser.uid), { [`inventario.${id}`]: increment(-1) }); } } };
+window.comprarJutsu = async (id, p, n, currency) => { const field = currency === 'EN' ? 'essencia_ninja' : 'ryos'; if(!confirm(`Comprar ${n}?`)) return; if((currentUserData[field]||0) < p) return alert(`Sem saldo!`); await updateDoc(doc(db, "users", auth.currentUser.uid), { [field]: increment(-p), meusJutsus: arrayUnion(id), [`maestrias.${id}`]: 0 }); alert("Comprado!"); };
+window.comprarMultiplos = async (id, p, n, t, i, currency) => { const q = parseInt(document.getElementById(i).value)||1; if(q<1) return; const tot=p*q; const field = currency === 'EN' ? 'essencia_ninja' : 'ryos'; if(!confirm(`Comprar ${q}x ${n}?`)) return; if((currentUserData[field]||0) < tot) return alert(`Sem saldo!`); await updateDoc(doc(db, "users", auth.currentUser.uid), { [field]: increment(-tot), [`inventario.${id}`]: increment(q) }); alert("Comprado!"); };
+
+window.editarHistoria = async () => { const n=prompt("Texto:",currentUserData.historiaTexto||""); if(n){ const i=prompt("Imagem:",currentUserData.historiaImagem||""); updateDoc(doc(db,"users",auth.currentUser.uid),{historiaTexto:n,historiaImagem:i}).then(location.reload()); } }
+window.toggleFraseMenu = (el) => { const dropdown = el.nextElementSibling; document.querySelectorAll('.options-dropdown').forEach(d => { if(d !== dropdown) d.classList.remove('active'); }); dropdown.classList.toggle('active'); };
+window.adicionarFrase = async () => { const t=document.getElementById('novaFraseInput').value; if(t) await addDoc(collection(db,"frases"),{texto:t,autor:currentUserData.nome,uid:auth.currentUser.uid,data:serverTimestamp()}); document.getElementById('novaFraseInput').value=''; }
+window.editarFrase = async (id, oldText) => { const n = prompt("Editar:", oldText); if(n) await updateDoc(doc(db, "frases", id), { texto: n }); };
+window.deletarFrase = async (id) => { if(confirm("Excluir?")) await deleteDoc(doc(db, "frases", id)); };
+window.copiarFrase = (t) => { navigator.clipboard.writeText(t).then(() => { const f=document.getElementById('copyFeedback'); f.style.display='block'; setTimeout(()=>f.style.display='none',2000); }); };
+window.handleAvatarPreview = async (e) => { if(e.target.files[0]) { newAvatarBase64 = await comprimirImagem(e.target.files[0]); document.getElementById('edit-avatar-preview').src = newAvatarBase64; } };
+window.salvarPerfil = async () => { const nome = document.getElementById('edit-name-input').value; const apelido = document.getElementById('edit-nick-input').value; const updates = { nome: nome, apelido: apelido, personagem: nome }; if(newAvatarBase64) updates.avatar = newAvatarBase64; await updateDoc(doc(db, "users", auth.currentUser.uid), updates); location.reload(); };
+window.salvarNovaSenha = async () => { const p = document.getElementById('new-password').value; if(!p || p.length < 6) return alert("Mínimo 6 caracteres"); try { await updatePassword(auth.currentUser, p); alert("Sucesso!"); closeChangePasswordModal(); } catch(e) { alert("Erro: " + e.message); } };
+
+async function carregarFrases() { const c = document.getElementById('frases-list-container'); try { onSnapshot(query(collection(db, "frases"), orderBy("data", "desc")), (s) => { c.innerHTML=''; s.forEach(d=>{ const f=d.data(); const k=document.createElement('div'); k.className='frase-item'; const menu = f.uid === auth.currentUser.uid ? `<div class="options-menu-container"><div class="options-btn" onclick="toggleFraseMenu(this); event.stopPropagation();">...</div><div class="options-dropdown"><div class="options-item" onclick="editarFrase('${d.id}','${f.texto}');event.stopPropagation()">Editar</div><div class="options-item danger" onclick="deletarFrase('${d.id}');event.stopPropagation()">Excluir</div></div></div>` : ''; k.onclick=()=>copiarFrase(f.texto); k.innerHTML=`<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor}</div>${menu}`; c.appendChild(k); }); }); } catch(e){} }
+function comprimirImagem(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 600;
+                const scaleSize = MAX_WIDTH / img.width;
+                canvas.width = MAX_WIDTH;
+                canvas.height = img.height * scaleSize;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL('image/jpeg', 0.7));
+            };
+        };
+        reader.readAsDataURL(file);
+    });
 }
-
-// Funções de Admin que faltavam no último código
-window.aprovarMissao = async (uid, mid) => { 
-    if(confirm("Aprovar missão?")) {
-        try {
-            await updateDoc(doc(db, "users", uid), { [`statusMissoes.${mid}`]: 'aprovado' }); 
-            alert("Missão aprovada!"); 
-            carregarPainelAdmin(); 
-        } catch(e) { alert("Erro: " + e.message); }
-    }
-};
-
-window.aprovarConquista = async (uid, cid) => { 
-    if(confirm("Aprovar conquista?")) {
-        try {
-            await updateDoc(doc(db, "users", uid), { [`statusConquistas.${cid}`]: 'aprovado' }); 
-            alert("Conquista aprovada!"); 
-            carregarPainelAdmin(); 
-        } catch(e) { alert("Erro: " + e.message); }
-    }
-};
+window.publicarPost = async () => { const t = document.getElementById('postInput').value; if(!t.trim() && !currentImageBase64) return alert("Vazio"); const btn=document.querySelector('.btn-post'); btn.innerText="..."; try { await addDoc(collection(db, "posts"), { uid: auth.currentUser.uid, autor: currentUserData.apelido, autorAvatar: currentUserData.avatar, conteudo: t, imagem: currentImageBase64, data: serverTimestamp(), likes: [], savedBy: [], comments: [] }); document.getElementById('postInput').value=''; currentImageBase64=null; document.getElementById('preview-container').style.display='none'; } catch(e){} finally{btn.innerText="Publicar";} };
+window.deletarPost = async (id) => { if(confirm("Apagar?")) await deleteDoc(doc(db, "posts", id)); };
+window.toggleLike = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().likes||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{likes:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{likes:arrayUnion(auth.currentUser.uid)}); };
+window.toggleSave = async (id) => { const r=doc(db,"posts",id), s=await getDoc(r), l=s.data().savedBy||[]; if(l.includes(auth.currentUser.uid)) await updateDoc(r,{savedBy:arrayRemove(auth.currentUser.uid)}); else await updateDoc(r,{savedBy:arrayUnion(auth.currentUser.uid)}); };
+window.verPost = async (id) => { currentOpenPostId = id; const s = await getDoc(doc(db, "posts", id)), p = s.data(); document.getElementById('modalPostContent').innerHTML = p.imagem ? `<img src="${p.imagem}" style="width:100%;height:100%;object-fit:contain;">` : `<div style="padding:20px;">${p.conteudo}</div>`; document.getElementById('commentsList').innerHTML = (p.comments||[]).map(c=>`<div><b>${c.autor}</b>: ${c.texto}</div>`).join(''); document.getElementById('commentModal').style.display='flex'; };
+window.submitComment = async () => { const t = document.getElementById('newCommentText').value; if(!t) return; await updateDoc(doc(db, "posts", currentOpenPostId), { comments: arrayUnion({ autor: currentUserData.nome, texto: t }) }); document.getElementById('newCommentText').value = ""; verPost(currentOpenPostId); };
