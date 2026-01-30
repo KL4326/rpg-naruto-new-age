@@ -1155,3 +1155,175 @@ window.aprovarConquista = async (uid, cid) => {
         } catch(e) { alert("Erro: " + e.message); }
     }
 };
+
+// --- FUNÇÕES DO FEED (Estavam faltando) ---
+
+// 1. Lidar com o Upload de Imagem
+window.handleImageUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    try {
+        currentImageBase64 = await comprimirImagem(file);
+        document.getElementById('preview-image').src = currentImageBase64;
+        document.getElementById('preview-container').style.display = 'block';
+    } catch (error) {
+        alert("Erro ao processar imagem: " + error);
+    }
+};
+
+// 2. Remover Imagem do Preview
+window.removeImage = () => {
+    currentImageBase64 = null;
+    document.getElementById('imageInput').value = "";
+    document.getElementById('preview-container').style.display = 'none';
+    document.getElementById('preview-image').src = "";
+};
+
+// 3. Publicar Post
+window.publicarPost = async () => {
+    const texto = document.getElementById('postInput').value;
+    const btn = document.querySelector('.create-post .btn-post');
+    
+    if (!texto && !currentImageBase64) return alert("Escreva algo ou poste uma foto!");
+
+    try {
+        btn.disabled = true;
+        btn.innerText = "Publicando...";
+
+        await addDoc(collection(db, "posts"), {
+            uid: auth.currentUser.uid,
+            autor: currentUserData.nome,
+            avatar: currentUserData.avatar || IMG_PADRAO,
+            texto: texto,
+            imagem: currentImageBase64,
+            likes: [],
+            comentarios: [],
+            data: serverTimestamp() // Importante para a ordenação
+        });
+
+        // Limpar campos
+        document.getElementById('postInput').value = "";
+        window.removeImage();
+        window.renderFeed('all'); // Recarrega o feed
+        
+    } catch (error) {
+        console.error(error);
+        alert("Erro ao publicar.");
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Publicar";
+    }
+};
+
+// 4. Renderizar o Feed (A função principal que estava faltando)
+window.renderFeed = async (filtro = 'all') => {
+    const container = document.getElementById('feed-container');
+    if (!container) return;
+
+    container.innerHTML = '<p style="text-align:center; padding:20px; color:#777;">Atualizando feed...</p>';
+
+    try {
+        // Busca os posts ordenados por data decrescente
+        const q = query(collection(db, "posts"), orderBy("data", "desc"));
+        const querySnapshot = await getDocs(q);
+
+        container.innerHTML = "";
+
+        if (querySnapshot.empty) {
+            container.innerHTML = '<p style="text-align:center; padding:20px;">Nenhuma publicação ainda.</p>';
+            return;
+        }
+
+        querySnapshot.forEach((docSnap) => {
+            const post = docSnap.data();
+            const pid = docSnap.id;
+
+            // Filtro de "Salvos" (se você tiver essa lógica no futuro, implemente aqui)
+            // if (filtro === 'saved' && !post.salvo) return; 
+
+            const isLiked = post.likes && post.likes.includes(auth.currentUser.uid);
+            const likeClass = isLiked ? "fa-solid liked" : "fa-regular";
+            const likeColor = isLiked ? "color:var(--danger-color);" : "";
+            const tempo = calcularTempo(post.data); // Usa sua função auxiliar existente
+
+            const div = document.createElement('div');
+            div.className = 'post';
+            div.innerHTML = `
+                <div class="post-header">
+                    <div class="user-avatar-post"><img src="${post.avatar}"></div>
+                    <div class="post-info">
+                        <span class="post-author">${post.autor}</span>
+                        <span class="post-time">${tempo}</span>
+                    </div>
+                    ${post.uid === auth.currentUser.uid ? `
+                    <div class="post-menu-container">
+                        <div class="post-options-btn" onclick="togglePostMenu('${pid}')">...</div>
+                        <div id="menu-${pid}" class="post-dropdown">
+                            <div class="post-dropdown-item danger" onclick="deletarPost('${pid}')">Excluir</div>
+                        </div>
+                    </div>` : ''}
+                </div>
+                <div class="post-content">${post.texto || ""}</div>
+                ${post.imagem ? `<img src="${post.imagem}" class="post-image">` : ""}
+                <div class="post-actions">
+                    <button class="action-btn" onclick="curtirPost('${pid}')" style="${likeColor}">
+                        <i class="${likeClass} fa-heart"></i> ${post.likes ? post.likes.length : 0}
+                    </button>
+                    <button class="action-btn" onclick="abrirComentarios('${pid}')">
+                        <i class="fa-regular fa-comment"></i> ${post.comentarios ? post.comentarios.length : 0}
+                    </button>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+
+    } catch (e) {
+        console.error("Erro feed:", e);
+        container.innerHTML = '<p style="text-align:center; color:red;">Erro ao carregar feed.</p>';
+    }
+};
+
+// 5. Funções Auxiliares do Feed
+window.togglePostMenu = (pid) => {
+    const menu = document.getElementById(`menu-${pid}`);
+    // Fecha outros
+    document.querySelectorAll('.post-dropdown').forEach(d => {
+        if(d !== menu) d.classList.remove('active');
+    });
+    if(menu) menu.classList.toggle('active');
+};
+
+window.curtirPost = async (pid) => {
+    const uid = auth.currentUser.uid;
+    const postRef = doc(db, "posts", pid);
+    
+    try {
+        const p = await getDoc(postRef);
+        if(p.exists()) {
+            let likes = p.data().likes || [];
+            if(likes.includes(uid)) {
+                likes = likes.filter(id => id !== uid); // Remove like
+            } else {
+                likes.push(uid); // Adiciona like
+            }
+            await updateDoc(postRef, { likes: likes });
+            // Recarrega apenas para atualizar o ícone (ou poderia fazer manipulação DOM direta para ser mais rápido)
+            window.renderFeed('all'); 
+        }
+    } catch(e) { console.error(e); }
+};
+
+window.deletarPost = async (pid) => {
+    if(confirm("Tem certeza que deseja excluir esta postagem?")) {
+        try {
+            await deleteDoc(doc(db, "posts", pid));
+            window.renderFeed('all');
+        } catch(e) { alert("Erro ao excluir."); }
+    }
+};
+
+// Função placeholder para abrir comentários (já que vi o modal no seu HTML)
+window.abrirComentarios = (pid) => {
+    alert("Função de comentários em breve! (ID: " + pid + ")");
+    // Aqui você implementaria a lógica para preencher o 'commentModal' e mostrá-lo.
+};
