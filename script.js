@@ -683,8 +683,55 @@ async function carregarMissoes() {
         }); 
     } catch(e) {}
 }
-async function carregarRankings() { const c = document.getElementById('ranking-container'); if(!c) return; try { const s = await getDocs(collection(db, "users")); let l = []; s.forEach(d => l.push(d.data())); c.innerHTML = ''; renderRank(c, "Nível", l, 'nivel'); renderRank(c, "Ryos", l, 'ryos'); } catch (e) {} };
-function renderRank(c,t,l,f) { const s=[...l].sort((a,b)=>(b[f]||0)-(a[f]||0)).slice(0,5); let h=`<div class="ranking-col"><h3>${t}</h3><table class="ranking-table">`; s.forEach((u,i)=>h+=`<tr><td>${i+1}. ${u.nome}</td><td>${formatarNum(u[f])}</td></tr>`); h+='</table></div>'; c.innerHTML+=h; }
+
+async function carregarRankings() { 
+    const c = document.getElementById('ranking-container'); 
+    if(!c) return; 
+    
+    c.innerHTML = '<p style="text-align:center; padding:20px; color:#777;">Carregando Rankings...</p>';
+
+    try { 
+        const s = await getDocs(collection(db, "users")); 
+        let l = []; 
+        s.forEach(d => l.push(d.data())); 
+        
+        c.innerHTML = ''; 
+        
+        // Lista completa de Rankings
+        renderRank(c, "Nível", l, 'nivel'); 
+        renderRank(c, "Ryos", l, 'ryos'); 
+        renderRank(c, "Rankeadas", l, 'pontos_rankeada'); 
+        renderRank(c, "Torneios", l, 'vitorias_torneio'); 
+        renderRank(c, "Amistosos", l, 'pontos_amistoso'); 
+        renderRank(c, "Duplas", l, 'vitorias_dupla'); 
+        renderRank(c, "Clãs", l, 'vitorias_cla'); 
+        renderRank(c, "Missões Rank S", l, 'missoes_concluidas_s'); 
+        renderRank(c, "Missões Rank A", l, 'missoes_concluidas_a'); 
+        renderRank(c, "Missões Rank B", l, 'missoes_concluidas_b'); 
+        renderRank(c, "Missões Rank C", l, 'missoes_concluidas_c'); 
+        renderRank(c, "Missões Rank D", l, 'missoes_concluidas_d'); 
+        renderRank(c, "Missões Rank E", l, 'missoes_concluidas_e');
+
+    } catch (e) { 
+        console.error(e);
+        c.innerHTML = '<p>Erro ao carregar rankings.</p>';
+    } 
+};
+
+function renderRank(c, t, l, f) { 
+    // Ordena do maior para o menor e pega os top 5
+    const s = [...l].sort((a,b) => (b[f]||0) - (a[f]||0)).slice(0,5); 
+    
+    let h = `<div class="ranking-col"><h3>${t}</h3><table class="ranking-table">`; 
+    
+    s.forEach((u, i) => {
+        h += `<tr><td>${i+1}. ${u.nome || "Anônimo"}</td><td>${formatarNum(u[f])}</td></tr>`;
+    }); 
+    
+    h += '</table></div>'; 
+    c.innerHTML += h; 
+}
+
 window.verDetalhesJutsu = (id,d) => abrirModalSimples('jutsu',d); 
 window.verDetalhesFerramenta = (id,d) => abrirModalSimples('tool',d); 
 window.verDetalhesItem = (id,d) => abrirModalSimples('item',d);
@@ -842,19 +889,99 @@ function comprimirImagem(file) {
         reader.readAsDataURL(file);
     });
 }
+// --- FUNÇÃO DE VER PERFIL COMPLETA ---
 window.verPerfil = async (uid) => {
     try {
-        const s = await getDoc(doc(db, "users", uid)); if(!s.exists()) return;
-        const u = s.data(); let totalJutsus = (u.meusJutsus || []).length;
-        document.getElementById('profile-modal-name').innerText = u.nome; document.getElementById('profile-modal-char').innerText = u.apelido || "";
-        document.getElementById('profile-modal-img').src = u.avatar || IMG_PADRAO;
-        renderizarIcones(u.elementos || [], 'profile-elementos-container', ELEMENTOS_ICONS, 'Naturezas');
+        const s = await getDoc(doc(db, "users", uid)); 
+        if(!s.exists()) return;
         
+        const u = s.data(); 
+        
+        // 1. Preencher Cabeçalho
+        document.getElementById('profile-modal-name').innerText = u.nome || "Desconhecido"; 
+        document.getElementById('profile-modal-char').innerText = u.apelido || "Sem Apelido";
+        document.getElementById('profile-modal-img').src = u.avatar || IMG_PADRAO;
+        
+        // 2. Renderizar Elementos e Kekkeis
+        renderizarIcones(u.elementos || [], 'profile-elementos-container', ELEMENTOS_ICONS, 'Naturezas');
+        renderizarIcones(u.kekkei_genkai || [], 'profile-kekkei-container', KEKKEI_ICONS, 'Kekkei Genkai');
+        renderizarIcones(u.kekkei_moura || [], 'profile-moura-container', KEKKEI_MOURA_ICONS, 'Kekkei Moura');
+        renderizarIcones(u.kekkei_touta || [], 'profile-touta-container', KEKKEI_TOUTA_ICONS, 'Kekkei Touta');
+
+        // 3. Calcular Contagens de Inventário
+        let totalJutsus = (u.meusJutsus || []).length;
+        let totalTools = 0;
+        let totalItems = 0;
+
+        if (u.inventario) {
+            for (const [id, qtd] of Object.entries(u.inventario)) {
+                // Tenta identificar se é ferramenta ou item pelo mapa global
+                if (globalItensMap[id] && globalItensMap[id].type === 'tool') {
+                    totalTools += qtd;
+                } else {
+                    totalItems += qtd;
+                }
+            }
+        }
+
+        // 4. HTML dos Contadores de Inventário
+        let invHtml = `
+            <div class="stat-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                <div class="stat-value" style="font-size:1.5rem;">${totalJutsus}</div>
+                <div class="stat-label">Jutsus</div>
+            </div>
+            <div class="stat-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                <div class="stat-value" style="font-size:1.5rem;">${totalTools}</div>
+                <div class="stat-label">Ferramentas</div>
+            </div>
+            <div class="stat-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                <div class="stat-value" style="font-size:1.5rem;">${totalItems}</div>
+                <div class="stat-label">Itens</div>
+            </div>
+        `;
+
+        // 5. HTML Completo das Estatísticas (Geral, Batalha, Vitalidade, Atributos)
         const statsContainer = document.getElementById('other-profile-stats'); 
-        statsContainer.innerHTML = `<div class="stat-card"><div class="stat-value">${u.nivel||1}</div><div class="stat-label">Nível</div></div><div class="stat-card"><div class="stat-value">${u.rank||'E'}</div><div class="stat-label">Rank</div></div>`;
+        statsContainer.innerHTML = `
+            <div class="stats-divider">Geral</div>
+            <div class="stat-card"><div class="stat-value">${u.nivel||1}</div><div class="stat-label">Nível</div></div>
+            <div class="stat-card"><div class="stat-value">${u.cargo||'Genin'}</div><div class="stat-label">Cargo</div></div>
+            <div class="stat-card"><div class="stat-value">${u.patente||'Genin'}</div><div class="stat-label">Patente</div></div>
+            <div class="stat-card"><div class="stat-value">${u.rank||'E'}</div><div class="stat-label">Rank</div></div>
+            <div class="stat-card"><div class="stat-value">${u.speed_rank||"E"}</div><div class="stat-label">Rank Vel.</div></div>
+            <div class="stat-card"><div class="stat-value">${u.tipo||'Normal'}</div><div class="stat-label">Tipo</div></div>
+            
+            <div class="stats-divider">Batalha</div>
+            <div class="stat-card"><div class="stat-value">${u.vitorias||0}</div><div class="stat-label">Vitórias</div></div>
+            <div class="stat-card"><div class="stat-value">${u.empates||0}</div><div class="stat-label">Empates</div></div>
+            <div class="stat-card"><div class="stat-value">${u.derrotas||0}</div><div class="stat-label">Derrotas</div></div>
+            
+            <div class="stats-divider">Inventário</div>
+            <div style="grid-column: 1 / -1; display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">${invHtml}</div>
+            
+            <div class="stats-divider">Vitalidade</div>
+            <div class="stat-card"><div class="stat-value">${u.vida||100}</div><div class="stat-label">Vida</div></div>
+            <div class="stat-card"><div class="stat-value">${u.chakra||100}</div><div class="stat-label">Chakra</div></div>
+            <div class="stat-card"><div class="stat-value">${u.stamina||100}</div><div class="stat-label">Stamina</div></div>
+            <div class="stat-card"><div class="stat-value">${u.controle_chakra||"Baixo"}</div><div class="stat-label">Controle</div></div>
+            
+            <div class="stats-divider">Atributos</div>
+            <div class="stat-card"><div class="stat-value">${u.forca||10}</div><div class="stat-label">Força</div></div>
+            <div class="stat-card"><div class="stat-value">${u.defesa||10}</div><div class="stat-label">Defesa</div></div>
+            <div class="stat-card"><div class="stat-value">${u.agilidade||10}</div><div class="stat-label">Agilidade</div></div>
+            <div class="stat-card"><div class="stat-value">${u.velocidade||10}</div><div class="stat-label">Velocidade</div></div>
+            <div class="stat-card"><div class="stat-value">${u.intelecto||10}</div><div class="stat-label">Intelecto</div></div>
+            <div class="stat-card"><div class="stat-value">${u.constituicao||10}</div><div class="stat-label">Constituição</div></div>
+            <div class="stat-card"><div class="stat-value">${u.destreza||10}</div><div class="stat-label">Destreza</div></div>
+        `;
+        
         document.getElementById('profileModal').style.display = 'flex'; 
-    } catch(e) {}
+
+    } catch(e) { 
+        console.error("Erro ao abrir perfil:", e); 
+    }
 };
+
 // --- PAINEL KAGE (ADMIN) ---
 async function carregarPainelAdmin() { 
     const c = document.getElementById('admin-missoes-grid'); 
