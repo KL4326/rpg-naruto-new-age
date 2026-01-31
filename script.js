@@ -1215,7 +1215,9 @@ window.publicarPost = async () => {
     }
 };
 
-// 4. Renderizar o Feed (A função principal que estava faltando)
+// --- FUNÇÕES DE FEED E INTERAÇÃO (CORRIGIDAS) ---
+
+// 1. Função para carregar o Feed
 window.renderFeed = async (filtro = 'all') => {
     const container = document.getElementById('feed-container');
     if (!container) return;
@@ -1223,7 +1225,6 @@ window.renderFeed = async (filtro = 'all') => {
     container.innerHTML = '<p style="text-align:center; padding:20px; color:#777;">Atualizando feed...</p>';
 
     try {
-        // Busca os posts ordenados por data decrescente
         const q = query(collection(db, "posts"), orderBy("data", "desc"));
         const querySnapshot = await getDocs(q);
 
@@ -1238,33 +1239,47 @@ window.renderFeed = async (filtro = 'all') => {
             const post = docSnap.data();
             const pid = docSnap.id;
 
-            // Filtro de "Salvos" (se você tiver essa lógica no futuro, implemente aqui)
-            // if (filtro === 'saved' && !post.salvo) return; 
+            // --- CORREÇÃO 1: Avatar do Usuário (Fallback) ---
+            // Se o usuário não tiver foto, usa a imagem padrão (IMG_PADRAO já definida no seu código)
+            const avatarUsuario = post.avatar && post.avatar !== "undefined" ? post.avatar : IMG_PADRAO;
+            
+            // --- CORREÇÃO 2: Legenda (Texto) ---
+            // Garante que o texto seja exibido, mesmo se for nulo
+            const legendaPost = post.texto ? post.texto : "";
 
             const isLiked = post.likes && post.likes.includes(auth.currentUser.uid);
             const likeClass = isLiked ? "fa-solid liked" : "fa-regular";
             const likeColor = isLiked ? "color:var(--danger-color);" : "";
-            const tempo = calcularTempo(post.data); // Usa sua função auxiliar existente
+            const tempo = calcularTempo(post.data);
 
             const div = document.createElement('div');
             div.className = 'post';
+            
+            // Adicionamos onclick para abrir o post ao clicar na imagem ou no texto
             div.innerHTML = `
                 <div class="post-header">
-                    <div class="user-avatar-post"><img src="${post.avatar}"></div>
+                    <div class="user-avatar-post">
+                        <img src="${avatarUsuario}" alt="Avatar" onerror="this.src='${IMG_PADRAO}'">
+                    </div>
                     <div class="post-info">
-                        <span class="post-author">${post.autor}</span>
+                        <span class="post-author">${post.autor || "Ninja Desconhecido"}</span>
                         <span class="post-time">${tempo}</span>
                     </div>
                     ${post.uid === auth.currentUser.uid ? `
                     <div class="post-menu-container">
-                        <div class="post-options-btn" onclick="togglePostMenu('${pid}')">...</div>
+                        <div class="post-options-btn" onclick="togglePostMenu('${pid}'); event.stopPropagation();">...</div>
                         <div id="menu-${pid}" class="post-dropdown">
                             <div class="post-dropdown-item danger" onclick="deletarPost('${pid}')">Excluir</div>
                         </div>
                     </div>` : ''}
                 </div>
-                <div class="post-content">${post.texto || ""}</div>
-                ${post.imagem ? `<img src="${post.imagem}" class="post-image">` : ""}
+
+                <div class="post-content" onclick="abrirComentarios('${pid}')" style="cursor:pointer;">${legendaPost}</div>
+                
+                ${post.imagem ? 
+                    `<img src="${post.imagem}" class="post-image" onclick="abrirComentarios('${pid}')" style="cursor:pointer;">` 
+                    : ""}
+
                 <div class="post-actions">
                     <button class="action-btn" onclick="curtirPost('${pid}')" style="${likeColor}">
                         <i class="${likeClass} fa-heart"></i> ${post.likes ? post.likes.length : 0}
@@ -1283,47 +1298,107 @@ window.renderFeed = async (filtro = 'all') => {
     }
 };
 
-// 5. Funções Auxiliares do Feed
-window.togglePostMenu = (pid) => {
-    const menu = document.getElementById(`menu-${pid}`);
-    // Fecha outros
-    document.querySelectorAll('.post-dropdown').forEach(d => {
-        if(d !== menu) d.classList.remove('active');
-    });
-    if(menu) menu.classList.toggle('active');
-};
-
-window.curtirPost = async (pid) => {
-    const uid = auth.currentUser.uid;
-    const postRef = doc(db, "posts", pid);
+// 2. Função para Abrir o Post (Modal de Comentários)
+window.abrirComentarios = async (pid) => {
+    currentOpenPostId = pid; // Guarda o ID do post aberto
+    const modal = document.getElementById('commentModal');
+    const contentDiv = document.getElementById('modalPostContent');
+    const listDiv = document.getElementById('commentsList');
     
-    try {
-        const p = await getDoc(postRef);
-        if(p.exists()) {
-            let likes = p.data().likes || [];
-            if(likes.includes(uid)) {
-                likes = likes.filter(id => id !== uid); // Remove like
-            } else {
-                likes.push(uid); // Adiciona like
-            }
-            await updateDoc(postRef, { likes: likes });
-            // Recarrega apenas para atualizar o ícone (ou poderia fazer manipulação DOM direta para ser mais rápido)
-            window.renderFeed('all'); 
-        }
-    } catch(e) { console.error(e); }
-};
+    // Exibe o modal
+    modal.style.display = 'flex';
+    
+    // Mostra carregando enquanto busca os dados
+    contentDiv.innerHTML = '<p style="color:white;">Carregando...</p>';
+    listDiv.innerHTML = '<p>Carregando comentários...</p>';
 
-window.deletarPost = async (pid) => {
-    if(confirm("Tem certeza que deseja excluir esta postagem?")) {
-        try {
-            await deleteDoc(doc(db, "posts", pid));
-            window.renderFeed('all');
-        } catch(e) { alert("Erro ao excluir."); }
+    try {
+        const docRef = doc(db, "users", auth.currentUser.uid); // Apenas para garantir auth, mas buscamos o post abaixo
+        const postSnap = await getDoc(doc(db, "posts", pid));
+        
+        if (!postSnap.exists()) {
+            alert("Post não encontrado.");
+            modal.style.display = 'none';
+            return;
+        }
+
+        const p = postSnap.data();
+
+        // Preenche o lado esquerdo (Imagem/Texto Gigante)
+        let htmlContent = "";
+        if (p.imagem) {
+            htmlContent += `<img src="${p.imagem}" style="max-width:100%; max-height:80vh; object-fit:contain;">`;
+        }
+        if (p.texto) {
+            htmlContent += `<div style="padding:20px; color:white; font-size:1.2rem; text-align:center; overflow-y:auto;">${p.texto}</div>`;
+        }
+        contentDiv.innerHTML = htmlContent;
+
+        // Renderiza os comentários
+        renderizarListaComentarios(p.comentarios || []);
+
+    } catch (e) {
+        console.error(e);
+        contentDiv.innerHTML = '<p style="color:red">Erro ao abrir post.</p>';
     }
 };
 
-// Função placeholder para abrir comentários (já que vi o modal no seu HTML)
-window.abrirComentarios = (pid) => {
-    alert("Função de comentários em breve! (ID: " + pid + ")");
-    // Aqui você implementaria a lógica para preencher o 'commentModal' e mostrá-lo.
+// 3. Função Auxiliar para Renderizar a Lista de Comentários
+function renderizarListaComentarios(lista) {
+    const listDiv = document.getElementById('commentsList');
+    listDiv.innerHTML = "";
+    
+    if (!lista || lista.length === 0) {
+        listDiv.innerHTML = '<p style="text-align:center; color:#777; margin-top:20px;">Seja o primeiro a comentar!</p>';
+        return;
+    }
+
+    lista.forEach(c => {
+        const item = document.createElement('div');
+        item.style.borderBottom = "1px solid #eee";
+        item.style.padding = "10px";
+        item.innerHTML = `
+            <div style="font-weight:bold; font-size:0.9rem;">${c.autor}</div>
+            <div style="font-size:0.9rem;">${c.texto}</div>
+            <div style="font-size:0.7rem; color:#999;">${c.data ? calcularTempo(c.data) : "Agora"}</div>
+        `;
+        listDiv.appendChild(item);
+    });
+}
+
+// 4. Função para Enviar Comentário
+window.submitComment = async () => {
+    const input = document.getElementById('newCommentText');
+    const texto = input.value;
+    
+    if (!texto || !currentOpenPostId) return;
+
+    const novoComentario = {
+        uid: auth.currentUser.uid,
+        autor: currentUserData.nome,
+        texto: texto,
+        data: new Date().toISOString() // Salva como string ISO para simplificar no array
+    };
+
+    try {
+        // Adiciona ao array no Firestore
+        await updateDoc(doc(db, "posts", currentOpenPostId), {
+            comentarios: arrayUnion(novoComentario)
+        });
+
+        input.value = ""; // Limpa o campo
+        
+        // Recarrega os comentários visualmente (busca o post de novo para pegar atualizado)
+        const postSnap = await getDoc(doc(db, "posts", currentOpenPostId));
+        if(postSnap.exists()){
+            renderizarListaComentarios(postSnap.data().comentarios || []);
+        }
+        
+        // Atualiza o contador no feed atrás do modal
+        window.renderFeed('all'); 
+
+    } catch (e) {
+        console.error("Erro ao comentar:", e);
+        alert("Não foi possível comentar.");
+    }
 };
