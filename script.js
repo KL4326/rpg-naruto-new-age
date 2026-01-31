@@ -855,17 +855,86 @@ window.verPerfil = async (uid) => {
         document.getElementById('profileModal').style.display = 'flex'; 
     } catch(e) {}
 };
+// --- PAINEL KAGE (ADMIN) ---
 async function carregarPainelAdmin() { 
-    const c = document.getElementById('admin-missoes-grid'); if(!c) return;
-    c.innerHTML='<p>Carregando...</p>'; 
+    const c = document.getElementById('admin-missoes-grid'); 
+    if(!c) return;
+    
+    c.innerHTML = '<p style="text-align:center; padding:20px; color:#777;">Buscando solicitações...</p>'; 
+    
     try {
-        const s = await getDocs(collection(db, "users")); c.innerHTML='';
+        const s = await getDocs(collection(db, "users")); 
+        c.innerHTML = '';
+        let pendencias = false;
+
         s.forEach(u => { 
-            const d = u.data(); const m = d.statusMissoes || {}; const cq = d.statusConquistas || {}; 
-            for(const [mid, st] of Object.entries(m)) { if(st === 'em_andamento') { c.innerHTML += `<div class="card"><h4>${d.nome} (Missão)</h4><button onclick="window.aprovarMissao('${u.id}','${mid}')">Aprovar</button></div>`; } } 
-            for(const [cid, st] of Object.entries(cq)) { if(st === 'solicitado') { c.innerHTML += `<div class="card"><h4>${d.nome} (Conquista)</h4><button onclick="window.aprovarConquista('${u.id}','${cid}')">Aprovar</button></div>`; } } 
-        }); 
-    } catch(e) {} 
+            const d = u.data(); 
+            const m = d.statusMissoes || {}; 
+            const cq = d.statusConquistas || {}; 
+
+            // Renderizar Missões
+            for(const [mid, st] of Object.entries(m)) { 
+                if(st === 'em_andamento') { 
+                    pendencias = true;
+                    criarCardAdmin(c, d, u.id, mid, 'Missão', 'window.aprovarMissao');
+                } 
+            } 
+            
+            // Renderizar Conquistas
+            for(const [cid, st] of Object.entries(cq)) { 
+                if(st === 'solicitado') { 
+                    pendencias = true;
+                    criarCardAdmin(c, d, u.id, cid, 'Conquista', 'window.aprovarConquista');
+                } 
+            } 
+        });
+
+        if (!pendencias) {
+            c.innerHTML = '<p style="text-align:center; padding:20px; grid-column:1/-1; color:#999;">Nenhuma solicitação pendente.</p>';
+        }
+    } catch(e) { 
+        console.error(e);
+        c.innerHTML = '<p style="color:var(--danger-color);">Erro ao carregar painel.</p>';
+    } 
 }
-window.aprovarMissao = async (uid, mid) => { if(confirm("Aprovar?")) { await updateDoc(doc(db, "users", uid), { [`statusMissoes.${mid}`]: 'aprovado' }); alert("Aprovado!"); carregarPainelAdmin(); } };
-window.aprovarConquista = async (uid, cid) => { if(confirm("Aprovar?")) { await updateDoc(doc(db, "users", uid), { [`statusConquistas.${cid}`]: 'aprovado' }); alert("Aprovado!"); carregarPainelAdmin(); } };
+
+function criarCardAdmin(container, userData, uid, itemId, tipo, funcaoAprovar) {
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.style.display = 'flex';
+    div.style.flexDirection = 'column';
+    div.style.gap = '10px';
+    
+    div.innerHTML = `
+        <div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid #eee; padding-bottom:5px;">
+            <img src="${userData.avatar || IMG_PADRAO}" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
+            <div>
+                <h4 style="margin:0; font-size:0.9rem;">${userData.nome}</h4>
+                <small style="color:var(--primary-color); font-weight:bold;">${tipo}</small>
+            </div>
+        </div>
+        <div style="background:#f9f9f9; padding:8px; border-radius:4px; font-size:0.85rem; word-break:break-word;">
+            <strong>ID:</strong> ${itemId}
+        </div>
+        <button class="mission-btn-collect" onclick="${funcaoAprovar}('${uid}','${itemId}')">
+            <i class="fa-solid fa-check"></i> Aprovar
+        </button>
+    `;
+    container.appendChild(div);
+}
+
+window.aprovarMissao = async (uid, mid) => { 
+    if(confirm("Confirmar conclusão da missão?")) { 
+        await updateDoc(doc(db, "users", uid), { [`statusMissoes.${mid}`]: 'aprovado' }); 
+        alert("Aprovado!"); 
+        carregarPainelAdmin(); 
+    } 
+};
+
+window.aprovarConquista = async (uid, cid) => { 
+    if(confirm("Confirmar conquista?")) { 
+        await updateDoc(doc(db, "users", uid), { [`statusConquistas.${cid}`]: 'aprovado' }); 
+        alert("Aprovado!"); 
+        carregarPainelAdmin(); 
+    } 
+};
