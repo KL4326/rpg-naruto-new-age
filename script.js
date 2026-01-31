@@ -10,8 +10,8 @@ const db = getFirestore(app);
 
 // --- VARIÁVEIS GLOBAIS ---
 let currentUserData = null;
-let currentImageBase64 = null; // Usado para posts
-let newAvatarBase64 = null;    // Usado para perfil
+let currentImageBase64 = null; 
+let newAvatarBase64 = null;    
 let currentOpenPostId = null;
 let globalXpTable = [];
 let vilaAtual = "Konoha";
@@ -72,31 +72,24 @@ onAuthStateChanged(auth, async (user) => {
     if (user) {
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('app-container').style.display = 'flex';
-        
         if(user.email === "admin@rpgnaruto.com") document.getElementById('btn-admin-panel').style.display = 'flex';
-        
         await carregarConfiguracoes();
         await carregarCacheItens();
-        
         const docRef = doc(db, "users", user.uid);
         onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists()) {
                 currentUserData = docSnap.data();
                 if(!currentUserData.inventario) currentUserData.inventario = {};
                 if(!currentUserData.meusJutsus) currentUserData.meusJutsus = [];
-                
                 verificarLevelUpAutomatico(currentUserData);
                 atualizarInterface(currentUserData);
                 renderizarBatalha(); 
-                
                 const activeTab = document.querySelector('.tab-content.active');
                 if (activeTab) window.showTab(activeTab.id);
             }
         });
-        
         carregarTudo();
         setTimeout(() => { try { window.renderFeed('all'); } catch(e) {} }, 800); 
-
     } else {
         document.getElementById('login-screen').style.display = 'flex';
         document.getElementById('app-container').style.display = 'none';
@@ -110,11 +103,7 @@ if (btnLogin) {
         const s = document.getElementById('passwordInput').value;
         if(!e || !s) return alert("Preencha e-mail e senha!");
         btnLogin.innerText = "Carregando...";
-        signInWithEmailAndPassword(auth, e, s).catch((err) => {
-            console.error(err);
-            btnLogin.innerText = "Entrar";
-            alert("Erro: " + err.message);
-        });
+        signInWithEmailAndPassword(auth, e, s).catch((err) => { console.error(err); btnLogin.innerText = "Entrar"; alert("Erro: " + err.message); });
     });
 }
 
@@ -124,14 +113,12 @@ window.showTab = (t) => {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         const target = document.getElementById(t);
         if(target) target.classList.add('active');
-
         document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.sidebar button').forEach(b => b.classList.remove('active'));
         const btnTop = document.getElementById('nav-btn-'+t);
         const btnSide = document.getElementById('side-btn-'+t);
         if(btnTop) btnTop.classList.add('active');
         if(btnSide) btnSide.classList.add('active');
-
         if(currentUserData) {
             if(t==='feed') window.renderFeed('all');
             if(t==='personagens') carregarPersonagens();
@@ -146,7 +133,6 @@ window.showTab = (t) => {
             if(t==='mentorias') carregarMentorias();
             if(t==='admin-panel') carregarPainelAdmin();
         }
-        
         if(window.innerWidth <= 768) {
              const sidebar = document.querySelector('.sidebar');
              if(sidebar && sidebar.classList.contains('mobile-active')) window.toggleMobileMenu();
@@ -154,7 +140,7 @@ window.showTab = (t) => {
     } catch (e) { console.error("Erro ao trocar aba:", e); }
 };
 
-// --- FEED (Lógica Corrigida: Avatar, Legenda, Clique) ---
+// --- FEED (CORRIGIDO COM NOMES DO SEU BANCO) ---
 window.handleImageUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -179,11 +165,12 @@ window.publicarPost = async () => {
 
     try {
         btn.disabled = true; btn.innerText = "Publicando...";
+        // AQUI ESTAVA O ERRO: Agora salva como 'autorAvatar' e 'conteudo'
         await addDoc(collection(db, "posts"), {
             uid: auth.currentUser.uid,
             autor: currentUserData.nome,
-            avatar: currentUserData.avatar || IMG_PADRAO,
-            texto: texto,
+            autorAvatar: currentUserData.avatar || IMG_PADRAO, 
+            conteudo: texto,
             imagem: currentImageBase64,
             likes: [],
             comentarios: [],
@@ -215,16 +202,21 @@ window.renderFeed = async (filtro = 'all') => {
             const post = docSnap.data();
             const pid = docSnap.id;
 
-            // PROTEÇÃO ANTI-BUG DE IMAGEM E TEXTO
-            let avatarUrl = post.avatar;
+            // --- CORREÇÃO DOS CAMPOS (Baseado no seu print do Firebase) ---
+            
+            // 1. Avatar: Tenta 'autorAvatar' (novo), se não tiver tenta 'avatar' (velho), se não IMG_PADRAO
+            let avatarUrl = post.autorAvatar || post.avatar;
             if (!avatarUrl || avatarUrl === "undefined" || avatarUrl.length < 10) {
                 avatarUrl = IMG_PADRAO;
             }
-            const textoLegenda = post.texto ? post.texto : "";
-            const tempo = calcularTempo(post.data);
+
+            // 2. Conteúdo: Tenta 'conteudo' (novo), se não tiver tenta 'texto' (velho), se não vazio
+            const textoConteudo = post.conteudo || post.texto || "";
+
             const isLiked = post.likes && post.likes.includes(auth.currentUser.uid);
             const likeClass = isLiked ? "fa-solid liked" : "fa-regular";
             const likeColor = isLiked ? "color:var(--danger-color);" : "";
+            const tempo = calcularTempo(post.data);
 
             const div = document.createElement('div');
             div.className = 'post';
@@ -245,8 +237,11 @@ window.renderFeed = async (filtro = 'all') => {
                         </div>
                     </div>` : ''}
                 </div>
-                <div class="post-content" onclick="abrirComentarios('${pid}')" style="cursor:pointer; display:block; padding:10px; color:var(--text-color, #333); min-height:10px;">${textoLegenda}</div>
+                
+                <div class="post-content" onclick="abrirComentarios('${pid}')" style="cursor:pointer; display:block; padding:10px; color:var(--text-color, #333); min-height:10px; white-space: pre-wrap;">${textoConteudo}</div>
+                
                 ${post.imagem ? `<img src="${post.imagem}" class="post-image" onclick="abrirComentarios('${pid}')" style="cursor:pointer; background-color:#f0f0f0;">` : ""}
+                
                 <div class="post-actions">
                     <button class="action-btn" onclick="curtirPost('${pid}')" style="${likeColor}">
                         <i class="${likeClass} fa-heart"></i> ${post.likes ? post.likes.length : 0}
@@ -273,9 +268,14 @@ window.abrirComentarios = async (pid) => {
         const postSnap = await getDoc(doc(db, "posts", pid));
         if (!postSnap.exists()) { alert("Post não encontrado."); modal.style.display = 'none'; return; }
         const p = postSnap.data();
+        
+        // CORREÇÃO TAMBÉM NO MODAL
+        const textoModal = p.conteudo || p.texto || "";
+        
         let htmlContent = "";
         if (p.imagem) htmlContent += `<img src="${p.imagem}" style="max-width:100%; max-height:80vh; object-fit:contain;">`;
-        if (p.texto) htmlContent += `<div style="padding:20px; color:white; font-size:1.2rem; text-align:center; overflow-y:auto;">${p.texto}</div>`;
+        if (textoModal) htmlContent += `<div style="padding:20px; color:white; font-size:1.2rem; text-align:center; overflow-y:auto; white-space: pre-wrap;">${textoModal}</div>`;
+        
         contentDiv.innerHTML = htmlContent;
         renderizarListaComentarios(p.comentarios || []);
     } catch (e) { console.error(e); contentDiv.innerHTML = '<p style="color:red">Erro.</p>'; }
@@ -324,7 +324,7 @@ window.curtirPost = async (pid) => {
 };
 window.deletarPost = async (pid) => { if(confirm("Excluir postagem?")) { await deleteDoc(doc(db, "posts", pid)); window.renderFeed('all'); } };
 
-// --- PERFIL E UPLOAD (Correção) ---
+// --- PERFIL E UPLOAD ---
 window.handleAvatarPreview = async (e) => {
     const arquivo = e.target.files[0];
     if(arquivo) {
@@ -342,23 +342,19 @@ window.salvarPerfil = async () => {
     const apelido = document.getElementById('edit-nick-input').value;
     const updates = { nome: nome, apelido: apelido, personagem: nome };
     if(newAvatarBase64) updates.avatar = newAvatarBase64;
-
     try {
         await updateDoc(doc(db, "users", auth.currentUser.uid), updates);
         setTimeout(() => location.reload(), 500);
     } catch(e) { alert("Erro ao salvar: " + e.message); btn.disabled = false; btn.innerText = "Salvar"; }
 };
 
-// --- OUTRAS FUNÇÕES DO SISTEMA (Loja, Inventário, etc.) ---
-// As funções abaixo permanecem as mesmas que você já tinha, garantindo que o resto do site funcione.
-
+// --- OUTRAS FUNÇÕES ---
 window.mudarOrdenacao = (ordem) => {
     ordenacaoAtual = ordem;
     if(document.getElementById('jutsus').classList.contains('active')) { carregarMeusJutsus(currentUserData.meusJutsus); carregarLoja(); }
     if(document.getElementById('ferramentas').classList.contains('active')) carregarLojaFerramentas();
     if(document.getElementById('loja').classList.contains('active')) carregarLojaItens();
 };
-
 function aplicarOrdenacao(lista, ordem) {
     const novaLista = [...lista];
     if (ordem === 'menor_valor') return novaLista.sort((a, b) => (a.preco || 0) - (b.preco || 0));
@@ -366,7 +362,6 @@ function aplicarOrdenacao(lista, ordem) {
     else if (ordem === 'alfabetica') return novaLista.sort((a, b) => (a.nome || "").localeCompare(b.nome || ""));
     return novaLista;
 }
-
 async function verificarLevelUpAutomatico(dados) {
     let xpAtual = dados.xp || 0;
     let nivelAtual = dados.nivel || 1;
@@ -378,12 +373,10 @@ async function verificarLevelUpAutomatico(dados) {
         alert(`Level Up! Nível ${novoNivel}!`);
     }
 }
-
 function getXpNecessario(nivel) {
     if(globalXpTable.length > 0 && nivel <= globalXpTable.length) return globalXpTable[nivel - 1];
     return 300;
 }
-
 async function carregarConfiguracoes() { try { const s = await getDoc(doc(db, "game_config", "sistema_nivel")); if(s.exists()) globalXpTable = s.data().tabela_xp || []; } catch(e) {} }
 async function carregarCacheItens() {
     try {
@@ -391,7 +384,6 @@ async function carregarCacheItens() {
         const s2 = await getDocs(collection(db, "ferramentas")); s2.forEach(d => globalItensMap[d.id] = { ...d.data(), type: 'tool' });
     } catch(e) {}
 }
-
 function carregarTudo() {
     try { carregarLoja(); } catch(e){}
     try { carregarLojaItens(); } catch(e){}
@@ -404,7 +396,6 @@ function carregarTudo() {
     try { carregarFrases(); } catch(e){}
     try { carregarMentorias(); } catch(e){}
 }
-
 function renderizarIcones(lista, containerId, mapaIcones, titulo) {
     const container = document.getElementById(containerId); if (!container) return;
     container.innerHTML = `<div class="elementos-title">${titulo}</div><div class="elementos-list"></div>`;
@@ -416,7 +407,6 @@ function renderizarIcones(lista, containerId, mapaIcones, titulo) {
         if (iconUrl) { const img = document.createElement('img'); img.src = iconUrl; img.className = 'element-icon'; img.title = elem; listDiv.appendChild(img); }
     });
 }
-
 function atualizarInterface(dados) {
     document.querySelector('.user-info').innerText = dados.apelido || dados.nome || "Ninja";
     document.getElementById('ryos-text').innerText = formatarNum(dados.ryos);
@@ -424,28 +414,23 @@ function atualizarInterface(dados) {
     if(dados.avatar) document.getElementById('header-avatar').src = dados.avatar;
     if(dados.historiaTexto) document.getElementById('historia-display-text').innerText = dados.historiaTexto;
     if(dados.historiaImagem) document.getElementById('historia-display-img').src = dados.historiaImagem;
-
     const nivel = dados.nivel || 1;
     const xpAtual = dados.xp || 0;
     const xpMeta = getXpNecessario(nivel);
     let porcentagem = 0;
     if(xpMeta > 0) porcentagem = Math.min((xpAtual / xpMeta) * 100, 100);
-
     document.getElementById('level-display').innerText = "Nível " + nivel;
     document.getElementById('xp-text-display').innerText = `${xpAtual} / ${xpMeta} XP`;
     document.getElementById('xp-bar').style.width = porcentagem + "%";
-
     renderizarIcones(dados.elementos || [], 'dash-elementos', ELEMENTOS_ICONS, 'Naturezas de Chakra');
     renderizarIcones(dados.kekkei_genkai || [], 'dash-kekkei', KEKKEI_ICONS, 'Kekkei Genkai');
     renderizarIcones(dados.kekkei_moura || [], 'dash-moura', KEKKEI_MOURA_ICONS, 'Kekkei Moura');
     renderizarIcones(dados.kekkei_touta || [], 'dash-touta', KEKKEI_TOUTA_ICONS, 'Kekkei Touta');
-
     const set = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
     set('dash-nivel', nivel); set('dash-cargo', dados.cargo||"Genin"); set('dash-patente', dados.patente||"Genin"); 
     set('dash-rank', dados.rank||"E"); set('dash-speed-rank', dados.speed_rank||"E"); set('dash-tipo', dados.tipo||"Normal"); 
     set('dash-ryos', formatarNum(dados.ryos));
     set('dash-jutsus', (dados.meusJutsus || []).length); 
-    
     let totalItems = 0, totalTools = 0;
     if(dados.inventario) { for(let id in dados.inventario) { if(globalItensMap[id]) { if(globalItensMap[id].type === 'tool') totalTools += dados.inventario[id]; else totalItems += dados.inventario[id]; } } }
     set('dash-tools', totalTools); set('dash-items', totalItems);
@@ -455,7 +440,6 @@ function atualizarInterface(dados) {
     set('dash-forca', dados.forca||10); set('dash-defesa', dados.defesa||10); set('dash-constituicao', dados.constituicao||10);
     set('dash-destreza', dados.destreza||10); set('dash-intelecto', dados.intelecto||10); set('dash-agilidade', dados.agilidade||10); set('dash-velocidade', dados.velocidade||10);
 }
-
 function renderizarBatalha() {
     const grid = document.getElementById('battle-grid'); if(!grid) return;
     onSnapshot(collection(db, "users"), (snapshot) => {
@@ -476,22 +460,18 @@ function renderizarBatalha() {
         });
     });
 }
-
 function criarLinhaStatusCustom(uid, f, l, a, v, m, c) { 
     const p=Math.min((v/m)*100,100); 
     return `<div class="battle-row"><div class="battle-row-header"><span>${l}</span><span>${a}</span></div><div class="battle-controls"><div class="battle-actions-row"><div class="battle-mini-btn" onclick="alterarStatus('${uid}','${f}',-5)">-5</div><div class="battle-mini-btn" onclick="alterarStatus('${uid}','${f}',-1)">-1</div></div><span class="battle-val">${v} / <span style="cursor:pointer; border-bottom:1px dotted #ccc;" onclick="editarMaximo('${uid}', 'max_${f}')">${m}</span></span><div class="battle-actions-row"><div class="battle-mini-btn" onclick="alterarStatus('${uid}','${f}',1)">+1</div><div class="battle-mini-btn" onclick="alterarStatus('${uid}','${f}',5)">+5</div></div></div><div class="battle-bar-bg"><div class="battle-bar-fill ${c}" style="width:${p}%;"></div><div class="battle-bar-text">${p.toFixed(0)}%</div></div></div>`; 
 }
-
 window.editarMaximo = async (uid, field) => { const novo = prompt("Novo valor máximo:"); if(novo && !isNaN(novo)) await updateDoc(doc(db, "users", uid), { [field]: parseInt(novo) }); };
 window.alterarStatus = async (targetUid, stat, valor) => { await updateDoc(doc(db, "users", targetUid), { [stat]: increment(valor) }); };
-
 function gerarTagsBonus(d) {
     let html = '';
     const stats = ['hp', 'stamina', 'chakra', 'forca', 'defesa', 'agilidade', 'velocidade', 'intelecto', 'constituicao', 'destreza'];
     stats.forEach(s => { if(d['bonus_'+s]) html += `<span class="stat-tag tag-buff">+${d['bonus_'+s]} ${s.toUpperCase()}</span>`; });
     return html;
 }
-
 function criarCard(containerId, dados, id, tipo, clickFn, qtd = null) {
     const c = document.getElementById(containerId); if(!c) return;
     const div = document.createElement('div'); div.className = 'card'; div.onclick = () => clickFn(id, dados);
@@ -502,7 +482,6 @@ function criarCard(containerId, dados, id, tipo, clickFn, qtd = null) {
     div.innerHTML = `<img src="${dados.imagem||IMG_PADRAO}" class="card-img-top"><h4>${dados.nome}</h4><small>${sub}</small>${extra}`;
     c.appendChild(div);
 }
-
 function criarCardLoja(containerId, dados, id, tipo, buyFn, clickFn) {
     const c = document.getElementById(containerId); if(!c) return;
     const div = document.createElement('div'); div.className = 'card'; div.onclick = (e) => { if(!e.target.classList.contains('buy-btn') && !e.target.classList.contains('qtd-input-square')) clickFn(id, dados); };
@@ -540,7 +519,6 @@ function criarCardLoja(containerId, dados, id, tipo, buyFn, clickFn) {
         }); 
     }
 }
-
 async function carregarLoja() {
     try {
         if (!currentUserData) return;
@@ -553,7 +531,6 @@ async function carregarLoja() {
         lista.forEach(item => criarCardLoja('loja-jutsus-grid', item, item.id, 'jutsu', null, (id, i) => verDetalhesJutsu(id, i)));
     } catch(e) {}
 }
-
 async function carregarMeusJutsus(l) {
     try {
         if (!currentUserData) return;
@@ -566,7 +543,6 @@ async function carregarMeusJutsus(l) {
         lista.forEach(item => criarCard('meus-jutsus-grid', item, item.id, 'jutsu', (id, i) => verDetalhesJutsu(id, i)));
     } catch(e) {}
 }
-
 async function carregarLojaFerramentas() { 
     try {
         if (!currentUserData) return;
@@ -577,7 +553,6 @@ async function carregarLojaFerramentas() {
         lista.forEach(item => criarCardLoja('loja-ferramentas-grid', item, item.id, 'ferramenta', null, (id, i) => verDetalhesFerramenta(id, i)));
     } catch(e) {}
 }
-
 async function carregarLojaItens() {
     try {
         if (!currentUserData) return;
@@ -596,7 +571,6 @@ async function carregarLojaItens() {
         lista.forEach(item => criarCardLoja('loja-itens-grid', item, item.id, 'item', null, (id, i) => verDetalhesItem(id, i)));
     } catch(e) {}
 }
-
 async function carregarInventario() {
     try {
         if (!currentUserData) return;
@@ -623,7 +597,6 @@ async function carregarInventario() {
         }
     } catch(e) {}
 }
-
 async function carregarMentorias() {
     const cTurno = document.getElementById('grid-mentorias-turno'); const cCards = document.getElementById('grid-mentorias-cards');
     if (!cTurno || !cCards) return;
@@ -642,7 +615,6 @@ async function carregarMentorias() {
         });
     } catch (e) {}
 }
-
 window.abrirModalNovoMentor = () => { document.getElementById('novoMentorModal').style.display = 'flex'; };
 window.toggleMentorPlayerSelect = () => {
     const isPlayer = document.getElementById('check-is-player').checked;
@@ -666,7 +638,6 @@ window.salvarNovoMentor = async () => {
     document.getElementById('novoMentorModal').style.display = 'none';
     carregarMentorias();
 };
-
 async function carregarPersonagens() {
     try {
         const c = document.getElementById('directory-grid'); if(!c) return;
@@ -675,7 +646,6 @@ async function carregarPersonagens() {
         k.innerHTML = `<div style="width:60px; height:60px; border-radius:50%; overflow:hidden; margin:0 auto 10px;"><img src="${u.avatar||IMG_PADRAO}" style="width:100%; height:100%; object-fit:cover;"></div><h4>${u.nome}</h4><p>${u.apelido||""}</p><div style="font-size:0.8rem; margin-top:5px; color:#777;"><span style="color:var(--yellow-color);"><i class="fa-solid fa-coins"></i> ${formatarNum(u.ryos)}</span></div>${u.id !== auth.currentUser.uid ? `<button class="gift-btn" onclick="event.stopPropagation(); openGiftModal('${d.id}', '${u.nome}')">Presentear</button>` : ''}`; c.appendChild(k); });
     } catch(e){ c.innerHTML='<p>Erro.</p>'; }
 }
-
 async function carregarConquistas() {
     try {
         if (!currentUserData) return;
@@ -698,7 +668,6 @@ async function carregarConquistas() {
         });
     } catch(e) {}
 }
-
 async function carregarMissoes() { 
     try {
         if (!currentUserData) return;
@@ -714,10 +683,8 @@ async function carregarMissoes() {
         }); 
     } catch(e) {}
 }
-
 async function carregarRankings() { const c = document.getElementById('ranking-container'); if(!c) return; try { const s = await getDocs(collection(db, "users")); let l = []; s.forEach(d => l.push(d.data())); c.innerHTML = ''; renderRank(c, "Nível", l, 'nivel'); renderRank(c, "Ryos", l, 'ryos'); } catch (e) {} };
 function renderRank(c,t,l,f) { const s=[...l].sort((a,b)=>(b[f]||0)-(a[f]||0)).slice(0,5); let h=`<div class="ranking-col"><h3>${t}</h3><table class="ranking-table">`; s.forEach((u,i)=>h+=`<tr><td>${i+1}. ${u.nome}</td><td>${formatarNum(u[f])}</td></tr>`); h+='</table></div>'; c.innerHTML+=h; }
-
 window.verDetalhesJutsu = (id,d) => abrirModalSimples('jutsu',d); 
 window.verDetalhesFerramenta = (id,d) => abrirModalSimples('tool',d); 
 window.verDetalhesItem = (id,d) => abrirModalSimples('item',d);
@@ -728,7 +695,6 @@ window.fecharConquistaModal = () => document.getElementById('conquistaModal').st
 window.fecharMissaoModal = () => document.getElementById('missaoModal').style.display='none';
 window.fecharProfileModal = () => document.getElementById('profileModal').style.display = 'none';
 window.closeModal = () => document.getElementById('commentModal').style.display = 'none';
-
 window.openGiftModal = (uid, nome) => { currentGiftTarget = uid; document.getElementById('gift-target-name').innerText = nome; document.getElementById('giftModal').style.display = 'flex'; };
 window.enviarPresente = async () => {
     const qtd = parseInt(document.getElementById('gift-amount').value);
@@ -742,7 +708,6 @@ window.enviarPresente = async () => {
         alert("Enviado!"); document.getElementById('giftModal').style.display = 'none';
     } catch(e) { alert("Erro ao enviar."); }
 };
-
 window.consumirItem = async (id, nome) => { 
     let itemData = globalItensMap[id];
     if (itemData && itemData.type === 'tool' && itemData.stamina > 0) {
@@ -752,7 +717,6 @@ window.consumirItem = async (id, nome) => {
         if(confirm(`Usar ${nome}?`)) await updateDoc(doc(db, "users", auth.currentUser.uid), { [`inventario.${id}`]: increment(-1) }); 
     }
 };
-
 window.comprarJutsu = async (id, p, n, currency) => { 
     const field = currency === 'EN' ? 'essencia_ninja' : 'ryos';
     if(!confirm(`Comprar ${n}?`)) return; 
@@ -770,7 +734,6 @@ window.comprarMultiplos = async (id, p, n, t, i, currency) => {
 };
 window.filtrarLojaPorTipo = (t, b) => { lojaAtual = t; document.querySelectorAll('.shop-cat-btn').forEach(x => x.classList.remove('active')); if(b) b.classList.add('active'); carregarLojaItens(); };
 window.atualizarFiltroVila = () => { vilaAtual = document.getElementById('shop-location').value; carregarLojaItens(); };
-
 window.verDetalhesConquista = (id, d, st) => {
     document.getElementById('conquista-name-modal').innerText = d.titulo;
     document.getElementById('conquista-desc-modal').innerText = d.descricao;
@@ -786,7 +749,6 @@ window.verDetalhesConquista = (id, d, st) => {
 };
 window.solicitarConquista = async (id, btn) => { if(btn) { btn.disabled = true; btn.innerText = "..."; } await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusConquistas.${id}`]: 'solicitado' }); alert("Solicitado!"); };
 window.coletarConquista = async (id, r, x, en, btn) => { if(btn) btn.disabled = true; await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(r), xp: increment(x), essencia_ninja: increment(en), [`statusConquistas.${id}`]: 'concluido' }); alert("Coletado!"); document.getElementById('conquistaModal').style.display='none'; };
-
 window.verDetalhesMissao = (id, d, st) => { 
     document.getElementById('missao-name-modal').innerText = d.titulo; 
     document.getElementById('missao-desc-modal').innerText = d.descricao; 
@@ -802,7 +764,6 @@ window.verDetalhesMissao = (id, d, st) => {
 };
 window.iniciarMissao = async (id, btn) => { if(btn) { btn.disabled=true; btn.innerText="..."; } await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusMissoes.${id}`]: 'em_andamento' }); alert("Iniciada!"); };
 window.coletarRecompensa = async (id, r, x, en, rank, btn) => { if(btn) btn.disabled=true; await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(r), xp: increment(x), essencia_ninja: increment(en), [`statusMissoes.${id}`]: 'concluido', [`missoes_concluidas_${rank.toLowerCase()}`]: increment(1) }); alert("Missão cumprida!"); document.getElementById('missaoModal').style.display='none'; };
-
 function abrirModalSimples(t, d) {
     document.getElementById(t+'-name-modal').innerText = d.nome; 
     document.getElementById(t+'-desc-modal').innerText = d.descricao||""; 
@@ -821,14 +782,12 @@ function abrirModalSimples(t, d) {
     if(t==='item') document.getElementById(t+'-rank-modal').innerText = d.efeito||"Item";
     document.getElementById(t+'Modal').style.display='flex';
 }
-
 window.openEditProfileModal = () => { document.getElementById('editProfileModal').style.display = 'flex'; document.getElementById('edit-name-input').value = currentUserData.nome || ""; document.getElementById('edit-nick-input').value = currentUserData.apelido || ""; document.getElementById('user-menu').classList.remove('show'); };
 window.closeEditProfileModal = () => document.getElementById('editProfileModal').style.display = 'none';
 window.openChangePasswordModal = () => { document.getElementById('changePasswordModal').style.display='flex'; document.getElementById('user-menu').classList.remove('show'); };
 window.closeChangePasswordModal = () => document.getElementById('changePasswordModal').style.display='none';
 window.toggleMenu = () => document.getElementById('user-menu').classList.toggle('show');
 window.fazerLogout = () => signOut(auth).then(() => location.reload());
-
 window.abrirModalMentoria = (id) => {
     const mentor = globalMentores[id]; if (!mentor) return;
     currentMentorData = mentor;
@@ -845,7 +804,6 @@ window.abrirModalMentoria = (id) => {
     }
     document.getElementById('mentoriaModal').style.display = 'flex';
 };
-
 window.confirmarMentoria = async () => {
     const radios = document.getElementsByName('ensino_escolhido');
     let selectedIndex = -1; for(let i=0; i<radios.length; i++) { if(radios[i].checked) { selectedIndex = parseInt(radios[i].value); break; } }
@@ -859,7 +817,6 @@ window.confirmarMentoria = async () => {
         alert(`Aprendeu: ${ensino.nome}!`); document.getElementById('mentoriaModal').style.display = 'none';
     } catch(e) { alert("Erro: " + e.message); }
 };
-
 window.editarHistoria = async () => { const n=prompt("Texto:",currentUserData.historiaTexto||""); if(n){ const i=prompt("Imagem:",currentUserData.historiaImagem||""); updateDoc(doc(db,"users",auth.currentUser.uid),{historiaTexto:n,historiaImagem:i}).then(location.reload()); } }
 window.toggleFraseMenu = (el) => { const dropdown = el.nextElementSibling; document.querySelectorAll('.options-dropdown').forEach(d => { if(d !== dropdown) d.classList.remove('active'); }); dropdown.classList.toggle('active'); };
 window.adicionarFrase = async () => { const t=document.getElementById('novaFraseInput').value; if(t) await addDoc(collection(db,"frases"),{texto:t,autor:currentUserData.nome,uid:auth.currentUser.uid,data:serverTimestamp()}); document.getElementById('novaFraseInput').value=''; }
@@ -867,9 +824,7 @@ window.editarFrase = async (id, oldText) => { const n = prompt("Editar:", oldTex
 window.deletarFrase = async (id) => { if(confirm("Excluir?")) await deleteDoc(doc(db, "frases", id)); };
 window.copiarFrase = (t) => { navigator.clipboard.writeText(t).then(() => { const f=document.getElementById('copyFeedback'); f.style.display='block'; setTimeout(()=>f.style.display='none',2000); }); };
 window.salvarNovaSenha = async () => { const p = document.getElementById('new-password').value; if(!p || p.length < 6) return alert("Mínimo 6 caracteres"); try { await updatePassword(auth.currentUser, p); alert("Sucesso!"); closeChangePasswordModal(); } catch(e) { alert("Erro: " + e.message); } };
-
 async function carregarFrases() { const c = document.getElementById('frases-list-container'); try { onSnapshot(query(collection(db, "frases"), orderBy("data", "desc")), (s) => { c.innerHTML=''; s.forEach(d=>{ const f=d.data(); const k=document.createElement('div'); k.className='frase-item'; const menu = f.uid === auth.currentUser.uid ? `<div class="options-menu-container"><div class="options-btn" onclick="toggleFraseMenu(this); event.stopPropagation();">...</div><div class="options-dropdown"><div class="options-item" onclick="editarFrase('${d.id}','${f.texto}');event.stopPropagation()">Editar</div><div class="options-item danger" onclick="deletarFrase('${d.id}');event.stopPropagation()">Excluir</div></div></div>` : ''; k.onclick=()=>copiarFrase(f.texto); k.innerHTML=`<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor}</div>${menu}`; c.appendChild(k); }); }); } catch(e){} }
-
 function comprimirImagem(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -887,7 +842,6 @@ function comprimirImagem(file) {
         reader.readAsDataURL(file);
     });
 }
-
 window.verPerfil = async (uid) => {
     try {
         const s = await getDoc(doc(db, "users", uid)); if(!s.exists()) return;
@@ -901,7 +855,6 @@ window.verPerfil = async (uid) => {
         document.getElementById('profileModal').style.display = 'flex'; 
     } catch(e) {}
 };
-
 async function carregarPainelAdmin() { 
     const c = document.getElementById('admin-missoes-grid'); if(!c) return;
     c.innerHTML='<p>Carregando...</p>'; 
