@@ -195,6 +195,15 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 .battle-mini-btn:hover { background: #555; color: white; }
 
 /* Feed */
+/* --- INÍCIO DA CORREÇÃO DO FEED --- */
+
+/* Centraliza a coluna do feed e limita a largura (Estilo Celular) */
+#feed {
+    max-width: 500px;
+    margin: 0 auto;
+    width: 100%;
+}
+
 .create-post { background: var(--card-bg); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border-color); }
 .create-post textarea { width: 100%; padding: 10px; border: none; outline: none; background: transparent; color: var(--text-color); resize: none; font-size: 1rem; }
 .post-tools { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 10px; margin-top: 10px; }
@@ -217,11 +226,25 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 .post-dropdown-item { padding: 10px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: var(--text-color); }
 .post-dropdown-item.danger { color: var(--danger-color); }
 .post-content { padding: 0 10px 10px 10px; line-height: 1.5; white-space: pre-wrap; font-size: 0.95rem; }
-.post-image { width: 100%; height: auto; display: block; border-top: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); max-height: 600px; object-fit: cover; }
+
+/* Correção da Imagem: Contain para não cortar, fundo preto e altura auto */
+.post-image { 
+    width: 100%; 
+    height: auto; 
+    display: block; 
+    border-top: 1px solid var(--border-color); 
+    border-bottom: 1px solid var(--border-color); 
+    max-height: 600px; 
+    object-fit: contain; 
+    background-color: #000; 
+}
+
 .post-actions { display: flex; padding: 10px; gap: 15px; }
 .action-btn { background: none; border: none; cursor: pointer; color: var(--text-color); font-size: 1.5rem; display: flex; align-items: center; gap: 5px; padding: 0; }
 .action-btn.liked { color: var(--danger-color); }
 .edit-textarea { width: 100%; border: 1px solid var(--primary-color); border-radius: 4px; padding: 10px; margin: 10px 0; }
+
+/* --- FIM DA CORREÇÃO --- */
 
 /* Rankings */
 .rankings-wrapper { display: flex; gap: 20px; flex-wrap: wrap; padding-bottom: 20px; }
