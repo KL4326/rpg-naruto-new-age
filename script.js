@@ -520,44 +520,97 @@ function criarCardLoja(containerId, dados, id, tipo, buyFn, clickFn) {
     }
 }
 async function carregarLoja() {
+    const c = document.getElementById('loja-jutsus-grid'); 
+    if (!c) return;
+    
     try {
-        if (!currentUserData) return;
-        const c = document.getElementById('loja-jutsus-grid'); if(!c) return; c.innerHTML = '';
-        const m = currentUserData.meusJutsus || []; 
-        const isAdmin = auth.currentUser && auth.currentUser.email === "admin@rpgnaruto.com";
+        c.innerHTML = '<p style="color:#777;">Invocando pergaminhos...</p>';
+        
+        if (!currentUserData) {
+            console.error("Dados do usuário não carregados.");
+            return;
+        }
+
+        // 1. Verificação segura de Admin
+        let isAdmin = false;
+        if (auth.currentUser && auth.currentUser.email === "admin@rpgnaruto.com") {
+            isAdmin = true;
+        }
+
+        // 2. Coleta nome e apelido de forma segura (sempre minúsculo e sem espaços sobrando)
+        const nomePlayer = currentUserData.nome ? String(currentUserData.nome).trim().toLowerCase() : "";
+        const apelidoPlayer = currentUserData.apelido ? String(currentUserData.apelido).trim().toLowerCase() : "";
+
         const snap = await getDocs(collection(db, "jutsus"));
         let lista = [];
-        
-        snap.forEach(d => { 
-            try { 
-                let i = d.data(); 
-                i = aplicarEscalaPersonalizada(i); 
-                
-                let p = i.restrito_a || [];
-                
-                // Se o Firebase mandar como texto (ex: "Sasuke, Naruto"), converte para lista
-                if (typeof p === 'string') {
-                    p = p.split(',');
-                }
-                
-                // Limpa os nomes (tira espaços, deixa minúsculo e ignora os vazios)
-                p = p.map(nome => String(nome).trim().toLowerCase()).filter(nome => nome !== "");
 
-                // Se houver restrição e não for admin, verifica o nome e apelido do jogador
-                if(!isAdmin && p.length > 0) {
-                    const nomePlayer = (currentUserData.nome || "").trim().toLowerCase();
-                    const apelidoPlayer = (currentUserData.apelido || "").trim().toLowerCase();
-                    
-                    if (!p.includes(nomePlayer) && !p.includes(apelidoPlayer)) return; 
-                }
+        snap.forEach(d => {
+            try {
+                let i = d.data();
+                i = aplicarEscalaPersonalizada(i);
                 
-                lista.push({id:d.id, ...i}); 
-            } catch(e){} 
+                let restritos = i.restrito_a;
+                let permiteAcesso = true; // Por padrão, o jutsu é liberado
+                
+                // 3. Lógica blindada para analisar a restrição
+                if (restritos) {
+                    let listaRestrita = [];
+                    
+                    // Se o Firebase mandou como Texto (ex: "Sasuke, Naruto")
+                    if (typeof restritos === 'string') {
+                        listaRestrita = restritos.split(',');
+                    } 
+                    // Se o Firebase mandou como Array
+                    else if (Array.isArray(restritos)) {
+                        listaRestrita = restritos;
+                    }
+
+                    // Limpa a lista (tudo minúsculo, remove espaços nas bordas e remove itens vazios)
+                    listaRestrita = listaRestrita
+                        .map(n => String(n).trim().toLowerCase())
+                        .filter(n => n !== "");
+
+                    // 4. Aplica a barreira se houver nomes restritos e o usuário não for admin
+                    if (listaRestrita.length > 0 && !isAdmin) {
+                        // Se nem o nome nem o apelido estiverem na lista de restrição, bloqueia o acesso
+                        if (!listaRestrita.includes(nomePlayer) && !listaRestrita.includes(apelidoPlayer)) {
+                            permiteAcesso = false;
+                        }
+                    }
+                }
+
+                // Só adiciona na loja se o acesso foi permitido
+                if (permiteAcesso) {
+                    lista.push({ id: d.id, ...i });
+                }
+
+            } catch(erroItem) {
+                // Se der erro em um jutsu específico, mostra no console mas não quebra a loja inteira
+                console.error("Erro ao processar o jutsu ID:", d.id, erroItem);
+            }
         });
-        
+
+        // 5. Renderização na tela
+        c.innerHTML = '';
         lista = aplicarOrdenacao(lista, ordenacaoAtual);
-        lista.forEach(item => criarCardLoja('loja-jutsus-grid', item, item.id, 'jutsu', null, (id, i) => verDetalhesJutsu(id, i)));
-    } catch(e) {}
+        
+        if (lista.length === 0) {
+            c.innerHTML = '<p style="color:#777;">A loja de jutsus está vazia.</p>';
+        } else {
+            lista.forEach(item => {
+                criarCardLoja('loja-jutsus-grid', item, item.id, 'jutsu', null, (id, dados) => {
+                    // Proteção ao clicar
+                    if (typeof window.verDetalhesJutsu === 'function') {
+                        window.verDetalhesJutsu(id, dados);
+                    }
+                });
+            });
+        }
+
+    } catch (erroGeral) {
+        console.error("Erro crítico na loja de jutsus:", erroGeral);
+        c.innerHTML = '<p style="color:red;">Ocorreu um erro ao carregar a loja. Verifique o console (F12).</p>';
+    }
 }
 async function carregarMeusJutsus(l) {
     try {
