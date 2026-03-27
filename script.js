@@ -523,12 +523,38 @@ async function carregarLoja() {
     try {
         if (!currentUserData) return;
         const c = document.getElementById('loja-jutsus-grid'); if(!c) return; c.innerHTML = '';
+        const m = currentUserData.meusJutsus || []; 
         const isAdmin = auth.currentUser.email === "admin@rpgnaruto.com";
         const snap = await getDocs(collection(db, "jutsus"));
         let lista = [];
-        snap.forEach(d => { try { let i = d.data(); const p = i.restrito_a || []; if(!isAdmin && p.length > 0 && !p.includes(currentUserData.nome || "")) return; lista.push({id:d.id, ...i}); } catch(e){} });
+        
+        snap.forEach(d => { 
+            try { 
+                let i = d.data(); 
+                i = aplicarEscalaPersonalizada(i); 
+                
+                // --- LÓGICA BLINDADA DE RESTRIÇÃO ---
+                let restritos = i.restrito_a;
+                if (restritos) {
+                    let listaRestrita = [];
+                    if (typeof restritos === 'string') listaRestrita = restritos.split(',').map(n => n.trim().toLowerCase());
+                    else if (Array.isArray(restritos)) listaRestrita = restritos.map(n => n.trim().toLowerCase());
+                    listaRestrita = listaRestrita.filter(n => n !== "");
+
+                    if (listaRestrita.length > 0 && !isAdmin) {
+                        const nomePlayer = (currentUserData.nome || "").trim().toLowerCase();
+                        const apelidoPlayer = (currentUserData.apelido || "").trim().toLowerCase();
+                        if (!listaRestrita.includes(nomePlayer) && !listaRestrita.includes(apelidoPlayer)) return;
+                    }
+                }
+                // ------------------------------------
+
+                lista.push({id:d.id, ...i}); 
+            } catch(e){} 
+        });
+        
         lista = aplicarOrdenacao(lista, ordenacaoAtual);
-        lista.forEach(item => criarCardLoja('loja-jutsus-grid', item, item.id, 'jutsu', null, (id, i) => verDetalhesJutsu(id, i)));
+        lista.forEach(item => criarCardLoja('loja-jutsus-grid', item, item.id, 'jutsu', null, (id, i) => window.verDetalhesJutsu(id, i)));
     } catch(e) {}
 }
 async function carregarMeusJutsus(l) {
@@ -649,39 +675,117 @@ async function carregarPersonagens() {
 async function carregarConquistas() {
     try {
         if (!currentUserData) return;
-        const cTurno = document.getElementById('conquistas-turno-grid'); const cCards = document.getElementById('conquistas-cards-grid'); if(!cTurno) return;
-        const m = currentUserData.statusConquistas || {}; cTurno.innerHTML = ''; cCards.innerHTML = '';
+        const cTurno = document.getElementById('conquistas-turno-grid'); 
+        const cCards = document.getElementById('conquistas-cards-grid');
+        if(!cTurno || !cCards) return;
+
+        const m = currentUserData.statusConquistas || {};
+        cTurno.innerHTML = ''; cCards.innerHTML = '';
+        
         const s = await getDocs(collection(db, "conquistas"));
+        if(s.empty) { cTurno.innerHTML = '<p>Nenhuma conquista.</p>'; return; }
+        
         const isAdmin = auth.currentUser.email === "admin@rpgnaruto.com";
         s.forEach(d => {
-            const i = d.data(); const p = i.restrito_a || [];
-            if (!isAdmin && p.length > 0 && !p.includes(currentUserData.nome)) return;
-            const st = m[d.id]; const k = document.createElement('div'); k.className = 'card jutsu-card-click';
-            let btn = ""; const r = i.recompensa || 0; const x = i.xp || 0; const en = i.en || 0; 
-            if(!st) btn = `<button class="mission-btn-start" onclick="event.stopPropagation(); solicitarConquista('${d.id}', this)">Reivindicar</button>`;
+            const i = d.data(); if(!i) return;
+
+            // --- LÓGICA BLINDADA DE RESTRIÇÃO ---
+            let restritos = i.restrito_a;
+            if (restritos) {
+                let lista = [];
+                if (typeof restritos === 'string') lista = restritos.split(',').map(n => n.trim().toLowerCase());
+                else if (Array.isArray(restritos)) lista = restritos.map(n => n.trim().toLowerCase());
+                lista = lista.filter(n => n !== "");
+
+                if (lista.length > 0 && !isAdmin) {
+                    const nomePlayer = (currentUserData.nome || "").trim().toLowerCase();
+                    const apelidoPlayer = (currentUserData.apelido || "").trim().toLowerCase();
+                    if (!lista.includes(nomePlayer) && !lista.includes(apelidoPlayer)) return;
+                }
+            }
+            // ------------------------------------
+            
+            const st = m[d.id]; 
+            const k = document.createElement('div'); k.className = 'card jutsu-card-click';
+            let btn = "";
+            const r = i.recompensa || 0; const x = i.xp || 0; const en = i.en || 0; 
+            
+            if(!st) btn = `<button class="mission-btn-start" onclick="event.stopPropagation(); window.solicitarConquista('${d.id}', this)">Reivindicar</button>`;
             else if(st === 'solicitado') btn = `<button class="mission-btn-wait" onclick="event.stopPropagation();">Aguardando</button>`;
-            else if(st === 'aprovado') btn = `<button class="mission-btn-collect" onclick="event.stopPropagation(); coletarConquista('${d.id}', ${r}, ${x}, ${en}, this)">Coletar</button>`;
-            else if(st === 'concluido') btn = `<button class="mission-btn-done" onclick="event.stopPropagation();">Feito</button>`;
-            k.onclick = () => verDetalhesConquista(d.id, i, st);
-            k.innerHTML = `<img src="${i.imagem||IMG_PADRAO}" class="card-img-top"><h4>${i.titulo}</h4><small>${formatarNum(r)} Ryos</small>${btn}`;
-            if((i.categoria||"").includes('card')) cCards.appendChild(k); else cTurno.appendChild(k);
+            else if(st === 'aprovado') btn = `<button class="mission-btn-collect" onclick="event.stopPropagation(); window.coletarConquista('${d.id}', ${r}, ${x}, ${en}, this)">Coletar</button>`;
+            else if(st === 'concluido') btn = `<button class="mission-btn-done" onclick="event.stopPropagation();">Concluído</button>`;
+            
+            k.onclick = () => window.verDetalhesConquista(d.id, i, st);
+            k.innerHTML = `<img src="${i.imagem||IMG_PADRAO}" class="card-img-top"><h4>${i.titulo}</h4><small style="color:var(--primary-color)">${formatarNum(r)} Ryos</small>${btn}`;
+            
+            const cat = (i.categoria || "turno").toLowerCase().trim();
+            if(cat.includes('card')) cCards.appendChild(k); else cTurno.appendChild(k);
         });
-    } catch(e) {}
+
+        if(cTurno.innerHTML === '') cTurno.innerHTML = '<p style="color:#777;">Vazio.</p>';
+        if(cCards.innerHTML === '') cCards.innerHTML = '<p style="color:#777;">Vazio.</p>';
+
+    } catch(e) { 
+        cTurno.innerHTML = '<p>Erro.</p>';
+        cCards.innerHTML = '<p>Erro.</p>';
+    } 
 }
 async function carregarMissoes() { 
     try {
         if (!currentUserData) return;
-        const cTurno = document.getElementById('missoes-turno-grid'); const cCards = document.getElementById('missoes-cards-grid'); if(!cTurno) return;
-        const m = currentUserData.statusMissoes || {}; cTurno.innerHTML = ''; cCards.innerHTML = '';
+        const cTurno = document.getElementById('missoes-turno-grid'); 
+        const cCards = document.getElementById('missoes-cards-grid');
+        if(!cTurno || !cCards) return;
+
+        const m = currentUserData.statusMissoes || {}; 
+        cTurno.innerHTML = ''; cCards.innerHTML = '';
+
         const s = await getDocs(collection(db, "missoes"));
         const isAdmin = auth.currentUser.email === "admin@rpgnaruto.com";
         s.forEach(d => { 
-            const i = d.data(); const st = m[d.id] || 'neutro'; const k = document.createElement('div'); k.className = 'card jutsu-card-click'; 
-            k.onclick = () => verDetalhesMissao(d.id, i, st); 
-            k.innerHTML=`<span class="rank-tag rank-${(i.rank||'d').toLowerCase()}">Rank ${i.rank||'D'}</span><h4>${i.titulo}</h4><p>${st==='neutro'?'Disponível':st}</p>`; 
-            if((i.categoria||"").includes('card')) cCards.appendChild(k); else cTurno.appendChild(k);
+            const i = d.data();
+            if(!i) return;
+
+            // --- LÓGICA BLINDADA DE RESTRIÇÃO ---
+            let restritos = i.restrito_a;
+            if (restritos) {
+                let lista = [];
+                // Se for texto (mesmo separado por vírgula), converte para array, tira espaços e deixa minúsculo
+                if (typeof restritos === 'string') {
+                    lista = restritos.split(',').map(n => n.trim().toLowerCase());
+                } else if (Array.isArray(restritos)) {
+                    lista = restritos.map(n => n.trim().toLowerCase());
+                }
+                
+                // Remove campos que ficaram em branco
+                lista = lista.filter(n => n !== "");
+
+                if (lista.length > 0 && !isAdmin) {
+                    const nomePlayer = (currentUserData.nome || "").trim().toLowerCase();
+                    const apelidoPlayer = (currentUserData.apelido || "").trim().toLowerCase();
+                    
+                    // Se o nome e o apelido não estiverem na lista exata, a missão NÃO aparece
+                    if (!lista.includes(nomePlayer) && !lista.includes(apelidoPlayer)) return;
+                }
+            }
+            // ------------------------------------
+
+            const st = m[d.id] || 'neutro'; const k = document.createElement('div'); k.className = 'card jutsu-card-click'; 
+            const rankClass = `rank-${(i.rank||'d').toLowerCase()}`;
+            const rankHtml = `<span class="rank-tag ${rankClass}">Rank ${i.rank||'D'}</span>`;
+            const r = i.recompensa || 0; const x = i.xp || 0; const en = i.en || 0; 
+            k.onclick = () => window.verDetalhesMissao(d.id, i, st); 
+            k.innerHTML=`${rankHtml}<h4>${i.titulo}</h4><p style="font-size:0.8rem; color:${st==='em_andamento'?'orange':st==='aprovado'?'green':'#777'};">${st==='neutro'?'Disponível':st}</p><small style="color:var(--primary-color)">${x} XP | ${formatarNum(r)} Ryos</small>`; 
+            
+            const cat = (i.categoria || "turno").toLowerCase().trim();
+            if(cat.includes('card')) cCards.appendChild(k); else cTurno.appendChild(k);
         }); 
-    } catch(e) {}
+        
+        if(cTurno.innerHTML === '') cTurno.innerHTML = '<p style="color:#777;">Vazio.</p>';
+        if(cCards.innerHTML === '') cCards.innerHTML = '<p style="color:#777;">Vazio.</p>';
+    } catch(e) { 
+        cTurno.innerHTML = '<p>Erro.</p>'; cCards.innerHTML = '<p>Erro.</p>';
+    } 
 }
 
 async function carregarRankings() { 
