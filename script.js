@@ -524,7 +524,7 @@ async function carregarLoja() {
         if (!currentUserData) return;
         const c = document.getElementById('loja-jutsus-grid'); if(!c) return; c.innerHTML = '';
         const m = currentUserData.meusJutsus || []; 
-        const isAdmin = auth.currentUser.email === "admin@rpgnaruto.com";
+        const isAdmin = auth.currentUser && auth.currentUser.email === "admin@rpgnaruto.com";
         const snap = await getDocs(collection(db, "jutsus"));
         let lista = [];
         
@@ -533,28 +533,30 @@ async function carregarLoja() {
                 let i = d.data(); 
                 i = aplicarEscalaPersonalizada(i); 
                 
-                // --- LÓGICA BLINDADA DE RESTRIÇÃO ---
-                let restritos = i.restrito_a;
-                if (restritos) {
-                    let listaRestrita = [];
-                    if (typeof restritos === 'string') listaRestrita = restritos.split(',').map(n => n.trim().toLowerCase());
-                    else if (Array.isArray(restritos)) listaRestrita = restritos.map(n => n.trim().toLowerCase());
-                    listaRestrita = listaRestrita.filter(n => n !== "");
-
-                    if (listaRestrita.length > 0 && !isAdmin) {
-                        const nomePlayer = (currentUserData.nome || "").trim().toLowerCase();
-                        const apelidoPlayer = (currentUserData.apelido || "").trim().toLowerCase();
-                        if (!listaRestrita.includes(nomePlayer) && !listaRestrita.includes(apelidoPlayer)) return;
-                    }
+                let p = i.restrito_a || [];
+                
+                // Se o Firebase mandar como texto (ex: "Sasuke, Naruto"), converte para lista
+                if (typeof p === 'string') {
+                    p = p.split(',');
                 }
-                // ------------------------------------
+                
+                // Limpa os nomes (tira espaços, deixa minúsculo e ignora os vazios)
+                p = p.map(nome => String(nome).trim().toLowerCase()).filter(nome => nome !== "");
 
+                // Se houver restrição e não for admin, verifica o nome e apelido do jogador
+                if(!isAdmin && p.length > 0) {
+                    const nomePlayer = (currentUserData.nome || "").trim().toLowerCase();
+                    const apelidoPlayer = (currentUserData.apelido || "").trim().toLowerCase();
+                    
+                    if (!p.includes(nomePlayer) && !p.includes(apelidoPlayer)) return; 
+                }
+                
                 lista.push({id:d.id, ...i}); 
             } catch(e){} 
         });
         
         lista = aplicarOrdenacao(lista, ordenacaoAtual);
-        lista.forEach(item => criarCardLoja('loja-jutsus-grid', item, item.id, 'jutsu', null, (id, i) => window.verDetalhesJutsu(id, i)));
+        lista.forEach(item => criarCardLoja('loja-jutsus-grid', item, item.id, 'jutsu', null, (id, i) => verDetalhesJutsu(id, i)));
     } catch(e) {}
 }
 async function carregarMeusJutsus(l) {
