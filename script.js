@@ -519,6 +519,29 @@ function criarCardLoja(containerId, dados, id, tipo, buyFn, clickFn) {
         }); 
     }
 }
+
+function aplicarEscalaPersonalizada(dadosJutsu) {
+    if (!dadosJutsu) return {}; 
+    let dadosFinais = { ...dadosJutsu };
+    try {
+        if (!auth.currentUser) return dadosFinais;
+        const uid = auth.currentUser.uid;
+        // Verifica se existem ajustes manuais de admin para este usuário no jutsu
+        if (dadosFinais.escalonamento && typeof dadosFinais.escalonamento === 'object') {
+            const p = dadosFinais.escalonamento[uid];
+            if (p) {
+                if (p.chakra !== undefined) dadosFinais.chakra = p.chakra;
+                if (p.stamina !== undefined) dadosFinais.stamina = p.stamina;
+                if (p.dano !== undefined) dadosFinais.dano = p.dano;
+                if (p.descricao !== undefined) dadosFinais.descricao = p.descricao;
+            }
+        }
+    } catch (err) { 
+        return dadosJutsu; 
+    }
+    return dadosFinais;
+}
+
 async function carregarLoja() {
     const c = document.getElementById('loja-jutsus-grid'); 
     if (!c) return;
