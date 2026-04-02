@@ -1,5 +1,14 @@
 /* --- VARIÁVEIS GLOBAIS --- */
 :root {
+    /* Adicione esta cor nas suas variáveis no topo do arquivo */
+    --stat-bijuu: #c0392b; 
+}
+
+/* Se quiser um estilo diferente para o ícone da Bijuu */
+#dash-bijuu .element-icon, #profile-bijuu-container .element-icon {
+    border-color: #c0392b;
+    box-shadow: 0 0 5px rgba(192, 57, 43, 0.5);
+}
     --bg-color: #fafafa; 
     --sidebar-bg: #ffffff; 
     --text-color: #262626; 
