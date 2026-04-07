@@ -974,29 +974,6 @@ function renderRank(c, t, l, f) {
     c.innerHTML += h; 
 }
 
-window.verDetalhesJutsu = (id,d) => abrirModalSimples('jutsu',d); 
-window.verDetalhesFerramenta = (id,d) => abrirModalSimples('tool',d); 
-window.verDetalhesItem = (id,d) => abrirModalSimples('item',d);
-window.fecharJutsuModal = () => document.getElementById('jutsuModal').style.display='none';
-window.fecharToolModal = () => document.getElementById('toolModal').style.display='none';
-window.fecharItemModal = () => document.getElementById('itemModal').style.display='none';
-window.fecharConquistaModal = () => document.getElementById('conquistaModal').style.display='none';
-window.fecharMissaoModal = () => document.getElementById('missaoModal').style.display='none';
-window.fecharProfileModal = () => document.getElementById('profileModal').style.display = 'none';
-window.closeModal = () => document.getElementById('commentModal').style.display = 'none';
-window.openGiftModal = (uid, nome) => { currentGiftTarget = uid; document.getElementById('gift-target-name').innerText = nome; document.getElementById('giftModal').style.display = 'flex'; };
-window.enviarPresente = async () => {
-    const qtd = parseInt(document.getElementById('gift-amount').value);
-    const tipo = document.getElementById('gift-currency').value;
-    if(!qtd || !currentGiftTarget) return;
-    const field = tipo === 'ryos' ? 'ryos' : 'essencia_ninja';
-    if((currentUserData[field] || 0) < qtd) return alert("Fundos insuficientes!");
-    try {
-        await updateDoc(doc(db, "users", auth.currentUser.uid), { [field]: increment(-qtd) });
-        await updateDoc(doc(db, "users", currentGiftTarget), { [field]: increment(qtd) });
-        alert("Enviado!"); document.getElementById('giftModal').style.display = 'none';
-    } catch(e) { alert("Erro ao enviar."); }
-};
 window.consumirItem = async (id, nome) => { 
     let itemData = globalItensMap[id];
     if (itemData && itemData.type === 'tool' && itemData.stamina > 0) {
