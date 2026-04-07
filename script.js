@@ -537,6 +537,7 @@ function criarCardLoja(containerId, dados, id, tipo, buyFn, clickFn) {
     }
 }
 
+// --- 1. FUNÇÃO DE ESCALA (ESSENCIAL) ---
 function aplicarEscalaPersonalizada(dadosJutsu) {
     if (!dadosJutsu) return {}; 
     let dadosFinais = { ...dadosJutsu };
@@ -555,6 +556,50 @@ function aplicarEscalaPersonalizada(dadosJutsu) {
     } catch (err) { return dadosJutsu; }
     return dadosFinais;
 }
+
+// --- 2. FUNÇÃO DO MODAL CORRIGIDA ---
+function abrirModalSimples(tipo, dados) {
+    // Aplica escala se for jutsu
+    let info = tipo === 'jutsu' ? aplicarEscalaPersonalizada(dados) : dados;
+    
+    // DEBUG: Isso mostrará no console (F12) o que o Firebase enviou
+    console.log("Abrindo modal de " + tipo, info);
+
+    const modal = document.getElementById(tipo + 'Modal');
+    if (!modal) return;
+
+    // Preenche textos básicos
+    const nome = document.getElementById(tipo + '-name-modal');
+    if(nome) nome.innerText = info.nome || "Sem nome";
+    
+    const desc = document.getElementById(tipo + '-desc-modal');
+    if(desc) desc.innerText = info.descricao || "Sem descrição";
+    
+    const img = document.getElementById(tipo + '-img-modal');
+    if(img) img.src = info.imagem || IMG_PADRAO;
+
+    // --- LOGICA DA STAMINA E STATUS ---
+    const statsRow = document.getElementById(tipo + '-stats-row');
+    if (statsRow) {
+        let h = "";
+        
+        if (info.dano) h += `<span class="jutsu-stat-tag tag-dano">Dano: ${info.dano}</span>`;
+        if (info.chakra) h += `<span class="jutsu-stat-tag tag-chakra">Chakra: ${info.chakra}</span>`;
+        
+        // Verifica se existe stamina (aceita número ou texto)
+        if (info.stamina !== undefined && info.stamina !== null && info.stamina !== "") {
+            h += `<span class="jutsu-stat-tag tag-stamina">Stamina: ${info.stamina}</span>`;
+        }
+        
+        if (info.bonus) h += `<span class="jutsu-stat-tag tag-buff">${info.bonus}</span>`;
+        h += gerarTagsBonus(info);
+        
+        statsRow.innerHTML = h;
+    }
+
+    modal.style.display = 'flex';
+}
+
 
 async function carregarLoja() {
     const c = document.getElementById('loja-jutsus-grid'); 
@@ -649,63 +694,6 @@ async function carregarLoja() {
         c.innerHTML = '<p style="color:red;">Ocorreu um erro ao carregar a loja. Verifique o console (F12).</p>';
     }
 }
-
-window.abrirModalSimples = (tipo, dados) => {
-    // 1. Se for um jutsu, aplica a escala personalizada para mostrar valores reais de dano/chakra/stamina
-    let info = tipo === 'jutsu' ? aplicarEscalaPersonalizada(dados) : dados;
-
-    // 2. Localiza o modal correto no HTML (ex: jutsuModal, toolModal ou itemModal)
-    const modal = document.getElementById(tipo + 'Modal');
-    if (!modal) return;
-
-    // 3. Preenche os campos básicos de texto e imagem
-    const nameEl = document.getElementById(tipo + '-name-modal');
-    if (nameEl) nameEl.innerText = info.nome;
-
-    const descEl = document.getElementById(tipo + '-desc-modal');
-    if (descEl) descEl.innerText = info.descricao || "";
-
-    const imgEl = document.getElementById(tipo + '-img-modal');
-    if (imgEl) imgEl.src = info.imagem || IMG_PADRAO;
-    
-    // 4. Preenche o preço formatado
-    const precoEl = document.getElementById(tipo + '-price-modal');
-    if (precoEl) precoEl.innerText = "Valor: " + formatarNum(info.preco) + " Ryos";
-
-    // 5. Preenche a linha de Status (Dano, Chakra, Stamina e Bônus)
-    const statsRow = document.getElementById(tipo + '-stats-row');
-    if (statsRow) {
-        let h = "";
-        
-        // Exibe o Dano (comum em ferramentas e jutsus)
-        if (info.dano) h += `<span class="jutsu-stat-tag tag-dano">Dano: ${info.dano}</span>`;
-        
-        // Exibe o gasto de Chakra
-        if (info.chakra) h += `<span class="jutsu-stat-tag tag-chakra">Chakra: ${info.chakra}</span>`;
-        
-        // --- EXIBE O GASTO DE STAMINA (Para Jutsus e Ferramentas) ---
-        if (info.stamina) {
-            h += `<span class="jutsu-stat-tag tag-stamina">Stamina: ${info.stamina}</span>`;
-        }
-        
-        // Exibe bônus fixos de texto se houver
-        if (info.bonus) h += `<span class="jutsu-stat-tag tag-buff">${info.bonus}</span>`;
-        
-        // Adiciona automaticamente as tags de bônus de atributos (FOR, DEF, etc)
-        h += gerarTagsBonus(info);
-        
-        statsRow.innerHTML = h;
-    }
-
-    // 6. Preenche o Rank (apenas se for Jutsu)
-    if (tipo === 'jutsu') {
-        const rankEl = document.getElementById(tipo + '-rank-modal');
-        if (rankEl) rankEl.innerText = "Rank " + info.rank;
-    }
-
-    // 7. Abre o modal na tela
-    modal.style.display = 'flex';
-};
 
 async function carregarMeusJutsus(l) {
     try {
@@ -1321,7 +1309,11 @@ window.aprovarConquista = async (uid, cid) => {
     } 
 };
 
-window.renderFeed = renderFeed;
-window.carregarMeusJutsus = carregarMeusJutsus;
-window.aplicarEscalaPersonalizada = aplicarEscalaPersonalizada; // Essencial para a loja
+window.aplicarEscalaPersonalizada = aplicarEscalaPersonalizada;
 window.abrirModalSimples = abrirModalSimples;
+window.verDetalhesJutsu = (id, d) => abrirModalSimples('jutsu', d);
+window.verDetalhesFerramenta = (id, d) => abrirModalSimples('tool', d);
+window.verDetalhesItem = (id, d) => abrirModalSimples('item', d);
+window.fecharJutsuModal = () => document.getElementById('jutsuModal').style.display='none';
+window.fecharToolModal = () => document.getElementById('toolModal').style.display='none';
+window.fecharItemModal = () => document.getElementById('itemModal').style.display='none';
