@@ -1320,3 +1320,11 @@ window.aprovarConquista = async (uid, cid) => {
         carregarPainelAdmin(); 
     } 
 };
+
+window.renderFeed = renderFeed;
+window.carregarMeusJutsus = carregarMeusJutsus;
+window.aplicarEscalaPersonalizada = aplicarEscalaPersonalizada; // Essencial para a loja
+window.abrirModalSimples = abrirModalSimples;
+```.
+
+**Observação sobre o Firebase:** Verifique se os nomes dos campos no seu banco de dados do Firebase estão escritos exatamente como `stamina` (em letras minúsculas). Se no banco estiver como "Stamina" ou outro nome, o JavaScript não conseguirá ler o valor corretamente.
