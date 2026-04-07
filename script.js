@@ -557,45 +557,46 @@ function aplicarEscalaPersonalizada(dadosJutsu) {
     return dadosFinais;
 }
 
-// --- 2. FUNÇÃO DO MODAL CORRIGIDA ---
-function abrirModalSimples(tipo, dados) {
-    // Aplica escala se for jutsu
-    let info = tipo === 'jutsu' ? aplicarEscalaPersonalizada(dados) : dados;
+// Esta é a única versão da função que deve existir no seu código
+function abrirModalSimples(t, d) {
+    // Aplica escala se for jutsu para pegar os valores de stamina/dano corrigidos
+    let info = t === 'jutsu' ? aplicarEscalaPersonalizada(d) : d;
     
-    // DEBUG: Isso mostrará no console (F12) o que o Firebase enviou
-    console.log("Abrindo modal de " + tipo, info);
-
-    const modal = document.getElementById(tipo + 'Modal');
+    const modal = document.getElementById(t + 'Modal');
     if (!modal) return;
 
     // Preenche textos básicos
-    const nome = document.getElementById(tipo + '-name-modal');
-    if(nome) nome.innerText = info.nome || "Sem nome";
+    if(document.getElementById(t + '-name-modal')) document.getElementById(t + '-name-modal').innerText = info.nome || "Sem nome";
+    if(document.getElementById(t + '-desc-modal')) document.getElementById(t + '-desc-modal').innerText = info.descricao || "";
+    if(document.getElementById(t + '-img-modal')) document.getElementById(t + '-img-modal').src = info.imagem || IMG_PADRAO;
     
-    const desc = document.getElementById(tipo + '-desc-modal');
-    if(desc) desc.innerText = info.descricao || "Sem descrição";
-    
-    const img = document.getElementById(tipo + '-img-modal');
-    if(img) img.src = info.imagem || IMG_PADRAO;
+    const precoEl = document.getElementById(t + '-price-modal');
+    if (precoEl) precoEl.innerText = "Valor: " + formatarNum(info.preco) + " Ryos";
 
-    // --- LOGICA DA STAMINA E STATUS ---
-    const statsRow = document.getElementById(tipo + '-stats-row');
+    // --- LINHA DE STATUS (ONDE A STAMINA APARECE) ---
+    const statsRow = document.getElementById(t + '-stats-row');
     if (statsRow) {
         let h = "";
         
         if (info.dano) h += `<span class="jutsu-stat-tag tag-dano">Dano: ${info.dano}</span>`;
         if (info.chakra) h += `<span class="jutsu-stat-tag tag-chakra">Chakra: ${info.chakra}</span>`;
         
-        // Verifica se existe stamina (aceita número ou texto)
-        if (info.stamina !== undefined && info.stamina !== null && info.stamina !== "") {
+        // VERIFICAÇÃO DA STAMINA (O que estava faltando)
+        if (info.stamina) {
             h += `<span class="jutsu-stat-tag tag-stamina">Stamina: ${info.stamina}</span>`;
         }
         
         if (info.bonus) h += `<span class="jutsu-stat-tag tag-buff">${info.bonus}</span>`;
+        
+        // Adiciona bônus de atributos (FOR, DEF, etc)
         h += gerarTagsBonus(info);
         
         statsRow.innerHTML = h;
     }
+
+    // Rank (Apenas Jutsus)
+    const rankEl = document.getElementById(t + '-rank-modal');
+    if (rankEl && t === 'jutsu') rankEl.innerText = "Rank " + (info.rank || "D");
 
     modal.style.display = 'flex';
 }
