@@ -985,6 +985,7 @@ window.verDetalhesMissao = (id, d, st) => {
 };
 window.iniciarMissao = async (id, btn) => { if(btn) { btn.disabled=true; btn.innerText="..."; } await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusMissoes.${id}`]: 'em_andamento' }); alert("Iniciada!"); };
 window.coletarRecompensa = async (id, r, x, en, rank, btn) => { if(btn) btn.disabled=true; await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(r), xp: increment(x), essencia_ninja: increment(en), [`statusMissoes.${id}`]: 'concluido', [`missoes_concluidas_${rank.toLowerCase()}`]: increment(1) }); alert("Missão cumprida!"); document.getElementById('missaoModal').style.display='none'; };
+
 function abrirModalSimples(t, d) {
     document.getElementById(t+'-name-modal').innerText = d.nome; 
     document.getElementById(t+'-desc-modal').innerText = d.descricao||""; 
@@ -995,7 +996,7 @@ function abrirModalSimples(t, d) {
         document.getElementById(t+'-rank-modal').innerText="Rank "+d.rank; 
         let h=""; if(d.dano) h+=`<span class="jutsu-stat-tag tag-dano">Dano: ${d.dano}</span>`; 
         if(d.chakra) h+=`<span class="jutsu-stat-tag tag-chakra">Chakra: ${d.chakra}</span>`; 
-        if(dados.stamina) h += <span class="jutsu-stat-tag tag-stamina">Stamina: ${dados.stamina}</span>;
+        if(dados.stamina) h +=`<span class="jutsu-stat-tag tag-stamina">Stamina: ${dados.stamina}</span>`;
         h += bonusHtml; document.getElementById('jutsu-stats-row').innerHTML=h; 
     } else if (t === 'tool') {
         document.getElementById(t+'-rank-modal').innerText=d.dano||"Ferramenta";
@@ -1009,6 +1010,7 @@ function abrirModalSimples(t, d) {
     if(t==='item') document.getElementById(t+'-rank-modal').innerText = d.efeito||"Item";
     document.getElementById(t+'Modal').style.display='flex';
 }
+    
 window.openEditProfileModal = () => { document.getElementById('editProfileModal').style.display = 'flex'; document.getElementById('edit-name-input').value = currentUserData.nome || ""; document.getElementById('edit-nick-input').value = currentUserData.apelido || ""; document.getElementById('user-menu').classList.remove('show'); };
 window.closeEditProfileModal = () => document.getElementById('editProfileModal').style.display = 'none';
 window.openChangePasswordModal = () => { document.getElementById('changePasswordModal').style.display='flex'; document.getElementById('user-menu').classList.remove('show'); };
