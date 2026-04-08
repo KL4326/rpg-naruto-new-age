@@ -987,29 +987,52 @@ window.iniciarMissao = async (id, btn) => { if(btn) { btn.disabled=true; btn.inn
 window.coletarRecompensa = async (id, r, x, en, rank, btn) => { if(btn) btn.disabled=true; await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(r), xp: increment(x), essencia_ninja: increment(en), [`statusMissoes.${id}`]: 'concluido', [`missoes_concluidas_${rank.toLowerCase()}`]: increment(1) }); alert("Missão cumprida!"); document.getElementById('missaoModal').style.display='none'; };
 
 function abrirModalSimples(t, d) {
-    document.getElementById(t+'-name-modal').innerText = d.nome; 
-    document.getElementById(t+'-desc-modal').innerText = d.descricao||""; 
-    document.getElementById(t+'-price-modal').innerText = "Valor: "+formatarNum(d.preco)+" Ryos";
-    document.getElementById(t+'-img-modal').src = d.imagem||IMG_PADRAO;
+    // 1. Preenchimento básico (funciona para todos)
+    document.getElementById(t + '-name-modal').innerText = d.nome;
+    document.getElementById(t + '-desc-modal').innerText = d.descricao || "";
+    document.getElementById(t + '-price-modal').innerText = "Valor: " + formatarNum(d.preco) + " Ryos";
+    document.getElementById(t + '-img-modal').src = d.imagem || IMG_PADRAO;
+
     let bonusHtml = gerarTagsBonus(d);
-    if(t==='jutsu'){ 
-        document.getElementById(t+'-rank-modal').innerText="Rank "+d.rank; 
-        let h=""; if(d.dano) h+=`<span class="jutsu-stat-tag tag-dano">Dano: ${d.dano}</span>`; 
-        if(d.chakra) h+=`<span class="jutsu-stat-tag tag-chakra">Chakra: ${d.chakra}</span>`; 
-        if(dados.stamina) h +=`<span class="jutsu-stat-tag tag-stamina">Stamina: ${dados.stamina}</span>`;
-        h += bonusHtml; document.getElementById('jutsu-stats-row').innerHTML=h; 
+    let h = ""; // Variável para acumular as tags de status
+
+    // 2. Lógica para JUTSUS
+    if (t === 'jutsu') {
+        document.getElementById(t + '-rank-modal').innerText = "Rank " + d.rank;
+        
+        if (d.dano) h += `<span class="jutsu-stat-tag tag-dano">Dano: ${d.dano}</span>`;
+        if (d.chakra) h += `<span class="jutsu-stat-tag tag-chakra">Chakra: ${d.chakra}</span>`;
+        
+        // CORREÇÃO AQUI: Adicionado crases e trocado 'dados' por 'd'
+        if (d.stamina) h += `<span class="jutsu-stat-tag tag-stamina">Stamina: ${d.stamina}</span>`;
+        
+        h += bonusHtml;
+        document.getElementById('jutsu-stats-row').innerHTML = h;
+
+    // 3. Lógica para FERRAMENTAS (TOOLS)
     } else if (t === 'tool') {
-        document.getElementById(t+'-rank-modal').innerText=d.dano||"Ferramenta";
-        document.getElementById('tool-stats-row').innerHTML = bonusHtml;
-    let h = "";
-    let custoStamina = 0;
-    if(dados.stamina) custoStamina = Number(dados.stamina);
-    if(custoStamina > 0) { 
-        h += `<span class="jutsu-stat-tag tag-stamina">Stamina: ${custoStamina}</span>`; 
-    } else { document.getElementById('item-stats-row').innerHTML = bonusHtml; }
-    if(t==='item') document.getElementById(t+'-rank-modal').innerText = d.efeito||"Item";
-    document.getElementById(t+'Modal').style.display='flex';
+        document.getElementById(t + '-rank-modal').innerText = d.dano || "Ferramenta";
+        
+        if (d.dano) h += `<span class="jutsu-stat-tag tag-dano">Dano: ${d.dano}</span>`;
+        
+        // CORREÇÃO AQUI: Stamina para ferramentas
+        if (d.stamina) h += `<span class="jutsu-stat-tag tag-stamina">Stamina: ${d.stamina}</span>`;
+        
+        h += bonusHtml;
+        document.getElementById('tool-stats-row').innerHTML = h;
+
+    // 4. Lógica para ITENS
+    } else if (t === 'item') {
+        document.getElementById(t + '-rank-modal').innerText = d.efeito || "Item";
+        document.getElementById('item-stats-row').innerHTML = bonusHtml;
+    }
+
+    // 5. Exibe o modal
+    document.getElementById(t + 'Modal').style.display = 'flex';
 }
+
+// Não esqueça de exportar para o window no final do script.js:
+window.abrirModalSimples = abrirModalSimples;
     
 window.openEditProfileModal = () => { document.getElementById('editProfileModal').style.display = 'flex'; document.getElementById('edit-name-input').value = currentUserData.nome || ""; document.getElementById('edit-nick-input').value = currentUserData.apelido || ""; document.getElementById('user-menu').classList.remove('show'); };
 window.closeEditProfileModal = () => document.getElementById('editProfileModal').style.display = 'none';
