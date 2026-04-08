@@ -1281,3 +1281,65 @@ window.verDetalhesItem = (id, d) => abrirModalSimples('item', d);
 window.fecharJutsuModal = () => document.getElementById('jutsuModal').style.display='none';
 window.fecharToolModal = () => document.getElementById('toolModal').style.display='none';
 window.fecharItemModal = () => document.getElementById('itemModal').style.display='none';
+
+// --- FUNÇÕES PARA FECHAR OS MODAIS ---
+
+// Fecha o modal de Comentários/Postagem (Feed)
+window.closeModal = () => {
+    const modal = document.getElementById('commentModal');
+    if (modal) modal.style.display = 'none';
+};
+
+// Fecha o modal de Missões
+window.fecharMissaoModal = () => {
+    const modal = document.getElementById('missaoModal');
+    if (modal) modal.style.display = 'none';
+};
+
+// Fecha o modal de Conquistas
+window.fecharConquistaModal = () => {
+    const modal = document.getElementById('conquistaModal');
+    if (modal) modal.style.display = 'none';
+};
+
+// Fecha o modal de Perfil/Personagem
+window.fecharProfileModal = () => {
+    const modal = document.getElementById('profileModal');
+    if (modal) modal.style.display = 'none';
+};
+
+// Fecha o modal de Jutsus
+window.fecharJutsuModal = () => {
+    const modal = document.getElementById('jutsuModal');
+    if (modal) modal.style.display = 'none';
+};
+
+// Fecha o modal de Ferramentas
+window.fecharToolModal = () => {
+    const modal = document.getElementById('toolModal');
+    if (modal) modal.style.display = 'none';
+};
+
+// Fecha o modal de Itens
+window.fecharItemModal = () => {
+    const modal = document.getElementById('itemModal');
+    if (modal) modal.style.display = 'none';
+};
+
+// Fecha o modal de Edição de Perfil
+window.closeEditProfileModal = () => {
+    const modal = document.getElementById('editProfileModal');
+    if (modal) modal.style.display = 'none';
+};
+
+// Fecha o modal de Alterar Senha
+window.closeChangePasswordModal = () => {
+    const modal = document.getElementById('changePasswordModal');
+    if (modal) modal.style.display = 'none';
+};
+
+window.onclick = function(event) {
+    if (event.target.classList.contains('modal-overlay-comment')) {
+        event.target.style.display = "none";
+    }
+};
