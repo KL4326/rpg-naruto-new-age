@@ -1247,6 +1247,50 @@ window.aprovarConquista = async (uid, cid) => {
     } 
 };
 
+    // Esta é a única versão da função que deve existir no seu código
+function abrirModalSimples(t, d) {
+    // Aplica escala se for jutsu para pegar os valores de stamina/dano corrigidos
+    let info = t === 'jutsu' ? aplicarEscalaPersonalizada(d) : d;
+    
+    const modal = document.getElementById(t + 'Modal');
+    if (!modal) return;
+
+    // Preenche textos básicos
+    if(document.getElementById(t + '-name-modal')) document.getElementById(t + '-name-modal').innerText = info.nome || "Sem nome";
+    if(document.getElementById(t + '-desc-modal')) document.getElementById(t + '-desc-modal').innerText = info.descricao || "";
+    if(document.getElementById(t + '-img-modal')) document.getElementById(t + '-img-modal').src = info.imagem || IMG_PADRAO;
+    
+    const precoEl = document.getElementById(t + '-price-modal');
+    if (precoEl) precoEl.innerText = "Valor: " + formatarNum(info.preco) + " Ryos";
+
+    // --- LINHA DE STATUS (ONDE A STAMINA APARECE) ---
+    const statsRow = document.getElementById(t + '-stats-row');
+    if (statsRow) {
+        let h = "";
+        
+        if (info.dano) h += `<span class="jutsu-stat-tag tag-dano">Dano: ${info.dano}</span>`;
+        if (info.chakra) h += `<span class="jutsu-stat-tag tag-chakra">Chakra: ${info.chakra}</span>`;
+        
+        // VERIFICAÇÃO DA STAMINA (O que estava faltando)
+        if (info.stamina) {
+            h += `<span class="jutsu-stat-tag tag-stamina">Stamina: ${info.stamina}</span>`;
+        }
+        
+        if (info.bonus) h += `<span class="jutsu-stat-tag tag-buff">${info.bonus}</span>`;
+        
+        // Adiciona bônus de atributos (FOR, DEF, etc)
+        h += gerarTagsBonus(info);
+        
+        statsRow.innerHTML = h;
+    }
+
+    // Rank (Apenas Jutsus)
+    const rankEl = document.getElementById(t + '-rank-modal');
+    if (rankEl && t === 'jutsu') rankEl.innerText = "Rank " + (info.rank || "D");
+
+    modal.style.display = 'flex';
+}
+
 window.aplicarEscalaPersonalizada = aplicarEscalaPersonalizada;
 window.abrirModalSimples = abrirModalSimples;
 window.verDetalhesJutsu = (id, d) => abrirModalSimples('jutsu', d);
