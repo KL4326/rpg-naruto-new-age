@@ -758,12 +758,43 @@ window.salvarNovoMentor = async () => {
     carregarMentorias();
 };
 async function carregarPersonagens() {
+    const c = document.getElementById('directory-grid');
+    if (!c) return;
+    
     try {
-        const c = document.getElementById('directory-grid'); if(!c) return;
-        c.innerHTML = '<p>Carregando...</p>'; const s = await getDocs(collection(db, "users")); c.innerHTML = '';
-        s.forEach(d => { const u = d.data(); const k = document.createElement('div'); k.className = 'card'; k.onclick = () => window.verPerfil(d.id); 
-        k.innerHTML = `<div style="width:60px; height:60px; border-radius:50%; overflow:hidden; margin:0 auto 10px;"><img src="${u.avatar||IMG_PADRAO}" style="width:100%; height:100%; object-fit:cover;"></div><h4>${u.nome}</h4><p>${u.apelido||""}</p><div style="font-size:0.8rem; margin-top:5px; color:#777;"><span style="color:var(--yellow-color);"><i class="fa-solid fa-coins"></i> ${formatarNum(u.ryos)}</span></div>${u.id !== auth.currentUser.uid ? `<button class="gift-btn" onclick="event.stopPropagation(); openGiftModal('${d.id}', '${u.nome}')">Presentear</button>` : ''}`; c.appendChild(k); });
-    } catch(e){ c.innerHTML='<p>Erro.</p>'; }
+        c.innerHTML = '<p style="color:#777;">Localizando ninjas...</p>';
+        const s = await getDocs(collection(db, "users"));
+        c.innerHTML = '';
+
+        s.forEach(d => {
+            const u = d.data();
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.onclick = () => window.verPerfil(d.id);
+            
+            // Pega os valores ou define 0 caso não existam no Firebase
+            const ryos = u.ryos || 0;
+            const en = u.essencia_ninja || 0;
+
+            div.innerHTML = `
+                <img src="${u.avatar || IMG_PADRAO}" class="card-img-top">
+                <h4>${u.nome || "Ninja"}</h4>
+                <p style="font-size:0.85em; color:var(--primary-color); font-weight:600; margin-top:5px;">
+                    ${u.apelido || "Sem clã"}
+                </p>
+                <small style="color:#555;">
+                    <i class="fa-solid fa-coins"></i> ${formatarNum(ryos)} | 
+                    <i class="fa-regular fa-star"></i> ${formatarNum(en)} EN
+                </small>
+            `;
+            c.appendChild(div);
+        });
+
+        if(c.innerHTML === '') c.innerHTML = '<p>Nenhum ninja encontrado.</p>';
+    } catch (e) {
+        console.error("Erro ao carregar diretório:", e);
+        c.innerHTML = '<p>Erro ao carregar lista.</p>';
+    }
 }
 async function carregarConquistas() {
     try {
