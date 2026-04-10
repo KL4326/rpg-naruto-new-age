@@ -757,6 +757,7 @@ window.salvarNovoMentor = async () => {
     document.getElementById('novoMentorModal').style.display = 'none';
     carregarMentorias();
 };
+
 async function carregarPersonagens() {
     const c = document.getElementById('directory-grid');
     if (!c) return;
@@ -772,20 +773,26 @@ async function carregarPersonagens() {
             div.className = 'card';
             div.onclick = () => window.verPerfil(d.id);
             
-            // Pega os valores ou define 0 caso não existam no Firebase
             const ryos = u.ryos || 0;
             const en = u.essencia_ninja || 0;
 
             div.innerHTML = `
                 <img src="${u.avatar || IMG_PADRAO}" class="card-img-top">
                 <h4>${u.nome || "Ninja"}</h4>
-                <p style="font-size:0.85em; color:var(--primary-color); font-weight:600; margin-top:5px;">
+                <p style="font-size:0.85em; color:var(--primary-color); font-weight:600; margin-top:5px; margin-bottom:8px;">
                     ${u.apelido || "Sem clã"}
                 </p>
-                <small style="color:#555;">
-                    <i class="fa-solid fa-coins"></i> ${formatarNum(ryos)} | 
-                    <i class="fa-regular fa-star"></i> ${formatarNum(en)} EN
-                </small>
+                <div style="font-size: 0.8rem; font-weight: bold; display: flex; justify-content: center; gap: 8px; align-items: center;">
+                    <span style="color: #f1c40f;">
+                        <i class="fa-solid fa-coins"></i> ${formatarNum(ryos)}
+                    </span>
+                    
+                    <span style="color: #777;">|</span>
+                    
+                    <span style="color: #3498db;">
+                        <i class="fa-regular fa-star"></i> ${formatarNum(en)} EN
+                    </span>
+                </div>
             `;
             c.appendChild(div);
         });
@@ -796,6 +803,7 @@ async function carregarPersonagens() {
         c.innerHTML = '<p>Erro ao carregar lista.</p>';
     }
 }
+
 async function carregarConquistas() {
     try {
         if (!currentUserData) return;
