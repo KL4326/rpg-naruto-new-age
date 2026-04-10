@@ -1306,6 +1306,7 @@ window.aprovarConquista = async (uid, cid) => {
 
 window.aplicarEscalaPersonalizada = aplicarEscalaPersonalizada;
 window.abrirModalSimples = abrirModalSimples;
+window.carregarPersonagens = carregarPersonagens;
 window.verDetalhesJutsu = (id, d) => abrirModalSimples('jutsu', d);
 window.verDetalhesFerramenta = (id, d) => abrirModalSimples('tool', d);
 window.verDetalhesItem = (id, d) => abrirModalSimples('item', d);
