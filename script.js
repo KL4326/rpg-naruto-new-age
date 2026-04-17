@@ -1355,9 +1355,9 @@ window.abrirModalPix = (plano) => {
     const title = document.getElementById('pix-title');
     
     const linksPix = {
-        'plano10': 'URL_DO_QR_CODE_5REAIS',
-        'plano50': 'URL_DO_QR_CODE_25REAIS',
-        'plano100': 'URL_DO_QR_CODE_50REAIS'
+        'plano100': 'URL_DO_QR_CODE_5REAIS',
+        'plano300': 'URL_DO_QR_CODE_10REAIS',
+        'plano500': 'URL_DO_QR_CODE_20REAIS'
     };
 
     title.innerText = "Adquirir EN (" + plano.replace('plano', '') + " unidades)";
