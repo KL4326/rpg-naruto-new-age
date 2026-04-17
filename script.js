@@ -1313,6 +1313,60 @@ window.aprovarConquista = async (uid, cid) => {
 };
 
 
+// Calcula o custo em EN conforme o usuário digita os Ryos
+window.calcularCustoEN = (valor) => {
+    const qtdRyos = parseInt(valor) || 0;
+    const custo = Math.ceil(qtdRyos / 10); // 10 Ryos = 1 EN
+    document.getElementById('label-custo-en').innerText = custo;
+};
+
+// Executa a compra de Ryos usando EN
+window.confirmarTrocaRyos = async () => {
+    const qtdRyos = parseInt(document.getElementById('input-qtd-ryos').value) || 0;
+    if(qtdRyos <= 0) return alert("Digite uma quantidade válida!");
+    
+    const custoEN = Math.ceil(qtdRyos / 10);
+    const enAtual = currentUserData.essencia_ninja || 0;
+
+    if(enAtual < custoEN) {
+        return alert("Você não possui Essência Ninja suficiente!");
+    }
+
+    if(confirm(`Deseja trocar ${custoEN} EN por ${qtdRyos} Ryos?`)) {
+        try {
+            const userRef = doc(db, "users", auth.currentUser.uid);
+            await updateDoc(userRef, {
+                essencia_ninja: increment(-custoEN),
+                ryos: increment(qtdRyos)
+            });
+            alert("Troca realizada com sucesso!");
+            document.getElementById('input-qtd-ryos').value = "";
+            document.getElementById('label-custo-en').innerText = "0";
+        } catch(e) {
+            alert("Erro ao realizar a transação.");
+        }
+    }
+};
+
+// Abre o modal com o QR Code do Pix
+window.abrirModalPix = (plano) => {
+    const modal = document.getElementById('pixModal');
+    const img = document.getElementById('pix-qrcode');
+    const title = document.getElementById('pix-title');
+    
+    const linksPix = {
+        'plano10': 'URL_DO_QR_CODE_5REAIS',
+        'plano50': 'URL_DO_QR_CODE_25REAIS',
+        'plano100': 'URL_DO_QR_CODE_50REAIS'
+    };
+
+    title.innerText = "Adquirir EN (" + plano.replace('plano', '') + " unidades)";
+    img.src = linksPix[plano] || IMG_PADRAO;
+    modal.style.display = 'flex';
+};
+
+
+
 window.aplicarEscalaPersonalizada = aplicarEscalaPersonalizada;
 window.abrirModalSimples = abrirModalSimples;
 window.carregarPersonagens = carregarPersonagens;
@@ -1322,6 +1376,9 @@ window.verDetalhesItem = (id, d) => abrirModalSimples('item', d);
 window.fecharJutsuModal = () => document.getElementById('jutsuModal').style.display='none';
 window.fecharToolModal = () => document.getElementById('toolModal').style.display='none';
 window.fecharItemModal = () => document.getElementById('itemModal').style.display='none';
+window.calcularCustoEN = calcularCustoEN;
+window.confirmarTrocaRyos = confirmarTrocaRyos;
+window.abrirModalPix = abrirModalPix;
 
 // --- FUNÇÕES PARA FECHAR OS MODAIS ---
 
