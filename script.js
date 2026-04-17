@@ -1040,6 +1040,7 @@ function abrirModalSimples(t, d) {
         document.getElementById(t + '-rank-modal').innerText = "Rank " + d.rank;
         
         if (d.dano) h += `<span class="jutsu-stat-tag tag-dano">Dano: ${d.dano}</span>`;
+        if (info.defesa) h += `<span class="jutsu-stat-tag tag-defesa" style="background:#2ecc71;">Defesa: ${info.defesa}</span>`;
         if (d.chakra) h += `<span class="jutsu-stat-tag tag-chakra">Chakra: ${d.chakra}</span>`;
         
         // CORREÇÃO AQUI: Adicionado crases e trocado 'dados' por 'd'
