@@ -824,11 +824,15 @@ async function carregarConquistas() {
         cTurno.innerHTML = ''; cCards.innerHTML = '';
         
         const s = await getDocs(collection(db, "conquistas"));
-        if(s.empty) { cTurno.innerHTML = '<p>Nenhuma conquista.</p>'; return; }
+        if(s.empty) { 
+            cTurno.innerHTML = '<p>Nenhuma conquista.</p>'; 
+            return; 
+        }
         
         const isAdmin = auth.currentUser.email === "admin@rpgnaruto.com";
         s.forEach(d => {
-            const i = d.data(); if(!i) return;
+            const i = d.data(); 
+            if(!i) return;
 
             // --- LÓGICA BLINDADA DE RESTRIÇÃO ---
             let restritos = i.restrito_a;
@@ -847,17 +851,46 @@ async function carregarConquistas() {
             // ------------------------------------
             
             const st = m[d.id]; 
-            const k = document.createElement('div'); k.className = 'card jutsu-card-click';
-            let btn = "";
-            const r = i.recompensa || 0; const x = i.xp || 0; const en = i.en || 0; 
+            const k = document.createElement('div'); 
+            k.className = 'card jutsu-card-click';
             
-            if(!st) btn = `<button class="mission-btn-start" onclick="event.stopPropagation(); window.solicitarConquista('${d.id}', this)">Reivindicar</button>`;
-            else if(st === 'solicitado') btn = `<button class="mission-btn-wait" onclick="event.stopPropagation();">Aguardando</button>`;
-            else if(st === 'aprovado') btn = `<button class="mission-btn-collect" onclick="event.stopPropagation(); window.coletarConquista('${d.id}', ${r}, ${x}, ${en}, this)">Coletar</button>`;
-            else if(st === 'concluido') btn = `<button class="mission-btn-done" onclick="event.stopPropagation();">Concluído</button>`;
+            const r = i.recompensa || 0; 
+            const x = i.xp || 0; 
+            const en = i.en || 0; 
+            
+            // Lógica dos botões
+            let btn = "";
+            if(!st) {
+                btn = `<button class="mission-btn-start" onclick="event.stopPropagation(); window.solicitarConquista('${d.id}', this)">Reivindicar</button>`;
+            } else if(st === 'solicitado') {
+                btn = `<button class="mission-btn-wait" onclick="event.stopPropagation();">Aguardando</button>`;
+            } else if(st === 'aprovado') {
+                btn = `<button class="mission-btn-collect" onclick="event.stopPropagation(); window.coletarConquista('${d.id}', ${r}, ${x}, ${en}, this)">Coletar</button>`;
+            } else if(st === 'concluido') {
+                btn = `<button class="mission-btn-done" onclick="event.stopPropagation();">Concluído</button>`;
+            }
             
             k.onclick = () => window.verDetalhesConquista(d.id, i, st);
-            k.innerHTML = `<img src="${i.imagem||IMG_PADRAO}" class="card-img-top"><h4>${i.titulo}</h4><small style="color:var(--primary-color)">${formatarNum(r)} Ryos</small>${btn}`;
+
+            // NOVO LAYOUT DO CARD COM RECOMPENSAS PADRONIZADAS
+            k.innerHTML = `
+                <img src="${i.imagem || IMG_PADRAO}" class="card-img-top">
+                <h4 style="margin-bottom: 4px; margin-top: 10px;">${i.titulo}</h4>
+
+                <div style="display: flex; justify-content: center; gap: 10px; font-size: 0.75rem; font-weight: bold; padding: 8px 0; border-top: 1px solid #f5f5f5; margin-top: 5px;">
+                    <span style="color: #2ecc71;" title="XP">
+                        <i class="fa-solid fa-bolt"></i> ${x}
+                    </span>
+                    <span style="color: #f1c40f;" title="Ryos">
+                        <i class="fa-solid fa-coins"></i> ${formatarNum(r)}
+                    </span>
+                    <span style="color: #3498db;" title="Essência Ninja">
+                        <i class="fa-regular fa-star"></i> ${en}
+                    </span>
+                </div>
+
+                ${btn}
+            `;
             
             const cat = (i.categoria || "turno").toLowerCase().trim();
             if(cat.includes('card')) cCards.appendChild(k); else cTurno.appendChild(k);
@@ -867,10 +900,13 @@ async function carregarConquistas() {
         if(cCards.innerHTML === '') cCards.innerHTML = '<p style="color:#777;">Vazio.</p>';
 
     } catch(e) { 
-        cTurno.innerHTML = '<p>Erro.</p>';
-        cCards.innerHTML = '<p>Erro.</p>';
+        console.error("Erro ao carregar conquistas:", e);
+        if(cTurno) cTurno.innerHTML = '<p>Erro.</p>';
+        if(cCards) cCards.innerHTML = '<p>Erro.</p>';
     } 
 }
+
+
 async function carregarMissoes() { 
     try {
         if (!currentUserData) return;
@@ -883,6 +919,7 @@ async function carregarMissoes() {
 
         const s = await getDocs(collection(db, "missoes"));
         const isAdmin = auth.currentUser.email === "admin@rpgnaruto.com";
+
         s.forEach(d => { 
             const i = d.data();
             if(!i) return;
@@ -891,32 +928,61 @@ async function carregarMissoes() {
             let restritos = i.restrito_a;
             if (restritos) {
                 let lista = [];
-                // Se for texto (mesmo separado por vírgula), converte para array, tira espaços e deixa minúsculo
                 if (typeof restritos === 'string') {
                     lista = restritos.split(',').map(n => n.trim().toLowerCase());
                 } else if (Array.isArray(restritos)) {
                     lista = restritos.map(n => n.trim().toLowerCase());
                 }
-                
-                // Remove campos que ficaram em branco
                 lista = lista.filter(n => n !== "");
 
                 if (lista.length > 0 && !isAdmin) {
                     const nomePlayer = (currentUserData.nome || "").trim().toLowerCase();
                     const apelidoPlayer = (currentUserData.apelido || "").trim().toLowerCase();
-                    
-                    // Se o nome e o apelido não estiverem na lista exata, a missão NÃO aparece
                     if (!lista.includes(nomePlayer) && !lista.includes(apelidoPlayer)) return;
                 }
             }
             // ------------------------------------
 
-            const st = m[d.id] || 'neutro'; const k = document.createElement('div'); k.className = 'card jutsu-card-click'; 
+            const st = m[d.id] || 'neutro'; 
+            const k = document.createElement('div'); 
+            k.className = 'card jutsu-card-click'; 
+            
             const rankClass = `rank-${(i.rank||'d').toLowerCase()}`;
             const rankHtml = `<span class="rank-tag ${rankClass}">Rank ${i.rank||'D'}</span>`;
-            const r = i.recompensa || 0; const x = i.xp || 0; const en = i.en || 0; 
+            
+            const r = i.recompensa || 0; 
+            const x = i.xp || 0; 
+            const en = i.en || 0; 
+
+            // Define a cor e o texto do status para ficar mais bonito
+            let statusLabel = st === 'neutro' ? 'Disponível' : st.replace('_', ' ');
+            let statusColor = '#777';
+            if(st === 'em_andamento') statusColor = 'orange';
+            if(st === 'aprovado') statusColor = '#2ecc71';
+            if(st === 'concluido') statusColor = '#3498db';
+
             k.onclick = () => window.verDetalhesMissao(d.id, i, st); 
-            k.innerHTML=`${rankHtml}<h4>${i.titulo}</h4><p style="font-size:0.8rem; color:${st==='em_andamento'?'orange':st==='aprovado'?'green':'#777'};">${st==='neutro'?'Disponível':st}</p><small style="color:var(--primary-color)">${x} XP | ${formatarNum(r)} Ryos</small>`; 
+
+            // NOVO LAYOUT DO CARD SIMPLES
+            k.innerHTML = `
+                ${rankHtml}
+                <h4 style="margin-bottom: 2px;">${i.titulo}</h4>
+                <p style="font-size:0.75rem; font-weight: bold; color:${statusColor}; text-transform: capitalize; margin-bottom: 8px;">
+                    ${statusLabel}
+                </p>
+                
+                <div style="display: flex; justify-content: center; gap: 10px; font-size: 0.75rem; font-weight: bold; border-top: 1px solid #eee; padding-top: 8px;">
+                    <span style="color: #2ecc71;" title="XP">
+                        <i class="fa-solid fa-bolt"></i> ${x}
+                    </span>
+                    <span style="color: #f1c40f;" title="Ryos">
+                        <i class="fa-solid fa-coins"></i> ${formatarNum(r)}
+                    </span>
+                    <span style="color: #3498db;" title="Essência Ninja">
+                        <i class="fa-regular fa-star"></i> ${en}
+                    </span>
+                </div>
+            `; 
             
             const cat = (i.categoria || "turno").toLowerCase().trim();
             if(cat.includes('card')) cCards.appendChild(k); else cTurno.appendChild(k);
@@ -925,7 +991,8 @@ async function carregarMissoes() {
         if(cTurno.innerHTML === '') cTurno.innerHTML = '<p style="color:#777;">Vazio.</p>';
         if(cCards.innerHTML === '') cCards.innerHTML = '<p style="color:#777;">Vazio.</p>';
     } catch(e) { 
-        cTurno.innerHTML = '<p>Erro.</p>'; cCards.innerHTML = '<p>Erro.</p>';
+        console.error("Erro ao carregar missões:", e);
+        if(cTurno) cTurno.innerHTML = '<p>Erro ao carregar.</p>'; 
     } 
 }
 
@@ -1008,13 +1075,28 @@ window.verDetalhesConquista = (id, d, st) => {
     document.getElementById('conquista-desc-modal').innerText = d.descricao;
     document.getElementById('conquista-reward-modal').innerText = formatarNum(d.recompensa);
     document.getElementById('conquista-xp-modal').innerText = d.xp || 0;
-    document.getElementById('conquista-img-modal').src = d.imagem||IMG_PADRAO;
-    const a = document.getElementById('conquista-actions-modal'); a.innerHTML = '';
-    if(!st) a.innerHTML = `<button class="mission-btn-start" onclick="window.solicitarConquista('${id}', this)">Reivindicar</button>`;
-    else if(st === 'solicitado') a.innerHTML = `<button class="mission-btn-wait">Aguardando</button>`;
-    else if(st === 'aprovado') a.innerHTML = `<button class="mission-btn-collect" onclick="window.coletarConquista('${id}', ${d.recompensa}, ${d.xp}, ${d.en}, this)">Coletar</button>`;
-    else a.innerHTML = `<button class="mission-btn-done">Feito</button>`;
-    document.getElementById('conquistaModal').style.display='flex';
+    
+    // Inserindo a Essência Ninja no modal
+    if(document.getElementById('conquista-en-modal')) {
+        document.getElementById('conquista-en-modal').innerText = d.en || 0;
+    }
+
+    document.getElementById('conquista-img-modal').src = d.imagem || IMG_PADRAO;
+    const a = document.getElementById('conquista-actions-modal'); 
+    a.innerHTML = '';
+
+    if(!st) {
+        a.innerHTML = `<button class="mission-btn-start" onclick="window.solicitarConquista('${id}', this)">Reivindicar</button>`;
+    } else if(st === 'solicitado') {
+        a.innerHTML = `<button class="mission-btn-wait">Aguardando</button>`;
+    } else if(st === 'aprovado') {
+        // Agora passando também o d.en para a coleta
+        a.innerHTML = `<button class="mission-btn-collect" onclick="window.coletarConquista('${id}', ${d.recompensa}, ${d.xp}, ${d.en || 0}, this)">Coletar</button>`;
+    } else {
+        a.innerHTML = `<button class="mission-btn-done">Feito</button>`;
+    }
+
+    document.getElementById('conquistaModal').style.display = 'flex';
 };
 window.solicitarConquista = async (id, btn) => { if(btn) { btn.disabled = true; btn.innerText = "..."; } await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusConquistas.${id}`]: 'solicitado' }); alert("Solicitado!"); };
 window.coletarConquista = async (id, r, x, en, btn) => { if(btn) btn.disabled = true; await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(r), xp: increment(x), essencia_ninja: increment(en), [`statusConquistas.${id}`]: 'concluido' }); alert("Coletado!"); document.getElementById('conquistaModal').style.display='none'; };
@@ -1023,13 +1105,28 @@ window.verDetalhesMissao = (id, d, st) => {
     document.getElementById('missao-desc-modal').innerText = d.descricao; 
     document.getElementById('missao-reward-modal').innerText = formatarNum(d.recompensa); 
     document.getElementById('missao-xp-modal').innerText = d.xp || 0; 
-    document.getElementById('missao-img-modal').src = d.imagem||IMG_PADRAO; 
-    const a = document.getElementById('missao-actions-modal'); a.innerHTML = ''; 
-    if(st==='neutro') a.innerHTML = `<button class="mission-btn-start" onclick="window.iniciarMissao('${id}', this)">Aceitar</button>`; 
-    else if(st==='em_andamento') a.innerHTML = `<button class="mission-btn-wait">Em Andamento</button>`; 
-    else if(st==='aprovado') a.innerHTML = `<button class="mission-btn-collect" onclick="window.coletarRecompensa('${id}', ${d.recompensa}, ${d.xp}, ${d.en}, '${d.rank||'D'}', this)">Receber</button>`; 
-    else if(st==='concluido') a.innerHTML = `<button class="mission-btn-done">Concluído</button>`; 
-    document.getElementById('missaoModal').style.display='flex'; 
+    
+    // Inserindo a Essência Ninja no modal
+    if(document.getElementById('missao-en-modal')) {
+        document.getElementById('missao-en-modal').innerText = d.en || 0;
+    }
+
+    document.getElementById('missao-img-modal').src = d.imagem || IMG_PADRAO; 
+    const a = document.getElementById('missao-actions-modal'); 
+    a.innerHTML = ''; 
+
+    if(st === 'neutro') {
+        a.innerHTML = `<button class="mission-btn-start" onclick="window.iniciarMissao('${id}', this)">Aceitar</button>`; 
+    } else if(st === 'em_andamento') {
+        a.innerHTML = `<button class="mission-btn-wait">Em Andamento</button>`; 
+    } else if(st === 'aprovado') {
+        // Agora passando também o d.en para a coleta
+        a.innerHTML = `<button class="mission-btn-collect" onclick="window.coletarRecompensa('${id}', ${d.recompensa}, ${d.xp}, ${d.en || 0}, '${d.rank || 'D'}', this)">Receber</button>`; 
+    } else if(st === 'concluido') {
+        a.innerHTML = `<button class="mission-btn-done">Concluído</button>`; 
+    }
+    
+    document.getElementById('missaoModal').style.display = 'flex'; 
 };
 window.iniciarMissao = async (id, btn) => { if(btn) { btn.disabled=true; btn.innerText="..."; } await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusMissoes.${id}`]: 'em_andamento' }); alert("Iniciada!"); };
 window.coletarRecompensa = async (id, r, x, en, rank, btn) => { if(btn) btn.disabled=true; await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(r), xp: increment(x), essencia_ninja: increment(en), [`statusMissoes.${id}`]: 'concluido', [`missoes_concluidas_${rank.toLowerCase()}`]: increment(1) }); alert("Missão cumprida!"); document.getElementById('missaoModal').style.display='none'; };
