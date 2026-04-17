@@ -148,6 +148,15 @@ window.showTab = (t) => {
             if(t==='rankings') carregarRankings();
             if(t==='mentorias') carregarMentorias();
             if(t==='admin-panel') carregarPainelAdmin();
+            // ... dentro do seu if(currentUserData) { ...
+            if(t==='loja-premium') {
+                // Caso queira resetar o valor do input ao abrir a aba
+                const input = document.getElementById('input-qtd-ryos');
+                if(input) input.value = "";
+                const label = document.getElementById('label-custo-en');
+                if(label) label.innerText = "0";
+            }
+
         }
         if(window.innerWidth <= 768) {
              const sidebar = document.querySelector('.sidebar');
@@ -1379,6 +1388,7 @@ window.fecharItemModal = () => document.getElementById('itemModal').style.displa
 window.calcularCustoEN = calcularCustoEN;
 window.confirmarTrocaRyos = confirmarTrocaRyos;
 window.abrirModalPix = abrirModalPix;
+window.showTab = showTab;
 
 // --- FUNÇÕES PARA FECHAR OS MODAIS ---
 
