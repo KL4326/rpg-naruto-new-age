@@ -318,11 +318,16 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 
 
 
-/* Container Geral da Loja */
+/* 1. Define que a aba começa escondida */
 #loja-premium {
+    display: none; 
+}
+
+/* 2. Define que o layout FLEX só aparece quando a aba estiver ativa */
+#loja-premium.active {
     display: flex;
     flex-direction: column;
-    align-items: center; /* Centraliza no topo */
+    align-items: center;
     padding-top: 20px;
     min-height: 100vh;
 }
