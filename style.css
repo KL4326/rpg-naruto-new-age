@@ -316,6 +316,54 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 .mentoria-option:hover { border-color: var(--primary-color); background-color: rgba(0,0,0,0.02); }
 .mentoria-radio { margin-right: 10px; transform: scale(1.2); cursor: pointer; }
 
+.premium-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.premium-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+    text-align: center;
+}
+
+.buy-ryos-box input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+.planos-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.plano-btn {
+    background: #f8f9fa;
+    border: 1px solid #3498db;
+    color: #3498db;
+    padding: 15px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.plano-btn:hover {
+    background: #3498db;
+    color: white;
+}
+
 @media (max-width: 768px) {
     #mobile-menu-btn { display: block; }
     .sidebar { position: fixed; top: 0; left: -260px; height: 100%; box-shadow: 2px 0 10px rgba(0,0,0,0.3); transition: left 0.3s ease; }
