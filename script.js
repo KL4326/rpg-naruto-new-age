@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, addDoc, serverTimestamp, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, deleteField, addDoc, serverTimestamp, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // --- CONFIGURAÇÃO FIREBASE ---
 const firebaseConfig = { apiKey: "AIzaSyC3HOor32_p5Z-iADm0VgZ279rt1kj8ICg", authDomain: "rpg-naruto-5150a.firebaseapp.com", projectId: "rpg-naruto-5150a", storageBucket: "rpg-naruto-5150a.firebasestorage.app", messagingSenderId: "1007094335306", appId: "1:1007094335306:web:ac96fa96f9494f90fd63b3" };
@@ -1287,6 +1287,10 @@ function criarCardAdmin(container, userData, uid, itemId, tipo, funcaoAprovar) {
     div.style.flexDirection = 'column';
     div.style.gap = '10px';
     
+    // Definimos o tipo interno para a função de reprovar saber o que apagar
+    // Se o seu 'tipo' vier como 'Missão', passamos 'missao'. Se vier 'Conquista', passamos 'conquista'.
+    const tipoSlug = tipo.toLowerCase().includes('miss') ? 'missao' : 'conquista';
+
     div.innerHTML = `
         <div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid #eee; padding-bottom:5px;">
             <img src="${userData.avatar || IMG_PADRAO}" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
@@ -1298,12 +1302,20 @@ function criarCardAdmin(container, userData, uid, itemId, tipo, funcaoAprovar) {
         <div style="background:#f9f9f9; padding:8px; border-radius:4px; font-size:0.85rem; word-break:break-word;">
             <strong>ID:</strong> ${itemId}
         </div>
-        <button class="mission-btn-collect" onclick="${funcaoAprovar}('${uid}','${itemId}')">
-            <i class="fa-solid fa-check"></i> Aprovar
-        </button>
+        
+        <div style="display: flex; gap: 8px;">
+            <button class="mission-btn-collect" style="flex: 1;" onclick="${funcaoAprovar}('${uid}','${itemId}')">
+                <i class="fa-solid fa-check"></i> Aprovar
+            </button>
+            
+            <button class="mission-btn-collect" style="flex: 1; background: #e74c3c;" onclick="window.reprovarSolicitacao('${uid}', '${itemId}', '${tipoSlug}', this)">
+                <i class="fa-solid fa-xmark"></i> Reprovar
+            </button>
+        </div>
     `;
     container.appendChild(div);
 }
+
 
 window.aprovarMissao = async (uid, mid) => { 
     if(confirm("Confirmar conclusão da missão?")) { 
@@ -1319,6 +1331,35 @@ window.aprovarConquista = async (uid, cid) => {
         alert("Aprovado!"); 
         carregarPainelAdmin(); 
     } 
+};
+
+
+window.reprovarSolicitacao = async (uid, id, tipo, btn) => {
+    if(!confirm("Deseja reprovar esta solicitação? O ninja poderá tentar novamente.")) return;
+    
+    if(btn) btn.disabled = true;
+
+    try {
+        const userRef = doc(db, "users", uid);
+        const campoStatus = tipo === 'missao' ? `statusMissoes.${id}` : `statusConquistas.${id}`;
+
+        // Remove o status atual para que o botão de "Iniciar" ou "Resgatar" reapareça para o player
+        await updateDoc(userRef, {
+            [campoStatus]: deleteField() // Importe deleteField do firebase/firestore se não tiver
+        });
+
+        alert("Solicitação reprovada! O ninja já pode tentar novamente.");
+        
+        // Fecha o modal e atualiza o painel
+        fecharMissaoModal();
+        fecharConquistaModal();
+        carregarPainelAdmin(); 
+
+    } catch (e) {
+        console.error(e);
+        alert("Erro ao reprovar.");
+        if(btn) btn.disabled = false;
+    }
 };
 
 
@@ -1389,6 +1430,7 @@ window.calcularCustoEN = calcularCustoEN;
 window.confirmarTrocaRyos = confirmarTrocaRyos;
 window.abrirModalPix = abrirModalPix;
 window.showTab = showTab;
+window.reprovarSolicitacao = reprovarSolicitacao;
 
 // --- FUNÇÕES PARA FECHAR OS MODAIS ---
 
