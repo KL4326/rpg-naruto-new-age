@@ -1099,7 +1099,28 @@ window.verDetalhesConquista = (id, d, st) => {
     document.getElementById('conquistaModal').style.display = 'flex';
 };
 window.solicitarConquista = async (id, btn) => { if(btn) { btn.disabled = true; btn.innerText = "..."; } await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusConquistas.${id}`]: 'solicitado' }); alert("Solicitado!"); };
-window.coletarConquista = async (id, r, x, en, btn) => { if(btn) btn.disabled = true; await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(r), xp: increment(x), essencia_ninja: increment(en), [`statusConquistas.${id}`]: 'concluido' }); alert("Coletado!"); document.getElementById('conquistaModal').style.display='none'; };
+window.coletarConquista = async (id, ryos, xp, en, btn) => {
+    if(btn) btn.disabled = true;
+    try {
+        const uid = auth.currentUser.uid;
+        const userRef = doc(db, "users", uid);
+
+        await updateDoc(userRef, {
+            ryos: increment(ryos || 0),
+            xp: increment(xp || 0),
+            essencia_ninja: increment(en || 0), // ADICIONADO AQUI
+            [`statusConquistas.${id}`]: 'concluido'
+        });
+
+        alert(`Conquista Coletada! +${en} Essência Ninja recebida.`);
+        fecharConquistaModal();
+        carregarConquistas(); // Atualiza a lista
+    } catch (e) {
+        console.error(e);
+        alert("Erro ao coletar conquista.");
+        if(btn) btn.disabled = false;
+    }
+};
 window.verDetalhesMissao = (id, d, st) => { 
     document.getElementById('missao-name-modal').innerText = d.titulo; 
     document.getElementById('missao-desc-modal').innerText = d.descricao; 
@@ -1129,7 +1150,32 @@ window.verDetalhesMissao = (id, d, st) => {
     document.getElementById('missaoModal').style.display = 'flex'; 
 };
 window.iniciarMissao = async (id, btn) => { if(btn) { btn.disabled=true; btn.innerText="..."; } await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusMissoes.${id}`]: 'em_andamento' }); alert("Iniciada!"); };
-window.coletarRecompensa = async (id, r, x, en, rank, btn) => { if(btn) btn.disabled=true; await updateDoc(doc(db, "users", auth.currentUser.uid), { ryos: increment(r), xp: increment(x), essencia_ninja: increment(en), [`statusMissoes.${id}`]: 'concluido', [`missoes_concluidas_${rank.toLowerCase()}`]: increment(1) }); alert("Missão cumprida!"); document.getElementById('missaoModal').style.display='none'; };
+window.coletarRecompensa = async (id, ryos, xp, en, rank, btn) => {
+    if(btn) btn.disabled = true;
+    try {
+        const uid = auth.currentUser.uid;
+        const userRef = doc(db, "users", uid);
+
+        // Define qual contador de missão concluída aumentar baseado no Rank
+        const campoRank = `missoes_concluidas_${rank.toLowerCase()}`;
+
+        await updateDoc(userRef, {
+            ryos: increment(ryos || 0),
+            xp: increment(xp || 0),
+            essencia_ninja: increment(en || 0), // ADICIONADO AQUI
+            [campoRank]: increment(1),
+            [`statusMissoes.${id}`]: 'concluido'
+        });
+
+        alert("Recompensa de Missão recebida com sucesso!");
+        fecharMissaoModal();
+        carregarMissoes(); // Atualiza a lista
+    } catch (e) {
+        console.error(e);
+        alert("Erro ao coletar recompensa.");
+        if(btn) btn.disabled = false;
+    }
+};
 
 function abrirModalSimples(t, d) {
     // 1. Preenchimento básico (funciona para todos)
