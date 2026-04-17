@@ -317,20 +317,88 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 .mentoria-radio { margin-right: 10px; transform: scale(1.2); cursor: pointer; }
 
 
-.btn-reprovar {
-    background-color: #e74c3c !important; /* Vermelho */
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: bold;
+/* Container que segura os cards no Painel Admin */
+#admin-missoes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); /* Organiza em colunas automáticas */
+    gap: 20px;
+    padding: 20px 0;
 }
 
-.btn-reprovar:disabled {
-    background-color: #95a5a6 !important;
-    cursor: not-allowed;
+/* O Card do Admin reformulado */
+.admin-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    border: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: transform 0.2s;
 }
+
+.admin-card:hover {
+    transform: translateY(-3px);
+}
+
+/* Header do card (Avatar e Nome) */
+.admin-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 2px solid #f8f9fa;
+    padding-bottom: 10px;
+}
+
+.admin-card-header img {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--primary-color);
+}
+
+/* Box do ID (estilo tag/crachá) */
+.admin-card-id {
+    background: #f1f2f6;
+    padding: 8px;
+    border-radius: 6px;
+    font-family: 'monospace';
+    font-size: 0.75rem;
+    color: #57606f;
+    text-align: center;
+    border: 1px dashed #ced4da;
+}
+
+/* Botões do Admin */
+.admin-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: auto; /* Joga os botões para o final do card */
+}
+
+.btn-adm {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    transition: 0.2s;
+    color: white;
+}
+
+.btn-adm-approve { background-color: #2ecc71; }
+.btn-adm-approve:hover { background-color: #27ae60; }
+
+.btn-adm-reject { background-color: #e74c3c; }
+.btn-adm-reject:hover { background-color: #c0392b; }
 
 
 
