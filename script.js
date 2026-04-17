@@ -1280,36 +1280,35 @@ async function carregarPainelAdmin() {
     } 
 }
 
+
 function criarCardAdmin(container, userData, uid, itemId, tipo, funcaoAprovar) {
     const div = document.createElement('div');
-    div.className = 'card';
-    div.style.display = 'flex';
-    div.style.flexDirection = 'column';
-    div.style.gap = '10px';
+    div.className = 'admin-card'; // Usando a nova classe
     
-    // Definimos o tipo interno para a função de reprovar saber o que apagar
-    // Se o seu 'tipo' vier como 'Missão', passamos 'missao'. Se vier 'Conquista', passamos 'conquista'.
     const tipoSlug = tipo.toLowerCase().includes('miss') ? 'missao' : 'conquista';
 
     div.innerHTML = `
-        <div style="display:flex; align-items:center; gap:10px; border-bottom:1px solid #eee; padding-bottom:5px;">
-            <img src="${userData.avatar || IMG_PADRAO}" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
+        <div class="admin-card-header">
+            <img src="${userData.avatar || IMG_PADRAO}" alt="Avatar">
             <div>
-                <h4 style="margin:0; font-size:0.9rem;">${userData.nome}</h4>
-                <small style="color:var(--primary-color); font-weight:bold;">${tipo}</small>
+                <h4 style="margin:0; font-size:0.9rem; color:#2d3436;">${userData.nome}</h4>
+                <small style="color:var(--primary-color); font-weight:800; text-transform:uppercase; font-size:0.65rem;">
+                    <i class="fa-solid fa-scroll"></i> ${tipo}
+                </small>
             </div>
         </div>
-        <div style="background:#f9f9f9; padding:8px; border-radius:4px; font-size:0.85rem; word-break:break-word;">
+
+        <div class="admin-card-id">
             <strong>ID:</strong> ${itemId}
         </div>
         
-        <div style="display: flex; gap: 8px;">
-            <button class="mission-btn-collect" style="flex: 1;" onclick="${funcaoAprovar}('${uid}','${itemId}')">
+        <div class="admin-actions">
+            <button class="btn-adm btn-adm-approve" onclick="${funcaoAprovar}('${uid}','${itemId}')">
                 <i class="fa-solid fa-check"></i> Aprovar
             </button>
             
-            <button class="mission-btn-collect" style="flex: 1; background: #e74c3c;" onclick="window.reprovarSolicitacao('${uid}', '${itemId}', '${tipoSlug}', this)">
-                <i class="fa-solid fa-xmark"></i> Reprovar
+            <button class="btn-adm btn-adm-reject" onclick="window.reprovarSolicitacao('${uid}', '${itemId}', '${tipoSlug}', this)">
+                <i class="fa-solid fa-xmark"></i> Recusar
             </button>
         </div>
     `;
