@@ -318,12 +318,12 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 
 
 
-/* Força a aba a sumir por padrão, ignorando qualquer outra regra */
+/* 1. Esconde a aba de forma absoluta usando ID + classe */
 #loja-premium {
     display: none !important;
 }
 
-/* Só mostra (e usa o FLEX) quando a aba receber a classe .active */
+/* 2. Só mostra e ativa o layout FLEX quando a aba tiver a classe .active */
 #loja-premium.active {
     display: flex !important;
     flex-direction: column;
