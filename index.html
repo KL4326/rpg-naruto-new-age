@@ -51,6 +51,7 @@
                     <button id="nav-btn-ferramentas" onclick="showTab('ferramentas')" class="top-btn">Ferramentas</button>
                     <button id="nav-btn-historia" onclick="showTab('historia')" class="top-btn">História</button>
                     <button id="nav-btn-frases" onclick="showTab('frases')" class="top-btn">Frases</button>
+                    <button id="nav-btn-loja-premium" onclick="showTab('loja-premium')" class="top-btn">Ryos e Essência Ninja</button>
                 </nav>
                 <div class="user-area">
                     <div class="currency-container">
@@ -267,6 +268,47 @@
                     <div class="frases-list" id="frases-list-container"><p style="color:#777; text-align:center;">Carregando frases...</p></div>
                 </div>
             </div>
+            
+
+                <div id="loja-premium" class="tab-content">
+                    <div class="premium-header">
+                        <h2>Banco de Konoha</h2>
+                        <p>Troque sua Essência Ninja por Ryos ou adquira mais Essência.</p>
+                    </div>
+
+                    <div class="premium-grid">
+                        <div class="premium-card">
+                            <h3>Comprar Ryos</h3>
+                            <p style="font-size: 0.8rem; color: #777; margin-bottom: 15px;">Taxa: 1 EN = 10 Ryos</p>
+                                <div class="buy-ryos-box">
+                                    <input type="number" id="input-qtd-ryos" placeholder="Qtd de Ryos" oninput="window.calcularCustoEN(this.value)">
+                                    <div class="cost-preview">Custo: <span id="label-custo-en" style="color: #3498db; font-weight: bold;">0</span> EN</div>
+                                    <button class="buy-btn" onclick="window.confirmarTrocaRyos()">Trocar por Ryos</button>
+                                </div>
+                        </div>
+
+                        <div class="premium-card">
+                            <h3>Obter Essência Ninja</h3>
+                            <p style="font-size: 0.8rem; color: #777; margin-bottom: 15px;">Planos via PIX</p>
+                            <div class="planos-list">
+                                <button class="plano-btn" onclick="window.abrirModalPix('plano10')">10 EN - R$ 5,00</button>
+                                <button class="plano-btn" onclick="window.abrirModalPix('plano50')">55 EN - R$ 25,00</button>
+                                <button class="plano-btn" onclick="window.abrirModalPix('plano100')">120 EN - R$ 50,00</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            
+
+<div class="modal-overlay-comment" id="pixModal" style="z-index: 3000;">
+    <div class="modal-content-card" style="max-width: 350px; text-align: center;">
+        <span class="close-modal" onclick="document.getElementById('pixModal').style.display='none'">&times;</span>
+        <h3 id="pix-title" style="color: #3498db;"></h3>
+        <p style="font-size: 0.8rem; margin: 10px 0;">Após o pagamento, envie o comprovante ao Administrador para a liberação.</p>
+        <img id="pix-qrcode" src="" style="width: 250px; height: 250px; margin: 15px auto; border: 1px solid #ddd; border-radius: 8px;">
+        <p style="font-weight: bold; color: var(--primary-color);">Chave PIX: sua@chave.com</p>
+    </div>
+</div>
         </main>
     </div>
     
