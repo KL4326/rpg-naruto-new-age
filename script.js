@@ -125,6 +125,17 @@ if (btnLogin) {
 
 // --- NAVEGAÇÃO ---
 window.showTab = (t) => {
+    // Dentro da sua função window.showTab = (t) => { ...
+    const isAdmin = auth.currentUser?.email === "admin@rpgnaruto.com";
+    const btnAdd = document.getElementById('btn-adicionar-geral');
+    const abasComCriacao = ['jutsus', 'ferramentas', 'missoes', 'conquistas', 'loja'];
+
+    if (isAdmin && abasComCriacao.includes(t)) {
+        btnAdd.style.display = 'block';
+        btnAdd.setAttribute('data-tipo', t); // Salva qual aba estamos para saber o que criar
+    } else {
+        btnAdd.style.display = 'none';
+    }
     try {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         const target = document.getElementById(t);
@@ -1557,6 +1568,84 @@ window.abrirModalPix = (plano) => {
     modal.style.display = 'flex';
 };
 
+window.abrirModalCriacao = () => {
+    const tipo = document.getElementById('btn-adicionar-geral').getAttribute('data-tipo');
+    const container = document.getElementById('campos-dinamicos');
+    const titulo = document.getElementById('titulo-modal-criacao');
+    container.innerHTML = '';
+    
+    titulo.innerText = `Criar Novo(a) ${tipo.toUpperCase()}`;
+
+    // Campos básicos que quase todos têm
+    let html = `
+        <input type="text" id="cre-titulo" placeholder="Título/Nome" required style="padding:10px; border:1px solid #ddd; border-radius:5px;">
+        <input type="text" id="cre-imagem" placeholder="URL da Imagem" style="padding:10px; border:1px solid #ddd; border-radius:5px;">
+        <textarea id="cre-desc" placeholder="Descrição" required style="padding:10px; border:1px solid #ddd; border-radius:5px; height:80px;"></textarea>
+    `;
+
+    // Campos específicos por tipo
+    if (tipo === 'missoes' || tipo === 'conquistas') {
+        html += `
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
+                <input type="number" id="cre-ryos" placeholder="Ryos">
+                <input type="number" id="cre-xp" placeholder="XP">
+                <input type="number" id="cre-en" placeholder="EN">
+            </div>
+            <input type="text" id="cre-rank" placeholder="Rank (D, C, B, A, S)">
+            <input type="text" id="cre-restrito" placeholder="Restrito a (Nome do Player ou vazio)">
+        `;
+    } else if (tipo === 'jutsus') {
+        html += `
+            <input type="text" id="cre-requisito" placeholder="Requisito (ex: Nível 5)">
+            <input type="number" id="cre-preco" placeholder="Preço em Ryos">
+            <input type="text" id="cre-rank-j" placeholder="Rank do Jutsu">
+        `;
+    } else if (tipo === 'ferramentas' || tipo === 'loja') {
+        html += `<input type="number" id="cre-preco-f" placeholder="Preço em Ryos">`;
+    }
+
+    container.innerHTML = html;
+    document.getElementById('modalCriacaoGeral').style.display = 'flex';
+};
+
+// Função para Salvar
+document.getElementById('form-criacao-geral').onsubmit = async (e) => {
+    e.preventDefault();
+    const tipo = document.getElementById('btn-adicionar-geral').getAttribute('data-tipo');
+    const btnSubmit = e.target.querySelector('button');
+    btnSubmit.disabled = true;
+
+    // Mapeia os campos para os nomes corretos do Firebase
+    const dados = {
+        titulo: document.getElementById('cre-titulo').value,
+        nome: document.getElementById('cre-titulo').value, // Duplicado para compatibilidade
+        descricao: document.getElementById('cre-desc').value,
+        imagem: document.getElementById('cre-imagem').value || "",
+        criado_em: new Date().toISOString()
+    };
+
+    // Adiciona campos numéricos se existirem
+    if(document.getElementById('cre-ryos')) dados.recompensa = Number(document.getElementById('cre-ryos').value) || 0;
+    if(document.getElementById('cre-xp')) dados.xp = Number(document.getElementById('cre-xp').value) || 0;
+    if(document.getElementById('cre-en')) dados.en = Number(document.getElementById('cre-en').value) || 0;
+    if(document.getElementById('cre-rank')) dados.rank = document.getElementById('cre-rank').value.toUpperCase();
+    if(document.getElementById('cre-restrito')) dados.restrito_a = document.getElementById('cre-restrito').value;
+    if(document.getElementById('cre-preco')) dados.ryos = Number(document.getElementById('cre-preco').value) || 0;
+    if(document.getElementById('cre-preco-f')) dados.preco = Number(document.getElementById('cre-preco-f').value) || 0;
+
+    try {
+        // Envia para a coleção correta no Firestore
+        await addDoc(collection(db, tipo), dados);
+        alert("Sucesso! O item foi forjado e adicionado ao mundo ninja.");
+        document.getElementById('modalCriacaoGeral').style.display = 'none';
+        location.reload(); // Recarrega para mostrar o novo item
+    } catch (error) {
+        console.error(error);
+        alert("Erro ao salvar no banco de dados.");
+        btnSubmit.disabled = false;
+    }
+};
+
 
 
 window.aplicarEscalaPersonalizada = aplicarEscalaPersonalizada;
@@ -1573,6 +1662,7 @@ window.confirmarTrocaRyos = confirmarTrocaRyos;
 window.abrirModalPix = abrirModalPix;
 window.showTab = showTab;
 window.reprovarSolicitacao = reprovarSolicitacao;
+window.abrirModalCriacao = abrirModalCriacao;
 
 // --- FUNÇÕES PARA FECHAR OS MODAIS ---
 
@@ -1635,3 +1725,5 @@ window.onclick = function(event) {
         event.target.style.display = "none";
     }
 };
+
+
