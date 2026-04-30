@@ -1568,84 +1568,118 @@ window.abrirModalPix = (plano) => {
     modal.style.display = 'flex';
 };
 
+
 window.abrirModalCriacao = () => {
     const tipo = document.getElementById('btn-adicionar-geral').getAttribute('data-tipo');
     const container = document.getElementById('campos-dinamicos');
     const titulo = document.getElementById('titulo-modal-criacao');
     container.innerHTML = '';
     
-    titulo.innerText = `Criar Novo(a) ${tipo.toUpperCase()}`;
+    titulo.innerHTML = `<i class="fa-solid fa-scroll"></i> Novo(a) ${tipo.slice(0, -1).toUpperCase()}`;
 
-    // Campos básicos que quase todos têm
-    let html = `
-        <input type="text" id="cre-titulo" placeholder="Título/Nome" required style="padding:10px; border:1px solid #ddd; border-radius:5px;">
-        <input type="text" id="cre-imagem" placeholder="URL da Imagem" style="padding:10px; border:1px solid #ddd; border-radius:5px;">
-        <textarea id="cre-desc" placeholder="Descrição" required style="padding:10px; border:1px solid #ddd; border-radius:5px; height:80px;"></textarea>
+    // Helper para criar campos bonitos
+    const campo = (label, id, type = 'text', placeholder = '', grid = '') => `
+        <div class="input-group ${grid}">
+            <label>${label}</label>
+            <input type="${type}" id="${id}" placeholder="${placeholder}">
+        </div>
     `;
 
-    // Campos específicos por tipo
+    // 1. Campos Comuns
+    let html = campo('Nome do Item/Título', 'cre-titulo', 'text', 'Ex: Rasengan ou Missão Rank S');
+    html += campo('URL da Imagem', 'cre-imagem', 'text', 'https://link-da-foto.png');
+    html += `<div class="input-group"><label>Descrição Detalhada</label>
+             <textarea id="cre-desc" placeholder="Descreva os efeitos ou detalhes..." style="height:100px; padding:12px; border-radius:10px; border:2px solid #edf2f7; background:#f8fafc;"></textarea></div>`;
+
+    // 2. Campos Específicos
     if (tipo === 'missoes' || tipo === 'conquistas') {
-        html += `
-            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
-                <input type="number" id="cre-ryos" placeholder="Ryos">
-                <input type="number" id="cre-xp" placeholder="XP">
-                <input type="number" id="cre-en" placeholder="EN">
-            </div>
-            <input type="text" id="cre-rank" placeholder="Rank (D, C, B, A, S)">
-            <input type="text" id="cre-restrito" placeholder="Restrito a (Nome do Player ou vazio)">
-        `;
-    } else if (tipo === 'jutsus') {
-        html += `
-            <input type="text" id="cre-requisito" placeholder="Requisito (ex: Nível 5)">
-            <input type="number" id="cre-preco" placeholder="Preço em Ryos">
-            <input type="text" id="cre-rank-j" placeholder="Rank do Jutsu">
-        `;
-    } else if (tipo === 'ferramentas' || tipo === 'loja') {
-        html += `<input type="number" id="cre-preco-f" placeholder="Preço em Ryos">`;
+        html += `<div class="input-grid-3">
+                    ${campo('Ryos', 'cre-ryos', 'number', '0')}
+                    ${campo('XP', 'cre-xp', 'number', '0')}
+                    ${campo('EN', 'cre-en', 'number', '0')}
+                 </div>`;
+        html += `<div class="input-grid-2">
+                    ${campo('Rank (D,C,B,A,S)', 'cre-rank', 'text', 'Rank D')}
+                    ${campo('Restrito a', 'cre-restrito', 'text', 'Nome do Ninja')}
+                 </div>`;
+    } 
+    
+    else if (tipo === 'jutsus') {
+        html += `<div class="input-grid-3">
+                    ${campo('Preço (Ryos)', 'cre-preco', 'number', '0')}
+                    ${campo('Requisito', 'cre-requisito', 'text', 'Nível 10')}
+                    ${campo('Rank', 'cre-rank-j', 'text', 'C')}
+                 </div>`;
+        html += `<div class="input-grid-2">
+                    ${campo('Dano', 'cre-dano', 'text', '100')}
+                    ${campo('Gasto Chakra', 'cre-chakra', 'text', '50')}
+                    ${campo('Defesa', 'cre-defesa', 'text', '20')}
+                    ${campo('Bônus HP', 'cre-hp', 'text', '0')}
+                 </div>`;
+        html += campo('Restrito a', 'cre-restrito', 'text', 'Ex: Clã Uchiha');
+    }
+
+    else if (tipo === 'ferramentas' || tipo === 'loja') {
+        html += campo('Preço em Ryos', 'cre-preco-f', 'number', '500');
     }
 
     container.innerHTML = html;
     document.getElementById('modalCriacaoGeral').style.display = 'flex';
 };
 
-// Função para Salvar
+// Lógica de Salvamento Atualizada
 document.getElementById('form-criacao-geral').onsubmit = async (e) => {
     e.preventDefault();
     const tipo = document.getElementById('btn-adicionar-geral').getAttribute('data-tipo');
-    const btnSubmit = e.target.querySelector('button');
+    const btnSubmit = e.target.querySelector('.mission-btn-start');
     btnSubmit.disabled = true;
 
-    // Mapeia os campos para os nomes corretos do Firebase
+    // Coleta básica
     const dados = {
+        nome: document.getElementById('cre-titulo').value,
         titulo: document.getElementById('cre-titulo').value,
-        nome: document.getElementById('cre-titulo').value, // Duplicado para compatibilidade
         descricao: document.getElementById('cre-desc').value,
         imagem: document.getElementById('cre-imagem').value || "",
-        criado_em: new Date().toISOString()
+        data_criacao: new Date()
     };
 
-    // Adiciona campos numéricos se existirem
-    if(document.getElementById('cre-ryos')) dados.recompensa = Number(document.getElementById('cre-ryos').value) || 0;
-    if(document.getElementById('cre-xp')) dados.xp = Number(document.getElementById('cre-xp').value) || 0;
-    if(document.getElementById('cre-en')) dados.en = Number(document.getElementById('cre-en').value) || 0;
-    if(document.getElementById('cre-rank')) dados.rank = document.getElementById('cre-rank').value.toUpperCase();
-    if(document.getElementById('cre-restrito')) dados.restrito_a = document.getElementById('cre-restrito').value;
-    if(document.getElementById('cre-preco')) dados.ryos = Number(document.getElementById('cre-preco').value) || 0;
-    if(document.getElementById('cre-preco-f')) dados.preco = Number(document.getElementById('cre-preco-f').value) || 0;
+    // Coleta dinâmica (Tenta pegar se o campo existir no DOM)
+    const getVal = (id) => document.getElementById(id) ? document.getElementById(id).value : null;
+
+    if (tipo === 'missoes' || tipo === 'conquistas') {
+        dados.recompensa = Number(getVal('cre-ryos')) || 0;
+        dados.xp = Number(getVal('cre-xp')) || 0;
+        dados.en = Number(getVal('cre-en')) || 0;
+        dados.rank = (getVal('cre-rank') || 'D').toUpperCase();
+        dados.restrito_a = getVal('cre-restrito') || "";
+    }
+
+    if (tipo === 'jutsus') {
+        dados.ryos = Number(getVal('cre-preco')) || 0;
+        dados.requisito = getVal('cre-requisito') || "";
+        dados.rank = getVal('cre-rank-j') || "";
+        dados.dano = getVal('cre-dano') || "";
+        dados.chakra = getVal('cre-chakra') || "";
+        dados.defesa = getVal('cre-defesa') || "";
+        dados.bonus_hp = getVal('cre-hp') || "";
+        dados.restrito_a = getVal('cre-restrito') || "";
+    }
+
+    if (tipo === 'ferramentas' || tipo === 'loja') {
+        dados.preco = Number(getVal('cre-preco-f')) || 0;
+    }
 
     try {
-        // Envia para a coleção correta no Firestore
         await addDoc(collection(db, tipo), dados);
-        alert("Sucesso! O item foi forjado e adicionado ao mundo ninja.");
+        alert("Criado com sucesso!");
         document.getElementById('modalCriacaoGeral').style.display = 'none';
-        location.reload(); // Recarrega para mostrar o novo item
-    } catch (error) {
-        console.error(error);
-        alert("Erro ao salvar no banco de dados.");
+        location.reload();
+    } catch (err) {
+        console.error(err);
+        alert("Erro ao salvar.");
         btnSubmit.disabled = false;
     }
 };
-
 
 
 window.aplicarEscalaPersonalizada = aplicarEscalaPersonalizada;
