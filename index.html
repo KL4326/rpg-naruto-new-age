@@ -466,9 +466,24 @@
 
 <!-- Modal Genérico de Criação -->
 <div class="modal-overlay-comment" id="modalCriacaoGeral" style="display: none; z-index: 10000;">
-    <div class="modal-content-card" style="max-width: 500px; padding: 20px;">
+    <div class="modal-criacao-container">
         <span class="close-modal" onclick="document.getElementById('modalCriacaoGeral').style.display='none'">&times;</span>
-        <h2 id="titulo-modal-criacao" style="color: var(--primary-color); margin-bottom: 15px;">Criar Novo</h2>
+        <h2 id="titulo-modal-criacao">Editor do Kage</h2>
+        
+        <form id="form-criacao-geral">
+            <div id="campos-dinamicos">
+                <!-- Conteúdo gerado pelo JS -->
+            </div>
+            
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button type="button" class="plano-btn" style="border-color:#ccc; color:#777;" onclick="document.getElementById('modalCriacaoGeral').style.display='none'">Cancelar</button>
+                <button type="submit" class="mission-btn-start" style="flex: 2; margin: 0;">
+                    <i class="fa-solid fa-fire"></i> Confirmar Criação
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
         
         <form id="form-criacao-geral" style="display: flex; flex-direction: column; gap: 12px;">
             <!-- Os campos serão injetados via JavaScript dependendo da aba -->
