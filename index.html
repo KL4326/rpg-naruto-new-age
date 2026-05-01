@@ -458,11 +458,19 @@
     </div>
     
 
-<!-- Modal Genérico de Criação -->
-<div class="modal-overlay-comment" id="modalCriacaoGeral" style="display: none; align-items: center; justify-content: center; z-index: 10000;">
-    <div class="modal-criacao-container">
-        <span class="close-modal" onclick="document.getElementById('modalCriacaoGeral').style.display='none'">&times;</span>
-        <h2 id="titulo-modal-criacao" style="margin-top: 0; color: var(--primary-color);">Editor do Kage</h2>
+<!-- BOTÃO FLUTUANTE DE CRIAÇÃO (Obrigatório para o showTab funcionar) -->
+<div id="btn-adicionar-geral" style="display: none; position: fixed; bottom: 30px; right: 30px; z-index: 9999;">
+    <button onclick="window.abrirModalCriacao()" style="width: 60px; height: 60px; border-radius: 50%; background: var(--primary-color); color: white; border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.3); cursor: pointer; font-size: 1.5rem; display: flex; align-items: center; justify-content: center;">
+        <i class="fa-solid fa-plus"></i>
+    </button>
+</div>
+
+<!-- MODAL GENÉRICO DE CRIAÇÃO -->
+<div class="modal-overlay-comment" id="modalCriacaoGeral" style="display: none; align-items: center; justify-content: center; z-index: 10000; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6);">
+    <div class="modal-criacao-container" style="background: #fff; width: 90%; max-width: 550px; border-radius: 15px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); position: relative;">
+        <span class="close-modal" onclick="document.getElementById('modalCriacaoGeral').style.display='none'" style="position: absolute; right: 20px; top: 15px; cursor: pointer; font-size: 24px;">&times;</span>
+        
+        <h2 id="titulo-modal-criacao" style="margin-top: 0; color: var(--primary-color); font-size: 1.5rem; margin-bottom: 20px;">Editor do Kage</h2>
         
         <form id="form-criacao-geral">
             <div id="campos-dinamicos">
@@ -471,7 +479,7 @@
             
             <div style="margin-top: 20px; display: flex; gap: 10px;">
                 <button type="button" class="plano-btn" style="flex: 1; border: 1px solid #ddd; background: #fff; padding: 12px; border-radius: 10px; cursor: pointer;" onclick="document.getElementById('modalCriacaoGeral').style.display='none'">Sair</button>
-                <button type="submit" class="mission-btn-start" style="flex: 2; margin: 0; padding: 12px; font-weight: bold;">
+                <button type="submit" class="mission-btn-start" style="flex: 2; margin: 0; padding: 12px; font-weight: bold; cursor: pointer;">
                     <i class="fa-solid fa-save"></i> Forjar Item
                 </button>
             </div>
