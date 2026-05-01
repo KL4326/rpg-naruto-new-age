@@ -44,70 +44,54 @@ body.dark-mode {
 body { background-color: var(--bg-color); color: var(--text-color); height: 100vh; overflow: hidden; }
 
 
-/* Estilização Geral do Modal de Criação */
+/* Estilização do Modal de Criação */
 .modal-criacao-container {
     background: #fff;
-    width: 95%;
-    max-width: 650px;
+    width: 90%;
+    max-width: 550px;
     border-radius: 15px;
-    padding: 30px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-    border-top: 6px solid var(--primary-color);
-    max-height: 90vh;
-    overflow-y: auto;
+    padding: 25px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    animation: modalShow 0.3s ease;
 }
 
-.modal-criacao-container h2 {
-    text-align: center;
-    margin-bottom: 25px;
-    font-size: 1.6rem;
-    letter-spacing: 1px;
-}
-
-/* Organização dos Grupos de Input */
-.input-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-bottom: 18px;
-}
-
-.input-group label {
-    font-weight: bold;
-    font-size: 0.85rem;
-    color: #444;
+#form-criacao-geral label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #555;
+    margin-bottom: 5px;
     text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.input-group input, 
-.input-group textarea, 
-.input-group select {
-    padding: 12px 15px;
+#form-criacao-geral input, 
+#form-criacao-geral textarea {
+    width: 100%;
+    padding: 10px 12px;
     border: 2px solid #edf2f7;
     border-radius: 10px;
-    font-size: 1rem;
-    transition: all 0.3s ease;
     background: #f8fafc;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    box-sizing: border-box;
 }
 
-.input-group input:focus {
+#form-criacao-geral input:focus, 
+#form-criacao-geral textarea:focus {
     border-color: var(--primary-color);
     background: #fff;
     outline: none;
-    box-shadow: 0 0 0 4px rgba(255, 107, 0, 0.1);
 }
 
-/* Grid para campos pequenos (Números) */
-.input-grid-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-}
+/* Sistema de Grid para alinhar campos lado a lado */
+.input-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.input-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.input-group { margin-bottom: 15px; }
 
-.input-grid-3 {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 12px;
+@keyframes modalShow {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
 
 
