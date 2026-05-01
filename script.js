@@ -712,15 +712,59 @@ async function carregarMeusJutsus(l) {
         lista.forEach(item => criarCard('meus-jutsus-grid', item, item.id, 'jutsu', (id, i) => verDetalhesJutsu(id, i)));
     } catch(e) {}
 }
-async function carregarLojaFerramentas() { 
+async function carregarLojaFerramentas() {
+    const c = document.getElementById('loja-ferramentas-grid'); 
+    if (!c) return;
+    
     try {
+        c.innerHTML = '<p style="color:#777;">Abrindo o arsenal...</p>';
         if (!currentUserData) return;
-        const c = document.getElementById('loja-ferramentas-grid'); if(!c) return; c.innerHTML = ''; 
-        const s = await getDocs(collection(db, "ferramentas")); 
-        let lista = []; s.forEach(d => lista.push({id:d.id, ...d.data()}));
-        lista = aplicarOrdenacao(lista, ordenacaoAtual);
-        lista.forEach(item => criarCardLoja('loja-ferramentas-grid', item, item.id, 'ferramenta', null, (id, i) => verDetalhesFerramenta(id, i)));
-    } catch(e) {}
+
+        const nivelNinja = currentUserData.nivel || 1;
+        const nomePlayer = String(currentUserData.nome || "").trim().toLowerCase();
+        const apelidoPlayer = String(currentUserData.apelido || "").trim().toLowerCase();
+        const isAdmin = auth.currentUser?.email === "admin@rpgnaruto.com";
+
+        const snap = await getDocs(collection(db, "ferramentas"));
+        let lista = [];
+
+        snap.forEach(d => {
+            try {
+                let i = d.data();
+                let restritos = i.restrito_a;
+                let permiteAcesso = true; 
+                
+                // Validação de Restrição (Array de nomes)
+                if (restritos && restritos.length > 0 && !isAdmin) {
+                    const listaCheck = restritos.map(n => String(n).toLowerCase());
+                    const temAcesso = listaCheck.includes(nomePlayer) || listaCheck.includes(apelidoPlayer);
+                    if (!temAcesso) permiteAcesso = false;
+                }
+
+                if (permiteAcesso) {
+                    // Validação de Nível para compra
+                    const requisitoNivel = Number(i.requisito) || 0;
+                    i.bloqueadoPorNivel = nivelNinja < requisitoNivel;
+                    
+                    lista.push({ id: d.id, ...i });
+                }
+            } catch(e) { console.error("Erro na ferramenta:", d.id); }
+        });
+
+        c.innerHTML = '';
+        if (lista.length === 0) {
+            c.innerHTML = '<p style="color:#777;">Arsenal vazio no momento.</p>';
+        } else {
+            lista.forEach(item => {
+                // Usamos o tipo 'ferramenta' para o card carregar os campos certos (dano, etc)
+                criarCardLoja('loja-ferramentas-grid', item, item.id, 'ferramenta', null, (id, dados) => {
+                    if (typeof window.verDetalhesFerramenta === 'function') window.verDetalhesFerramenta(id, dados);
+                });
+            });
+        }
+    } catch (err) {
+        c.innerHTML = '<p style="color:red;">Erro ao carregar ferramentas.</p>';
+    }
 }
 async function carregarLojaItens() {
     try {
@@ -1638,6 +1682,21 @@ window.abrirModalCriacao = () => {
     
     container.innerHTML = html;
     document.getElementById('modalCriacaoGeral').style.display = 'flex';
+
+
+    // Dentro da função window.abrirModalCriacao = () => { ...
+    if (tipo === 'ferramentas') {
+        html += `<div class="input-grid-3">
+                    ${campo('Preço (Ryos)', 'cre-preco', 'number', '0')}
+                    ${campo('Requisito (Nível)', 'cre-requisito', 'number', '1')}
+                    ${campo('Dano', 'cre-dano', 'text', '0')}
+                 </div>`;
+        html += `<div class="input-grid-2">
+                    ${campo('Stamina', 'cre-stamina', 'text', '0')}
+                    ${campo('Defesa', 'cre-defesa', 'text', '0')}
+                 </div>`;
+        html += campo('Restrito a (Nomes)', 'cre-restrito', 'text', 'Nome 1, Nome 2...');
+    }
 };
 
 
@@ -1646,52 +1705,51 @@ document.getElementById('form-criacao-geral').onsubmit = async (e) => {
     const tipo = document.getElementById('btn-adicionar-geral').getAttribute('data-tipo');
     const nomeInput = document.getElementById('cre-nome').value;
     
-    // Gera o ID limpo: "Bola de Fogo" -> "bola_de_fogo"
+    // ID Limpo (ex: "Kunai de Ferro" -> "kunai_de_ferro")
     const gerarSlugSimples = (nome) => {
         return nome.toLowerCase().trim()
-            .normalize('NFD').replace(/[\u0300-\u036f]/g, "") // Remove acentos
-            .replace(/\s+/g, '_') // Espaços para _
-            .replace(/[^\w-]+/g, ''); // Remove caracteres especiais
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, "")
+            .replace(/\s+/g, '_').replace(/[^\w-]+/g, '');
     };
 
     const customID = gerarSlugSimples(nomeInput);
     const getVal = (id) => document.getElementById(id) ? document.getElementById(id).value : null;
 
-    // Processa a restrição mantendo as maiúsculas (ex: "Kagetsu Otsutsuki")
+    // Processa nomes restritos mantendo maiúsculas
     const restritoTexto = getVal('cre-restrito') || "";
-    const restritoArray = restritoTexto.split(',')
-        .map(n => n.trim())
-        .filter(n => n !== ""); 
+    const restritoArray = restritoTexto.split(',').map(n => n.trim()).filter(n => n !== ""); 
 
-    // Objeto com os campos exatos que você pediu
+    // Dados básicos comuns
     const dados = {
         nome: nomeInput,
         descricao: getVal('cre-desc') || "",
         imagem: getVal('cre-imagem') || "",
         preco: Number(getVal('cre-preco')) || 0,
-        rank: getVal('cre-rank') || "",
         restrito_a: restritoArray,
         requisito: Number(getVal('cre-requisito')) || 0
     };
 
-    // Campos específicos para Jutsus
-    if (tipo === 'jutsus') {
+    // Campos específicos para Jutsus OU Ferramentas
+    if (tipo === 'jutsus' || tipo === 'ferramentas') {
         dados.dano = getVal('cre-dano') || "";
-        dados.defesa = getVal('cre-defesa') || "";
-        dados.chakra = getVal('cre-chakra') || "";
         dados.stamina = getVal('cre-stamina') || "";
-        dados.bonus_hp = getVal('cre-hp') || "";
-        dados.bonus_stamina = getVal('cre-b-stamina') || "";
+        dados.defesa = getVal('cre-defesa') || "";
+        
+        if (tipo === 'jutsus') {
+            dados.rank = getVal('cre-rank') || "";
+            dados.chakra = getVal('cre-chakra') || "";
+            dados.bonus_hp = getVal('cre-hp') || "";
+            dados.bonus_stamina = getVal('cre-b-stamina') || "";
+        }
     }
 
     try {
-        // Salva com o ID personalizado (ex: bola_de_fogo)
         await setDoc(doc(db, tipo, customID), dados);
-        alert(`Documento criado com sucesso: ${customID}`);
+        alert(`Ferramenta forjada: ${customID}`);
         location.reload();
     } catch (err) {
-        console.error("Erro ao criar documento:", err);
-        alert("Erro ao salvar. Verifique o console.");
+        console.error(err);
+        alert("Erro ao salvar no Firebase.");
     }
 };
 
