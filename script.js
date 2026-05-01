@@ -1647,26 +1647,27 @@ window.abrirModalCriacao = () => {
     const btnAdd = document.getElementById('btn-adicionar-geral');
     if (!btnAdd) return;
 
-    // Pega o valor que sua showTab definiu (ex: 'ferramentas' ou 'jutsus')
-    const tipo = btnAdd.getAttribute('data-tipo');
-    console.log("Abrindo modal para o tipo detectado:", tipo); // Debug para você ver no console
+    // Pegamos o tipo e limpamos qualquer espaço extra
+    const tipo = (btnAdd.getAttribute('data-tipo') || "").trim().toLowerCase();
+    
+    // Debug no console para você confirmar o que o site está lendo
+    console.log("Abrindo modal para o tipo:", tipo);
 
     const container = document.getElementById('campos-dinamicos');
     const titulo = document.getElementById('titulo-modal-criacao');
-    
     container.innerHTML = '';
-    titulo.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> Editor: ${tipo.toUpperCase()}`;
+    
+    titulo.innerHTML = `<i class="fa-solid fa-screwdriver-wrench"></i> Criar: ${tipo.toUpperCase()}`;
 
-    // Helper para criar os campos
-    const campo = (label, id, type = 'text', placeholder = '', grid = '') => `
-        <div class="input-group ${grid}">
+    const campo = (label, id, type = 'text', placeholder = '') => `
+        <div class="input-group">
             <label>${label}</label>
             <input type="${type}" id="${id}" placeholder="${placeholder}">
         </div>
     `;
 
-    // 1. CAMPOS BÁSICOS (Sempre aparecem)
-    let html = campo('NOME EXATO', 'cre-nome', 'text', 'Ex: Kunai de Ferro');
+    // 1. CAMPOS BÁSICOS
+    let html = campo('NOME EXATO', 'cre-nome', 'text', 'Ex: Kunai de Papel');
     html += campo('URL DA IMAGEM', 'cre-imagem', 'text', 'Link da imagem...');
     html += `
         <div class="input-group">
@@ -1675,49 +1676,47 @@ window.abrirModalCriacao = () => {
         </div>
     `;
 
-    // 2. CAMPOS ESPECÍFICOS PARA FERRAMENTAS
-    // Aqui usamos exatamente o nome que está na sua abasComCriacao da showTab
-    if (tipo === 'ferramentas') {
+    // 2. CAMPOS DE FERRAMENTAS OU LOJA
+    if (tipo === 'ferramentas' || tipo === 'loja') {
         html += `
-            <div class="input-grid-3" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:10px;">
                 ${campo('PREÇO (RYOS)', 'cre-preco', 'number', '0')}
                 ${campo('REQUISITO (NV)', 'cre-requisito', 'number', '1')}
                 ${campo('DANO', 'cre-dano', 'text', '0')}
             </div>
-            <div class="input-grid-2" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
-                ${campo('STAMINA (GASTO)', 'cre-stamina', 'text', '0')}
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
+                ${campo('STAMINA', 'cre-stamina', 'text', '0')}
                 ${campo('DEFESA', 'cre-defesa', 'text', '0')}
             </div>
-            ${campo('RESTRITO A (NOMES)', 'cre-restrito', 'text', 'Nome 1, Nome 2...')}
+            ${campo('RESTRITO A (NOMES)', 'cre-restrito', 'text', 'Ex: Kagetsu Otsutsuki')}
         `;
     } 
     
-    // 3. CAMPOS ESPECÍFICOS PARA JUTSUS
+    // 3. CAMPOS DE JUTSUS
     else if (tipo === 'jutsus') {
         html += `
-            <div class="input-grid-3" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:10px;">
                 ${campo('PREÇO', 'cre-preco', 'number', '0')}
                 ${campo('REQUISITO (NV)', 'cre-requisito', 'number', '1')}
                 ${campo('RANK', 'cre-rank', 'text', 'C')}
             </div>
-            <div class="input-grid-3" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:10px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:10px;">
                 ${campo('DANO', 'cre-dano', 'text', '0')}
                 ${campo('DEFESA', 'cre-defesa', 'text', '0')}
                 ${campo('CHAKRA', 'cre-chakra', 'text', '0')}
             </div>
-            <div class="input-grid-3" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:10px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:10px;">
                 ${campo('STAMINA', 'cre-stamina', 'text', '0')}
                 ${campo('BÔNUS HP', 'cre-hp', 'text', '0')}
                 ${campo('BÔNUS STAMINA', 'cre-b-stamina', 'text', '0')}
             </div>
-            ${campo('RESTRITO A (NOMES)', 'cre-restrito', 'text', 'Ex: Naruto Uzumaki')}
+            ${campo('RESTRITO A (NOMES)', 'cre-restrito', 'text', 'Ex: Hatsume Uchiha')}
         `;
     }
 
     container.innerHTML = html;
     document.getElementById('modalCriacaoGeral').style.display = 'flex';
 };
-
 
 document.getElementById('form-criacao-geral').onsubmit = async (e) => {
     e.preventDefault();
