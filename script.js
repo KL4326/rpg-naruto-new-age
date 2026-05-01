@@ -1644,10 +1644,15 @@ window.abrirModalPix = (plano) => {
 
 
 window.abrirModalCriacao = () => {
-    const tipo = document.getElementById('btn-adicionar-geral').getAttribute('data-tipo');
+    const btnAdd = document.getElementById('btn-adicionar-geral');
+    const tipo = btnAdd.getAttribute('data-tipo');
     const container = document.getElementById('campos-dinamicos');
-    container.innerHTML = '';
+    const titulo = document.getElementById('titulo-modal-criacao');
     
+    container.innerHTML = '';
+    titulo.innerHTML = `<i class="fa-solid fa-hammer"></i> Novo(a) ${tipo.slice(0, -1).toUpperCase()}`;
+
+    // Helper para gerar o HTML dos campos com label
     const campo = (label, id, type = 'text', placeholder = '', grid = '') => `
         <div class="input-group ${grid}">
             <label>${label}</label>
@@ -1655,48 +1660,71 @@ window.abrirModalCriacao = () => {
         </div>
     `;
 
-    let html = campo('Nome Exato', 'cre-nome', 'text', 'Ex: Bola de Fogo');
-    html += campo('URL da Imagem', 'cre-imagem', 'text', 'Link da imagem...');
-    html += `<div class="input-group"><label>Descrição</label>
-             <textarea id="cre-desc" placeholder="Descrição do item..." style="height:80px; border-radius:10px; border:2px solid #edf2f7; background:#f8fafc; padding:12px;"></textarea></div>`;
+    // 1. CAMPOS GERAIS (Sempre aparecem)
+    let html = campo('Nome Exato', 'cre-nome', 'text', 'Ex: Kunai de Papel');
+    html += campo('URL da Imagem', 'cre-imagem', 'text', 'https://...');
+    html += `
+        <div class="input-group">
+            <label>Descrição</label>
+            <textarea id="cre-desc" placeholder="Detalhes do item..." style="height:80px; padding:12px; border-radius:10px; border:2px solid #edf2f7; background:#f8fafc;"></textarea>
+        </div>
+    `;
 
-    if (tipo === 'jutsus') {
-        html += `<div class="input-grid-3">
-                    ${campo('Preço (Ryos)', 'cre-preco', 'number', '0')}
-                    ${campo('Requisito (Nível)', 'cre-requisito', 'number', '1')}
-                    ${campo('Rank', 'cre-rank', 'text', 'C')}
-                 </div>`;
-        html += `<div class="input-grid-3">
-                    ${campo('Dano', 'cre-dano', 'text', '0')}
-                    ${campo('Defesa', 'cre-defesa', 'text', '0')}
-                    ${campo('Chakra', 'cre-chakra', 'text', '0')}
-                 </div>`;
-        html += `<div class="input-grid-3">
-                    ${campo('Stamina', 'cre-stamina', 'text', '0')}
-                    ${campo('Bônus HP', 'cre-hp', 'text', '0')}
-                    ${campo('Bônus Stamina', 'cre-b-stamina', 'text', '0')}
-                 </div>`;
-        html += campo('Restrito a (ID do Usuário)', 'cre-restrito', 'text', 'Deixe vazio se for para todos');
-    }
-    // ... manter lógica para missões/conquistas se necessário, seguindo o mesmo padrão de campos limpos
+    // 2. CAMPOS ESPECÍFICOS PARA FERRAMENTAS
+    if (tipo === 'ferramentas') {
+        html += `
+            <div class="input-grid-3">
+                ${campo('Preço (Ryos)', 'cre-preco', 'number', '0')}
+                ${campo('Requisito (Nível)', 'cre-requisito', 'number', '1')}
+                ${campo('Dano', 'cre-dano', 'text', '0')}
+            </div>
+            <div class="input-grid-2">
+                ${campo('Stamina (Gasto)', 'cre-stamina', 'text', '0')}
+                ${campo('Defesa', 'cre-defesa', 'text', '0')}
+            </div>
+            ${campo('Restrito a (Nomes dos Personagens)', 'cre-restrito', 'text', 'Ex: Kagetsu Otsutsuki, Hatsume Uchiha')}
+        `;
+    } 
     
+    // 3. CAMPOS ESPECÍFICOS PARA JUTSUS (Para manter a função completa)
+    else if (tipo === 'jutsus') {
+        html += `
+            <div class="input-grid-3">
+                ${campo('Preço (Ryos)', 'cre-preco', 'number', '0')}
+                ${campo('Requisito (Nível)', 'cre-requisito', 'number', '1')}
+                ${campo('Rank', 'cre-rank', 'text', 'C')}
+            </div>
+            <div class="input-grid-3">
+                ${campo('Dano', 'cre-dano', 'text', '0')}
+                ${campo('Defesa', 'cre-defesa', 'text', '0')}
+                ${campo('Chakra', 'cre-chakra', 'text', '0')}
+            </div>
+            <div class="input-grid-3">
+                ${campo('Stamina', 'cre-stamina', 'text', '0')}
+                ${campo('Bônus HP', 'cre-hp', 'text', '0')}
+                ${campo('Bônus Stamina', 'cre-b-stamina', 'text', '0')}
+            </div>
+            ${campo('Restrito a (Nomes)', 'cre-restrito', 'text', 'Ex: Naruto Uzumaki')}
+        `;
+    }
+
+    // 4. CAMPOS PARA MISSÕES E CONQUISTAS
+    else if (tipo === 'missoes' || tipo === 'conquistas') {
+        html += `
+            <div class="input-grid-3">
+                ${campo('Ryos', 'cre-ryos', 'number', '0')}
+                ${campo('XP', 'cre-xp', 'number', '0')}
+                ${campo('EN', 'cre-en', 'number', '0')}
+            </div>
+            <div class="input-grid-2">
+                ${campo('Rank', 'cre-rank', 'text', 'D')}
+                ${campo('Restrito a', 'cre-restrito', 'text', 'Nome do Player')}
+            </div>
+        `;
+    }
+
     container.innerHTML = html;
     document.getElementById('modalCriacaoGeral').style.display = 'flex';
-
-
-    // Dentro da função window.abrirModalCriacao = () => { ...
-    if (tipo === 'ferramentas') {
-        html += `<div class="input-grid-3">
-                    ${campo('Preço (Ryos)', 'cre-preco', 'number', '0')}
-                    ${campo('Requisito (Nível)', 'cre-requisito', 'number', '1')}
-                    ${campo('Dano', 'cre-dano', 'text', '0')}
-                 </div>`;
-        html += `<div class="input-grid-2">
-                    ${campo('Stamina', 'cre-stamina', 'text', '0')}
-                    ${campo('Defesa', 'cre-defesa', 'text', '0')}
-                 </div>`;
-        html += campo('Restrito a (Nomes)', 'cre-restrito', 'text', 'Nome 1, Nome 2...');
-    }
 };
 
 
