@@ -1644,51 +1644,76 @@ window.abrirModalPix = (plano) => {
 
 
 window.abrirModalCriacao = () => {
-    // Se esse alerta NÃO aparecer, seu arquivo JS não atualizou no navegador!
-    alert("TESTE: Abrindo modal para o tipo: " + document.getElementById('btn-adicionar-geral').getAttribute('data-tipo'));
-
     const btnAdd = document.getElementById('btn-adicionar-geral');
+    if (!btnAdd) return;
+
     const tipo = (btnAdd.getAttribute('data-tipo') || "").trim().toLowerCase();
     const container = document.getElementById('campos-dinamicos');
     const titulo = document.getElementById('titulo-modal-criacao');
 
     container.innerHTML = '';
-    titulo.innerText = "Criar: " + tipo.toUpperCase();
+    titulo.innerHTML = `<i class="fa-solid fa-pen-nib"></i> Criar ${tipo.slice(0,-1).toUpperCase()}`;
 
-    const campo = (label, id, type = 'text', placeholder = '') => `
-        <div style="margin-bottom: 10px; display: flex; flex-direction: column;">
-            <label style="font-weight: bold; font-size: 12px;">${label}</label>
-            <input type="${type}" id="${id}" placeholder="${placeholder}" style="padding: 8px; border: 1px solid #ccc; border-radius: 5px;">
+    // Função interna para facilitar a criação de campos
+    const campo = (label, id, type = 'text', ph = '') => `
+        <div class="input-group">
+            <label>${label}</label>
+            <input type="${type}" id="${id}" placeholder="${ph}">
         </div>
     `;
 
-    // Campos Base
-    let html = campo('NOME', 'cre-nome');
-    html += campo('IMAGEM (URL)', 'cre-imagem');
-    html += `<label style="font-weight: bold; font-size: 12px;">DESCRIÇÃO</label>
-             <textarea id="cre-desc" style="padding: 8px; border: 1px solid #ccc; border-radius: 5px; height: 60px;"></textarea>`;
+    // 1. Bloco de Nome e Imagem lado a lado
+    let html = `
+        <div class="input-grid-2">
+            ${campo('Nome do Item', 'cre-nome', 'text', 'Ex: Espada Kusanagi')}
+            ${campo('URL da Imagem', 'cre-imagem', 'text', 'https://...')}
+        </div>
+    `;
 
-    // Verificação específica para Ferramentas
+    // 2. Descrição (ocupando largura total)
+    html += `
+        <div class="input-group">
+            <label>Descrição e Efeitos</label>
+            <textarea id="cre-desc" placeholder="Descreva o que este item faz..."></textarea>
+        </div>
+    `;
+
+    // 3. Campos Específicos para Ferramentas ou Itens de Loja
     if (tipo === 'ferramentas' || tipo === 'loja') {
-        html += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-                    ${campo('PREÇO', 'cre-preco', 'number')}
-                    ${campo('REQUISITO (NV)', 'cre-requisito', 'number')}
-                    ${campo('DANO', 'cre-dano')}
-                    ${campo('STAMINA', 'cre-stamina')}
-                    ${campo('DEFESA', 'cre-defesa')}
-                 </div>
-                 ${campo('RESTRITO A', 'cre-restrito')}`;
-    } else if (tipo === 'jutsus') {
-        html += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-                    ${campo('DANO', 'cre-dano')}
-                    ${campo('CHAKRA', 'cre-chakra')}
-                 </div>`;
+        html += `
+            <div class="input-grid-3">
+                ${campo('Preço (Ryos)', 'cre-preco', 'number', '0')}
+                ${campo('Requisito (Nv)', 'cre-requisito', 'number', '1')}
+                ${campo('Dano', 'cre-dano', 'text', '0')}
+            </div>
+            <div class="input-grid-2">
+                ${campo('Gasto Stamina', 'cre-stamina', 'text', '0')}
+                ${campo('Defesa/Bloqueio', 'cre-defesa', 'text', '0')}
+            </div>
+            ${campo('Restrito a (Nomes separados por vírgula)', 'cre-restrito', 'text', 'Opcional')}
+        `;
+    } 
+    
+    // 4. Campos para Jutsus
+    else if (tipo === 'jutsus') {
+        html += `
+            <div class="input-grid-3">
+                ${campo('Preço', 'cre-preco', 'number')}
+                ${campo('Requisito (Nv)', 'cre-requisito', 'number')}
+                ${campo('Rank', 'cre-rank', 'text', 'Ex: A')}
+            </div>
+            <div class="input-grid-3">
+                ${campo('Dano', 'cre-dano')}
+                ${campo('Defesa', 'cre-defesa')}
+                ${campo('Chakra', 'cre-chakra')}
+            </div>
+            ${campo('Restrito a', 'cre-restrito')}
+        `;
     }
 
     container.innerHTML = html;
-    document.getElementById('modalCriacaoGeral').style.display = 'block';
+    document.getElementById('modalCriacaoGeral').style.display = 'flex';
 };
-
 
 document.getElementById('form-criacao-geral').onsubmit = async (e) => {
     e.preventDefault();
