@@ -125,7 +125,7 @@ if (btnLogin) {
 
 // --- NAVEGAÇÃO ---
 window.showTab = (t) => {
-    const isAdmin = auth.currentUser?.email === "admin@rpgnaruto.com";
+    const isAdmin = auth.currentUser?.email === "admin@rpgnaruto.com" || auth.currentUser?.email === "conselheiro@rpgnaruto.com";
     const btnAdd = document.getElementById('btn-adicionar-geral');
     const abasComCriacao = ['jutsus', 'ferramentas', 'missoes', 'conquistas', 'loja'];
 
