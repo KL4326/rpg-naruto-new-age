@@ -1667,8 +1667,7 @@ window.abrirModalCriacao = () => {
     const tituloModal = document.getElementById('titulo-modal-criacao');
 
     container.innerHTML = '';
-    // Formata o título bonitinho
-    tituloModal.innerHTML = `<i class="fa-solid fa-scroll"></i> CRIAR ${tipo.toUpperCase()}`;
+    tituloModal.innerHTML = `<i class="fa-solid fa-trophy"></i> CRIAR ${tipo.toUpperCase()}`;
 
     const campo = (label, id, type = 'text', ph = '') => `
         <div class="input-group">
@@ -1677,41 +1676,41 @@ window.abrirModalCriacao = () => {
         </div>
     `;
 
-    // --- BLOCO 1: NOME E IMAGEM (Comum a todos) ---
+    // --- BLOCO 1: NOME E IMAGEM ---
     let html = `
         <div class="input-grid-2">
-            ${campo(tipo.includes('missoes') ? 'TÍTULO DA MISSÃO' : 'NOME DO ITEM', 'cre-nome', 'text', 'Ex: Resgate ao Kazekage')}
+            ${campo((tipo.includes('missoes') || tipo.includes('conquistas')) ? 'TÍTULO' : 'NOME', 'cre-nome', 'text', 'Ex: Herói da Vila')}
             ${campo('URL DA IMAGEM', 'cre-imagem', 'text', 'https://...')}
         </div>
         <div class="input-group">
-            <label>DESCRIÇÃO E EFEITOS</label>
-            <textarea id="cre-desc" placeholder="Descreva os detalhes aqui..."></textarea>
+            <label>DESCRIÇÃO</label>
+            <textarea id="cre-desc" placeholder="Descreva os requisitos desta conquista..."></textarea>
         </div>
     `;
 
-    // --- BLOCO 2: CAMPOS ESPECÍFICOS DE MISSÕES ---
-    if (tipo.includes('missoes')) {
+    // --- BLOCO 2: ESPECÍFICO PARA MISSÕES E CONQUISTAS ---
+    if (tipo.includes('missoes') || tipo.includes('conquistas')) {
         html += `
             <div class="input-grid-2">
                 <div class="input-group">
                     <label>CATEGORIA</label>
                     <select id="cre-categoria" style="width:100%; padding:10px; border-radius:10px; border:2px solid #edf2f7; background:#f8fafc;">
-                        <option value="turno">Missão por Turno</option>
-                        <option value="card">Missão por Card</option>
+                        <option value="turno">Turno</option>
+                        <option value="card">Card</option>
                     </select>
                 </div>
-                ${campo('RANK', 'cre-rank', 'text', 'Ex: Rank-S')}
+                ${tipo.includes('missoes') ? campo('RANK', 'cre-rank', 'text', 'Ex: Rank-S') : ''}
             </div>
             <div class="input-grid-3">
                 ${campo('XP', 'cre-xp', 'number', '0')}
                 ${campo('ESSÊNCIA NINJA (EN)', 'cre-en', 'number', '0')}
                 ${campo('RYOS (RECOMPENSA)', 'cre-recompensa', 'number', '0')}
             </div>
-            ${campo('RESTRITO A (NOMES)', 'cre-restrito', 'text', 'Nomes separados por vírgula')}
+            ${campo('RESTRITO A (NOMES)', 'cre-restrito', 'text', 'Opcional')}
         `;
     } 
-    // --- BLOCO 3: FERRAMENTAS ---
-    else if (tipo.includes('ferramenta') || tipo.includes('loja')) {
+    // --- BLOCO 3: FERRAMENTAS / JUTSUS ---
+    else if (tipo.includes('ferramenta') || tipo.includes('jutsus') || tipo.includes('loja')) {
         html += `
             <div class="input-grid-3">
                 ${campo('PREÇO', 'cre-preco', 'number', '0')}
@@ -1736,34 +1735,34 @@ document.getElementById('form-criacao-geral').onsubmit = async (e) => {
     const tipo = document.getElementById('btn-adicionar-geral').getAttribute('data-tipo');
     const nomeInput = document.getElementById('cre-nome').value;
     
-    // Gera ID amigável (Slug)
-    const customID = nomeInput.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '_').replace(/[^\w-]+/g, '');
-    
+    const gerarSlug = (n) => n.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '_').replace(/[^\w-]+/g, '');
+    const customID = gerarSlug(nomeInput);
     const getVal = (id) => document.getElementById(id) ? document.getElementById(id).value : null;
 
-    // Processa Array de restrição
     const restritoTexto = getVal('cre-restrito') || "";
     const restritoArray = restritoTexto.split(',').map(n => n.trim()).filter(n => n !== ""); 
 
-    // Dados que são iguais para todos
     let dados = {
         descricao: getVal('cre-desc') || "",
         imagem: getVal('cre-imagem') || "",
         restrito_a: restritoArray
     };
 
-    // Dados específicos para MISSÕES
-    if (tipo.includes('missoes')) {
-        dados.titulo = nomeInput; // Salva como 'titulo'
+    // Lógica para Conquistas e Missões
+    if (tipo.includes('missoes') || tipo.includes('conquistas')) {
+        dados.titulo = nomeInput;
         dados.categoria = getVal('cre-categoria');
-        dados.rank = getVal('cre-rank') || "";
         dados.xp = Number(getVal('cre-xp')) || 0;
         dados.en = Number(getVal('cre-en')) || 0;
         dados.recompensa = Number(getVal('cre-recompensa')) || 0;
+        
+        if (tipo.includes('missoes')) {
+            dados.rank = getVal('cre-rank') || "";
+        }
     } 
-    // Dados para JUTSUS ou FERRAMENTAS
+    // Lógica para Jutsus e Ferramentas
     else {
-        dados.nome = nomeInput; // Salva como 'nome'
+        dados.nome = nomeInput;
         dados.preco = Number(getVal('cre-preco')) || 0;
         dados.requisito = Number(getVal('cre-requisito')) || 0;
         dados.dano = getVal('cre-dano') || "";
@@ -1773,11 +1772,11 @@ document.getElementById('form-criacao-geral').onsubmit = async (e) => {
 
     try {
         await setDoc(doc(db, tipo, customID), dados);
-        alert(`Missão/Item salvo com sucesso! ID: ${customID}`);
+        alert(`Sucesso! ${tipo} salvo com ID: ${customID}`);
         location.reload();
     } catch (err) {
         console.error(err);
-        alert("Erro ao salvar no banco de dados.");
+        alert("Erro ao salvar no Firebase.");
     }
 };
 
