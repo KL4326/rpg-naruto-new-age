@@ -1645,17 +1645,19 @@ window.abrirModalPix = (plano) => {
 
 window.abrirModalCriacao = () => {
     const btnAdd = document.getElementById('btn-adicionar-geral');
-    // Pegamos o tipo e forçamos para minúsculo para evitar erro de "Ferramentas" vs "ferramentas"
-    const tipo = (btnAdd.getAttribute('data-tipo') || "").toLowerCase();
-    
-    console.log("Tentando abrir modal para:", tipo); // Debug: Veja isso no F12 se não funcionar
+    if (!btnAdd) return;
+
+    // Pega o valor que sua showTab definiu (ex: 'ferramentas' ou 'jutsus')
+    const tipo = btnAdd.getAttribute('data-tipo');
+    console.log("Abrindo modal para o tipo detectado:", tipo); // Debug para você ver no console
 
     const container = document.getElementById('campos-dinamicos');
     const titulo = document.getElementById('titulo-modal-criacao');
-    container.innerHTML = '';
     
-    titulo.innerHTML = `<i class="fa-solid fa-hammer"></i> Editor do Kage: ${tipo.toUpperCase()}`;
+    container.innerHTML = '';
+    titulo.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> Editor: ${tipo.toUpperCase()}`;
 
+    // Helper para criar os campos
     const campo = (label, id, type = 'text', placeholder = '', grid = '') => `
         <div class="input-group ${grid}">
             <label>${label}</label>
@@ -1663,19 +1665,19 @@ window.abrirModalCriacao = () => {
         </div>
     `;
 
-    // 1. CAMPOS BÁSICOS (Sempre visíveis)
+    // 1. CAMPOS BÁSICOS (Sempre aparecem)
     let html = campo('NOME EXATO', 'cre-nome', 'text', 'Ex: Kunai de Ferro');
     html += campo('URL DA IMAGEM', 'cre-imagem', 'text', 'Link da imagem...');
     html += `
         <div class="input-group">
             <label>DESCRIÇÃO</label>
-            <textarea id="cre-desc" placeholder="Descrição do item..." style="height:80px; padding:12px; border-radius:10px; border:2px solid #edf2f7; background:#f8fafc; width:100%; box-sizing:border-box;"></textarea>
+            <textarea id="cre-desc" placeholder="Detalhes do item..." style="height:80px; padding:12px; border-radius:10px; border:2px solid #edf2f7; background:#f8fafc; width:100%; box-sizing:border-box;"></textarea>
         </div>
     `;
 
-    // 2. CAMPOS ESPECÍFICOS (A mágica acontece aqui)
-    // Usamos .includes para garantir que pegue mesmo se o nome da aba for "loja-ferramentas"
-    if (tipo.includes('ferramenta')) {
+    // 2. CAMPOS ESPECÍFICOS PARA FERRAMENTAS
+    // Aqui usamos exatamente o nome que está na sua abasComCriacao da showTab
+    if (tipo === 'ferramentas') {
         html += `
             <div class="input-grid-3" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
                 ${campo('PREÇO (RYOS)', 'cre-preco', 'number', '0')}
@@ -1686,10 +1688,12 @@ window.abrirModalCriacao = () => {
                 ${campo('STAMINA (GASTO)', 'cre-stamina', 'text', '0')}
                 ${campo('DEFESA', 'cre-defesa', 'text', '0')}
             </div>
-            ${campo('RESTRITO A (NOMES)', 'cre-restrito', 'text', 'Kagetsu Otsutsuki, Hatsume Uchiha')}
+            ${campo('RESTRITO A (NOMES)', 'cre-restrito', 'text', 'Nome 1, Nome 2...')}
         `;
     } 
-    else if (tipo.includes('jutsu')) {
+    
+    // 3. CAMPOS ESPECÍFICOS PARA JUTSUS
+    else if (tipo === 'jutsus') {
         html += `
             <div class="input-grid-3" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
                 ${campo('PREÇO', 'cre-preco', 'number', '0')}
