@@ -1667,7 +1667,7 @@ window.abrirModalCriacao = () => {
     const tituloModal = document.getElementById('titulo-modal-criacao');
 
     container.innerHTML = '';
-    tituloModal.innerHTML = `<i class="fa-solid fa-trophy"></i> CRIAR ${tipo.toUpperCase()}`;
+    tituloModal.innerHTML = `<i class="fa-solid fa-pen-to-square"></i> CRIAR ${tipo.toUpperCase()}`;
 
     const campo = (label, id, type = 'text', ph = '') => `
         <div class="input-group">
@@ -1676,41 +1676,42 @@ window.abrirModalCriacao = () => {
         </div>
     `;
 
-    // --- BLOCO 1: NOME E IMAGEM ---
+    // --- BLOCO 1: NOME E IMAGEM (Padrão) ---
     let html = `
         <div class="input-grid-2">
-            ${campo((tipo.includes('missoes') || tipo.includes('conquistas')) ? 'TÍTULO' : 'NOME', 'cre-nome', 'text', 'Ex: Herói da Vila')}
+            ${campo((tipo.includes('missoes') || tipo.includes('conquistas')) ? 'TÍTULO' : 'NOME', 'cre-nome', 'text', 'Ex: Chidori')}
             ${campo('URL DA IMAGEM', 'cre-imagem', 'text', 'https://...')}
         </div>
         <div class="input-group">
             <label>DESCRIÇÃO</label>
-            <textarea id="cre-desc" placeholder="Descreva os requisitos desta conquista..."></textarea>
+            <textarea id="cre-desc" placeholder="Detalhes técnicos e efeitos..."></textarea>
         </div>
     `;
 
-    // --- BLOCO 2: ESPECÍFICO PARA MISSÕES E CONQUISTAS ---
-    if (tipo.includes('missoes') || tipo.includes('conquistas')) {
+    // --- BLOCO 2: ESPECÍFICO POR TIPO ---
+
+    // CASO: JUTSUS (Todos os campos recuperados)
+    if (tipo.includes('jutsus')) {
         html += `
-            <div class="input-grid-2">
-                <div class="input-group">
-                    <label>CATEGORIA</label>
-                    <select id="cre-categoria" style="width:100%; padding:10px; border-radius:10px; border:2px solid #edf2f7; background:#f8fafc;">
-                        <option value="turno">Turno</option>
-                        <option value="card">Card</option>
-                    </select>
-                </div>
-                ${tipo.includes('missoes') ? campo('RANK', 'cre-rank', 'text', 'Ex: Rank-S') : ''}
+            <div class="input-grid-3">
+                ${campo('PREÇO (RYOS)', 'cre-preco', 'number', '0')}
+                ${campo('REQUISITO (NV)', 'cre-requisito', 'number', '1')}
+                ${campo('RANK', 'cre-rank', 'text', 'Ex: A')}
             </div>
             <div class="input-grid-3">
-                ${campo('XP', 'cre-xp', 'number', '0')}
-                ${campo('ESSÊNCIA NINJA (EN)', 'cre-en', 'number', '0')}
-                ${campo('RYOS (RECOMPENSA)', 'cre-recompensa', 'number', '0')}
+                ${campo('DANO', 'cre-dano', 'text', '0')}
+                ${campo('DEFESA', 'cre-defesa', 'text', '0')}
+                ${campo('CHAKRA', 'cre-chakra', 'text', '0')}
             </div>
-            ${campo('RESTRITO A (NOMES)', 'cre-restrito', 'text', 'Opcional')}
+            <div class="input-grid-3">
+                ${campo('STAMINA', 'cre-stamina', 'text', '0')}
+                ${campo('BÔNUS HP', 'cre-hp', 'text', '0')}
+                ${campo('BÔNUS STAMINA', 'cre-b-stamina', 'text', '0')}
+            </div>
         `;
     } 
-    // --- BLOCO 3: FERRAMENTAS / JUTSUS ---
-    else if (tipo.includes('ferramenta') || tipo.includes('jutsus') || tipo.includes('loja')) {
+    // CASO: FERRAMENTAS / LOJA
+    else if (tipo.includes('ferramenta') || tipo.includes('loja')) {
         html += `
             <div class="input-grid-3">
                 ${campo('PREÇO', 'cre-preco', 'number', '0')}
@@ -1721,9 +1722,31 @@ window.abrirModalCriacao = () => {
                 ${campo('STAMINA', 'cre-stamina', 'text', '0')}
                 ${campo('DEFESA', 'cre-defesa', 'text', '0')}
             </div>
-            ${campo('RESTRITO A', 'cre-restrito', 'text', 'Opcional')}
         `;
     }
+    // CASO: MISSÕES / CONQUISTAS
+    else if (tipo.includes('missoes') || tipo.includes('conquistas')) {
+        html += `
+            <div class="input-grid-2">
+                <div class="input-group">
+                    <label>CATEGORIA</label>
+                    <select id="cre-categoria" style="width:100%; padding:10px; border-radius:10px; border:2px solid #edf2f7; background:#f8fafc;">
+                        <option value="turno">Turno</option>
+                        <option value="card">Card</option>
+                    </select>
+                </div>
+                ${tipo.includes('missoes') ? campo('RANK', 'cre-rank', 'text', 'Rank-D') : ''}
+            </div>
+            <div class="input-grid-3">
+                ${campo('XP', 'cre-xp', 'number', '0')}
+                ${campo('ESSÊNCIA NINJA', 'cre-en', 'number', '0')}
+                ${campo('RYOS', 'cre-recompensa', 'number', '0')}
+            </div>
+        `;
+    }
+
+    // Campo de Restrição (Comum a todos no final)
+    html += campo('RESTRITO A (NOMES)', 'cre-restrito', 'text', 'Ex: Kagetsu Otsutsuki');
 
     container.innerHTML = html;
     document.getElementById('modalCriacaoGeral').style.display = 'flex';
@@ -1739,8 +1762,7 @@ document.getElementById('form-criacao-geral').onsubmit = async (e) => {
     const customID = gerarSlug(nomeInput);
     const getVal = (id) => document.getElementById(id) ? document.getElementById(id).value : null;
 
-    const restritoTexto = getVal('cre-restrito') || "";
-    const restritoArray = restritoTexto.split(',').map(n => n.trim()).filter(n => n !== ""); 
+    const restritoArray = (getVal('cre-restrito') || "").split(',').map(n => n.trim()).filter(n => n !== ""); 
 
     let dados = {
         descricao: getVal('cre-desc') || "",
@@ -1748,35 +1770,37 @@ document.getElementById('form-criacao-geral').onsubmit = async (e) => {
         restrito_a: restritoArray
     };
 
-    // Lógica para Conquistas e Missões
+    // Mapeamento específico por tipo
     if (tipo.includes('missoes') || tipo.includes('conquistas')) {
         dados.titulo = nomeInput;
         dados.categoria = getVal('cre-categoria');
         dados.xp = Number(getVal('cre-xp')) || 0;
         dados.en = Number(getVal('cre-en')) || 0;
         dados.recompensa = Number(getVal('cre-recompensa')) || 0;
-        
-        if (tipo.includes('missoes')) {
-            dados.rank = getVal('cre-rank') || "";
-        }
-    } 
-    // Lógica para Jutsus e Ferramentas
-    else {
+        if (tipo.includes('missoes')) dados.rank = getVal('cre-rank') || "";
+    } else {
         dados.nome = nomeInput;
         dados.preco = Number(getVal('cre-preco')) || 0;
         dados.requisito = Number(getVal('cre-requisito')) || 0;
         dados.dano = getVal('cre-dano') || "";
-        dados.stamina = getVal('cre-stamina') || "";
         dados.defesa = getVal('cre-defesa') || "";
+        dados.stamina = getVal('cre-stamina') || "";
+        
+        if (tipo.includes('jutsus')) {
+            dados.rank = getVal('cre-rank') || "";
+            dados.chakra = getVal('cre-chakra') || "";
+            dados.bonus_hp = getVal('cre-hp') || "";
+            dados.bonus_stamina = getVal('cre-b-stamina') || "";
+        }
     }
 
     try {
         await setDoc(doc(db, tipo, customID), dados);
-        alert(`Sucesso! ${tipo} salvo com ID: ${customID}`);
+        alert(`Sucesso! ${tipo} criado: ${customID}`);
         location.reload();
     } catch (err) {
         console.error(err);
-        alert("Erro ao salvar no Firebase.");
+        alert("Erro ao salvar.");
     }
 };
 
