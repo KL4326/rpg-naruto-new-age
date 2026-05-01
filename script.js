@@ -1667,7 +1667,8 @@ window.abrirModalCriacao = () => {
     const tituloModal = document.getElementById('titulo-modal-criacao');
 
     container.innerHTML = '';
-    tituloModal.innerHTML = `<i class="fa-solid fa-scroll"></i> Criar ${tipo.toUpperCase()}`;
+    // Formata o título bonitinho
+    tituloModal.innerHTML = `<i class="fa-solid fa-scroll"></i> CRIAR ${tipo.toUpperCase()}`;
 
     const campo = (label, id, type = 'text', ph = '') => `
         <div class="input-group">
@@ -1676,52 +1677,52 @@ window.abrirModalCriacao = () => {
         </div>
     `;
 
-    // --- CAMPOS COMUNS ---
+    // --- BLOCO 1: NOME E IMAGEM (Comum a todos) ---
     let html = `
         <div class="input-grid-2">
-            ${campo('Título da Missão', 'cre-nome', 'text', 'Ex: Resgate ao Kazekage')}
-            ${campo('URL da Imagem', 'cre-imagem', 'text', 'Link da imagem...')}
+            ${campo(tipo.includes('missoes') ? 'TÍTULO DA MISSÃO' : 'NOME DO ITEM', 'cre-nome', 'text', 'Ex: Resgate ao Kazekage')}
+            ${campo('URL DA IMAGEM', 'cre-imagem', 'text', 'https://...')}
         </div>
         <div class="input-group">
-            <label>Descrição Detalhada</label>
-            <textarea id="cre-desc" placeholder="Objetivos da missão..."></textarea>
+            <label>DESCRIÇÃO E EFEITOS</label>
+            <textarea id="cre-desc" placeholder="Descreva os detalhes aqui..."></textarea>
         </div>
     `;
 
-    // --- CAMPOS ESPECÍFICOS PARA MISSÕES ---
-    if (tipo === 'missoes') {
+    // --- BLOCO 2: CAMPOS ESPECÍFICOS DE MISSÕES ---
+    if (tipo.includes('missoes')) {
         html += `
             <div class="input-grid-2">
                 <div class="input-group">
-                    <label>Categoria</label>
+                    <label>CATEGORIA</label>
                     <select id="cre-categoria" style="width:100%; padding:10px; border-radius:10px; border:2px solid #edf2f7; background:#f8fafc;">
                         <option value="turno">Missão por Turno</option>
                         <option value="card">Missão por Card</option>
                     </select>
                 </div>
-                ${campo('Rank', 'cre-rank', 'text', 'D, C, B, A, S...')}
+                ${campo('RANK', 'cre-rank', 'text', 'Ex: Rank-S')}
             </div>
             <div class="input-grid-3">
                 ${campo('XP', 'cre-xp', 'number', '0')}
-                ${campo('Essência Ninja (EN)', 'cre-en', 'number', '0')}
-                ${campo('Ryos (Recompensa)', 'cre-recompensa', 'number', '0')}
+                ${campo('ESSÊNCIA NINJA (EN)', 'cre-en', 'number', '0')}
+                ${campo('RYOS (RECOMPENSA)', 'cre-recompensa', 'number', '0')}
             </div>
-            ${campo('Restrito a (Nomes)', 'cre-restrito', 'text', 'Opcional')}
+            ${campo('RESTRITO A (NOMES)', 'cre-restrito', 'text', 'Nomes separados por vírgula')}
         `;
     } 
-    // ... manter os ifs de jutsus e ferramentas aqui se desejar ...
-    else if (tipo === 'ferramentas' || tipo === 'loja') {
+    // --- BLOCO 3: FERRAMENTAS ---
+    else if (tipo.includes('ferramenta') || tipo.includes('loja')) {
         html += `
             <div class="input-grid-3">
-                ${campo('Preço', 'cre-preco', 'number')}
-                ${campo('Requisito', 'cre-requisito', 'number')}
-                ${campo('Dano', 'cre-dano')}
+                ${campo('PREÇO', 'cre-preco', 'number', '0')}
+                ${campo('REQUISITO (NV)', 'cre-requisito', 'number', '1')}
+                ${campo('DANO', 'cre-dano', 'text', '0')}
             </div>
             <div class="input-grid-2">
-                ${campo('Stamina', 'cre-stamina')}
-                ${campo('Defesa', 'cre-defesa')}
+                ${campo('STAMINA', 'cre-stamina', 'text', '0')}
+                ${campo('DEFESA', 'cre-defesa', 'text', '0')}
             </div>
-            ${campo('Restrito a', 'cre-restrito')}
+            ${campo('RESTRITO A', 'cre-restrito', 'text', 'Opcional')}
         `;
     }
 
@@ -1735,51 +1736,48 @@ document.getElementById('form-criacao-geral').onsubmit = async (e) => {
     const tipo = document.getElementById('btn-adicionar-geral').getAttribute('data-tipo');
     const nomeInput = document.getElementById('cre-nome').value;
     
-    const gerarSlug = (n) => n.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '_').replace(/[^\w-]+/g, '');
-    const customID = gerarSlug(nomeInput);
+    // Gera ID amigável (Slug)
+    const customID = nomeInput.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '_').replace(/[^\w-]+/g, '');
+    
     const getVal = (id) => document.getElementById(id) ? document.getElementById(id).value : null;
 
-    // Processamento do Array de restrição
+    // Processa Array de restrição
     const restritoTexto = getVal('cre-restrito') || "";
     const restritoArray = restritoTexto.split(',').map(n => n.trim()).filter(n => n !== ""); 
 
-    // Dados base
+    // Dados que são iguais para todos
     let dados = {
-        titulo: nomeInput, // O campo no seu banco chama 'titulo'
         descricao: getVal('cre-desc') || "",
         imagem: getVal('cre-imagem') || "",
         restrito_a: restritoArray
     };
 
-    // Lógica específica por tipo
-    if (tipo === 'missoes') {
+    // Dados específicos para MISSÕES
+    if (tipo.includes('missoes')) {
+        dados.titulo = nomeInput; // Salva como 'titulo'
         dados.categoria = getVal('cre-categoria');
         dados.rank = getVal('cre-rank') || "";
         dados.xp = Number(getVal('cre-xp')) || 0;
         dados.en = Number(getVal('cre-en')) || 0;
         dados.recompensa = Number(getVal('cre-recompensa')) || 0;
     } 
-    else if (tipo === 'ferramentas' || tipo === 'jutsus') {
-        dados.nome = nomeInput; // Jutsus/Ferramentas usam 'nome' em vez de 'titulo'
+    // Dados para JUTSUS ou FERRAMENTAS
+    else {
+        dados.nome = nomeInput; // Salva como 'nome'
         dados.preco = Number(getVal('cre-preco')) || 0;
         dados.requisito = Number(getVal('cre-requisito')) || 0;
         dados.dano = getVal('cre-dano') || "";
         dados.stamina = getVal('cre-stamina') || "";
         dados.defesa = getVal('cre-defesa') || "";
-        
-        if (tipo === 'jutsus') {
-            dados.rank = getVal('cre-rank') || "";
-            dados.chakra = getVal('cre-chakra') || "";
-        }
     }
 
     try {
         await setDoc(doc(db, tipo, customID), dados);
-        alert(`Sucesso! Criado em ${tipo}: ${customID}`);
+        alert(`Missão/Item salvo com sucesso! ID: ${customID}`);
         location.reload();
     } catch (err) {
         console.error(err);
-        alert("Erro ao salvar.");
+        alert("Erro ao salvar no banco de dados.");
     }
 };
 
