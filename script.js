@@ -125,56 +125,71 @@ if (btnLogin) {
 
 // --- NAVEGAÇÃO ---
 window.showTab = (t) => {
-    // Dentro da sua função window.showTab = (t) => { ...
     const isAdmin = auth.currentUser?.email === "admin@rpgnaruto.com";
     const btnAdd = document.getElementById('btn-adicionar-geral');
     const abasComCriacao = ['jutsus', 'ferramentas', 'missoes', 'conquistas', 'loja'];
 
-    if (isAdmin && abasComCriacao.includes(t)) {
-        btnAdd.style.display = 'block';
-        btnAdd.setAttribute('data-tipo', t); // Salva qual aba estamos para saber o que criar
-    } else {
-        btnAdd.style.display = 'none';
+    // --- CORREÇÃO: Verificamos se o botão existe antes de mexer no estilo ---
+    if (btnAdd) {
+        if (isAdmin && abasComCriacao.includes(t)) {
+            btnAdd.style.display = 'block';
+            btnAdd.setAttribute('data-tipo', t); 
+        } else {
+            btnAdd.style.display = 'none';
+        }
     }
+
     try {
+        // Remove a classe active de todos os conteúdos e botões
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         const target = document.getElementById(t);
         if(target) target.classList.add('active');
+
         document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.sidebar button').forEach(b => b.classList.remove('active'));
-        const btnTop = document.getElementById('nav-btn-'+t);
-        const btnSide = document.getElementById('side-btn-'+t);
+
+        const btnTop = document.getElementById('nav-btn-' + t);
+        const btnSide = document.getElementById('side-btn-' + t);
         if(btnTop) btnTop.classList.add('active');
         if(btnSide) btnSide.classList.add('active');
+
+        // Lógica de carregamento de dados por aba
         if(currentUserData) {
-            if(t==='feed') window.renderFeed('all');
-            if(t==='personagens') carregarPersonagens();
-            if(t==='frases') carregarFrases();
-            if(t==='inventario') carregarInventario();
-            if(t==='loja') carregarLojaItens();
-            if(t==='jutsus') { carregarMeusJutsus(currentUserData.meusJutsus); carregarLoja(); }
-            if(t==='ferramentas') carregarLojaFerramentas(); 
-            if(t==='conquistas') carregarConquistas();
-            if(t==='missoes') carregarMissoes();
-            if(t==='rankings') carregarRankings();
-            if(t==='mentorias') carregarMentorias();
-            if(t==='admin-panel') carregarPainelAdmin();
-            // ... dentro do seu if(currentUserData) { ...
-            if(t==='loja-premium') {
-                // Caso queira resetar o valor do input ao abrir a aba
+            if(t === 'feed') window.renderFeed('all');
+            if(t === 'personagens') carregarPersonagens();
+            if(t === 'frases') carregarFrases();
+            if(t === 'inventario') carregarInventario();
+            if(t === 'loja') carregarLojaItens();
+            if(t === 'jutsus') { 
+                carregarMeusJutsus(currentUserData.meusJutsus); 
+                carregarLoja(); 
+            }
+            if(t === 'ferramentas') carregarLojaFerramentas(); 
+            if(t === 'conquistas') carregarConquistas();
+            if(t === 'missoes') carregarMissoes();
+            if(t === 'rankings') carregarRankings();
+            if(t === 'mentorias') carregarMentorias();
+            if(t === 'admin-panel') carregarPainelAdmin();
+
+            if(t === 'loja-premium') {
                 const input = document.getElementById('input-qtd-ryos');
                 if(input) input.value = "";
                 const label = document.getElementById('label-custo-en');
                 if(label) label.innerText = "0";
             }
-
         }
+
+        // Fecha o menu mobile ao trocar de aba (se estiver aberto)
         if(window.innerWidth <= 768) {
              const sidebar = document.querySelector('.sidebar');
              if(sidebar && sidebar.classList.contains('mobile-active')) window.toggleMobileMenu();
         }
-    } catch (e) { console.error("Erro ao trocar aba:", e); }
+    } catch (e) { 
+        console.error("Erro ao trocar aba:", e); 
+    }
 };
+
+
 
 // --- FEED (CORRIGIDO COM NOMES DO SEU BANCO) ---
 window.handleImageUpload = async (event) => {
