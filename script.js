@@ -634,22 +634,13 @@ async function carregarLoja() {
     
     try {
         c.innerHTML = '<p style="color:#777;">Invocando pergaminhos...</p>';
-        
-        if (!currentUserData) {
-            console.error("Dados do usuário não carregados.");
-            return;
-        }
+        if (!currentUserData) return;
 
-        // --- NOVO: Captura o nível do ninja para a comparação ---
+        // Dados do jogador em minúsculas para comparação segura
         const nivelNinja = currentUserData.nivel || 1;
-
-        let isAdmin = false;
-        if (auth.currentUser && auth.currentUser.email === "admin@rpgnaruto.com") {
-            isAdmin = true;
-        }
-
-        const nomePlayer = currentUserData.nome ? String(currentUserData.nome).trim().toLowerCase() : "";
-        const apelidoPlayer = currentUserData.apelido ? String(currentUserData.apelido).trim().toLowerCase() : "";
+        const nomePlayer = String(currentUserData.nome || "").trim().toLowerCase();
+        const apelidoPlayer = String(currentUserData.apelido || "").trim().toLowerCase();
+        const isAdmin = auth.currentUser?.email === "admin@rpgnaruto.com";
 
         const snap = await getDocs(collection(db, "jutsus"));
         let lista = [];
@@ -662,36 +653,31 @@ async function carregarLoja() {
                 let restritos = i.restrito_a;
                 let permiteAcesso = true; 
                 
-                if (restritos) {
-                    let listaRestrita = [];
-                    if (typeof restritos === 'string') {
-                        listaRestrita = restritos.split(',');
-                    } else if (Array.isArray(restritos)) {
-                        listaRestrita = restritos;
+                // --- VALIDAÇÃO DE RESTRIÇÃO INTELIGENTE ---
+                if (restritos && restritos.length > 0 && !isAdmin) {
+                    let listaNomesCheck = [];
+                    
+                    if (Array.isArray(restritos)) {
+                        // Converte a lista do Firebase para minúsculas apenas na memória para checar
+                        listaNomesCheck = restritos.map(n => String(n).toLowerCase());
+                    } else if (typeof restritos === 'string') {
+                        listaNomesCheck = restritos.split(',').map(n => n.trim().toLowerCase());
                     }
 
-                    listaRestrita = listaRestrita
-                        .map(n => String(n).trim().toLowerCase())
-                        .filter(n => n !== "");
-
-                    if (listaRestrita.length > 0 && !isAdmin) {
-                        if (!listaRestrita.includes(nomePlayer) && !listaRestrita.includes(apelidoPlayer)) {
-                            permiteAcesso = false;
-                        }
-                    }
+                    const temAcesso = listaNomesCheck.includes(nomePlayer) || listaNomesCheck.includes(apelidoPlayer);
+                    if (!temAcesso) permiteAcesso = false;
                 }
 
                 if (permiteAcesso) {
-                    // --- NOVO: Lógica de Bloqueio por Nível ---
+                    // Validação de Nível para bloquear o botão
                     const requisitoNivel = Number(i.requisito) || 0;
-                    // Criamos uma propriedade extra no objeto 'i' para o card saber se deve bloquear
                     i.bloqueadoPorNivel = nivelNinja < requisitoNivel;
                     
                     lista.push({ id: d.id, ...i });
                 }
 
             } catch(erroItem) {
-                console.error("Erro ao processar o jutsu ID:", d.id, erroItem);
+                console.error("Erro no jutsu:", d.id, erroItem);
             }
         });
 
@@ -699,21 +685,18 @@ async function carregarLoja() {
         lista = aplicarOrdenacao(lista, ordenacaoAtual);
         
         if (lista.length === 0) {
-            c.innerHTML = '<p style="color:#777;">A loja de jutsus está vazia.</p>';
+            c.innerHTML = '<p style="color:#777;">Nenhum jutsu disponível para você no momento.</p>';
         } else {
             lista.forEach(item => {
-                // Passamos o objeto 'item' que agora contém a propriedade 'bloqueadoPorNivel'
                 criarCardLoja('loja-jutsus-grid', item, item.id, 'jutsu', null, (id, dados) => {
-                    if (typeof window.verDetalhesJutsu === 'function') {
-                        window.verDetalhesJutsu(id, dados);
-                    }
+                    if (typeof window.verDetalhesJutsu === 'function') window.verDetalhesJutsu(id, dados);
                 });
             });
         }
 
     } catch (erroGeral) {
-        console.error("Erro crítico na loja de jutsus:", erroGeral);
-        c.innerHTML = '<p style="color:red;">Ocorreu um erro ao carregar a loja. Verifique o console (F12).</p>';
+        console.error("Erro crítico na loja:", erroGeral);
+        c.innerHTML = '<p style="color:red;">Erro ao carregar pergaminhos.</p>';
     }
 }
 
@@ -1675,18 +1658,31 @@ document.getElementById('form-criacao-geral').onsubmit = async (e) => {
     e.preventDefault();
     const tipo = document.getElementById('btn-adicionar-geral').getAttribute('data-tipo');
     const nome = document.getElementById('cre-nome').value;
-    const customID = gerarSlug(tipo, nome); // Gera o ID como jutsu_bola_de_fogo
     
+    // Função auxiliar para gerar o ID amigável (ex: jutsu_bola_de_fogo)
+    const gerarSlug = (t, n) => {
+        const nFormatado = n.toLowerCase().trim()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, "")
+            .replace(/\s+/g, '_').replace(/[^\w-]+/g, '');
+        return `${t.slice(0, -1)}_${nFormatado}`;
+    };
+
+    const customID = gerarSlug(tipo, nome);
     const getVal = (id) => document.getElementById(id) ? document.getElementById(id).value : null;
 
-    // Objeto limpo apenas com os campos que você pediu
+    // --- PROCESSAMENTO DO ARRAY DE RESTRIÇÃO (Mantendo Maiúsculas) ---
+    const restritoTexto = getVal('cre-restrito') || "";
+    const restritoArray = restritoTexto.split(',')
+        .map(n => n.trim()) // Tira espaços, mas mantém "Kagetsu Otsutsuki"
+        .filter(n => n !== ""); 
+
     const dados = {
         nome: nome,
-        descricao: getVal('cre-desc'),
+        descricao: getVal('cre-desc') || "",
         imagem: getVal('cre-imagem') || "",
         preco: Number(getVal('cre-preco')) || 0,
         rank: getVal('cre-rank') || "",
-        restrito_a: getVal('cre-restrito') || "",
+        restrito_a: restritoArray, // Salva o Array "bonito" no Firebase
         requisito: Number(getVal('cre-requisito')) || 0
     };
 
@@ -1700,13 +1696,12 @@ document.getElementById('form-criacao-geral').onsubmit = async (e) => {
     }
 
     try {
-        // setDoc permite definir o ID do documento
         await setDoc(doc(db, tipo, customID), dados);
         alert(`Sucesso! Documento criado como: ${customID}`);
         location.reload();
     } catch (err) {
         console.error(err);
-        alert("Erro ao salvar.");
+        alert("Erro ao salvar no Firebase.");
     }
 };
 
