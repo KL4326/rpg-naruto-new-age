@@ -636,7 +636,7 @@ async function carregarLoja() {
         c.innerHTML = '<p style="color:#777;">Invocando pergaminhos...</p>';
         if (!currentUserData) return;
 
-        // Dados do jogador em minúsculas para comparação segura
+        // Dados para comparação (sempre em minúsculas)
         const nivelNinja = currentUserData.nivel || 1;
         const nomePlayer = String(currentUserData.nome || "").trim().toLowerCase();
         const apelidoPlayer = String(currentUserData.apelido || "").trim().toLowerCase();
@@ -648,28 +648,28 @@ async function carregarLoja() {
         snap.forEach(d => {
             try {
                 let i = d.data();
-                i = aplicarEscalaPersonalizada(i);
+                i = aplicarEscalaPersonalizada(i); // Mantém sua lógica de escala
                 
                 let restritos = i.restrito_a;
                 let permiteAcesso = true; 
                 
-                // --- VALIDAÇÃO DE RESTRIÇÃO INTELIGENTE ---
+                // Validação de Restrição por Nome (Array ou String antiga)
                 if (restritos && restritos.length > 0 && !isAdmin) {
-                    let listaNomesCheck = [];
+                    let listaCheck = [];
                     
                     if (Array.isArray(restritos)) {
-                        // Converte a lista do Firebase para minúsculas apenas na memória para checar
-                        listaNomesCheck = restritos.map(n => String(n).toLowerCase());
+                        // Converte os nomes do Array para minúsculas apenas para comparar
+                        listaCheck = restritos.map(n => String(n).toLowerCase());
                     } else if (typeof restritos === 'string') {
-                        listaNomesCheck = restritos.split(',').map(n => n.trim().toLowerCase());
+                        listaCheck = restritos.split(',').map(n => n.trim().toLowerCase());
                     }
 
-                    const temAcesso = listaNomesCheck.includes(nomePlayer) || listaNomesCheck.includes(apelidoPlayer);
+                    const temAcesso = listaCheck.includes(nomePlayer) || listaCheck.includes(apelidoPlayer);
                     if (!temAcesso) permiteAcesso = false;
                 }
 
                 if (permiteAcesso) {
-                    // Validação de Nível para bloquear o botão
+                    // Verifica se o nível do ninja é suficiente
                     const requisitoNivel = Number(i.requisito) || 0;
                     i.bloqueadoPorNivel = nivelNinja < requisitoNivel;
                     
@@ -677,7 +677,7 @@ async function carregarLoja() {
                 }
 
             } catch(erroItem) {
-                console.error("Erro no jutsu:", d.id, erroItem);
+                console.error("Erro no processamento do jutsu:", d.id, erroItem);
             }
         });
 
@@ -685,7 +685,7 @@ async function carregarLoja() {
         lista = aplicarOrdenacao(lista, ordenacaoAtual);
         
         if (lista.length === 0) {
-            c.innerHTML = '<p style="color:#777;">Nenhum jutsu disponível para você no momento.</p>';
+            c.innerHTML = '<p style="color:#777;">Nenhum jutsu disponível para você.</p>';
         } else {
             lista.forEach(item => {
                 criarCardLoja('loja-jutsus-grid', item, item.id, 'jutsu', null, (id, dados) => {
@@ -696,7 +696,7 @@ async function carregarLoja() {
 
     } catch (erroGeral) {
         console.error("Erro crítico na loja:", erroGeral);
-        c.innerHTML = '<p style="color:red;">Erro ao carregar pergaminhos.</p>';
+        c.innerHTML = '<p style="color:red;">Falha ao carregar a loja.</p>';
     }
 }
 
@@ -1599,19 +1599,6 @@ window.abrirModalPix = (plano) => {
 };
 
 
-const gerarSlug = (tipo, nome) => {
-    const nomeFormatado = nome.toLowerCase()
-        .trim()
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, "") // Remove acentos
-        .replace(/\s+/g, '_') // Troca espaços por _
-        .replace(/[^\w-]+/g, ''); // Remove caracteres especiais
-    
-    // Define o prefixo baseado no tipo (singular)
-    const prefixo = tipo.slice(0, -1); 
-    return `${prefixo}_${nomeFormatado}`;
-};
-
-
 window.abrirModalCriacao = () => {
     const tipo = document.getElementById('btn-adicionar-geral').getAttribute('data-tipo');
     const container = document.getElementById('campos-dinamicos');
@@ -1657,35 +1644,37 @@ window.abrirModalCriacao = () => {
 document.getElementById('form-criacao-geral').onsubmit = async (e) => {
     e.preventDefault();
     const tipo = document.getElementById('btn-adicionar-geral').getAttribute('data-tipo');
-    const nome = document.getElementById('cre-nome').value;
+    const nomeInput = document.getElementById('cre-nome').value;
     
-    // Função auxiliar para gerar o ID amigável (ex: jutsu_bola_de_fogo)
-    const gerarSlug = (t, n) => {
-        const nFormatado = n.toLowerCase().trim()
-            .normalize('NFD').replace(/[\u0300-\u036f]/g, "")
-            .replace(/\s+/g, '_').replace(/[^\w-]+/g, '');
-        return `${t.slice(0, -1)}_${nFormatado}`;
+    // Gera o ID limpo: "Bola de Fogo" -> "bola_de_fogo"
+    const gerarSlugSimples = (nome) => {
+        return nome.toLowerCase().trim()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, "") // Remove acentos
+            .replace(/\s+/g, '_') // Espaços para _
+            .replace(/[^\w-]+/g, ''); // Remove caracteres especiais
     };
 
-    const customID = gerarSlug(tipo, nome);
+    const customID = gerarSlugSimples(nomeInput);
     const getVal = (id) => document.getElementById(id) ? document.getElementById(id).value : null;
 
-    // --- PROCESSAMENTO DO ARRAY DE RESTRIÇÃO (Mantendo Maiúsculas) ---
+    // Processa a restrição mantendo as maiúsculas (ex: "Kagetsu Otsutsuki")
     const restritoTexto = getVal('cre-restrito') || "";
     const restritoArray = restritoTexto.split(',')
-        .map(n => n.trim()) // Tira espaços, mas mantém "Kagetsu Otsutsuki"
+        .map(n => n.trim())
         .filter(n => n !== ""); 
 
+    // Objeto com os campos exatos que você pediu
     const dados = {
-        nome: nome,
+        nome: nomeInput,
         descricao: getVal('cre-desc') || "",
         imagem: getVal('cre-imagem') || "",
         preco: Number(getVal('cre-preco')) || 0,
         rank: getVal('cre-rank') || "",
-        restrito_a: restritoArray, // Salva o Array "bonito" no Firebase
+        restrito_a: restritoArray,
         requisito: Number(getVal('cre-requisito')) || 0
     };
 
+    // Campos específicos para Jutsus
     if (tipo === 'jutsus') {
         dados.dano = getVal('cre-dano') || "";
         dados.defesa = getVal('cre-defesa') || "";
@@ -1696,12 +1685,13 @@ document.getElementById('form-criacao-geral').onsubmit = async (e) => {
     }
 
     try {
+        // Salva com o ID personalizado (ex: bola_de_fogo)
         await setDoc(doc(db, tipo, customID), dados);
-        alert(`Sucesso! Documento criado como: ${customID}`);
+        alert(`Documento criado com sucesso: ${customID}`);
         location.reload();
     } catch (err) {
-        console.error(err);
-        alert("Erro ao salvar no Firebase.");
+        console.error("Erro ao criar documento:", err);
+        alert("Erro ao salvar. Verifique o console.");
     }
 };
 
