@@ -1645,14 +1645,17 @@ window.abrirModalPix = (plano) => {
 
 window.abrirModalCriacao = () => {
     const btnAdd = document.getElementById('btn-adicionar-geral');
-    const tipo = btnAdd.getAttribute('data-tipo');
+    // Pegamos o tipo e forçamos para minúsculo para evitar erro de "Ferramentas" vs "ferramentas"
+    const tipo = (btnAdd.getAttribute('data-tipo') || "").toLowerCase();
+    
+    console.log("Tentando abrir modal para:", tipo); // Debug: Veja isso no F12 se não funcionar
+
     const container = document.getElementById('campos-dinamicos');
     const titulo = document.getElementById('titulo-modal-criacao');
-    
     container.innerHTML = '';
-    titulo.innerHTML = `<i class="fa-solid fa-hammer"></i> Novo(a) ${tipo.slice(0, -1).toUpperCase()}`;
+    
+    titulo.innerHTML = `<i class="fa-solid fa-hammer"></i> Editor do Kage: ${tipo.toUpperCase()}`;
 
-    // Helper para gerar o HTML dos campos com label
     const campo = (label, id, type = 'text', placeholder = '', grid = '') => `
         <div class="input-group ${grid}">
             <label>${label}</label>
@@ -1660,66 +1663,50 @@ window.abrirModalCriacao = () => {
         </div>
     `;
 
-    // 1. CAMPOS GERAIS (Sempre aparecem)
-    let html = campo('Nome Exato', 'cre-nome', 'text', 'Ex: Kunai de Papel');
-    html += campo('URL da Imagem', 'cre-imagem', 'text', 'https://...');
+    // 1. CAMPOS BÁSICOS (Sempre visíveis)
+    let html = campo('NOME EXATO', 'cre-nome', 'text', 'Ex: Kunai de Ferro');
+    html += campo('URL DA IMAGEM', 'cre-imagem', 'text', 'Link da imagem...');
     html += `
         <div class="input-group">
-            <label>Descrição</label>
-            <textarea id="cre-desc" placeholder="Detalhes do item..." style="height:80px; padding:12px; border-radius:10px; border:2px solid #edf2f7; background:#f8fafc;"></textarea>
+            <label>DESCRIÇÃO</label>
+            <textarea id="cre-desc" placeholder="Descrição do item..." style="height:80px; padding:12px; border-radius:10px; border:2px solid #edf2f7; background:#f8fafc; width:100%; box-sizing:border-box;"></textarea>
         </div>
     `;
 
-    // 2. CAMPOS ESPECÍFICOS PARA FERRAMENTAS
-    if (tipo === 'ferramentas') {
+    // 2. CAMPOS ESPECÍFICOS (A mágica acontece aqui)
+    // Usamos .includes para garantir que pegue mesmo se o nome da aba for "loja-ferramentas"
+    if (tipo.includes('ferramenta')) {
         html += `
-            <div class="input-grid-3">
-                ${campo('Preço (Ryos)', 'cre-preco', 'number', '0')}
-                ${campo('Requisito (Nível)', 'cre-requisito', 'number', '1')}
-                ${campo('Dano', 'cre-dano', 'text', '0')}
+            <div class="input-grid-3" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+                ${campo('PREÇO (RYOS)', 'cre-preco', 'number', '0')}
+                ${campo('REQUISITO (NV)', 'cre-requisito', 'number', '1')}
+                ${campo('DANO', 'cre-dano', 'text', '0')}
             </div>
-            <div class="input-grid-2">
-                ${campo('Stamina (Gasto)', 'cre-stamina', 'text', '0')}
-                ${campo('Defesa', 'cre-defesa', 'text', '0')}
+            <div class="input-grid-2" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
+                ${campo('STAMINA (GASTO)', 'cre-stamina', 'text', '0')}
+                ${campo('DEFESA', 'cre-defesa', 'text', '0')}
             </div>
-            ${campo('Restrito a (Nomes dos Personagens)', 'cre-restrito', 'text', 'Ex: Kagetsu Otsutsuki, Hatsume Uchiha')}
+            ${campo('RESTRITO A (NOMES)', 'cre-restrito', 'text', 'Kagetsu Otsutsuki, Hatsume Uchiha')}
         `;
     } 
-    
-    // 3. CAMPOS ESPECÍFICOS PARA JUTSUS (Para manter a função completa)
-    else if (tipo === 'jutsus') {
+    else if (tipo.includes('jutsu')) {
         html += `
-            <div class="input-grid-3">
-                ${campo('Preço (Ryos)', 'cre-preco', 'number', '0')}
-                ${campo('Requisito (Nível)', 'cre-requisito', 'number', '1')}
-                ${campo('Rank', 'cre-rank', 'text', 'C')}
+            <div class="input-grid-3" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+                ${campo('PREÇO', 'cre-preco', 'number', '0')}
+                ${campo('REQUISITO (NV)', 'cre-requisito', 'number', '1')}
+                ${campo('RANK', 'cre-rank', 'text', 'C')}
             </div>
-            <div class="input-grid-3">
-                ${campo('Dano', 'cre-dano', 'text', '0')}
-                ${campo('Defesa', 'cre-defesa', 'text', '0')}
-                ${campo('Chakra', 'cre-chakra', 'text', '0')}
+            <div class="input-grid-3" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:10px;">
+                ${campo('DANO', 'cre-dano', 'text', '0')}
+                ${campo('DEFESA', 'cre-defesa', 'text', '0')}
+                ${campo('CHAKRA', 'cre-chakra', 'text', '0')}
             </div>
-            <div class="input-grid-3">
-                ${campo('Stamina', 'cre-stamina', 'text', '0')}
-                ${campo('Bônus HP', 'cre-hp', 'text', '0')}
-                ${campo('Bônus Stamina', 'cre-b-stamina', 'text', '0')}
+            <div class="input-grid-3" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-top:10px;">
+                ${campo('STAMINA', 'cre-stamina', 'text', '0')}
+                ${campo('BÔNUS HP', 'cre-hp', 'text', '0')}
+                ${campo('BÔNUS STAMINA', 'cre-b-stamina', 'text', '0')}
             </div>
-            ${campo('Restrito a (Nomes)', 'cre-restrito', 'text', 'Ex: Naruto Uzumaki')}
-        `;
-    }
-
-    // 4. CAMPOS PARA MISSÕES E CONQUISTAS
-    else if (tipo === 'missoes' || tipo === 'conquistas') {
-        html += `
-            <div class="input-grid-3">
-                ${campo('Ryos', 'cre-ryos', 'number', '0')}
-                ${campo('XP', 'cre-xp', 'number', '0')}
-                ${campo('EN', 'cre-en', 'number', '0')}
-            </div>
-            <div class="input-grid-2">
-                ${campo('Rank', 'cre-rank', 'text', 'D')}
-                ${campo('Restrito a', 'cre-restrito', 'text', 'Nome do Player')}
-            </div>
+            ${campo('RESTRITO A (NOMES)', 'cre-restrito', 'text', 'Ex: Naruto Uzumaki')}
         `;
     }
 
