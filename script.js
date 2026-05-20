@@ -2007,8 +2007,6 @@ window.abrirChat = (targetUserId, targetUserName, isOnline = false) => {
     currentChatUserId = targetUserId;
     document.getElementById('chat-user-name').innerText = targetUserName;
     document.getElementById('chat-widget').style.display = 'flex';
-    
-    const salaId = gerarIdSala(auth.currentUser.uid, targetUserId);
 
     const salaId = gerarIdSala(auth.currentUser.uid, targetUserId);
         
