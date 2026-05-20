@@ -885,43 +885,42 @@ async function carregarPersonagens() {
             const u = d.data();
             const div = document.createElement('div');
             div.className = 'card';
-            // Clicar no card abre o perfil
             div.onclick = () => window.verPerfil(d.id);
             
             const ryos = u.ryos || 0;
             const en = u.essencia_ninja || 0;
 
-            // 1. Os botões agora estão dentro do laço de repetição.
-            // 2. Usamos d.id para o ID e u.nome para o nome.
-            // 3. event.stopPropagation() impede que o clique no botão abra o perfil sem querer.
+            // Lógica do Status Online
+            const isOnline = u.isOnline === true;
+            const corBolinha = isOnline ? '#2ecc71' : '#ccc'; // Verde se online, Cinza se offline
+            const brilhoBolinha = isOnline ? 'box-shadow: 0 0 5px #2ecc71;' : '';
+
+            // Botões atualizados (Presentear agora é Laranja/Branco)
             const botoesHTML = `
                 <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 15px;">
-                    <button onclick="event.stopPropagation(); abrirModalPresentear('${d.id}')" class="mission-btn-start" style="background: #f1c40f; color: #333; width: 100%; border: none;">
+                    <button onclick="event.stopPropagation(); abrirModalPresentear('${d.id}')" class="mission-btn-start" style="background: var(--primary-color); color: white; width: 100%; border: none;">
                         <i class="fa-solid fa-gift"></i> Presentear
                     </button>
-                    <button onclick="event.stopPropagation(); abrirChat('${d.id}', '${u.nome || u.apelido || "Ninja"}')" class="mission-btn-start" style="background: #3498db; width: 100%; border: none; color: white;">
+                    <button onclick="event.stopPropagation(); abrirChat('${d.id}', '${u.nome || u.apelido || "Ninja"}', ${isOnline})" class="mission-btn-start" style="background: #3498db; width: 100%; border: none; color: white;">
                         <i class="fa-solid fa-comment-dots"></i> Conversar
                     </button>
                 </div>
             `;
 
-            // 4. Injetamos o ${botoesHTML} no final do card.
+            // Injeta a bolinha ao lado do nome (<h4>)
             div.innerHTML = `
                 <img src="${u.avatar || IMG_PADRAO}" class="card-img-top">
-                <h4>${u.nome || "Ninja"}</h4>
+                <h4 style="display: flex; justify-content: center; align-items: center; gap: 6px;">
+                    <span style="display: inline-block; width: 10px; height: 10px; background: ${corBolinha}; border-radius: 50%; ${brilhoBolinha}"></span>
+                    ${u.nome || "Ninja"}
+                </h4>
                 <p style="font-size:0.85em; color:var(--primary-color); font-weight:600; margin-top:5px; margin-bottom:8px;">
                     ${u.apelido || "Sem clã"}
                 </p>
                 <div style="font-size: 0.8rem; font-weight: bold; display: flex; justify-content: center; gap: 8px; align-items: center;">
-                    <span style="color: #f1c40f;">
-                        <i class="fa-solid fa-coins"></i> ${formatarNum(ryos)}
-                    </span>
-                    
+                    <span style="color: #f1c40f;"><i class="fa-solid fa-coins"></i> ${formatarNum(ryos)}</span>
                     <span style="color: #777;">|</span>
-                    
-                    <span style="color: #3498db;">
-                        <i class="fa-regular fa-star"></i> ${formatarNum(en)} EN
-                    </span>
+                    <span style="color: #3498db;"><i class="fa-regular fa-star"></i> ${formatarNum(en)} EN</span>
                 </div>
                 ${botoesHTML} 
             `;
@@ -1914,9 +1913,13 @@ const gerarIdSala = (uid1, uid2) => {
 };
 
 // 1. Abrir o Chat
-window.abrirChat = (targetUserId, targetUserName) => {
+window.abrirChat = (targetUserId, targetUserName, isOnline = false) => {
     if (!auth.currentUser) return alert("Você precisa estar logado!");
     if (auth.currentUser.uid === targetUserId) return alert("Você não pode conversar consigo mesmo!");
+
+    // --- NOVO: Atualiza a cor da bolinha no cabeçalho do chat ---
+    const corBolinha = isOnline ? '#2ecc71' : '#ccc';
+    document.getElementById('chat-status-dot').style.background = corBolinha;
 
     currentChatUserId = targetUserId;
     document.getElementById('chat-user-name').innerText = targetUserName;
@@ -1985,6 +1988,28 @@ window.enviarMensagemChat = async () => {
         alert("Falha ao enviar o pergaminho.");
     }
 };
+
+
+
+// --- SISTEMA DE PRESENÇA (ONLINE/OFFLINE) ---
+window.atualizarStatusOnline = (online) => {
+    if (auth && auth.currentUser) {
+        updateDoc(doc(db, "users", auth.currentUser.uid), { isOnline: online }).catch(()=>{});
+    }
+};
+
+// Avisa o Firebase quando o jogador muda de aba, minimiza o celular ou volta pro jogo
+document.addEventListener("visibilitychange", () => {
+    atualizarStatusOnline(document.visibilityState === 'visible');
+});
+
+// Tenta avisar o Firebase quando o jogador fecha a janela/navegador de vez
+window.addEventListener("beforeunload", () => {
+    atualizarStatusOnline(false);
+});
+
+// DICA: Você também pode colocar "atualizarStatusOnline(true);" 
+// dentro da sua função que faz o login dar certo, para ele já entrar verdinho!
 
 
 
