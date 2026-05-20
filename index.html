@@ -536,6 +536,21 @@
         </button>
     </div>
 </div>
+
+
+    <div id="chat-list-tab" onclick="window.toggleChatList()">
+    <i class="fa-solid fa-comments"></i> Chats <span id="total-unread-badge" class="unread-badge-main" style="display:none;">(0)</span>
+</div>
+
+<div id="chat-list-panel" style="display: none;">
+    <div class="chat-list-header">
+        <strong>Suas Conversas</strong>
+        <span onclick="window.toggleChatList()" style="cursor: pointer; font-size: 1.2rem;">&times;</span>
+    </div>
+    <div id="chat-list-content">
+        <p style="text-align:center; color:#999; margin-top:20px; font-size: 0.9rem;">Carregando...</p>
+    </div>
+</div>
     
 
     <div class="modal-overlay-comment" id="commentModal"><span class="close-modal" onclick="closeModal()">&times;</span><div class="modal-content-comment"><div class="modal-left" id="modalPostContent"></div><div class="modal-right"><div style="padding: 15px; border-bottom: 1px solid #eee;">Comentários</div><div class="comments-list" id="commentsList"></div><div class="comment-input-area"><input type="text" id="newCommentText" placeholder="Comentar..."><button onclick="submitComment()" style="border:none; background:none; color:var(--primary-color); font-weight:bold;">Enviar</button></div></div></div></div>
