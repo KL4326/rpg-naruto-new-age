@@ -22,6 +22,9 @@ let currentGiftTarget = null;
 let currentMentorData = null;
 let globalMentores = {};
 let newMentorImageBase64 = null;
+let currentChatUserId = null;
+let unsubscribeChat = null;
+let usuarioDestinoPresente = null;
 
 const IMG_PADRAO = "https://placehold.co/40x40/orange/white?text=N";
 
@@ -911,6 +914,17 @@ async function carregarPersonagens() {
         console.error("Erro ao carregar diretório:", e);
         c.innerHTML = '<p>Erro ao carregar lista.</p>';
     }
+
+    const botoesHTML = `
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 15px;">
+            <button onclick="abrirModalPresentear('${user.id}')" class="mission-btn-start" style="background: #f1c40f; color: #333; width: 100%;">
+                <i class="fa-solid fa-gift"></i> Presentear
+            </button>
+            <button onclick="abrirChat('${user.id}', '${user.nome || user.apelido}')" class="mission-btn-start" style="background: #3498db; width: 100%;">
+                <i class="fa-solid fa-comment-dots"></i> Conversar
+            </button>
+        </div>
+    `;
 }
 
 async function carregarConquistas() {
@@ -1143,6 +1157,84 @@ function renderRank(c, t, l, f) {
     h += '</table></div>'; 
     c.innerHTML += h; 
 }
+
+
+window.abrirModalPresentear = (alvoId) => {
+    if (!auth.currentUser) return alert("Você precisa estar logado!");
+    if (auth.currentUser.uid === alvoId) return alert("Você não pode presentear a si mesmo!");
+
+    usuarioDestinoPresente = alvoId;
+    document.getElementById('pres-qtd').value = ''; // Limpa o campo de valor
+    document.getElementById('modalPresentear').style.display = 'flex';
+};
+
+// 2. Função que envia o dinheiro
+window.confirmarPresente = async () => {
+    if (!usuarioDestinoPresente || !auth.currentUser) return;
+
+    const tipo = document.getElementById('pres-tipo').value; // 'ryos' ou 'en'
+    const qtd = Number(document.getElementById('pres-qtd').value);
+
+    // Validações de segurança
+    if (isNaN(qtd) || qtd <= 0) return alert("Insira uma quantidade válida!");
+    if (!currentUserData) return alert("Seus dados não foram carregados. Tente novamente.");
+
+    // Verifica se o remetente tem saldo
+    const saldoAtual = Number(currentUserData[tipo]) || 0;
+    
+    if (saldoAtual < qtd) {
+        const nomeMoeda = tipo === 'ryos' ? 'Ryos' : 'Essência Ninja';
+        return alert(`Saldo insuficiente! Você tem apenas ${saldoAtual} ${nomeMoeda}.`);
+    }
+
+    try {
+        const btnConfirmar = document.querySelector('#modalPresentear button');
+        btnConfirmar.innerText = "Enviando...";
+        btnConfirmar.disabled = true;
+
+        // Referências do Banco de Dados
+        const refRemetente = doc(db, "users", auth.currentUser.uid);
+        const refDestinatario = doc(db, "users", usuarioDestinoPresente);
+
+        // Pega o saldo atual do amigo
+        const snapDestinatario = await getDoc(refDestinatario);
+        if (!snapDestinatario.exists()) {
+            throw new Error("O ninja destinatário não foi encontrado na vila.");
+        }
+        
+        const dadosDestinatario = snapDestinatario.data();
+        const saldoDestinatario = Number(dadosDestinatario[tipo]) || 0;
+
+        // 1. Tira da conta de quem enviou
+        await updateDoc(refRemetente, {
+            [tipo]: saldoAtual - qtd
+        });
+
+        // 2. Coloca na conta de quem recebeu
+        await updateDoc(refDestinatario, {
+            [tipo]: saldoDestinatario + qtd
+        });
+
+        // Atualiza os dados locais para não precisar recarregar a página
+        currentUserData[tipo] = saldoAtual - qtd;
+
+        alert("Presente enviado com sucesso!");
+        document.getElementById('modalPresentear').style.display = 'none';
+        
+        // Se a aba de personagens estiver aberta, atualiza visualmente
+        if (typeof carregarPersonagens === 'function') carregarPersonagens();
+
+    } catch (erro) {
+        console.error("Erro na transferência:", erro);
+        alert("Ocorreu um erro ao enviar o presente. O chakra falhou!");
+    } finally {
+        const btnConfirmar = document.querySelector('#modalPresentear button');
+        btnConfirmar.innerText = "Confirmar Envio";
+        btnConfirmar.disabled = false;
+    }
+};
+
+
 
 window.consumirItem = async (id, nome) => { 
     let itemData = globalItensMap[id];
@@ -1803,6 +1895,87 @@ document.getElementById('form-criacao-geral').onsubmit = async (e) => {
         alert("Erro ao salvar.");
     }
 };
+
+
+
+// Função para gerar ID único da sala de conversa
+const gerarIdSala = (uid1, uid2) => {
+    return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`;
+};
+
+// 1. Abrir o Chat
+window.abrirChat = (targetUserId, targetUserName) => {
+    if (!auth.currentUser) return alert("Você precisa estar logado!");
+    if (auth.currentUser.uid === targetUserId) return alert("Você não pode conversar consigo mesmo!");
+
+    currentChatUserId = targetUserId;
+    document.getElementById('chat-user-name').innerText = targetUserName;
+    document.getElementById('chat-widget').style.display = 'flex';
+    
+    const salaId = gerarIdSala(auth.currentUser.uid, targetUserId);
+    const msgsDiv = document.getElementById('chat-messages');
+    msgsDiv.innerHTML = '<p style="text-align:center; color:#999; font-size:12px;">Conectando...</p>';
+
+    // Se já tinha um chat aberto, cancela a escuta anterior
+    if (unsubscribeChat) unsubscribeChat();
+
+    // Escuta as mensagens em tempo real
+    const q = query(collection(db, "chats", salaId, "mensagens"), orderBy("timestamp", "asc"));
+    
+    unsubscribeChat = onSnapshot(q, (snapshot) => {
+        msgsDiv.innerHTML = '';
+        if (snapshot.empty) {
+            msgsDiv.innerHTML = '<p style="text-align:center; color:#999; font-size:12px;">Nenhuma mensagem. Diga olá!</p>';
+            return;
+        }
+
+        snapshot.forEach((docSnap) => {
+            const dados = docSnap.data();
+            const ehMinha = dados.remetenteId === auth.currentUser.uid;
+            
+            const div = document.createElement('div');
+            div.className = `chat-msg ${ehMinha ? 'msg-minha' : 'msg-dele'}`;
+            div.innerText = dados.texto;
+            msgsDiv.appendChild(div);
+        });
+
+        // Rola automaticamente para a última mensagem
+        msgsDiv.scrollTop = msgsDiv.scrollHeight;
+    });
+};
+
+// 2. Fechar o Chat
+window.fecharChat = () => {
+    document.getElementById('chat-widget').style.display = 'none';
+    currentChatUserId = null;
+    if (unsubscribeChat) {
+        unsubscribeChat();
+        unsubscribeChat = null;
+    }
+};
+
+// 3. Enviar Mensagem
+window.enviarMensagemChat = async () => {
+    const input = document.getElementById('chat-input');
+    const texto = input.value.trim();
+    
+    if (!texto || !currentChatUserId || !auth.currentUser) return;
+    
+    input.value = ''; // Limpa o campo
+    const salaId = gerarIdSala(auth.currentUser.uid, currentChatUserId);
+
+    try {
+        await addDoc(collection(db, "chats", salaId, "mensagens"), {
+            remetenteId: auth.currentUser.uid,
+            texto: texto,
+            timestamp: serverTimestamp()
+        });
+    } catch (e) {
+        console.error("Erro ao enviar mensagem:", e);
+        alert("Falha ao enviar o pergaminho.");
+    }
+};
+
 
 
 window.aplicarEscalaPersonalizada = aplicarEscalaPersonalizada;
