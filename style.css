@@ -727,7 +727,7 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 
 
 
-/* --- ROLETA DE PRÊMIOS --- */
+/* --- ROLETA DE PRÊMIOS (8 FATIAS) --- */
 .roleta-wrapper {
     position: relative;
     width: 300px;
@@ -757,19 +757,21 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
     box-shadow: 0 5px 15px rgba(0,0,0,0.2);
     position: relative;
     overflow: hidden;
-    transition: transform 4s cubic-bezier(0.1, 0.7, 0.1, 1); /* Animação suave girando e parando */
-    /* 6 fatias desenhadas por ângulos */
+    transition: transform 4s cubic-bezier(0.1, 0.7, 0.1, 1);
+    
+    /* 8 fatias de 45 graus cada */
     background: conic-gradient(
-        #f1c40f 0deg 60deg,
-        #3498db 60deg 120deg,
-        #e67e22 120deg 180deg,
-        #9b59b6 180deg 240deg,
-        #2ecc71 240deg 300deg,
-        #95a5a6 300deg 360deg
+        #f1c40f 0deg 45deg,      /* 5.000 Ryos (Amarelo) */
+        #3498db 45deg 90deg,     /* 15 EN (Azul) */
+        #9b59b6 90deg 135deg,    /* 1 Jutsu B (Roxo) */
+        #e67e22 135deg 180deg,   /* 20.000 Ryos (Laranja) */
+        #2ecc71 180deg 225deg,   /* 1 Ferramenta (Verde) */
+        #e74c3c 225deg 270deg,   /* 1 Arma (Vermelho) */
+        #1abc9c 270deg 315deg,   /* 50 EN (Ciano) */
+        #34495e 315deg 360deg    /* +1 Modificador (Azul Escuro) */
     );
 }
 
-/* Textos dentro da roleta */
 .roleta-text {
     position: absolute;
     width: 50%;
@@ -777,13 +779,15 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
     top: 50%;
     left: 50%;
     transform-origin: 0% 50%;
-    transform: translateY(-50%) rotate(calc(var(--i) * 60deg + 30deg));
+    /* Centraliza o texto nos 45 graus de cada fatia (22.5 é a metade) */
+    transform: translateY(-50%) rotate(calc(var(--i) * 45deg + 22.5deg));
     font-weight: bold;
     color: white;
     text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-    font-size: 14px;
-    padding-left: 30px; /* Afasta o texto do centro */
+    font-size: 0.75rem; /* Fonte um pouco menor para caber */
+    padding-left: 25px; 
 }
+
 
 
 @media (max-width: 768px) {
