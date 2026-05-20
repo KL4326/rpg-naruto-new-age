@@ -557,6 +557,81 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 }
 
 
+/* --- CENTRAL DE CHATS (ABAS E LISTAS) --- */
+#chat-list-tab {
+    position: fixed;
+    bottom: 0;
+    right: 390px; /* Fica ao lado da janela principal do chat */
+    background: var(--primary-color, #e67e22);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 12px 12px 0 0;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1rem;
+    z-index: 10000;
+    box-shadow: 0 -3px 10px rgba(0,0,0,0.2);
+    transition: 0.2s;
+}
+#chat-list-tab:hover { background: #d35400; }
+
+#chat-list-panel {
+    position: fixed;
+    bottom: 0;
+    right: 390px;
+    width: 280px;
+    height: 400px;
+    background: #fff;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 -5px 15px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    z-index: 10001;
+    overflow: hidden;
+}
+
+.chat-list-header {
+    background: var(--primary-color, #e67e22);
+    color: white;
+    padding: 12px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#chat-list-content {
+    flex: 1;
+    overflow-y: auto;
+    background: #f8fafc;
+}
+
+.chat-list-item {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background 0.2s;
+}
+.chat-list-item:hover { background: #f1f5f9; border-left: 4px solid var(--primary-color); }
+
+.unread-badge {
+    background: #e74c3c;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 7px;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+.unread-badge-main { margin-left: 5px; background: white; color: var(--primary-color); }
+
+@media (max-width: 768px) {
+    #chat-list-tab { right: 20px; bottom: 80px; border-radius: 20px; }
+    #chat-list-panel { right: 10px; left: 10px; width: auto; bottom: 80px; }
+    #chat-widget { right: 10px; left: 10px; width: auto; }
+}
+
 
 /* Estilos do Chat Flutuante */
 #chat-widget {
