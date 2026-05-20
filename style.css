@@ -10,6 +10,7 @@
     --yellow-color: #f1c40f;
     --danger-color: #ed4956; 
     --en-color: #3498db;
+    --stat-bijuu: #c0392b; 
     
     /* Cores de Status e Barras */
     --stat-chakra: #2980b9; 
@@ -31,8 +32,6 @@ body.dark-mode {
     --border-color: #363636; 
 }
 
-    --stat-bijuu: #c0392b; 
-}
 
 /* Se quiser um estilo diferente para o ícone da Bijuu */
 #dash-bijuu .element-icon, #profile-bijuu-container .element-icon {
