@@ -726,6 +726,66 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 }
 
 
+
+/* --- ROLETA DE PRÊMIOS --- */
+.roleta-wrapper {
+    position: relative;
+    width: 300px;
+    height: 300px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.roleta-pointer {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 40px;
+    color: var(--danger-color);
+    z-index: 10;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.roleta-wheel {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    border: 5px solid var(--border-color);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    position: relative;
+    overflow: hidden;
+    transition: transform 4s cubic-bezier(0.1, 0.7, 0.1, 1); /* Animação suave girando e parando */
+    /* 6 fatias desenhadas por ângulos */
+    background: conic-gradient(
+        #f1c40f 0deg 60deg,
+        #3498db 60deg 120deg,
+        #e67e22 120deg 180deg,
+        #9b59b6 180deg 240deg,
+        #2ecc71 240deg 300deg,
+        #95a5a6 300deg 360deg
+    );
+}
+
+/* Textos dentro da roleta */
+.roleta-text {
+    position: absolute;
+    width: 50%;
+    height: 20px;
+    top: 50%;
+    left: 50%;
+    transform-origin: 0% 50%;
+    transform: translateY(-50%) rotate(calc(var(--i) * 60deg + 30deg));
+    font-weight: bold;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+    font-size: 14px;
+    padding-left: 30px; /* Afasta o texto do centro */
+}
+
+
 @media (max-width: 768px) {
     #mobile-menu-btn { display: block; }
     .sidebar { position: fixed; top: 0; left: -260px; height: 100%; box-shadow: 2px 0 10px rgba(0,0,0,0.3); transition: left 0.3s ease; }
