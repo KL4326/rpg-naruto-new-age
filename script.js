@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, deleteField, addDoc, serverTimestamp, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, deleteField, addDoc, serverTimestamp, query, orderBy, onSnapshot, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // --- CONFIGURAÇÃO FIREBASE ---
 const firebaseConfig = { apiKey: "AIzaSyC3HOor32_p5Z-iADm0VgZ279rt1kj8ICg", authDomain: "rpg-naruto-5150a.firebaseapp.com", projectId: "rpg-naruto-5150a", storageBucket: "rpg-naruto-5150a.firebasestorage.app", messagingSenderId: "1007094335306", appId: "1:1007094335306:web:ac96fa96f9494f90fd63b3" };
@@ -108,6 +108,7 @@ onAuthStateChanged(auth, async (user) => {
             }
         });
         carregarTudo();
+        window.iniciarEscutaChats();
         setTimeout(() => { try { window.renderFeed('all'); } catch(e) {} }, 800); 
     } else {
         document.getElementById('login-screen').style.display = 'flex';
@@ -1912,6 +1913,88 @@ const gerarIdSala = (uid1, uid2) => {
     return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`;
 };
 
+
+
+// Abre e fecha a lista de conversas
+window.toggleChatList = () => {
+    const panel = document.getElementById('chat-list-panel');
+    panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+};
+
+// Zera a bolinha de mensagens não lidas de um chat específico
+window.zerarNaoLidas = async (salaId) => {
+    if(!auth.currentUser) return;
+    try {
+        await setDoc(doc(db, "chats", salaId), {
+            [`naoLidas_${auth.currentUser.uid}`]: 0
+        }, { merge: true });
+    } catch(e) {}
+};
+
+// Carrega o painel lateral com todas as suas conversas ativas
+let escutaListaChats = null;
+window.iniciarEscutaChats = () => {
+    if (!auth.currentUser) return;
+    
+    // Procura todos os chats onde o Array "participantes" tem o seu UID
+    const q = query(collection(db, "chats"), where("participantes", "array-contains", auth.currentUser.uid));
+    
+    escutaListaChats = onSnapshot(q, (snapshot) => {
+        const content = document.getElementById('chat-list-content');
+        content.innerHTML = '';
+        let totalNaoLidas = 0;
+
+        if (snapshot.empty) {
+            content.innerHTML = '<p style="text-align:center; color:#999; margin-top:20px;">Você não tem conversas ativas.</p>';
+            document.getElementById('total-unread-badge').style.display = 'none';
+            return;
+        }
+
+        snapshot.forEach((docSnap) => {
+            const dados = docSnap.data();
+            const meuId = auth.currentUser.uid;
+            
+            // Acha quem é o "outro" na conversa
+            const outroId = dados.participantes.find(id => id !== meuId);
+            if (!outroId) return;
+
+            const nomeOutro = (dados.nomes && dados.nomes[outroId]) ? dados.nomes[outroId] : "Ninja Oculto";
+            const naoLidas = dados[`naoLidas_${meuId}`] || 0;
+            totalNaoLidas += naoLidas;
+
+            const div = document.createElement('div');
+            div.className = 'chat-list-item';
+            div.onclick = () => {
+                window.zerarNaoLidas(docSnap.id);
+                window.abrirChat(outroId, nomeOutro, true);
+                window.toggleChatList(); // Fecha a lista após clicar
+            };
+
+            div.innerHTML = `
+                <div style="display:flex; flex-direction:column; overflow: hidden; padding-right: 10px;">
+                    <strong style="color:#333; font-size: 0.9rem;">${nomeOutro}</strong>
+                    <span style="font-size:0.75rem; color:#777; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                        ${dados.ultimaMensagem || "..."}
+                    </span>
+                </div>
+                ${naoLidas > 0 ? `<span class="unread-badge">${naoLidas}</span>` : ''}
+            `;
+            content.appendChild(div);
+        });
+
+        // Atualiza a notificação "(2)" da aba principal
+        const badge = document.getElementById('total-unread-badge');
+        if (totalNaoLidas > 0) {
+            badge.innerText = `(${totalNaoLidas})`;
+            badge.style.display = 'inline';
+        } else {
+            badge.style.display = 'none';
+        }
+    });
+};
+
+
+
 // 1. Abrir o Chat
 window.abrirChat = (targetUserId, targetUserName, isOnline = false) => {
     if (!auth.currentUser) return alert("Você precisa estar logado!");
@@ -1926,6 +2009,12 @@ window.abrirChat = (targetUserId, targetUserName, isOnline = false) => {
     document.getElementById('chat-widget').style.display = 'flex';
     
     const salaId = gerarIdSala(auth.currentUser.uid, targetUserId);
+
+    const salaId = gerarIdSala(auth.currentUser.uid, targetUserId);
+        
+        // LINHA NOVA: A pessoa clicou no chat, então zeramos a contagem!
+        window.zerarNaoLidas(salaId);
+    
     const msgsDiv = document.getElementById('chat-messages');
     msgsDiv.innerHTML = '<p style="text-align:center; color:#999; font-size:12px;">Conectando...</p>';
 
@@ -1967,22 +2056,47 @@ window.fecharChat = () => {
     }
 };
 
-// 3. Enviar Mensagem
 window.enviarMensagemChat = async () => {
     const input = document.getElementById('chat-input');
     const texto = input.value.trim();
     
     if (!texto || !currentChatUserId || !auth.currentUser) return;
     
-    input.value = ''; // Limpa o campo
+    input.value = ''; 
     const salaId = gerarIdSala(auth.currentUser.uid, currentChatUserId);
+    
+    // Nomes para salvar na lista (evita fazer novas buscas depois)
+    const meuNome = currentUserData?.nome || currentUserData?.apelido || "Ninja";
+    const outroNome = document.getElementById('chat-user-name').innerText;
 
     try {
+        // 1. Grava a mensagem na subcoleção (como já era)
         await addDoc(collection(db, "chats", salaId, "mensagens"), {
             remetenteId: auth.currentUser.uid,
             texto: texto,
             timestamp: serverTimestamp()
         });
+
+        // 2. Lê a sala principal para ver quantas mensagens o outro já não leu
+        const salaRef = doc(db, "chats", salaId);
+        const salaSnap = await getDoc(salaRef);
+        let naoLidasDele = 1;
+        
+        if (salaSnap.exists()) {
+            naoLidasDele = (salaSnap.data()[`naoLidas_${currentChatUserId}`] || 0) + 1;
+        }
+
+        // 3. Grava o resumo na raiz do Chat (Faz a Lista funcionar!)
+        await setDoc(salaRef, {
+            participantes: [auth.currentUser.uid, currentChatUserId],
+            nomes: {
+                [auth.currentUser.uid]: meuNome,
+                [currentChatUserId]: outroNome
+            },
+            ultimaMensagem: texto,
+            [`naoLidas_${currentChatUserId}`]: naoLidasDele
+        }, { merge: true });
+
     } catch (e) {
         console.error("Erro ao enviar mensagem:", e);
         alert("Falha ao enviar o pergaminho.");
