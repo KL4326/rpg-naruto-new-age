@@ -870,6 +870,8 @@ window.salvarNovoMentor = async () => {
     carregarMentorias();
 };
 
+
+
 async function carregarPersonagens() {
     const c = document.getElementById('directory-grid');
     if (!c) return;
@@ -883,11 +885,27 @@ async function carregarPersonagens() {
             const u = d.data();
             const div = document.createElement('div');
             div.className = 'card';
+            // Clicar no card abre o perfil
             div.onclick = () => window.verPerfil(d.id);
             
             const ryos = u.ryos || 0;
             const en = u.essencia_ninja || 0;
 
+            // 1. Os botões agora estão dentro do laço de repetição.
+            // 2. Usamos d.id para o ID e u.nome para o nome.
+            // 3. event.stopPropagation() impede que o clique no botão abra o perfil sem querer.
+            const botoesHTML = `
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 15px;">
+                    <button onclick="event.stopPropagation(); abrirModalPresentear('${d.id}')" class="mission-btn-start" style="background: #f1c40f; color: #333; width: 100%; border: none;">
+                        <i class="fa-solid fa-gift"></i> Presentear
+                    </button>
+                    <button onclick="event.stopPropagation(); abrirChat('${d.id}', '${u.nome || u.apelido || "Ninja"}')" class="mission-btn-start" style="background: #3498db; width: 100%; border: none; color: white;">
+                        <i class="fa-solid fa-comment-dots"></i> Conversar
+                    </button>
+                </div>
+            `;
+
+            // 4. Injetamos o ${botoesHTML} no final do card.
             div.innerHTML = `
                 <img src="${u.avatar || IMG_PADRAO}" class="card-img-top">
                 <h4>${u.nome || "Ninja"}</h4>
@@ -905,6 +923,7 @@ async function carregarPersonagens() {
                         <i class="fa-regular fa-star"></i> ${formatarNum(en)} EN
                     </span>
                 </div>
+                ${botoesHTML} 
             `;
             c.appendChild(div);
         });
@@ -914,18 +933,9 @@ async function carregarPersonagens() {
         console.error("Erro ao carregar diretório:", e);
         c.innerHTML = '<p>Erro ao carregar lista.</p>';
     }
-
-    const botoesHTML = `
-        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 15px;">
-            <button onclick="abrirModalPresentear('${user.id}')" class="mission-btn-start" style="background: #f1c40f; color: #333; width: 100%;">
-                <i class="fa-solid fa-gift"></i> Presentear
-            </button>
-            <button onclick="abrirChat('${user.id}', '${user.nome || user.apelido}')" class="mission-btn-start" style="background: #3498db; width: 100%;">
-                <i class="fa-solid fa-comment-dots"></i> Conversar
-            </button>
-        </div>
-    `;
 }
+
+
 
 async function carregarConquistas() {
     try {
