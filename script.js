@@ -156,11 +156,20 @@ if (btnLogin) {
 
 // --- NAVEGAÇÃO ---
 window.showTab = (t) => {
-    const isAdmin = auth.currentUser?.email === "admin@rpgnaruto.com" || auth.currentUser?.email === "conselheiro@rpgnaruto.com";
+    // 1. Lista organizada de administradores
+    const listaAdmins = [
+        "admin@rpgnaruto.com",
+        "conselheiro@rpgnaruto.com"
+    ];
+    // Verifica se o usuário logado está na lista
+    const isAdmin = auth.currentUser && listaAdmins.includes(auth.currentUser.email);
+    
     const btnAdd = document.getElementById('btn-adicionar-geral');
+    
+    // Se no futuro você quiser criar prêmios com o botão "+", basta adicionar 'premios' nesta lista:
     const abasComCriacao = ['jutsus', 'ferramentas', 'missoes', 'conquistas', 'loja'];
 
-    // --- CORREÇÃO: Verificamos se o botão existe antes de mexer no estilo ---
+    // --- Controla a exibição do botão flutuante (+) ---
     if (btnAdd) {
         if (isAdmin && abasComCriacao.includes(t)) {
             btnAdd.style.display = 'block';
@@ -179,6 +188,7 @@ window.showTab = (t) => {
         document.querySelectorAll('.top-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.sidebar button').forEach(b => b.classList.remove('active'));
 
+        // O botão superior ou lateral vai receber a bordinha laranja/destaque automaticamente
         const btnTop = document.getElementById('nav-btn-' + t);
         const btnSide = document.getElementById('side-btn-' + t);
         if(btnTop) btnTop.classList.add('active');
@@ -207,6 +217,25 @@ window.showTab = (t) => {
                 if(input) input.value = "";
                 const label = document.getElementById('label-custo-en');
                 if(label) label.innerText = "0";
+            }
+            
+            // --- NOVO: Lógica visual da aba de Prêmios (Roleta) ---
+            if(t === 'premios') {
+                const agora = Date.now();
+                const seteDiasEmMs = 7 * 24 * 60 * 60 * 1000;
+                const ultimoGiro = currentUserData.ultimoGiroRoleta || 0;
+                const timerTexto = document.getElementById('roleta-timer');
+                
+                // Se já girou nos últimos 7 dias, mostra o aviso na hora que a aba abre
+                if (agora - ultimoGiro < seteDiasEmMs) {
+                    const diasRestantes = Math.ceil((seteDiasEmMs - (agora - ultimoGiro)) / (1000 * 60 * 60 * 24));
+                    if(timerTexto) {
+                        timerTexto.innerText = `Você já girou! Volte em ${diasRestantes} dias.`;
+                        timerTexto.style.display = 'block';
+                    }
+                } else {
+                    if(timerTexto) timerTexto.style.display = 'none';
+                }
             }
         }
 
@@ -2149,6 +2178,118 @@ window.addEventListener("beforeunload", () => {
 
 // DICA: Você também pode colocar "atualizarStatusOnline(true);" 
 // dentro da sua função que faz o login dar certo, para ele já entrar verdinho!
+
+
+
+
+// --- SISTEMA DA ROLETA SEMANAL (8 FATIAS) ---
+let roletaGirando = false;
+
+window.girarRoleta = async () => {
+    if (!auth.currentUser || !currentUserData) return alert("Erro ao carregar dados do ninja.");
+    if (roletaGirando) return;
+
+    // 1. Verificação de Tempo (7 dias = 604.800.000 milissegundos)
+    const agora = Date.now();
+    const seteDiasEmMs = 7 * 24 * 60 * 60 * 1000;
+    const ultimoGiro = currentUserData.ultimoGiroRoleta || 0;
+
+    if (agora - ultimoGiro < seteDiasEmMs) {
+        const diasRestantes = Math.ceil((seteDiasEmMs - (agora - ultimoGiro)) / (1000 * 60 * 60 * 24));
+        const timerTexto = document.getElementById('roleta-timer');
+        timerTexto.innerText = `Você já girou! Volte em ${diasRestantes} dias.`;
+        timerTexto.style.display = 'block';
+        return;
+    }
+
+    // 2. Definição dos 8 Prêmios
+    const premios = [
+        { nome: '5.000 Ryos', tipo: 'moeda_ryos', valor: 5000 },
+        { nome: '15 Essências Ninjas', tipo: 'moeda_en', valor: 15 },
+        { nome: '1 Jutsu de Rank B', tipo: 'item_manual', valor: 'Jutsu Rank B' },
+        { nome: '20.000 Ryos', tipo: 'moeda_ryos', valor: 20000 },
+        { nome: '1 Ferramenta', tipo: 'item_manual', valor: 'Ferramenta Especial' },
+        { nome: '1 Arma', tipo: 'item_manual', valor: 'Arma Ninja' },
+        { nome: '50 Essências Ninjas', tipo: 'moeda_en', valor: 50 },
+        { nome: '+1 Modificador', tipo: 'item_manual', valor: 'Modificador de Atributo' }
+    ];
+
+    // Sorteia um número de 0 a 7
+    const fatiaSorteada = Math.floor(Math.random() * 8);
+    const premioSorteado = premios[fatiaSorteada];
+
+    // 3. Animação Visual
+    roletaGirando = true;
+    const btn = document.getElementById('btn-girar-roleta');
+    btn.innerText = "Girando...";
+    btn.disabled = true;
+    document.getElementById('roleta-timer').style.display = 'none';
+
+    // Calcula os graus: 5 voltas completas (1800deg) + a fatia (45 graus cada). Subtraímos 22.5 para parar no meio.
+    const grausPorFatia = 45;
+    const grausParaCair = 1800 + (360 - (fatiaSorteada * grausPorFatia)) - 22.5;
+
+    const roleta = document.getElementById('roleta-wheel');
+    roleta.style.transform = `rotate(${grausParaCair}deg)`;
+
+    // 4. Aguarda a animação acabar (4 segundos)
+    setTimeout(async () => {
+        try {
+            const docRef = doc(db, "users", auth.currentUser.uid);
+            
+            // O que vamos atualizar no Firebase:
+            let dadosParaAtualizar = { ultimoGiroRoleta: agora };
+            let msgAlerta = `Parabéns! Você ganhou: ${premioSorteado.nome}!`;
+
+            // Lógica de Recompensas
+            if (premioSorteado.tipo === 'moeda_ryos') {
+                const novosRyos = (currentUserData.ryos || 0) + premioSorteado.valor;
+                dadosParaAtualizar.ryos = novosRyos;
+                currentUserData.ryos = novosRyos; // Atualiza local
+                document.getElementById('ryos-text').innerText = formatarNum(novosRyos);
+                
+            } else if (premioSorteado.tipo === 'moeda_en') {
+                const novoEN = (currentUserData.essencia_ninja || 0) + premioSorteado.valor;
+                dadosParaAtualizar.essencia_ninja = novoEN;
+                currentUserData.essencia_ninja = novoEN; // Atualiza local
+                document.getElementById('en-text').innerText = formatarNum(novoEN);
+                
+            } else if (premioSorteado.tipo === 'item_manual') {
+                // Pega a lista atual de prêmios pendentes do usuário (ou cria uma vazia)
+                let listaPendentes = currentUserData.premios_pendentes || [];
+                listaPendentes.push({ item: premioSorteado.valor, data: new Date().toLocaleDateString() });
+                
+                dadosParaAtualizar.premios_pendentes = listaPendentes;
+                currentUserData.premios_pendentes = listaPendentes; // Atualiza local
+                
+                msgAlerta += `\n\nTire um PRINT desta tela e envie para o Kage (Admin) para adicionar este item à sua ficha! O prêmio foi registrado no sistema.`;
+            }
+
+            // Salva as alterações no Firebase
+            await updateDoc(docRef, dadosParaAtualizar);
+            currentUserData.ultimoGiroRoleta = agora;
+
+            // Reseta a roleta visualmente sem que o jogador perceba
+            setTimeout(() => {
+                roleta.style.transition = 'none';
+                roleta.style.transform = 'rotate(0deg)';
+                setTimeout(() => roleta.style.transition = 'transform 4s cubic-bezier(0.1, 0.7, 0.1, 1)', 50);
+            }, 1000);
+
+            // Avisa o jogador do prêmio
+            alert(msgAlerta);
+
+        } catch (e) {
+            console.error(e);
+            alert("Erro ao registrar o prêmio, mas a roleta girou. Avise o Administrador.");
+        } finally {
+            roletaGirando = false;
+            btn.innerText = "Girar Roleta!";
+            btn.disabled = false;
+        }
+    }, 4000);
+};
+
 
 
 
