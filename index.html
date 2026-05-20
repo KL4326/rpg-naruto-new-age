@@ -486,6 +486,56 @@
         </form>
     </div>
 </div>
+
+
+    <div class="modal-overlay-comment" id="modalPresentear" style="display: none; align-items: center; justify-content: center; z-index: 10000; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6);">
+    <div class="modal-criacao-container" style="background: #fff; width: 90%; max-width: 400px; border-radius: 15px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); position: relative;">
+        <span onclick="document.getElementById('modalPresentear').style.display='none'" style="position: absolute; right: 20px; top: 15px; cursor: pointer; font-size: 24px;">&times;</span>
+        
+        <h2 style="margin-top: 0; color: #f39c12; font-size: 1.5rem; margin-bottom: 20px;">
+            <i class="fa-solid fa-gift"></i> Enviar Presente
+        </h2>
+        
+        <div class="input-group" style="margin-bottom: 15px;">
+            <label style="display: block; font-size: 0.75rem; font-weight: bold; color: #555; margin-bottom: 5px;">O QUE DESEJA ENVIAR?</label>
+            <select id="pres-tipo" style="width: 100%; padding: 10px; border-radius: 10px; border: 2px solid #edf2f7; background: #f8fafc; font-size: 1rem;">
+                <option value="ryos">Ryos</option>
+                <option value="en">Essência Ninja (EN)</option>
+            </select>
+        </div>
+
+        <div class="input-group" style="margin-bottom: 20px;">
+            <label style="display: block; font-size: 0.75rem; font-weight: bold; color: #555; margin-bottom: 5px;">QUANTIDADE</label>
+            <input type="number" id="pres-qtd" placeholder="Ex: 500" style="width: 100%; padding: 10px; border-radius: 10px; border: 2px solid #edf2f7; background: #f8fafc; font-size: 1rem; box-sizing: border-box;">
+        </div>
+
+        <button onclick="confirmarPresente()" class="mission-btn-start" style="width: 100%; margin: 0; padding: 12px; font-weight: bold; background: #f39c12; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 1.1rem;">
+            Confirmar Envio
+        </button>
+    </div>
+</div>
+    
+
+
+    <div id="chat-widget" style="display: none;">
+    <div class="chat-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span id="chat-status-dot" style="width: 10px; height: 10px; background: #2ecc71; border-radius: 50%; display: inline-block;"></span>
+            <strong id="chat-user-name">Ninja</strong>
+        </div>
+        <span onclick="fecharChat()" style="cursor: pointer; font-weight: bold; font-size: 18px;">&times;</span>
+    </div>
+    
+    <div id="chat-messages">
+        </div>
+    
+    <div class="chat-footer">
+        <input type="text" id="chat-input" placeholder="Envie um pergaminho..." onkeypress="if(event.key === 'Enter') enviarMensagemChat()">
+        <button onclick="enviarMensagemChat()">
+            <i class="fa-solid fa-paper-plane"></i>
+        </button>
+    </div>
+</div>
     
 
     <div class="modal-overlay-comment" id="commentModal"><span class="close-modal" onclick="closeModal()">&times;</span><div class="modal-content-comment"><div class="modal-left" id="modalPostContent"></div><div class="modal-right"><div style="padding: 15px; border-bottom: 1px solid #eee;">Comentários</div><div class="comments-list" id="commentsList"></div><div class="comment-input-area"><input type="text" id="newCommentText" placeholder="Comentar..."><button onclick="submitComment()" style="border:none; background:none; color:var(--primary-color); font-weight:bold;">Enviar</button></div></div></div></div>
