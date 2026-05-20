@@ -52,6 +52,7 @@
                     <button id="nav-btn-historia" onclick="showTab('historia')" class="top-btn">História</button>
                     <button id="nav-btn-frases" onclick="showTab('frases')" class="top-btn">Frases</button>
                     <button id="nav-btn-loja-premium" onclick="showTab('loja-premium')" class="top-btn">Ryos e Essência Ninja</button>
+                    <button id="nav-btn-premios" onclick="showTab('premios')" class="top-btn"><i class="fa-solid fa-gift"></i> Prêmios</button>
                 </nav>
                 <div class="user-area">
                     <div class="currency-container">
@@ -89,6 +90,32 @@
                         </div>
                     </div>
                     <div id="feed-container"><p style="text-align:center; color:#777; padding:20px;">Carregando feed...</p></div>
+
+                    <div id="premios" class="tab-content">
+                        <div style="text-align: center; margin-bottom: 30px;">
+                            <h2 style="color: var(--primary-color);">Centro de Recompensas</h2>
+                            <p style="color: #777;">Gire a Roleta da Sorte uma vez por semana para ganhar prêmios incríveis!</p>
+                        </div>
+                    
+                        <div class="roleta-wrapper">
+                            <div class="roleta-pointer"><i class="fa-solid fa-caret-down"></i></div>
+                            <div class="roleta-wheel" id="roleta-wheel">
+                                <div class="roleta-text" style="--i:0;">100 Ryos</div>
+                                <div class="roleta-text" style="--i:1;">5 EN</div>
+                                <div class="roleta-text" style="--i:2;">300 Ryos</div>
+                                <div class="roleta-text" style="--i:3;">10 EN</div>
+                                <div class="roleta-text" style="--i:4;">50 Ryos</div>
+                                <div class="roleta-text" style="--i:5;">Nada</div>
+                            </div>
+                        </div>
+                    
+                        <div style="text-align: center; margin-top: 30px;">
+                            <button id="btn-girar-roleta" class="buy-btn" style="max-width: 250px; font-size: 1.2rem; padding: 15px;" onclick="window.girarRoleta()">
+                                Girar Roleta!
+                            </button>
+                            <p id="roleta-timer" style="margin-top: 15px; font-weight: bold; color: #e74c3c; display: none;"></p>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="batalha" class="tab-content">
