@@ -557,6 +557,101 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
     color: #fff;
 }
 
+
+
+/* Estilos do Chat Flutuante */
+#chat-widget {
+    position: fixed;
+    bottom: 0;
+    right: 80px; /* Afastado da borda para não sobrepor o botão '+' */
+    width: 300px;
+    height: 400px;
+    background: #fff;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 -5px 15px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    z-index: 10001;
+    overflow: hidden;
+    font-family: sans-serif;
+}
+
+.chat-header {
+    background: var(--primary-color, #e67e22);
+    color: white;
+    padding: 12px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+}
+
+#chat-messages {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.chat-msg {
+    max-width: 80%;
+    padding: 8px 12px;
+    border-radius: 15px;
+    font-size: 13px;
+    line-height: 1.4;
+    word-wrap: break-word;
+}
+
+.msg-minha {
+    background: #e1f5fe;
+    color: #0277bd;
+    align-self: flex-end;
+    border-bottom-right-radius: 3px;
+}
+
+.msg-dele {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    color: #333;
+    align-self: flex-start;
+    border-bottom-left-radius: 3px;
+}
+
+.chat-footer {
+    display: flex;
+    border-top: 1px solid #e2e8f0;
+    padding: 10px;
+    background: #fff;
+}
+
+.chat-footer input {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 8px;
+    background: #f1f5f9;
+    border-radius: 20px;
+    font-size: 13px;
+}
+
+.chat-footer button {
+    background: none;
+    border: none;
+    color: var(--primary-color, #e67e22);
+    font-size: 18px;
+    margin-left: 10px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.chat-footer button:hover {
+    transform: scale(1.1);
+}
+
+
 @media (max-width: 768px) {
     #mobile-menu-btn { display: block; }
     .sidebar { position: fixed; top: 0; left: -260px; height: 100%; box-shadow: 2px 0 10px rgba(0,0,0,0.3); transition: left 0.3s ease; }
