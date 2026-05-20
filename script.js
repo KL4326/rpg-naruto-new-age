@@ -340,7 +340,7 @@ window.renderFeed = async (filtro = 'all') => {
                         <span class="post-author">${post.autor || "Ninja"}</span>
                         <span class="post-time">${tempo}</span>
                     </div>
-                    ${post.uid === auth.currentUser.uid ? `
+                    ${auth.currentUser && post.uid === auth.currentUser.uid ? `
                     <div class="post-menu-container">
                         <div class="post-options-btn" onclick="togglePostMenu('${pid}'); event.stopPropagation();">...</div>
                         <div id="menu-${pid}" class="post-dropdown">
