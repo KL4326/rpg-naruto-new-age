@@ -91,10 +91,26 @@ onAuthStateChanged(auth, async (user) => {
     if (user) {
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('app-container').style.display = 'flex';
-        if(user.email === "admin@rpgnaruto.com") document.getElementById('btn-admin-panel').style.display = 'flex';
+        
+        // --- AJUSTE 1: Lista de Admins para mostrar o botão Painel Kage ---
+        const listaAdmins = [
+            "admin@rpgnaruto.com",
+            "conselheiro@rpgnaruto.com" // Coloque o email do parceiro aqui
+        ];
+        if (listaAdmins.includes(user.email)) {
+            document.getElementById('btn-admin-panel').style.display = 'flex';
+        }
+
+        // --- AJUSTE 2: Deixa o Ninja ONLINE (bolinha verde) ao entrar ---
+        if (typeof window.atualizarStatusOnline === 'function') {
+            window.atualizarStatusOnline(true);
+        }
+
+        // Restante da sua lógica de carregamento (intacta)
         await carregarConfiguracoes();
         await carregarCacheItens();
         const docRef = doc(db, "users", user.uid);
+        
         onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists()) {
                 currentUserData = docSnap.data();
@@ -107,12 +123,18 @@ onAuthStateChanged(auth, async (user) => {
                 if (activeTab) window.showTab(activeTab.id);
             }
         });
+        
         carregarTudo();
         window.iniciarEscutaChats();
         setTimeout(() => { try { window.renderFeed('all'); } catch(e) {} }, 800); 
+        
     } else {
         document.getElementById('login-screen').style.display = 'flex';
         document.getElementById('app-container').style.display = 'none';
+        
+        // Retorna o botão de login para o estado normal caso o usuário deslogue
+        const btnLogin = document.getElementById('btnLogin');
+        if (btnLogin) btnLogin.innerText = "Entrar";
     }
 });
 
@@ -122,8 +144,13 @@ if (btnLogin) {
         const e = document.getElementById('emailInput').value;
         const s = document.getElementById('passwordInput').value;
         if(!e || !s) return alert("Preencha e-mail e senha!");
+        
         btnLogin.innerText = "Carregando...";
-        signInWithEmailAndPassword(auth, e, s).catch((err) => { console.error(err); btnLogin.innerText = "Entrar"; alert("Erro: " + err.message); });
+        signInWithEmailAndPassword(auth, e, s).catch((err) => { 
+            console.error(err); 
+            btnLogin.innerText = "Entrar"; 
+            alert("Erro: " + err.message); 
+        });
     });
 }
 
@@ -1966,7 +1993,7 @@ window.iniciarEscutaChats = () => {
             div.className = 'chat-list-item';
             div.onclick = () => {
                 window.zerarNaoLidas(docSnap.id);
-                window.abrirChat(outroId, nomeOutro, true);
+                window.abrirChat(outroId, nomeOutro);
                 window.toggleChatList(); // Fecha a lista após clicar
             };
 
