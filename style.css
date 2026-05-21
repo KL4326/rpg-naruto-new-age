@@ -569,7 +569,7 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 #chat-list-tab {
     position: fixed;
     bottom: 0;
-    right: 390px; /* Fica ao lado da janela principal do chat */
+    right: 100px; /* <-- ALTERADO: Agora fica no canto direito, longe do centro */
     background: var(--primary-color, #e67e22);
     color: white;
     padding: 12px 20px;
@@ -586,7 +586,7 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 #chat-list-panel {
     position: fixed;
     bottom: 0;
-    right: 390px;
+    right: 100px; /* <-- ALTERADO: Acompanha a aba no canto direito */
     width: 280px;
     height: 400px;
     background: #fff;
@@ -596,6 +596,22 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
     flex-direction: column;
     z-index: 10001;
     overflow: hidden;
+}
+
+#chat-widget {
+    position: fixed;
+    bottom: 0;
+    right: 390px; /* <-- ALTERADO: A conversa ativa abre ao lado da lista, mantendo o centro livre */
+    width: 300px;
+    height: 400px;
+    background: #fff;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 -5px 15px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    z-index: 10001;
+    overflow: hidden;
+    font-family: sans-serif;
 }
 
 .chat-list-header {
