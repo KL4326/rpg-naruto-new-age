@@ -18,7 +18,7 @@
     --stat-dano: #e74c3c;   
     --stat-buff: #9b59b6;   
     
-    --hp-color: #e74c3c;       
+    --hp-color: #e74c3c;        
     --sanidade-color: #3498db; 
     --stamina-color: #ff9f43;  
     --chakra-color: #2980b9;   
@@ -135,7 +135,15 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 .dropdown-item { display: block; padding: 12px 15px; color: var(--text-color); text-decoration: none; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 10px; }
 .dropdown-item:hover { background: rgba(0,0,0,0.03); }
 
-#content-area { padding: 20px; overflow-y: auto; background-color: var(--bg-color); flex: 1; }
+/* --- AQUI ESTÁ A CORREÇÃO DE ALTURA --- */
+#content-area { 
+    padding: 20px; 
+    overflow-y: auto; 
+    background-color: var(--bg-color); 
+    flex: 1; 
+    min-height: 0; 
+}
+
 .tab-content { display: none; animation: fadeIn 0.3s; }
 .tab-content.active { display: block; }
 
