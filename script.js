@@ -2186,70 +2186,11 @@ window.addEventListener("beforeunload", () => {
 let roletaGirando = false;
 
 
-window.girarRoletaPaga = async () => {
-    // Verifica se os dados do jogador já carregaram
-    if (!currentUserData) return;
-
-    // Define o custo do giro extra
-    const custoEN = 15;
-
-    // 1. LER O NOME CORRETO DA BASE DE DADOS (essencia_ninja)
-    const saldoEN = currentUserData.essencia_ninja || 0; 
-    
-    if (saldoEN < custoEN) {
-        alert("Não tem Essência Ninja suficiente! Precisa de 15 EN para girar de novo.");
-        return;
-    }
-
-    // Pede confirmação ao jogador para evitar gastos acidentais
-    const confirmar = confirm(`Quer gastar ${custoEN} EN para girar a roleta imediatamente?`);
-    if (!confirmar) return;
-
-    try {
-        // Desativa o botão temporariamente para evitar cliques duplos
-        const btnPago = document.getElementById('btn-girar-roleta-paga');
-        btnPago.disabled = true;
-        btnPago.innerText = "Processando...";
-
-        // 2. DESCONTAR O NOME CORRETO NO FIREBASE (essencia_ninja)
-        const userRef = doc(db, "users", auth.currentUser.uid);
-        await updateDoc(userRef, {
-            essencia_ninja: increment(-custoEN) 
-        });
-
-        // Restaura o aspeto do botão
-        btnPago.disabled = false;
-        btnPago.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Girar de novo (15 EN)';
-
-        // 3. Executa a lógica de girar e dar o prémio!
-        executarAnimacaoRoleta(); 
-
-    } catch (error) {
-        console.error("Erro ao processar o giro pago:", error);
-        alert("Ocorreu um erro ao tentar girar a roleta.");
-        document.getElementById('btn-girar-roleta-paga').disabled = false;
-    }
-};
-
-
-window.girarRoleta = async () => {
-    if (!auth.currentUser || !currentUserData) return alert("Erro ao carregar dados do ninja.");
+// Função que faz a roleta girar e dá o prémio (usada pelos dois botões)
+const executarAnimacaoRoleta = async (pago = false) => {
     if (roletaGirando) return;
+    roletaGirando = true;
 
-    // 1. Verificação de Tempo (7 dias = 604.800.000 milissegundos)
-    const agora = Date.now();
-    const seteDiasEmMs = 7 * 24 * 60 * 60 * 1000;
-    const ultimoGiro = currentUserData.ultimoGiroRoleta || 0;
-
-    if (agora - ultimoGiro < seteDiasEmMs) {
-        const diasRestantes = Math.ceil((seteDiasEmMs - (agora - ultimoGiro)) / (1000 * 60 * 60 * 24));
-        const timerTexto = document.getElementById('roleta-timer');
-        timerTexto.innerText = `Você já girou! Volte em ${diasRestantes} dias.`;
-        timerTexto.style.display = 'block';
-        return;
-    }
-
-    // 2. Definição dos 8 Prêmios
     const premios = [
         { nome: '5.000 Ryos', tipo: 'moeda_ryos', valor: 5000 },
         { nome: '15 Essências Ninjas', tipo: 'moeda_en', valor: 15 },
@@ -2261,80 +2202,77 @@ window.girarRoleta = async () => {
         { nome: '+1 Modificador', tipo: 'item_manual', valor: 'Modificador de Atributo' }
     ];
 
-    // Sorteia um número de 0 a 7
     const fatiaSorteada = Math.floor(Math.random() * 8);
     const premioSorteado = premios[fatiaSorteada];
-
-    // 3. Animação Visual
-    roletaGirando = true;
-    const btn = document.getElementById('btn-girar-roleta');
-    btn.innerText = "Girando...";
-    btn.disabled = true;
-    document.getElementById('roleta-timer').style.display = 'none';
-
-    // Calcula os graus: 5 voltas completas (1800deg) + a fatia (45 graus cada). Subtraímos 22.5 para parar no meio.
+    
+    // Animação
+    const roleta = document.getElementById('roleta-wheel');
     const grausPorFatia = 45;
     const grausParaCair = 1800 + (360 - (fatiaSorteada * grausPorFatia)) - 22.5;
-
-    const roleta = document.getElementById('roleta-wheel');
     roleta.style.transform = `rotate(${grausParaCair}deg)`;
 
-    // 4. Aguarda a animação acabar (4 segundos)
     setTimeout(async () => {
         try {
             const docRef = doc(db, "users", auth.currentUser.uid);
+            let dadosParaAtualizar = {};
             
-            // O que vamos atualizar no Firebase:
-            let dadosParaAtualizar = { ultimoGiroRoleta: agora };
+            // Só atualiza a data do último giro se for gratuito
+            if (!pago) dadosParaAtualizar.ultimoGiroRoleta = Date.now();
+
             let msgAlerta = `Parabéns! Você ganhou: ${premioSorteado.nome}!`;
 
-            // Lógica de Recompensas
             if (premioSorteado.tipo === 'moeda_ryos') {
-                const novosRyos = (currentUserData.ryos || 0) + premioSorteado.valor;
-                dadosParaAtualizar.ryos = novosRyos;
-                currentUserData.ryos = novosRyos; // Atualiza local
-                document.getElementById('ryos-text').innerText = formatarNum(novosRyos);
-                
+                dadosParaAtualizar.ryos = (currentUserData.ryos || 0) + premioSorteado.valor;
+                currentUserData.ryos = dadosParaAtualizar.ryos;
+                document.getElementById('ryos-text').innerText = formatarNum(dadosParaAtualizar.ryos);
             } else if (premioSorteado.tipo === 'moeda_en') {
-                const novoEN = (currentUserData.essencia_ninja || 0) + premioSorteado.valor;
-                dadosParaAtualizar.essencia_ninja = novoEN;
-                currentUserData.essencia_ninja = novoEN; // Atualiza local
-                document.getElementById('en-text').innerText = formatarNum(novoEN);
-                
-            } else if (premioSorteado.tipo === 'item_manual') {
-                // Pega a lista atual de prêmios pendentes do usuário (ou cria uma vazia)
+                dadosParaAtualizar.essencia_ninja = (currentUserData.essencia_ninja || 0) + premioSorteado.valor;
+                currentUserData.essencia_ninja = dadosParaAtualizar.essencia_ninja;
+                document.getElementById('en-text').innerText = formatarNum(dadosParaAtualizar.essencia_ninja);
+            } else {
                 let listaPendentes = currentUserData.premios_pendentes || [];
                 listaPendentes.push({ item: premioSorteado.valor, data: new Date().toLocaleDateString() });
-                
                 dadosParaAtualizar.premios_pendentes = listaPendentes;
-                currentUserData.premios_pendentes = listaPendentes; // Atualiza local
-                
-                msgAlerta += `\n\nTire um PRINT desta tela e envie para o Kage (Admin) para adicionar este item à sua ficha! O prêmio foi registrado no sistema.`;
+                currentUserData.premios_pendentes = listaPendentes;
+                msgAlerta += `\n\nEnvie um print ao Kage para receber este item!`;
             }
 
-            // Salva as alterações no Firebase
             await updateDoc(docRef, dadosParaAtualizar);
-            currentUserData.ultimoGiroRoleta = agora;
+            
+            // Reset visual
+            roleta.style.transition = 'none';
+            roleta.style.transform = 'rotate(0deg)';
+            setTimeout(() => roleta.style.transition = 'transform 4s cubic-bezier(0.1, 0.7, 0.1, 1)', 50);
 
-            // Reseta a roleta visualmente sem que o jogador perceba
-            setTimeout(() => {
-                roleta.style.transition = 'none';
-                roleta.style.transform = 'rotate(0deg)';
-                setTimeout(() => roleta.style.transition = 'transform 4s cubic-bezier(0.1, 0.7, 0.1, 1)', 50);
-            }, 1000);
-
-            // Avisa o jogador do prêmio
             alert(msgAlerta);
-
         } catch (e) {
             console.error(e);
-            alert("Erro ao registrar o prêmio, mas a roleta girou. Avise o Administrador.");
+            alert("Erro ao registrar o prêmio.");
         } finally {
             roletaGirando = false;
-            btn.innerText = "Girar Roleta!";
-            btn.disabled = false;
         }
     }, 4000);
+};
+
+// Botão Grátis
+window.girarRoleta = async () => {
+    const seteDiasEmMs = 7 * 24 * 60 * 60 * 1000;
+    if (Date.now() - (currentUserData.ultimoGiroRoleta || 0) < seteDiasEmMs) {
+        alert("Volte em 7 dias!");
+        return;
+    }
+    executarAnimacaoRoleta(false);
+};
+
+// Botão Pago
+window.girarRoletaPaga = async () => {
+    if ((currentUserData.essencia_ninja || 0) < 15) return alert("Saldo insuficiente (15 EN)");
+    if (confirm("Gastar 15 EN para girar agora?")) {
+        await updateDoc(doc(db, "users", auth.currentUser.uid), { essencia_ninja: increment(-15) });
+        currentUserData.essencia_ninja -= 15;
+        document.getElementById('en-text').innerText = formatarNum(currentUserData.essencia_ninja);
+        executarAnimacaoRoleta(true);
+    }
 };
 
 
