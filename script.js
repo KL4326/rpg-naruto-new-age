@@ -2193,29 +2193,28 @@ window.girarRoletaPaga = async () => {
     // Define o custo do giro extra
     const custoEN = 15;
 
-    // 1. Verifica se o jogador tem Essência Ninja suficiente
-    // ATENÇÃO: Confirma se o campo na tua base de dados se chama 'en' ou 'essencia_ninja'
-    const saldoEN = currentUserData.en || 0; 
+    // 1. LER O NOME CORRETO DA BASE DE DADOS (essencia_ninja)
+    const saldoEN = currentUserData.essencia_ninja || 0; 
     
     if (saldoEN < custoEN) {
-        alert("Não tens Essência Ninja suficiente! Precisas de 15 EN para girar de novo.");
+        alert("Não tem Essência Ninja suficiente! Precisa de 15 EN para girar de novo.");
         return;
     }
 
     // Pede confirmação ao jogador para evitar gastos acidentais
-    const confirmar = confirm(`Queres gastar ${custoEN} EN para girar a roleta imediatamente?`);
+    const confirmar = confirm(`Quer gastar ${custoEN} EN para girar a roleta imediatamente?`);
     if (!confirmar) return;
 
     try {
         // Desativa o botão temporariamente para evitar cliques duplos
         const btnPago = document.getElementById('btn-girar-roleta-paga');
         btnPago.disabled = true;
-        btnPago.innerText = "A processar...";
+        btnPago.innerText = "Processando...";
 
-        // 2. Desconta os 15 EN no Firebase
+        // 2. DESCONTAR O NOME CORRETO NO FIREBASE (essencia_ninja)
         const userRef = doc(db, "users", auth.currentUser.uid);
         await updateDoc(userRef, {
-            en: increment(-custoEN) // Mais uma vez, ajusta o 'en' se o nome do campo for diferente
+            essencia_ninja: increment(-custoEN) 
         });
 
         // Restaura o aspeto do botão
@@ -2223,10 +2222,7 @@ window.girarRoletaPaga = async () => {
         btnPago.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Girar de novo (15 EN)';
 
         // 3. Executa a lógica de girar e dar o prémio!
-        // Como o jogador pagou, não precisamos de verificar a data do último giro.
-        // Apenas chamamos a função que roda a animação e distribui a recompensa.
-        
-        executarAnimacaoRoleta(); // Lê o aviso abaixo sobre esta função
+        executarAnimacaoRoleta(); 
 
     } catch (error) {
         console.error("Erro ao processar o giro pago:", error);
