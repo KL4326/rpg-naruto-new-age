@@ -32,7 +32,6 @@ body.dark-mode {
     --border-color: #363636; 
 }
 
-
 /* Se quiser um estilo diferente para o ícone da Bijuu */
 #dash-bijuu .element-icon, #profile-bijuu-container .element-icon {
     border-color: #c0392b;
@@ -41,7 +40,6 @@ body.dark-mode {
 
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
 body { background-color: var(--bg-color); color: var(--text-color); height: 100vh; overflow: hidden; }
-
 
 /* Estilização do Modal de Criação */
 .modal-criacao-container {
@@ -92,7 +90,6 @@ body { background-color: var(--bg-color); color: var(--text-color); height: 100v
     from { transform: translateY(-20px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
 }
-
 
 /* --- COMPONENTES GERAIS --- */
 .rank-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-weight: bold; color: white; font-size: 0.75rem; margin-right: 5px; vertical-align: middle; text-transform: uppercase; }
@@ -264,7 +261,6 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 
 /* Feed */
 /* --- INÍCIO DA CORREÇÃO DO FEED --- */
-
 /* Centraliza a coluna do feed e limita a largura (Estilo Celular) */
 #feed {
     max-width: 500px;
@@ -311,8 +307,6 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 .action-btn { background: none; border: none; cursor: pointer; color: var(--text-color); font-size: 1.5rem; display: flex; align-items: center; gap: 5px; padding: 0; }
 .action-btn.liked { color: var(--danger-color); }
 .edit-textarea { width: 100%; border: 1px solid var(--primary-color); border-radius: 4px; padding: 10px; margin: 10px 0; }
-
-/* --- FIM DA CORREÇÃO --- */
 
 /* Rankings */
 .rankings-wrapper { display: flex; gap: 20px; flex-wrap: wrap; padding-bottom: 20px; }
@@ -375,11 +369,10 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 .mentoria-option:hover { border-color: var(--primary-color); background-color: rgba(0,0,0,0.02); }
 .mentoria-radio { margin-right: 10px; transform: scale(1.2); cursor: pointer; }
 
-
 /* Container que segura os cards no Painel Admin */
 #admin-missoes-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); /* Organiza em colunas automáticas */
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); 
     gap: 20px;
     padding: 20px 0;
 }
@@ -434,7 +427,7 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 .admin-actions {
     display: flex;
     gap: 10px;
-    margin-top: auto; /* Joga os botões para o final do card */
+    margin-top: auto; 
 }
 
 .btn-adm {
@@ -455,11 +448,8 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 
 .btn-adm-approve { background-color: #2ecc71; }
 .btn-adm-approve:hover { background-color: #27ae60; }
-
 .btn-adm-reject { background-color: #e74c3c; }
 .btn-adm-reject:hover { background-color: #c0392b; }
-
-
 
 /* 1. Esconde a aba de forma absoluta usando ID + classe */
 #loja-premium {
@@ -485,20 +475,20 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 30px; /* Espaço entre os cards */
+    gap: 30px; 
     width: 100%;
-    max-width: 900px; /* Evita que fiquem longe demais um do outro */
+    max-width: 900px; 
 }
 
 /* O "Card" Retangular e Vertical */
 .premium-card {
     background: #fff;
-    width: 320px; /* Largura fixa para manter o formato retangular */
+    width: 320px; 
     padding: 30px 20px;
     border-radius: 15px;
     box-shadow: 0 10px 25px rgba(0,0,0,0.1);
     border: 1px solid var(--border-color);
-    border-top: 5px solid var(--primary-color); /* Detalhe colorido no topo */
+    border-top: 5px solid var(--primary-color); 
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -506,7 +496,7 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 }
 
 .premium-card:hover {
-    transform: translateY(-5px); /* Efeito de flutuar ao passar o mouse */
+    transform: translateY(-5px); 
 }
 
 .premium-card h3 {
@@ -564,12 +554,11 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
     color: #fff;
 }
 
-
 /* --- CENTRAL DE CHATS (ABAS E LISTAS) --- */
 #chat-list-tab {
     position: fixed;
     bottom: 0;
-    right: 100px; /* <-- ALTERADO: Agora fica no canto direito, longe do centro */
+    right: 100px; 
     background: var(--primary-color, #e67e22);
     color: white;
     padding: 12px 20px;
@@ -586,7 +575,7 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 #chat-list-panel {
     position: fixed;
     bottom: 0;
-    right: 100px; /* <-- ALTERADO: Acompanha a aba no canto direito */
+    right: 100px; 
     width: 280px;
     height: 400px;
     background: #fff;
@@ -596,22 +585,6 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
     flex-direction: column;
     z-index: 10001;
     overflow: hidden;
-}
-
-#chat-widget {
-    position: fixed;
-    bottom: 0;
-    right: 390px; /* <-- ALTERADO: A conversa ativa abre ao lado da lista, mantendo o centro livre */
-    width: 300px;
-    height: 400px;
-    background: #fff;
-    border-radius: 12px 12px 0 0;
-    box-shadow: 0 -5px 15px rgba(0,0,0,0.2);
-    display: flex;
-    flex-direction: column;
-    z-index: 10001;
-    overflow: hidden;
-    font-family: sans-serif;
 }
 
 .chat-list-header {
@@ -650,18 +623,11 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
 }
 .unread-badge-main { margin-left: 5px; background: white; color: var(--primary-color); }
 
-@media (max-width: 768px) {
-    #chat-list-tab { right: 20px; bottom: 80px; border-radius: 20px; }
-    #chat-list-panel { right: 10px; left: 10px; width: auto; bottom: 80px; }
-    #chat-widget { right: 10px; left: 10px; width: auto; }
-}
-
-
 /* Estilos do Chat Flutuante */
 #chat-widget {
     position: fixed;
     bottom: 0;
-    right: 80px; /* Afastado da borda para não sobrepor o botão '+' */
+    right: 390px; 
     width: 300px;
     height: 400px;
     background: #fff;
@@ -749,8 +715,6 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
     transform: scale(1.1);
 }
 
-
-
 /* --- ROLETA DE PRÊMIOS (8 FATIAS) --- */
 .roleta-wrapper {
     position: relative;
@@ -803,7 +767,6 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
     top: 50%;
     left: 50%;
     transform-origin: 0% 50%;
-    /* Adicionamos o -90deg aqui no final do cálculo para alinhar a escrita com a fatia colorida! */
     transform: translateY(-50%) rotate(calc(var(--i) * 45deg + 22.5deg - 90deg));
     font-weight: bold;
     color: white;
@@ -811,8 +774,6 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
     font-size: 0.75rem;
     padding-left: 25px; 
 }
-
-
 
 @media (max-width: 768px) {
     #mobile-menu-btn { display: block; }
@@ -827,4 +788,7 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
     .modal-left { height: 40%; }
     .modal-content-profile { width: 100%; height: 100%; border-radius: 0; }
     .historia-img-container { height: 200px; }
+    #chat-list-tab { right: 20px; bottom: 80px; border-radius: 20px; }
+    #chat-list-panel { right: 10px; left: 10px; width: auto; bottom: 80px; }
+    #chat-widget { right: 10px; left: 10px; width: auto; }
 }
