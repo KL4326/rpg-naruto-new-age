@@ -2051,7 +2051,7 @@ window.iniciarEscutaChats = () => {
 
 
 
-// 1. Abrir o Chat
+// 1. Abrir o Chat (Com ordenação inteligente no front-end)
 window.abrirChat = (targetUserId, targetUserName, isOnline = false) => {
     if (!auth.currentUser) return alert("Você precisa estar logado!");
     if (auth.currentUser.uid === targetUserId) return alert("Você não pode conversar consigo mesmo!");
@@ -2066,17 +2066,16 @@ window.abrirChat = (targetUserId, targetUserName, isOnline = false) => {
 
     const salaId = window.gerarIdSala(auth.currentUser.uid, targetUserId);
         
-    // A pessoa clicou no chat, então zeramos a contagem!
+    // Zera as mensagens não lidas
     window.zerarNaoLidas(salaId);
     
     const msgsDiv = document.getElementById('chat-messages');
     msgsDiv.innerHTML = '<p style="text-align:center; color:#999; font-size:12px;">Conectando...</p>';
 
-    // Se já tinha um chat aberto, cancela a escuta anterior
     if (unsubscribeChat) unsubscribeChat();
 
-    // Escuta as mensagens em tempo real
-    const q = query(collection(db, "chats", salaId, "mensagens"), orderBy("timestamp", "asc"));
+    // BUSCA SEM O orderBy (Garante que o Firebase não esconda NADA)
+    const q = query(collection(db, "chats", salaId, "mensagens"));
     
     unsubscribeChat = onSnapshot(q, (snapshot) => {
         msgsDiv.innerHTML = '';
@@ -2085,21 +2084,35 @@ window.abrirChat = (targetUserId, targetUserName, isOnline = false) => {
             return;
         }
 
+        // 1. Coloca todas as mensagens em uma lista temporária
+        let listaMensagens = [];
         snapshot.forEach((docSnap) => {
-            const dados = docSnap.data();
+            listaMensagens.push(docSnap.data());
+        });
+
+        // 2. O JavaScript organiza a ordem cronológica (corrige o bug do Firebase)
+        listaMensagens.sort((a, b) => {
+            const getMs = (msg) => {
+                if (msg.timestamp?.toMillis) return msg.timestamp.toMillis();
+                if (msg.data?.toMillis) return msg.data.toMillis(); // Caso alguma velha use "data"
+                return 0; // Se não tiver data nenhuma, vai pro início do chat
+            };
+            return getMs(a) - getMs(b);
+        });
+
+        // 3. Renderiza na tela
+        listaMensagens.forEach((dados) => {
             const ehMinha = dados.remetenteId === auth.currentUser.uid;
             
             const div = document.createElement('div');
             let classeEstilo = ehMinha ? 'msg-minha' : 'msg-dele';
             
-            // Aplica os estilos de RPG
             if (dados.tipo === 'narrador') classeEstilo = 'msg-narrador';
             if (dados.tipo === 'ooc') classeEstilo += ' msg-ooc';
             if (dados.tipo === 'dice') classeEstilo = 'msg-dice';
 
             div.className = `chat-msg ${classeEstilo}`;
             
-            // Mostra quem enviou (útil para dados e narrador)
             let nomeExibicao = dados.remetenteNome || (ehMinha ? "Você" : "Ninja");
             
             if (dados.tipo === 'narrador') {
@@ -2107,10 +2120,9 @@ window.abrirChat = (targetUserId, targetUserName, isOnline = false) => {
             } else if (dados.tipo === 'dice') {
                 div.innerHTML = `<strong>${nomeExibicao}</strong><br><span style="font-size:1.2rem;">🎲 ${dados.texto}</span>`;
             } else {
-                // Se for Off-Character, coloca [OOC] no nome
                 let labelOOC = dados.tipo === 'ooc' ? ' [OOC]' : '';
                 div.innerHTML = `<span class="chat-msg-author">${nomeExibicao}${labelOOC}</span>${dados.texto}`;
-            } // <--- A CHAVE QUE ESTAVA FALTANDO É ESTA AQUI!
+            }
 
             msgsDiv.appendChild(div);
         });
