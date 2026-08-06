@@ -81,6 +81,73 @@ const KEKKEI_TOUTA_ICONS = {
     "estilo_poeira": "data:image/jpeg;base64,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ZkE3PxAKFk1TH0x2srxsifqltPco5pjiEkNMNmcpkeIy4cQ2xJy8x3cVlxDSimikdG5znFu45G3APNe/FRzSjHYamFjI892yB5zNtuykc/dSqvLlEzHT2yzHjMRPbJq60Klxes2THbOKLK+aXddjCTYNHK42NuTcV9U4Fg0FFTR0tLGI44xYAcSeVzjyuPKVS/qZ/wA7iXyKX/mVXuui54iIgIiICIiAiIgIiIChWtTQ2bF6OGnhljiMU4mJlzWIyObYZQd/slNUQfPfUCru3KX6pPQofp9q/qcHMJnfFKyfMGviJ3Oba7SHWPAgr60VL+qW9zYf32o8liCA6CVr3wPY92YROa1t+IaQd1+bduUra9VtozjkdK2QPa92ctIyAbrA8bkc6kNJphTve1hEjMxtmeG2HxkHcFguqy5TMQ31W48YiZ7S1r1la9aLXrIHrMvboevdotQSL3aINraLwvWttF4ZEGcvWNz1hL1+HPQftz1wdL658VI4xuylzmx3HEA3vbmO7isWJaVQQymOz3lu4mMAgHmuTxXA0i0iiqYNmxkgOdrrvDbWAPMe6r66suUTMdKbLMeMxE9vxoNodUYvUup6d0bNnGZXvlJs1twBuG8kkhTzqBV3blL9UnoT1NnXCs+at841fQi6Lnq51T6vZ8HfVOmmhlFQ2EDZB3sSwvvfMB2QVjIiAiIgIiICIiAiIgIiICIiAoRrP0DdjMdMxtQ2n/B3yPu6IvzZg0chFuCm6IKI/wAvsn7SZ9lPTUL1hatKrCAyUvFTA+zTNGwt2cnYvbc27hvvX1WsFdRxzxPhmY2SORpY5jxcOaeQhB8h4NpTJBHs3s2obbLd+UtHNexuObmXRGnP7v8Azv7Va0+oSgL3FlVVMaXEhtmHKCdwuRcrH1AaLt2q8GP0KqacJncwti7OI1Equ9fX7t/O/tXvr7/dv539qtDqA0XbtV4MfoTqA0XbtV4MfoXn+PX4e+vZ5Vf6+/3b+d/avPX1+7fzv7VaPUBou3arwY/QnUBou3arwY/Qn+PX4PXs8qtOnP7v/O/tWpiOmEkkZZHHsi7cXiTMQ3ly7hY91W71AaLt2q8GP0INQNF25VeDH6F7FFcfs8m/Of3VPoDoJU4vO5kX4qKP85O9pLWG25oG7M481+G9WD/l9k/aTPsp6aujAsGgoqaOlpYxHHGLADiTyuceVx5St9WqldastWj8HqZpnVTagTRCLK2EsynMHXvmN+CsVEQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREBERAREQEREH/2Q=="
         };
 
+// --- SISTEMA DE CENÁRIOS E MAPA ---
+const CENARIOS_RPG = [
+    { id: "vila_folha", nome: "Vila da Folha", img: "https://i.pinimg.com/736x/8e/bc/0a/8ebc0af5c8de5b978fc91cce667b2ab1.jpg" },
+    { id: "vila_areia", nome: "Vila da Areia", img: "https://i.pinimg.com/736x/55/a7/bc/55a7bc12e4f0c8baab6949397e59f425.jpg" },
+    { id: "vila_nevoa", nome: "Vila da Névoa", img: "https://i.pinimg.com/736x/e4/c7/2f/e4c72fd69a3028da35c10443e2f5ff57.jpg" },
+    { id: "vila_nuvem", nome: "Vila da Nuvem", img: "https://i.pinimg.com/736x/2d/a5/d7/2da5d7a64e101f3e7b165b4c1fc7868d.jpg" },
+    { id: "vila_pedra", nome: "Vila da Pedra", img: "https://i.pinimg.com/736x/21/cd/72/21cd72d17c7d425dc89f417db4fb9494.jpg" },
+    { id: "vila_gelo", nome: "Vila do Gelo", img: "https://i.pinimg.com/736x/f6/c9/b7/f6c9b73f83ce82887a030ab2fde4cc46.jpg" },
+    { id: "vila_som", nome: "Vila do Som", img: "https://i.pinimg.com/736x/b2/29/7d/b2297db0e2a2221b2bc2bbd25c689d02.jpg" },
+    { id: "vila_cachoeira", nome: "Vila da Cachoeira", img: "https://i.pinimg.com/736x/81/2d/65/812d6594247f070c70415a7ea89ef78b.jpg" },
+    { id: "esconderijo_akatsuki", nome: "Esconderijo da Akatsuki", img: "https://i.pinimg.com/736x/11/4a/01/114a01c402120b08051754ec4fbdbbb6.jpg" },
+    { id: "mundo_aberto", nome: "Mundo Aberto", img: "https://i.pinimg.com/736x/da/0c/34/da0c3453b53f6db15049a4f216dd5a89.jpg" }
+];
+
+// Opcional: Colequei links de imagens genéricas como exemplo no 'img'. Você pode trocar pelos links da sua preferência.
+
+window.carregarMapa = () => {
+    const grid = document.getElementById('cenarios-grid');
+    if (!grid) return;
+    
+    grid.innerHTML = '';
+    
+    CENARIOS_RPG.forEach(cenario => {
+        // Verifica se o player já está neste lugar
+        const isLocalAtual = currentUserData.cenarioAtual === cenario.id;
+        const btnTexto = isLocalAtual ? 'Você está aqui' : 'Viajar para cá';
+        const btnDisabled = isLocalAtual ? 'disabled style="background: #95a5a6; cursor: not-allowed;"' : '';
+
+        const div = document.createElement('div');
+        div.className = 'cenario-card';
+        div.innerHTML = `
+            <img src="${cenario.img}" class="cenario-img" onerror="this.src='${IMG_PADRAO}'">
+            <div class="cenario-info">
+                <div class="cenario-nome">${cenario.nome}</div>
+            </div>
+            <button class="cenario-btn" ${btnDisabled} onclick="window.viajarPara('${cenario.id}', '${cenario.nome}')">
+                <i class="fa-solid fa-person-walking-luggage"></i> ${btnTexto}
+            </button>
+        `;
+        grid.appendChild(div);
+    });
+};
+
+window.viajarPara = async (id, nome) => {
+    if (!auth.currentUser) return;
+    
+    if (confirm(`Deseja iniciar a viagem para ${nome}?`)) {
+        try {
+            await window.updateDoc(window.doc(window.db, "users", auth.currentUser.uid), {
+                cenarioAtual: id
+            });
+            
+            // Atualiza os dados no navegador na mesma hora
+            currentUserData.cenarioAtual = id; 
+            window.carregarMapa(); 
+            
+            // Avisa o usuário e já abre o Chat do lugar novo!
+            alert(`Sua viagem foi concluída. Você chegou em: ${nome}!`);
+            window.abrirChatCenario(id, nome);
+            
+        } catch (e) {
+            console.error(e);
+            alert("Erro ao viajar. O chakra falhou!");
+        }
+    }
+};
+
 // --- UTILITÁRIOS ---
 function calcularTempo(timestamp) { try { if (!timestamp) return "Desconhecido"; let date = (typeof timestamp.toDate === 'function') ? timestamp.toDate() : new Date(timestamp); if (isNaN(date.getTime())) return "-"; return date.toLocaleDateString('pt-BR'); } catch (e) { return "-"; } }
 function formatarNum(v) { return Number(v||0).toLocaleString('pt-BR'); }
@@ -198,6 +265,7 @@ window.showTab = (t) => {
         if(currentUserData) {
             if(t === 'feed') window.renderFeed('all');
             if(t === 'personagens') carregarPersonagens();
+            if(t === 'mapa') window.carregarMapa();
             if(t === 'frases') carregarFrases();
             if(t === 'inventario') carregarInventario();
             if(t === 'loja') carregarLojaItens();
@@ -2050,22 +2118,11 @@ window.iniciarEscutaChats = () => {
 };
 
 
+// --- SISTEMA DE CHATS (PRIVADO, DIÁRIO E CENÁRIOS) ---
+window.currentSalaId = null; // Diz ao sistema em qual sala estamos escrevendo
 
-window.abrirChat = (targetUserId, targetUserName, isOnline = false) => {
-    if (!auth.currentUser) return alert("Você precisa estar logado!");
-    if (auth.currentUser.uid === targetUserId) return alert("Você não pode conversar consigo mesmo!");
-
-    const corBolinha = isOnline ? '#2ecc71' : '#ccc';
-    document.getElementById('chat-status-dot').style.background = corBolinha;
-
-    currentChatUserId = targetUserId;
-    document.getElementById('chat-user-name').innerText = targetUserName;
-    document.getElementById('chat-widget').style.display = 'flex';
-
-    const salaId = gerarIdSala(auth.currentUser.uid, targetUserId);
-        
-    window.zerarNaoLidas(salaId);
-    
+// 1. Motor que lê e renderiza as mensagens de qualquer sala
+window.carregarMensagensDaSala = (salaId) => {
     const msgsDiv = document.getElementById('chat-messages');
     msgsDiv.innerHTML = '<p style="text-align:center; color:#999; font-size:12px;">Conectando...</p>';
 
@@ -2076,14 +2133,12 @@ window.abrirChat = (targetUserId, targetUserName, isOnline = false) => {
     unsubscribeChat = onSnapshot(q, (snapshot) => {
         msgsDiv.innerHTML = '';
         if (snapshot.empty) {
-            msgsDiv.innerHTML = '<p style="text-align:center; color:#999; font-size:12px;">Nenhuma mensagem. Diga olá!</p>';
+            msgsDiv.innerHTML = '<p style="text-align:center; color:#999; font-size:12px;">Nenhuma mensagem. Comece o roleplay!</p>';
             return;
         }
 
         let listaMensagens = [];
-        snapshot.forEach((docSnap) => {
-            listaMensagens.push(docSnap.data());
-        });
+        snapshot.forEach((docSnap) => { listaMensagens.push(docSnap.data()); });
 
         listaMensagens.sort((a, b) => {
             const getMs = (msg) => {
@@ -2096,7 +2151,6 @@ window.abrirChat = (targetUserId, targetUserName, isOnline = false) => {
 
         listaMensagens.forEach((dados) => {
             const ehMinha = dados.remetenteId === auth.currentUser.uid;
-            
             const div = document.createElement('div');
             let classeEstilo = ehMinha ? 'msg-minha' : 'msg-dele';
             
@@ -2105,7 +2159,6 @@ window.abrirChat = (targetUserId, targetUserName, isOnline = false) => {
             if (dados.tipo === 'dice') classeEstilo = 'msg-dice';
 
             div.className = `chat-msg ${classeEstilo}`;
-            
             let nomeExibicao = dados.remetenteNome || (ehMinha ? "Você" : "Ninja");
             
             if (dados.tipo === 'narrador') {
@@ -2116,41 +2169,74 @@ window.abrirChat = (targetUserId, targetUserName, isOnline = false) => {
                 let labelOOC = dados.tipo === 'ooc' ? ' [OOC]' : '';
                 div.innerHTML = `<span class="chat-msg-author">${nomeExibicao}${labelOOC}</span>${dados.texto}`;
             }
-
             msgsDiv.appendChild(div);
         });
-
         msgsDiv.scrollTop = msgsDiv.scrollHeight;
     });
 };
 
-// 2. Fechar o Chat
-window.fecharChat = () => {
-    document.getElementById('chat-widget').style.display = 'none';
-    currentChatUserId = null;
-    if (unsubscribeChat) {
-        unsubscribeChat();
-        unsubscribeChat = null;
-    }
+// 2. Abrir Chat Privado (Entre 2 Players)
+window.abrirChat = (targetUserId, targetUserName, isOnline = false) => {
+    if (!auth.currentUser) return;
+    if (auth.currentUser.uid === targetUserId) return alert("Você não pode conversar consigo mesmo!");
+
+    document.getElementById('chat-status-dot').style.background = isOnline ? '#2ecc71' : '#ccc';
+    document.getElementById('chat-user-name').innerText = targetUserName;
+    document.getElementById('chat-widget').style.display = 'flex';
+
+    currentChatUserId = targetUserId;
+    window.currentSalaId = gerarIdSala(auth.currentUser.uid, targetUserId);
+    
+    window.zerarNaoLidas(window.currentSalaId);
+    window.carregarMensagensDaSala(window.currentSalaId);
 };
 
+// 3. Abrir o Diário Ninja (Player x Mestre)
+window.abrirDiarioNinja = () => {
+    if (!auth.currentUser) return;
+    
+    document.getElementById('chat-status-dot').style.background = '#f1c40f'; // Dourado
+    document.getElementById('chat-user-name').innerText = "Diário Ninja (Mestre)";
+    document.getElementById('chat-widget').style.display = 'flex';
+    
+    currentChatUserId = "MESTRE"; 
+    window.currentSalaId = "diario_" + auth.currentUser.uid;
+    
+    window.zerarNaoLidas(window.currentSalaId);
+    window.carregarMensagensDaSala(window.currentSalaId);
+};
+
+// 4. Abrir Chat de Cenário (Grupo)
+window.abrirChatCenario = (id, nome) => {
+    if (id === 'mundo_aberto') {
+        alert("Você está no Mundo Aberto! Aqui a jornada é solitária. Suas ações devem ser enviadas no Diário Ninja.");
+        window.abrirDiarioNinja();
+        return;
+    }
+    
+    document.getElementById('chat-status-dot').style.background = '#3498db'; // Azul
+    document.getElementById('chat-user-name').innerText = "Cenário: " + nome;
+    document.getElementById('chat-widget').style.display = 'flex';
+    
+    currentChatUserId = "CENARIO"; 
+    window.currentSalaId = "cenario_" + id;
+    window.carregarMensagensDaSala(window.currentSalaId);
+};
+
+// 5. Enviar Mensagem Adaptativo
 window.enviarMensagemChat = async () => {
     const input = document.getElementById('chat-input');
     const textoCru = input.value.trim();
     
-    if (!textoCru || !currentChatUserId || !auth.currentUser) return;
+    if (!textoCru || !window.currentSalaId || !auth.currentUser) return;
     
     input.value = ''; 
-    const salaId = gerarIdSala(auth.currentUser.uid, currentChatUserId);
-    
     const meuNome = currentUserData?.nome || currentUserData?.apelido || "Ninja";
-    const outroNome = document.getElementById('chat-user-name').innerText;
+    const nomeSala = document.getElementById('chat-user-name').innerText;
 
     let tipoMsg = 'rp';
     let textoFinal = textoCru;
-    
-    const listaAdmins = ["admin@rpgnaruto.com", "conselheiro@rpgnaruto.com"];
-    const isAdmin = listaAdmins.includes(auth.currentUser.email);
+    const isAdmin = ["admin@rpgnaruto.com", "conselheiro@rpgnaruto.com"].includes(auth.currentUser.email);
 
     if (textoCru.startsWith('/narrador ') && isAdmin) {
         tipoMsg = 'narrador';
@@ -2169,7 +2255,8 @@ window.enviarMensagemChat = async () => {
     }
 
     try {
-        await addDoc(collection(db, "chats", salaId, "mensagens"), {
+        // Grava a mensagem
+        await addDoc(collection(db, "chats", window.currentSalaId, "mensagens"), {
             remetenteId: auth.currentUser.uid,
             remetenteNome: meuNome,
             texto: textoFinal,
@@ -2177,32 +2264,40 @@ window.enviarMensagemChat = async () => {
             timestamp: serverTimestamp()
         });
 
-        const salaRef = doc(db, "chats", salaId);
-        const salaSnap = await getDoc(salaRef);
-        let naoLidasDele = 1;
+        let prevMsg = tipoMsg === 'dice' ? `🎲 ${meuNome} rolou os dados!` : textoFinal;
         
-        if (salaSnap.exists()) {
-            naoLidasDele = (salaSnap.data()[`naoLidas_${currentChatUserId}`] || 0) + 1;
+        // Estrutura os Metadados dependendo de qual sala estamos
+        const salaRef = doc(db, "chats", window.currentSalaId);
+        let metadados = { ultimaMensagem: prevMsg, atualizadoEm: serverTimestamp() };
+
+        if (window.currentSalaId.startsWith("cenario_")) {
+            metadados.tipoChat = 'cenario';
+            metadados.nomeCenario = nomeSala;
+        } else if (window.currentSalaId.startsWith("diario_")) {
+            metadados.tipoChat = 'diario';
+            metadados.participantes = [auth.currentUser.uid, "MESTRE"];
+            metadados.nomes = {
+                [auth.currentUser.uid]: meuNome,
+                ["MESTRE"]: "Kage (Mestre)"
+            };
+            metadados[`naoLidas_MESTRE`] = increment(1);
+        } else {
+            metadados.tipoChat = 'privado';
+            metadados.participantes = [auth.currentUser.uid, currentChatUserId];
+            metadados.nomes = {
+                [auth.currentUser.uid]: meuNome,
+                [currentChatUserId]: nomeSala
+            };
+            metadados[`naoLidas_${currentChatUserId}`] = increment(1);
         }
 
-        let prevMsg = tipoMsg === 'dice' ? `🎲 ${meuNome} rolou os dados!` : textoFinal;
-
-        await setDoc(salaRef, {
-            participantes: [auth.currentUser.uid, currentChatUserId],
-            nomes: {
-                [auth.currentUser.uid]: meuNome,
-                [currentChatUserId]: outroNome
-            },
-            ultimaMensagem: prevMsg,
-            [`naoLidas_${currentChatUserId}`]: naoLidasDele
-        }, { merge: true });
+        await setDoc(salaRef, metadados, { merge: true });
 
     } catch (e) {
         console.error("Erro ao enviar mensagem:", e);
-        alert("Falha ao enviar a ação.");
+        alert("Falha ao enviar o pergaminho.");
     }
 };
-
 
 
 // --- SISTEMA DE PRESENÇA (ONLINE/OFFLINE) ---
