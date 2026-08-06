@@ -2051,12 +2051,10 @@ window.iniciarEscutaChats = () => {
 
 
 
-// 1. Abrir o Chat (Com ordenação inteligente no front-end)
 window.abrirChat = (targetUserId, targetUserName, isOnline = false) => {
     if (!auth.currentUser) return alert("Você precisa estar logado!");
     if (auth.currentUser.uid === targetUserId) return alert("Você não pode conversar consigo mesmo!");
 
-    // Atualiza a cor da bolinha no cabeçalho do chat
     const corBolinha = isOnline ? '#2ecc71' : '#ccc';
     document.getElementById('chat-status-dot').style.background = corBolinha;
 
@@ -2064,9 +2062,8 @@ window.abrirChat = (targetUserId, targetUserName, isOnline = false) => {
     document.getElementById('chat-user-name').innerText = targetUserName;
     document.getElementById('chat-widget').style.display = 'flex';
 
-    const salaId = window.gerarIdSala(auth.currentUser.uid, targetUserId);
+    const salaId = gerarIdSala(auth.currentUser.uid, targetUserId);
         
-    // Zera as mensagens não lidas
     window.zerarNaoLidas(salaId);
     
     const msgsDiv = document.getElementById('chat-messages');
@@ -2074,7 +2071,6 @@ window.abrirChat = (targetUserId, targetUserName, isOnline = false) => {
 
     if (unsubscribeChat) unsubscribeChat();
 
-    // BUSCA SEM O orderBy (Garante que o Firebase não esconda NADA)
     const q = query(collection(db, "chats", salaId, "mensagens"));
     
     unsubscribeChat = onSnapshot(q, (snapshot) => {
@@ -2084,23 +2080,20 @@ window.abrirChat = (targetUserId, targetUserName, isOnline = false) => {
             return;
         }
 
-        // 1. Coloca todas as mensagens em uma lista temporária
         let listaMensagens = [];
         snapshot.forEach((docSnap) => {
             listaMensagens.push(docSnap.data());
         });
 
-        // 2. O JavaScript organiza a ordem cronológica (corrige o bug do Firebase)
         listaMensagens.sort((a, b) => {
             const getMs = (msg) => {
                 if (msg.timestamp?.toMillis) return msg.timestamp.toMillis();
-                if (msg.data?.toMillis) return msg.data.toMillis(); // Caso alguma velha use "data"
-                return 0; // Se não tiver data nenhuma, vai pro início do chat
+                if (msg.data?.toMillis) return msg.data.toMillis(); 
+                return 0;
             };
             return getMs(a) - getMs(b);
         });
 
-        // 3. Renderiza na tela
         listaMensagens.forEach((dados) => {
             const ehMinha = dados.remetenteId === auth.currentUser.uid;
             
@@ -2127,7 +2120,6 @@ window.abrirChat = (targetUserId, targetUserName, isOnline = false) => {
             msgsDiv.appendChild(div);
         });
 
-        // Rola automaticamente para a última mensagem
         msgsDiv.scrollTop = msgsDiv.scrollHeight;
     });
 };
@@ -2149,30 +2141,24 @@ window.enviarMensagemChat = async () => {
     if (!textoCru || !currentChatUserId || !auth.currentUser) return;
     
     input.value = ''; 
-    const salaId = window.gerarIdSala(auth.currentUser.uid, currentChatUserId);
+    const salaId = gerarIdSala(auth.currentUser.uid, currentChatUserId);
     
     const meuNome = currentUserData?.nome || currentUserData?.apelido || "Ninja";
     const outroNome = document.getElementById('chat-user-name').innerText;
 
-    // --- LÓGICA DE COMANDOS DE RPG ---
-    let tipoMsg = 'rp'; // Roleplay (Padrão)
+    let tipoMsg = 'rp';
     let textoFinal = textoCru;
     
     const listaAdmins = ["admin@rpgnaruto.com", "conselheiro@rpgnaruto.com"];
     const isAdmin = listaAdmins.includes(auth.currentUser.email);
 
-    // 1. Fala do Narrador (Somente Admin)
     if (textoCru.startsWith('/narrador ') && isAdmin) {
         tipoMsg = 'narrador';
         textoFinal = textoCru.replace('/narrador ', '').trim();
-    } 
-    // 2. Off-Character (OOC) - Fora do personagem
-    else if (textoCru.startsWith('//')) {
+    } else if (textoCru.startsWith('//')) {
         tipoMsg = 'ooc';
         textoFinal = textoCru.substring(2).trim();
-    }
-    // 3. Rolagem de Dados (ex: /d20, /d100)
-    else {
+    } else {
         const matchDado = textoCru.match(/^\/d(\d+)/i);
         if (matchDado) {
             tipoMsg = 'dice';
@@ -2183,28 +2169,25 @@ window.enviarMensagemChat = async () => {
     }
 
     try {
-        // Grava a mensagem com os novos campos (tipo e remetenteNome)
-        await window.addDoc(window.collection(window.db, "chats", salaId, "mensagens"), {
+        await addDoc(collection(db, "chats", salaId, "mensagens"), {
             remetenteId: auth.currentUser.uid,
             remetenteNome: meuNome,
             texto: textoFinal,
             tipo: tipoMsg,
-            timestamp: window.serverTimestamp()
+            timestamp: serverTimestamp()
         });
 
-        // Atualiza a sala (Para a lista de chats)
-        const salaRef = window.doc(window.db, "chats", salaId);
-        const salaSnap = await window.getDoc(salaRef);
+        const salaRef = doc(db, "chats", salaId);
+        const salaSnap = await getDoc(salaRef);
         let naoLidasDele = 1;
         
         if (salaSnap.exists()) {
             naoLidasDele = (salaSnap.data()[`naoLidas_${currentChatUserId}`] || 0) + 1;
         }
 
-        // Se for dado, muda a prévia da última mensagem para ficar mais amigável
         let prevMsg = tipoMsg === 'dice' ? `🎲 ${meuNome} rolou os dados!` : textoFinal;
 
-        await window.setDoc(salaRef, {
+        await setDoc(salaRef, {
             participantes: [auth.currentUser.uid, currentChatUserId],
             nomes: {
                 [auth.currentUser.uid]: meuNome,
