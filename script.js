@@ -1002,6 +1002,9 @@ async function carregarPersonagens() {
         const s = await getDocs(collection(db, "users"));
         c.innerHTML = '';
 
+        // Verifica se o usuário logado é Admin (Kage)
+        const isAdmin = auth.currentUser && ["admin@rpgnaruto.com", "conselheiro@rpgnaruto.com"].includes(auth.currentUser.email);
+
         s.forEach(d => {
             const u = d.data();
             const div = document.createElement('div');
@@ -1013,23 +1016,10 @@ async function carregarPersonagens() {
 
             // Lógica do Status Online
             const isOnline = u.isOnline === true;
-            const corBolinha = isOnline ? '#2ecc71' : '#ccc'; // Verde se online, Cinza se offline
+            const corBolinha = isOnline ? '#2ecc71' : '#ccc'; 
             const brilhoBolinha = isOnline ? 'box-shadow: 0 0 5px #2ecc71;' : '';
 
-            // Botões atualizados (Presentear agora é Laranja/Branco)
-            const botoesHTML = `
-                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 15px;">
-                    <button onclick="event.stopPropagation(); abrirModalPresentear('${d.id}')" class="mission-btn-start" style="background: var(--primary-color); color: white; width: 100%; border: none;">
-                        <i class="fa-solid fa-gift"></i> Presentear
-                    </button>
-                    <button onclick="event.stopPropagation(); abrirChat('${d.id}', '${u.nome || u.apelido || "Ninja"}', ${isOnline})" class="mission-btn-start" style="background: #3498db; width: 100%; border: none; color: white;">
-                        <i class="fa-solid fa-comment-dots"></i> Conversar
-                    </button>
-                </div>
-            `;
-
-            const isAdmin = auth.currentUser && ["admin@rpgnaruto.com", "conselheiro@rpgnaruto.com"].includes(auth.currentUser.email);
-            
+            // ÚNICA DECLARAÇÃO dos botões (Corrige o erro do Console)
             const botoesHTML = `
                 <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 15px;">
                     <button onclick="event.stopPropagation(); abrirModalPresentear('${d.id}')" class="mission-btn-start" style="background: var(--primary-color); color: white; width: 100%; border: none;">
@@ -1046,7 +1036,7 @@ async function carregarPersonagens() {
                 </div>
             `;
 
-            // Injeta a bolinha ao lado do nome (<h4>)
+            // Injeta o conteúdo no card
             div.innerHTML = `
                 <img src="${u.avatar || IMG_PADRAO}" class="card-img-top">
                 <h4 style="display: flex; justify-content: center; align-items: center; gap: 6px;">
