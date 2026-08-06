@@ -882,6 +882,15 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
     background: #e05200;
 }
 
+.chat-msg-time {
+    font-size: 0.65rem;
+    opacity: 0.6;
+    text-align: right;
+    display: block;
+    margin-top: 5px;
+}
+
+
 @media (max-width: 768px) {
     #mobile-menu-btn { display: block; }
     .sidebar { position: fixed; top: 0; left: -260px; height: 100%; box-shadow: 2px 0 10px rgba(0,0,0,0.3); transition: left 0.3s ease; }
