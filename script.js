@@ -2085,35 +2085,37 @@ window.abrirChat = (targetUserId, targetUserName, isOnline = false) => {
             return;
         }
 
-        snapshot.forEach((docSnap) => {
-            const dados = docSnap.data();
-            const ehMinha = dados.remetenteId === auth.currentUser.uid;
-            
-            const div = document.createElement('div');
-            let classeEstilo = ehMinha ? 'msg-minha' : 'msg-dele';
-            
-            // Aplica os estilos de RPG
-            if (dados.tipo === 'narrador') classeEstilo = 'msg-narrador';
-            if (dados.tipo === 'ooc') classeEstilo += ' msg-ooc';
-            if (dados.tipo === 'dice') classeEstilo = 'msg-dice';
-
-            div.className = `chat-msg ${classeEstilo}`;
-            
-            // Mostra quem enviou (útil para dados e narrador)
-            let nomeExibicao = dados.remetenteNome || (ehMinha ? "Você" : "Ninja");
-            
-            if (dados.tipo === 'narrador') {
-                div.innerHTML = `<span class="chat-msg-author"><i class="fa-solid fa-scroll"></i> NARRADOR</span>${dados.texto}`;
-            } else if (dados.tipo === 'dice') {
-                div.innerHTML = `<strong>${nomeExibicao}</strong><br><span style="font-size:1.2rem;">🎲 ${dados.texto}</span>`;
-            } else {
+            snapshot.forEach((docSnap) => {
+                const dados = docSnap.data();
+                const ehMinha = dados.remetenteId === auth.currentUser.uid;
+                
+                const div = document.createElement('div');
+                let classeEstilo = ehMinha ? 'msg-minha' : 'msg-dele';
+                
+                // Aplica os estilos de RPG
+                if (dados.tipo === 'narrador') classeEstilo = 'msg-narrador';
+                if (dados.tipo === 'ooc') classeEstilo += ' msg-ooc';
+                if (dados.tipo === 'dice') classeEstilo = 'msg-dice';
+    
+                div.className = `chat-msg ${classeEstilo}`;
+                
+                // Mostra quem enviou (útil para dados e narrador)
+                let nomeExibicao = dados.remetenteNome || (ehMinha ? "Você" : "Ninja");
+                
+                if (dados.tipo === 'narrador') {
+                    div.innerHTML = `<span class="chat-msg-author"><i class="fa-solid fa-scroll"></i> NARRADOR</span>${dados.texto}`;
+                } else if (dados.tipo === 'dice') {
+                    div.innerHTML = `<strong>${nomeExibicao}</strong><br><span style="font-size:1.2rem;">🎲 ${dados.texto}</span>`;
+                } else {
                 // Se for Off-Character, coloca [OOC] no nome
                 let labelOOC = dados.tipo === 'ooc' ? ' [OOC]' : '';
                 div.innerHTML = `<span class="chat-msg-author">${nomeExibicao}${labelOOC}</span>${dados.texto}`;
-            }
+                msgsDiv.appendChild(div);
+            });
 
-            msgsDiv.appendChild(div);
-        });
+        //Rola automaticamente para a última mensagem
+        msgsDiv.scrollTop = msgsDiv.scrollHeight;
+    });
 };
 
 // 2. Fechar o Chat
