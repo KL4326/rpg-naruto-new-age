@@ -2262,6 +2262,8 @@ window.abrirChat = (targetUserId, targetUserName, isOnline = false) => {
     document.getElementById('chat-status-dot').style.background = isOnline ? '#2ecc71' : '#ccc';
     document.getElementById('chat-user-name').innerText = targetUserName;
     document.getElementById('chat-widget').style.display = 'flex';
+    document.getElementById('btn-ninjas-local').style.display = 'none';
+    document.getElementById('ninjas-local-panel').style.display = 'none';
 
     currentChatUserId = targetUserId;
     window.currentSalaId = gerarIdSala(auth.currentUser.uid, targetUserId);
@@ -2277,6 +2279,8 @@ window.abrirDiarioNinja = () => {
     document.getElementById('chat-status-dot').style.background = '#f1c40f'; // Dourado
     document.getElementById('chat-user-name').innerText = "Diário Ninja (Mestre)";
     document.getElementById('chat-widget').style.display = 'flex';
+    document.getElementById('btn-ninjas-local').style.display = 'none';
+    document.getElementById('ninjas-local-panel').style.display = 'none';
     
     currentChatUserId = "MESTRE"; 
     window.currentSalaId = "diario_" + auth.currentUser.uid;
@@ -2288,13 +2292,64 @@ window.abrirDiarioNinja = () => {
 // Função para fechar qualquer tipo de chat
 window.fecharChat = () => {
     document.getElementById('chat-widget').style.display = 'none';
+    document.getElementById('ninjas-local-panel').style.display = 'none'; // <-- Linha nova
     currentChatUserId = null;
     window.currentSalaId = null;
     
-    // Cancela a escuta do Firebase para economizar leituras
     if (typeof unsubscribeChat !== 'undefined' && unsubscribeChat) {
         unsubscribeChat();
         unsubscribeChat = null;
+    }
+};
+
+window.toggleNinjasLocal = async () => {
+    const panel = document.getElementById('ninjas-local-panel');
+    const list = document.getElementById('ninjas-local-list');
+    
+    // Se já estiver aberto, apenas fecha
+    if (panel.style.display === 'block') {
+        panel.style.display = 'none';
+        return;
+    }
+    
+    // Abre o painel e mostra status de carregamento
+    panel.style.display = 'block';
+    list.innerHTML = '<span style="color:#777;">Procurando rastros de chakra...</span>';
+    
+    // Extrai o ID do cenário da sala atual (ex: "cenario_vila_folha" vira "vila_folha")
+    const cenarioId = window.currentSalaId.replace('cenario_', '');
+    
+    try {
+        // Busca os jogadores que têm o 'cenarioAtual' igual ao local atual
+        const q = query(collection(db, "users"), where("cenarioAtual", "==", cenarioId));
+        const snap = await getDocs(q);
+        
+        list.innerHTML = '';
+        
+        if (snap.empty) {
+            list.innerHTML = '<span style="color:#999;">O local parece deserto...</span>';
+            return;
+        }
+        
+        snap.forEach(docSnap => {
+            const u = docSnap.data();
+            const isOnline = u.isOnline === true;
+            const corBolinha = isOnline ? '#2ecc71' : '#ccc';
+            const statusTexto = isOnline ? 'Online' : 'Offline';
+            
+            // Adiciona o jogador na lista
+            list.innerHTML += `
+                <div style="display:flex; align-items:center; gap:8px; margin-top:8px; padding: 4px; border-radius: 4px; background: white; border: 1px solid #eee;">
+                    <span style="width:8px; height:8px; background:${corBolinha}; border-radius:50%; box-shadow: 0 0 3px ${corBolinha};"></span>
+                    <strong style="color:var(--text-color);">${u.nome || "Ninja"}</strong>
+                    <span style="font-size:0.7rem; color:#777;">(${u.apelido || "Sem clã"})</span>
+                </div>
+            `;
+        });
+        
+    } catch (e) {
+        console.error("Erro ao buscar ninjas:", e);
+        list.innerHTML = '<span style="color:var(--danger-color);">Falha ao rastrear o local.</span>';
     }
 };
 
@@ -2306,9 +2361,13 @@ window.abrirChatCenario = (id, nome) => {
         return;
     }
     
-    document.getElementById('chat-status-dot').style.background = '#3498db'; // Azul
+    document.getElementById('chat-status-dot').style.background = '#3498db'; 
     document.getElementById('chat-user-name').innerText = "Cenário: " + nome;
     document.getElementById('chat-widget').style.display = 'flex';
+    
+    // Mostra o botão de Ninjas no Local apenas em cenários
+    document.getElementById('btn-ninjas-local').style.display = 'inline-block';
+    document.getElementById('ninjas-local-panel').style.display = 'none';
     
     currentChatUserId = "CENARIO"; 
     window.currentSalaId = "cenario_" + id;
