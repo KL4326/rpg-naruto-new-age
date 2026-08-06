@@ -2401,7 +2401,9 @@ window.enviarMensagemChat = async () => {
     if (!textoCru || !window.currentSalaId || !auth.currentUser) return;
     
     input.value = ''; 
-    const meuNome = currentUserData?.nome || currentUserData?.apelido || "Ninja";
+    
+    // --- CORREÇÃO AQUI: Mudamos de const para let ---
+    let meuNome = currentUserData?.nome || currentUserData?.apelido || "Ninja";
     const nomeSala = document.getElementById('chat-user-name').innerText;
 
     let tipoMsg = 'rp';
@@ -2412,17 +2414,17 @@ window.enviarMensagemChat = async () => {
         tipoMsg = 'narrador';
         textoFinal = textoCru.replace('/narrador ', '').trim();
     } 
-    // --- NOVO: Comando de NPC ---
+    // Comando de NPC
     else if (textoCru.startsWith('/npc ') && isAdmin) {
         tipoMsg = 'npc';
         let conteudoNpc = textoCru.replace('/npc ', '').trim();
         let separadorIndex = conteudoNpc.indexOf(':'); // Procura os dois pontos
         
         if (separadorIndex !== -1) {
-            meuNome = conteudoNpc.substring(0, separadorIndex).trim(); // Pega o nome antes dos ":"
-            textoFinal = conteudoNpc.substring(separadorIndex + 1).trim(); // Pega a fala depois dos ":"
+            meuNome = conteudoNpc.substring(0, separadorIndex).trim(); // Agora funciona!
+            textoFinal = conteudoNpc.substring(separadorIndex + 1).trim(); 
         } else {
-            meuNome = "NPC";
+            meuNome = "NPC"; // Agora funciona!
             textoFinal = conteudoNpc;
         }
     }
@@ -2459,7 +2461,6 @@ window.enviarMensagemChat = async () => {
             metadados.tipoChat = 'cenario';
             metadados.nomeCenario = nomeSala;
         } else if (window.currentSalaId.startsWith("diario_")) {
-            // Inteligência para saber se é o Jogador ou o Mestre digitando
             const donoId = window.currentSalaId.replace("diario_", "");
             const souDono = auth.currentUser.uid === donoId;
             const alvoNaoLida = souDono ? "MESTRE" : donoId;
@@ -2468,7 +2469,6 @@ window.enviarMensagemChat = async () => {
             metadados.participantes = [donoId, "MESTRE"];
             metadados[`naoLidas_${alvoNaoLida}`] = increment(1);
             
-            // Só grava o nome se for o dono enviando, para o Mestre não sobrescrever o nome do player
             if (souDono) {
                 metadados.nomes = {
                     [donoId]: meuNome,
