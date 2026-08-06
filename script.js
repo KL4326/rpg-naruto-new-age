@@ -106,18 +106,34 @@ window.carregarMapa = () => {
     CENARIOS_RPG.forEach(cenario => {
         // Verifica se o player já está neste lugar
         const isLocalAtual = currentUserData.cenarioAtual === cenario.id;
-        const btnTexto = isLocalAtual ? 'Você está aqui' : 'Viajar para cá';
-        const btnDisabled = isLocalAtual ? 'disabled style="background: #95a5a6; cursor: not-allowed;"' : '';
+        
+        // --- NOVO: Lógica inteligente do botão ---
+        let btnTexto, btnAcao, btnEstilo, icone;
+        
+        if (isLocalAtual) {
+            btnTexto = 'Explorar Local';
+            btnAcao = `window.abrirChatCenario('${cenario.id}', '${cenario.nome}')`;
+            btnEstilo = 'background: #2ecc71;'; // Fica verde indicando que você já está lá
+            icone = 'fa-comments';
+        } else {
+            btnTexto = 'Viajar para cá';
+            btnAcao = `window.viajarPara('${cenario.id}', '${cenario.nome}')`;
+            btnEstilo = 'background: var(--primary-color);'; // Laranja padrão
+            icone = 'fa-person-walking-luggage';
+        }
 
         const div = document.createElement('div');
         div.className = 'cenario-card';
+        
+        // Adicionamos um texto verde de "Localização Atual" abaixo do nome para dar mais destaque
         div.innerHTML = `
             <img src="${cenario.img}" class="cenario-img" onerror="this.src='${IMG_PADRAO}'">
             <div class="cenario-info">
                 <div class="cenario-nome">${cenario.nome}</div>
+                ${isLocalAtual ? '<div style="color:#2ecc71; font-size:0.8rem; font-weight:bold; margin-top:5px;"><i class="fa-solid fa-location-dot"></i> Localização Atual</div>' : ''}
             </div>
-            <button class="cenario-btn" ${btnDisabled} onclick="window.viajarPara('${cenario.id}', '${cenario.nome}')">
-                <i class="fa-solid fa-person-walking-luggage"></i> ${btnTexto}
+            <button class="cenario-btn" style="${btnEstilo}" onclick="${btnAcao}">
+                <i class="fa-solid ${icone}"></i> ${btnTexto}
             </button>
         `;
         grid.appendChild(div);
