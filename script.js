@@ -2260,6 +2260,9 @@ window.carregarMensagensDaSala = (salaId) => {
                 div.innerHTML = `<span class="chat-msg-author"><i class="fa-solid fa-scroll"></i> NARRADOR</span>${dados.texto}${htmlTempo}`;
             } else if (dados.tipo === 'dice') {
                 div.innerHTML = `<strong>${nomeExibicao}</strong><br><span style="font-size:1.2rem;">🎲 ${dados.texto}</span>${htmlTempo}`;
+            } else if (dados.tipo === 'npc') {
+                // Adiciona um ícone roxo ou da cor que preferir para destacar que é um NPC
+                div.innerHTML = `<span class="chat-msg-author" style="color: #9b59b6;"><i class="fa-solid fa-user-ninja"></i> ${nomeExibicao}</span>${dados.texto}${htmlTempo}`;
             } else {
                 let labelOOC = dados.tipo === 'ooc' ? ' [OOC]' : '';
                 div.innerHTML = `<span class="chat-msg-author">${nomeExibicao}${labelOOC}</span>${dados.texto}${htmlTempo}`;
@@ -2408,7 +2411,22 @@ window.enviarMensagemChat = async () => {
     if (textoCru.startsWith('/narrador ') && isAdmin) {
         tipoMsg = 'narrador';
         textoFinal = textoCru.replace('/narrador ', '').trim();
-    } else if (textoCru.startsWith('//')) {
+    } 
+    // --- NOVO: Comando de NPC ---
+    else if (textoCru.startsWith('/npc ') && isAdmin) {
+        tipoMsg = 'npc';
+        let conteudoNpc = textoCru.replace('/npc ', '').trim();
+        let separadorIndex = conteudoNpc.indexOf(':'); // Procura os dois pontos
+        
+        if (separadorIndex !== -1) {
+            meuNome = conteudoNpc.substring(0, separadorIndex).trim(); // Pega o nome antes dos ":"
+            textoFinal = conteudoNpc.substring(separadorIndex + 1).trim(); // Pega a fala depois dos ":"
+        } else {
+            meuNome = "NPC";
+            textoFinal = conteudoNpc;
+        }
+    }
+    else if (textoCru.startsWith('//')) {
         tipoMsg = 'ooc';
         textoFinal = textoCru.substring(2).trim();
     } else {
