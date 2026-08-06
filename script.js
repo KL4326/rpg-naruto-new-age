@@ -522,29 +522,6 @@ window.curtirPost = async (pid) => {
 };
 window.deletarPost = async (pid) => { if(confirm("Excluir postagem?")) { await deleteDoc(doc(db, "posts", pid)); window.renderFeed('all'); } };
 
-// --- PERFIL E UPLOAD ---
-window.handleAvatarPreview = async (e) => {
-    const arquivo = e.target.files[0];
-    if(arquivo) {
-        try {
-            newAvatarBase64 = await comprimirImagem(arquivo);
-            document.getElementById('edit-avatar-preview').src = newAvatarBase64;
-        } catch (erro) { alert("Erro na imagem."); }
-    }
-};
-
-window.salvarPerfil = async () => {
-    const btn = document.querySelector('#editProfileModal .btn-post');
-    btn.innerText = "Salvando..."; btn.disabled = true;
-    const nome = document.getElementById('edit-name-input').value;
-    const apelido = document.getElementById('edit-nick-input').value;
-    const updates = { nome: nome, apelido: apelido, personagem: nome };
-    if(newAvatarBase64) updates.avatar = newAvatarBase64;
-    try {
-        await updateDoc(doc(db, "users", auth.currentUser.uid), updates);
-        setTimeout(() => location.reload(), 500);
-    } catch(e) { alert("Erro ao salvar: " + e.message); btn.disabled = false; btn.innerText = "Salvar"; }
-};
 
 // --- OUTRAS FUNÇÕES ---
 window.mudarOrdenacao = (ordem) => {
@@ -1048,6 +1025,24 @@ async function carregarPersonagens() {
                     <button onclick="event.stopPropagation(); abrirChat('${d.id}', '${u.nome || u.apelido || "Ninja"}', ${isOnline})" class="mission-btn-start" style="background: #3498db; width: 100%; border: none; color: white;">
                         <i class="fa-solid fa-comment-dots"></i> Conversar
                     </button>
+                </div>
+            `;
+
+            const isAdmin = auth.currentUser && ["admin@rpgnaruto.com", "conselheiro@rpgnaruto.com"].includes(auth.currentUser.email);
+            
+            const botoesHTML = `
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 15px;">
+                    <button onclick="event.stopPropagation(); abrirModalPresentear('${d.id}')" class="mission-btn-start" style="background: var(--primary-color); color: white; width: 100%; border: none;">
+                        <i class="fa-solid fa-gift"></i> Presentear
+                    </button>
+                    <button onclick="event.stopPropagation(); abrirChat('${d.id}', '${u.nome || u.apelido || "Ninja"}', ${isOnline})" class="mission-btn-start" style="background: #3498db; width: 100%; border: none; color: white;">
+                        <i class="fa-solid fa-comment-dots"></i> Conversar
+                    </button>
+                    ${isAdmin ? `
+                    <button onclick="event.stopPropagation(); window.abrirPaginaPerfil('${d.id}')" class="mission-btn-start" style="background: #e74c3c; width: 100%; border: none; color: white;">
+                        <i class="fa-solid fa-pen"></i> Editar Ficha
+                    </button>
+                    ` : ''}
                 </div>
             `;
 
@@ -1568,11 +1563,121 @@ function abrirModalSimples(t, d) {
     document.getElementById(t + 'Modal').style.display = 'flex';
 }
 
+// --- NOVO SISTEMA DE PÁGINA DE PERFIL ---
+window.editingUserId = null; // Guarda o UID do ninja que está sendo editado na tela
+
+// Processa a imagem escolhida na hora
+window.handlePageAvatar = async (e) => {
+    const arquivo = e.target.files[0];
+    if(arquivo) {
+        try {
+            newAvatarBase64 = await comprimirImagem(arquivo);
+            document.getElementById('page-avatar-preview').src = newAvatarBase64;
+        } catch (erro) { alert("O pergaminho de imagem falhou."); }
+    }
+};
+
+// Abre a página de perfil carregando os dados do banco
+window.abrirPaginaPerfil = async (uid = null) => {
+    if (!auth.currentUser) return;
+    
+    // Se não for passado um UID, edita o próprio usuário logado
+    const targetUid = uid || auth.currentUser.uid;
+    window.editingUserId = targetUid;
+    
+    const isAdmin = ["admin@rpgnaruto.com", "conselheiro@rpgnaruto.com"].includes(auth.currentUser.email);
+    
+    window.showTab('perfil');
+    
+    const inpNome = document.getElementById('perfil-nome');
+    const inpApelido = document.getElementById('perfil-apelido');
+    const inpBio = document.getElementById('perfil-bio');
+    const inpCargo = document.getElementById('perfil-cargo');
+    const inpSalario = document.getElementById('perfil-salario');
+    const imgPreview = document.getElementById('page-avatar-preview');
+    
+    // Libera a edição dos campos restritos caso seja o Admin
+    inpCargo.disabled = !isAdmin;
+    inpSalario.disabled = !isAdmin;
+    
+    document.getElementById('perfil-titulo-pagina').innerHTML = targetUid === auth.currentUser.uid 
+        ? '<i class="fa-solid fa-address-card"></i> Minha Ficha Ninja' 
+        : '<i class="fa-solid fa-user-shield"></i> Editando Registro (Kage)';
+    
+    try {
+        let dados;
+        // Puxa da memória se for o próprio player, ou vai no banco se o Admin estiver editando alguém
+        if (targetUid === auth.currentUser.uid && currentUserData) {
+            dados = currentUserData;
+        } else {
+            const snap = await getDoc(doc(db, "users", targetUid));
+            if(snap.exists()) dados = snap.data();
+        }
+        
+        if(dados) {
+            inpNome.value = dados.nome || "";
+            inpApelido.value = dados.apelido || "";
+            inpBio.value = dados.historiaTexto || ""; 
+            inpCargo.value = dados.cargo || "Genin";
+            inpSalario.value = dados.salario || 0;
+            imgPreview.src = dados.avatar || IMG_PADRAO;
+            newAvatarBase64 = null; // Reseta a variável de imagem temporária
+        }
+    } catch(e) {
+        console.error("Erro ao carregar ficha:", e);
+    }
+};
+
+// Salva os dados no Firestore
+window.salvarPaginaPerfil = async () => {
+    const btn = document.getElementById('btn-salvar-perfil');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Salvando...';
+    
+    const isAdmin = ["admin@rpgnaruto.com", "conselheiro@rpgnaruto.com"].includes(auth.currentUser.email);
+    const novoNome = document.getElementById('perfil-nome').value;
+    
+    const updates = {
+        nome: novoNome,
+        apelido: document.getElementById('perfil-apelido').value,
+        historiaTexto: document.getElementById('perfil-bio').value,
+        personagem: novoNome // Mantém sincronizado com outros locais do seu DB
+    };
+    
+    // Admin salva também o cargo e o salário
+    if (isAdmin) {
+        updates.cargo = document.getElementById('perfil-cargo').value;
+        updates.salario = Number(document.getElementById('perfil-salario').value) || 0;
+    }
+    
+    if (newAvatarBase64) {
+        updates.avatar = newAvatarBase64;
+    }
+    
+    try {
+        await updateDoc(doc(db, "users", window.editingUserId), updates);
+        
+        // Atualiza a tela imediatamente se o usuário estiver editando a si mesmo
+        if(window.editingUserId === auth.currentUser.uid) {
+            currentUserData = { ...currentUserData, ...updates };
+            atualizarInterface(currentUserData);
+        }
+        
+        alert("Ficha atualizada com sucesso!");
+        window.showTab('dashboard'); // Volta para o Dashboard após salvar
+        
+    } catch(e) {
+        alert("Erro ao salvar os dados.");
+        console.error(e);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Salvar Ficha';
+    }
+};
+
 // Não esqueça de exportar para o window no final do script.js:
 window.abrirModalSimples = abrirModalSimples;
-    
-window.openEditProfileModal = () => { document.getElementById('editProfileModal').style.display = 'flex'; document.getElementById('edit-name-input').value = currentUserData.nome || ""; document.getElementById('edit-nick-input').value = currentUserData.apelido || ""; document.getElementById('user-menu').classList.remove('show'); };
-window.closeEditProfileModal = () => document.getElementById('editProfileModal').style.display = 'none';
+
 window.openChangePasswordModal = () => { document.getElementById('changePasswordModal').style.display='flex'; document.getElementById('user-menu').classList.remove('show'); };
 window.closeChangePasswordModal = () => document.getElementById('changePasswordModal').style.display='none';
 window.toggleMenu = () => document.getElementById('user-menu').classList.toggle('show');
