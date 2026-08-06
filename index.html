@@ -315,6 +315,20 @@
                 <div id="admin-panel" class="tab-content">
                     <h2>Painel Kage</h2>
                     
+                    <!-- MÓDULO DE TESOURARIA -->
+                    <div style="background: rgba(46, 204, 113, 0.1); padding: 20px; border-radius: 8px; border: 1px dashed #2ecc71; margin-bottom: 30px; text-align: center;">
+                        <h3 style="color: #27ae60; margin-top: 0; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <i class="fa-solid fa-sack-dollar"></i> Tesouraria da Vila
+                        </h3>
+                        <p style="font-size: 0.85rem; color: #555; margin-bottom: 15px;">
+                            Pague o salário de todos os ninjas da vila com um único comando. O valor depositado será baseado no campo "Salário" da ficha de cada jogador.
+                        </p>
+                        <button id="btn-pagar-salarios" class="buy-btn" style="background: #2ecc71; max-width: 250px; margin: 0 auto; font-size: 1.1rem;" onclick="window.pagarSalariosGeral()">
+                            <i class="fa-solid fa-coins"></i> Pagar Salários
+                        </button>
+                    </div>
+                    <!-- FIM DO MÓDULO -->
+                
                     <h3 class="section-title">Aprovações Pendentes</h3>
                     <div class="bucket-grid" id="admin-missoes-grid"><p>Carregando...</p></div>
                     
