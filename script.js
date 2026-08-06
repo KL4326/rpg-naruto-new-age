@@ -281,6 +281,7 @@ window.showTab = (t) => {
             if(t === 'rankings') carregarRankings();
             if(t === 'mentorias') carregarMentorias();
             if(t === 'admin-panel') carregarPainelAdmin();
+            if(t === 'admin-panel') { carregarPainelAdmin(); window.carregarDiariosAdmin(); }
 
             if(t === 'loja-premium') {
                 const input = document.getElementById('input-qtd-ryos');
@@ -1751,6 +1752,69 @@ async function carregarPainelAdmin() {
     } 
 }
 
+// Carrega a lista de Diários no Painel Kage
+window.carregarDiariosAdmin = () => {
+    const container = document.getElementById('admin-diarios-list');
+    if (!container) return;
+    
+    container.innerHTML = '<p style="text-align:center; color:#777;">Procurando diários...</p>';
+    
+    // Busca todos os chats onde o "MESTRE" está marcado como participante
+    const q = query(collection(db, "chats"), where("participantes", "array-contains", "MESTRE"));
+    
+    // Usamos onSnapshot para que você veja a notificação de nova mensagem brotar na hora
+    onSnapshot(q, (snapshot) => {
+        container.innerHTML = '';
+        
+        if(snapshot.empty) {
+            container.innerHTML = '<p style="text-align:center; color:#999; padding: 10px;">Nenhum diário ativo no momento.</p>';
+            return;
+        }
+        
+        snapshot.forEach(docSnap => {
+            const dados = docSnap.data();
+            
+            // Descobre qual é o ID do jogador (o participante que NÃO é o MESTRE)
+            const playerId = dados.participantes.find(id => id !== "MESTRE");
+            if (!playerId) return;
+            
+            const nomePlayer = dados.nomes ? dados.nomes[playerId] : "Ninja";
+            const naoLidas = dados.naoLidas_MESTRE || 0;
+            
+            const div = document.createElement('div');
+            // Reutilizamos o estilo bonito da sua lista de chats normal
+            div.className = 'chat-list-item'; 
+            div.onclick = () => {
+                window.zerarNaoLidas(docSnap.id); // Zera as não lidas do Mestre
+                window.abrirDiarioComoMestre(playerId, nomePlayer);
+            };
+            
+            div.innerHTML = `
+                <div style="display:flex; flex-direction:column; overflow: hidden; padding-right: 10px;">
+                    <strong style="color:var(--primary-color); font-size: 1rem;"><i class="fa-solid fa-book-journal-whills"></i> Diário de ${nomePlayer}</strong>
+                    <span style="font-size:0.85rem; color:#777; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                        ${dados.ultimaMensagem || "Nenhuma anotação ainda..."}
+                    </span>
+                </div>
+                ${naoLidas > 0 ? \`<span class="unread-badge" style="background:#f1c40f; color:#333;">${naoLidas}</span>\` : ''}
+            `;
+            container.appendChild(div);
+        });
+    });
+};
+
+// Abre a janela de Chat com o status invertido para o Mestre
+window.abrirDiarioComoMestre = (playerId, playerName) => {
+    document.getElementById('chat-status-dot').style.background = '#f1c40f'; // Bolinha dourada
+    document.getElementById('chat-user-name').innerText = "Diário: " + playerName;
+    document.getElementById('chat-widget').style.display = 'flex';
+    
+    currentChatUserId = playerId; 
+    window.currentSalaId = "diario_" + playerId;
+    
+    window.carregarMensagensDaSala(window.currentSalaId);
+};
+
 
 function criarCardAdmin(container, userData, uid, itemId, tipo, funcaoAprovar) {
     const div = document.createElement('div');
@@ -2302,13 +2366,22 @@ window.enviarMensagemChat = async () => {
             metadados.tipoChat = 'cenario';
             metadados.nomeCenario = nomeSala;
         } else if (window.currentSalaId.startsWith("diario_")) {
+            // Inteligência para saber se é o Jogador ou o Mestre digitando
+            const donoId = window.currentSalaId.replace("diario_", "");
+            const souDono = auth.currentUser.uid === donoId;
+            const alvoNaoLida = souDono ? "MESTRE" : donoId;
+
             metadados.tipoChat = 'diario';
-            metadados.participantes = [auth.currentUser.uid, "MESTRE"];
-            metadados.nomes = {
-                [auth.currentUser.uid]: meuNome,
-                ["MESTRE"]: "Kage (Mestre)"
-            };
-            metadados[`naoLidas_MESTRE`] = increment(1);
+            metadados.participantes = [donoId, "MESTRE"];
+            metadados[`naoLidas_${alvoNaoLida}`] = increment(1);
+            
+            // Só grava o nome se for o dono enviando, para o Mestre não sobrescrever o nome do player
+            if (souDono) {
+                metadados.nomes = {
+                    [donoId]: meuNome,
+                    ["MESTRE"]: "Kage (Mestre)"
+                };
+            }
         } else {
             metadados.tipoChat = 'privado';
             metadados.participantes = [auth.currentUser.uid, currentChatUserId];
