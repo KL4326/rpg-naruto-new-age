@@ -2056,7 +2056,7 @@ window.abrirChat = (targetUserId, targetUserName, isOnline = false) => {
     if (!auth.currentUser) return alert("Você precisa estar logado!");
     if (auth.currentUser.uid === targetUserId) return alert("Você não pode conversar consigo mesmo!");
 
-    // --- NOVO: Atualiza a cor da bolinha no cabeçalho do chat ---
+    // Atualiza a cor da bolinha no cabeçalho do chat
     const corBolinha = isOnline ? '#2ecc71' : '#ccc';
     document.getElementById('chat-status-dot').style.background = corBolinha;
 
@@ -2064,10 +2064,10 @@ window.abrirChat = (targetUserId, targetUserName, isOnline = false) => {
     document.getElementById('chat-user-name').innerText = targetUserName;
     document.getElementById('chat-widget').style.display = 'flex';
 
-    const salaId = gerarIdSala(auth.currentUser.uid, targetUserId);
+    const salaId = window.gerarIdSala(auth.currentUser.uid, targetUserId);
         
-        // LINHA NOVA: A pessoa clicou no chat, então zeramos a contagem!
-        window.zerarNaoLidas(salaId);
+    // A pessoa clicou no chat, então zeramos a contagem!
+    window.zerarNaoLidas(salaId);
     
     const msgsDiv = document.getElementById('chat-messages');
     msgsDiv.innerHTML = '<p style="text-align:center; color:#999; font-size:12px;">Conectando...</p>';
@@ -2085,35 +2085,37 @@ window.abrirChat = (targetUserId, targetUserName, isOnline = false) => {
             return;
         }
 
-            snapshot.forEach((docSnap) => {
-                const dados = docSnap.data();
-                const ehMinha = dados.remetenteId === auth.currentUser.uid;
-                
-                const div = document.createElement('div');
-                let classeEstilo = ehMinha ? 'msg-minha' : 'msg-dele';
-                
-                // Aplica os estilos de RPG
-                if (dados.tipo === 'narrador') classeEstilo = 'msg-narrador';
-                if (dados.tipo === 'ooc') classeEstilo += ' msg-ooc';
-                if (dados.tipo === 'dice') classeEstilo = 'msg-dice';
-    
-                div.className = `chat-msg ${classeEstilo}`;
-                
-                // Mostra quem enviou (útil para dados e narrador)
-                let nomeExibicao = dados.remetenteNome || (ehMinha ? "Você" : "Ninja");
-                
-                if (dados.tipo === 'narrador') {
-                    div.innerHTML = `<span class="chat-msg-author"><i class="fa-solid fa-scroll"></i> NARRADOR</span>${dados.texto}`;
-                } else if (dados.tipo === 'dice') {
-                    div.innerHTML = `<strong>${nomeExibicao}</strong><br><span style="font-size:1.2rem;">🎲 ${dados.texto}</span>`;
-                } else {
+        snapshot.forEach((docSnap) => {
+            const dados = docSnap.data();
+            const ehMinha = dados.remetenteId === auth.currentUser.uid;
+            
+            const div = document.createElement('div');
+            let classeEstilo = ehMinha ? 'msg-minha' : 'msg-dele';
+            
+            // Aplica os estilos de RPG
+            if (dados.tipo === 'narrador') classeEstilo = 'msg-narrador';
+            if (dados.tipo === 'ooc') classeEstilo += ' msg-ooc';
+            if (dados.tipo === 'dice') classeEstilo = 'msg-dice';
+
+            div.className = `chat-msg ${classeEstilo}`;
+            
+            // Mostra quem enviou (útil para dados e narrador)
+            let nomeExibicao = dados.remetenteNome || (ehMinha ? "Você" : "Ninja");
+            
+            if (dados.tipo === 'narrador') {
+                div.innerHTML = `<span class="chat-msg-author"><i class="fa-solid fa-scroll"></i> NARRADOR</span>${dados.texto}`;
+            } else if (dados.tipo === 'dice') {
+                div.innerHTML = `<strong>${nomeExibicao}</strong><br><span style="font-size:1.2rem;">🎲 ${dados.texto}</span>`;
+            } else {
                 // Se for Off-Character, coloca [OOC] no nome
                 let labelOOC = dados.tipo === 'ooc' ? ' [OOC]' : '';
                 div.innerHTML = `<span class="chat-msg-author">${nomeExibicao}${labelOOC}</span>${dados.texto}`;
-                msgsDiv.appendChild(div);
-            });
+            } // <--- A CHAVE QUE ESTAVA FALTANDO É ESTA AQUI!
 
-        //Rola automaticamente para a última mensagem
+            msgsDiv.appendChild(div);
+        });
+
+        // Rola automaticamente para a última mensagem
         msgsDiv.scrollTop = msgsDiv.scrollHeight;
     });
 };
