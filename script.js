@@ -2163,13 +2163,26 @@ window.carregarMensagensDaSala = (salaId) => {
             div.className = `chat-msg ${classeEstilo}`;
             let nomeExibicao = dados.remetenteNome || (ehMinha ? "Você" : "Ninja");
             
+            // --- NOVO: Extraindo e formatando a data e hora ---
+            let dataFormatada = "Enviando..."; // Aparece rapidinho antes do Firebase confirmar
+            let dataRaw = dados.timestamp || dados.data;
+            
+            if (dataRaw && typeof dataRaw.toDate === 'function') {
+                const d = dataRaw.toDate();
+                // Formata para: "DD/MM/AAAA às HH:MM"
+                dataFormatada = d.toLocaleDateString('pt-BR') + ' às ' + d.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+            }
+            
+            const htmlTempo = `<span class="chat-msg-time">${dataFormatada}</span>`;
+            // --------------------------------------------------
+
             if (dados.tipo === 'narrador') {
-                div.innerHTML = `<span class="chat-msg-author"><i class="fa-solid fa-scroll"></i> NARRADOR</span>${dados.texto}`;
+                div.innerHTML = `<span class="chat-msg-author"><i class="fa-solid fa-scroll"></i> NARRADOR</span>${dados.texto}${htmlTempo}`;
             } else if (dados.tipo === 'dice') {
-                div.innerHTML = `<strong>${nomeExibicao}</strong><br><span style="font-size:1.2rem;">🎲 ${dados.texto}</span>`;
+                div.innerHTML = `<strong>${nomeExibicao}</strong><br><span style="font-size:1.2rem;">🎲 ${dados.texto}</span>${htmlTempo}`;
             } else {
                 let labelOOC = dados.tipo === 'ooc' ? ' [OOC]' : '';
-                div.innerHTML = `<span class="chat-msg-author">${nomeExibicao}${labelOOC}</span>${dados.texto}`;
+                div.innerHTML = `<span class="chat-msg-author">${nomeExibicao}${labelOOC}</span>${dados.texto}${htmlTempo}`;
             }
             msgsDiv.appendChild(div);
         });
