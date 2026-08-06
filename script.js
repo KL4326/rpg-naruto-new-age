@@ -2588,6 +2588,66 @@ window.enviarMensagemChat = async () => {
     }
 };
 
+// --- SISTEMA DE PAGAMENTO DE SALÁRIOS ---
+window.pagarSalariosGeral = async () => {
+    if (!confirm("Atenção Kage! Deseja pagar o salário de TODOS os ninjas agora?")) return;
+    
+    const btn = document.getElementById('btn-pagar-salarios');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Transferindo Ryos...';
+    }
+
+    try {
+        // Busca todos os ninjas cadastrados
+        const usersSnap = await getDocs(collection(db, "users"));
+        
+        let ninjasPagos = 0;
+        let totalRyosInjetados = 0;
+        const promessasPagamento = [];
+
+        usersSnap.forEach((docSnap) => {
+            const dadosNinja = docSnap.data();
+            const salario = Number(dadosNinja.salario) || 0;
+            
+            // Só prepara a transferência se o ninja tiver um salário maior que zero
+            if (salario > 0) {
+                const refNinja = doc(db, "users", docSnap.id);
+                
+                promessasPagamento.push(
+                    updateDoc(refNinja, {
+                        ryos: increment(salario)
+                    })
+                );
+                
+                ninjasPagos++;
+                totalRyosInjetados += salario;
+            }
+        });
+
+        // Executa todas as atualizações no Firebase de uma vez só (muito mais rápido)
+        await Promise.all(promessasPagamento);
+
+        alert(`💰 Pagamento Concluído!\n\n${ninjasPagos} ninjas receberam seus salários.\nTotal injetado na economia: ${formatarNum(totalRyosInjetados)} Ryos.`);
+        
+        // Atualiza a interface do Kage caso ele mesmo tenha recebido salário
+        if (currentUserData && currentUserData.salario > 0) {
+            currentUserData.ryos += currentUserData.salario;
+            const ryosEl = document.getElementById('ryos-text');
+            if (ryosEl) ryosEl.innerText = formatarNum(currentUserData.ryos);
+        }
+
+    } catch (erro) {
+        console.error("Erro ao pagar salários:", erro);
+        alert("Ocorreu um erro na tesouraria. Alguns ninjas podem não ter recebido.");
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-coins"></i> Pagar Salários';
+        }
+    }
+};
+
 
 // --- SISTEMA DE PRESENÇA (ONLINE/OFFLINE) ---
 window.atualizarStatusOnline = (online) => {
