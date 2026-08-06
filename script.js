@@ -1796,7 +1796,7 @@ window.carregarDiariosAdmin = () => {
                         ${dados.ultimaMensagem || "Nenhuma anotação ainda..."}
                     </span>
                 </div>
-                ${naoLidas > 0 ? \`<span class="unread-badge" style="background:#f1c40f; color:#333;">${naoLidas}</span>\` : ''}
+                ${naoLidas > 0 ? '<span class="unread-badge" style="background:#f1c40f; color:#333;">' + naoLidas + '</span>' : ''}
             `;
             container.appendChild(div);
         });
