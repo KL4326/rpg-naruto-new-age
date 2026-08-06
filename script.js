@@ -2112,48 +2112,79 @@ window.fecharChat = () => {
 
 window.enviarMensagemChat = async () => {
     const input = document.getElementById('chat-input');
-    const texto = input.value.trim();
+    const textoCru = input.value.trim();
     
-    if (!texto || !currentChatUserId || !auth.currentUser) return;
+    if (!textoCru || !currentChatUserId || !auth.currentUser) return;
     
     input.value = ''; 
-    const salaId = gerarIdSala(auth.currentUser.uid, currentChatUserId);
+    const salaId = window.gerarIdSala(auth.currentUser.uid, currentChatUserId);
     
-    // Nomes para salvar na lista (evita fazer novas buscas depois)
     const meuNome = currentUserData?.nome || currentUserData?.apelido || "Ninja";
     const outroNome = document.getElementById('chat-user-name').innerText;
 
+    // --- LÓGICA DE COMANDOS DE RPG ---
+    let tipoMsg = 'rp'; // Roleplay (Padrão)
+    let textoFinal = textoCru;
+    
+    const listaAdmins = ["admin@rpgnaruto.com", "conselheiro@rpgnaruto.com"];
+    const isAdmin = listaAdmins.includes(auth.currentUser.email);
+
+    // 1. Fala do Narrador (Somente Admin)
+    if (textoCru.startsWith('/narrador ') && isAdmin) {
+        tipoMsg = 'narrador';
+        textoFinal = textoCru.replace('/narrador ', '').trim();
+    } 
+    // 2. Off-Character (OOC) - Fora do personagem
+    else if (textoCru.startsWith('//')) {
+        tipoMsg = 'ooc';
+        textoFinal = textoCru.substring(2).trim();
+    }
+    // 3. Rolagem de Dados (ex: /d20, /d100)
+    else {
+        const matchDado = textoCru.match(/^\/d(\d+)/i);
+        if (matchDado) {
+            tipoMsg = 'dice';
+            const lados = parseInt(matchDado[1]);
+            const resultado = Math.floor(Math.random() * lados) + 1;
+            textoFinal = `rolou um D${lados} e tirou: [ ${resultado} ]`;
+        }
+    }
+
     try {
-        // 1. Grava a mensagem na subcoleção (como já era)
-        await addDoc(collection(db, "chats", salaId, "mensagens"), {
+        // Grava a mensagem com os novos campos (tipo e remetenteNome)
+        await window.addDoc(window.collection(window.db, "chats", salaId, "mensagens"), {
             remetenteId: auth.currentUser.uid,
-            texto: texto,
-            timestamp: serverTimestamp()
+            remetenteNome: meuNome,
+            texto: textoFinal,
+            tipo: tipoMsg,
+            timestamp: window.serverTimestamp()
         });
 
-        // 2. Lê a sala principal para ver quantas mensagens o outro já não leu
-        const salaRef = doc(db, "chats", salaId);
-        const salaSnap = await getDoc(salaRef);
+        // Atualiza a sala (Para a lista de chats)
+        const salaRef = window.doc(window.db, "chats", salaId);
+        const salaSnap = await window.getDoc(salaRef);
         let naoLidasDele = 1;
         
         if (salaSnap.exists()) {
             naoLidasDele = (salaSnap.data()[`naoLidas_${currentChatUserId}`] || 0) + 1;
         }
 
-        // 3. Grava o resumo na raiz do Chat (Faz a Lista funcionar!)
-        await setDoc(salaRef, {
+        // Se for dado, muda a prévia da última mensagem para ficar mais amigável
+        let prevMsg = tipoMsg === 'dice' ? `🎲 ${meuNome} rolou os dados!` : textoFinal;
+
+        await window.setDoc(salaRef, {
             participantes: [auth.currentUser.uid, currentChatUserId],
             nomes: {
                 [auth.currentUser.uid]: meuNome,
                 [currentChatUserId]: outroNome
             },
-            ultimaMensagem: texto,
+            ultimaMensagem: prevMsg,
             [`naoLidas_${currentChatUserId}`]: naoLidasDele
         }, { merge: true });
 
     } catch (e) {
         console.error("Erro ao enviar mensagem:", e);
-        alert("Falha ao enviar o pergaminho.");
+        alert("Falha ao enviar a ação.");
     }
 };
 
