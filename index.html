@@ -31,6 +31,7 @@
             <nav>
                 <button id="side-btn-dashboard" onclick="showTab('dashboard')" class="active"><i class="fa-solid fa-chart-line"></i> Dashboard</button>
                 <button id="side-btn-batalha" onclick="showTab('batalha')"><i class="fa-solid fa-khanda"></i> Batalha</button>
+                <button id="side-btn-mapa" onclick="window.showTab('mapa')"><i class="fa-solid fa-map-location-dot"></i> Mapa</button>
                 <button id="side-btn-inventario" onclick="showTab('inventario')"><i class="fa-solid fa-box-open"></i> Inventário</button>
                 <button id="side-btn-mentorias" onclick="showTab('mentorias')"><i class="fa-solid fa-chalkboard-teacher"></i> Mentorias</button>
                 <button id="side-btn-missoes" onclick="showTab('missoes')"><i class="fa-solid fa-scroll"></i> Missões</button>
@@ -133,6 +134,18 @@
                     <h2 style="margin-bottom:15px;">Painel de Batalha</h2>
                     <div class="battle-grid" id="battle-grid">
                         <p style="color:#777;">Carregando lutadores...</p>
+                    </div>
+                </div>
+
+                <div id="mapa" class="tab-content">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <h2 style="color: var(--primary-color);">Mapa Mundi</h2>
+                        <p style="color: #777;">Escolha seu destino. Encontre outros ninjas e interaja no cenário.</p>
+                    </div>
+    
+                <!-- Onde os cenários vão aparecer -->
+                    <div class="cenarios-grid" id="cenarios-grid">
+                        <p style="text-align:center; color:#777; width: 100%;">Mapeando rotas...</p>
                     </div>
                 </div>
 
