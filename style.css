@@ -775,6 +775,44 @@ header { height: 60px; background: var(--sidebar-bg); border-bottom: 1px solid v
     padding-left: 25px; 
 }
 
+/* --- ESTILOS DE MENSAGENS RPG --- */
+.msg-narrador {
+    background: #c0392b !important;
+    color: white !important;
+    align-self: center;
+    width: 95%;
+    font-style: italic;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(192, 57, 43, 0.3);
+    border: 1px solid #e74c3c;
+}
+
+.msg-dice {
+    background: #f1c40f !important;
+    color: #333 !important;
+    align-self: center;
+    text-align: center;
+    font-weight: bold;
+    width: 80%;
+    border-radius: 8px;
+    border: 2px dashed #e67e22;
+}
+
+.msg-ooc {
+    opacity: 0.8;
+    font-family: monospace;
+    background: #f8fafc;
+    border: 1px solid #ccc;
+}
+
+.chat-msg-author {
+    font-size: 0.7rem;
+    font-weight: bold;
+    margin-bottom: 3px;
+    opacity: 0.7;
+    display: block;
+}
+
 @media (max-width: 768px) {
     #mobile-menu-btn { display: block; }
     .sidebar { position: fixed; top: 0; left: -260px; height: 100%; box-shadow: 2px 0 10px rgba(0,0,0,0.3); transition: left 0.3s ease; }
