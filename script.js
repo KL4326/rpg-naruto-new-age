@@ -129,7 +129,8 @@ window.viajarPara = async (id, nome) => {
     
     if (confirm(`Deseja iniciar a viagem para ${nome}?`)) {
         try {
-            await window.updateDoc(window.doc(window.db, "users", auth.currentUser.uid), {
+            // CORREÇÃO: Removido os prefixos "window." do Firebase
+            await updateDoc(doc(db, "users", auth.currentUser.uid), {
                 cenarioAtual: id
             });
             
@@ -147,6 +148,7 @@ window.viajarPara = async (id, nome) => {
         }
     }
 };
+
 
 // --- UTILITÁRIOS ---
 function calcularTempo(timestamp) { try { if (!timestamp) return "Desconhecido"; let date = (typeof timestamp.toDate === 'function') ? timestamp.toDate() : new Date(timestamp); if (isNaN(date.getTime())) return "-"; return date.toLocaleDateString('pt-BR'); } catch (e) { return "-"; } }
@@ -2204,6 +2206,19 @@ window.abrirDiarioNinja = () => {
     
     window.zerarNaoLidas(window.currentSalaId);
     window.carregarMensagensDaSala(window.currentSalaId);
+};
+
+// Função para fechar qualquer tipo de chat
+window.fecharChat = () => {
+    document.getElementById('chat-widget').style.display = 'none';
+    currentChatUserId = null;
+    window.currentSalaId = null;
+    
+    // Cancela a escuta do Firebase para economizar leituras
+    if (typeof unsubscribeChat !== 'undefined' && unsubscribeChat) {
+        unsubscribeChat();
+        unsubscribeChat = null;
+    }
 };
 
 // 4. Abrir Chat de Cenário (Grupo)
