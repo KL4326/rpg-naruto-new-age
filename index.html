@@ -579,14 +579,24 @@
                 <span id="chat-status-dot" style="width: 10px; height: 10px; background: #2ecc71; border-radius: 50%; display: inline-block;"></span>
                 <strong id="chat-user-name">Ninja</strong>
             </div>
-            <span onclick="fecharChat()" style="cursor: pointer; font-weight: bold; font-size: 18px;">&times;</span>
+            <div>
+                <!-- Novo botão de ver ninjas no local -->
+                <i id="btn-ninjas-local" class="fa-solid fa-users" style="cursor:pointer; margin-right: 15px; display: none;" onclick="window.toggleNinjasLocal()" title="Ver ninjas no local"></i>
+                <span onclick="window.fecharChat()" style="cursor: pointer; font-weight: bold; font-size: 18px;">&times;</span>
+            </div>
+        </div>
+        
+        <!-- Novo Painel de Ninjas no Local -->
+        <div id="ninjas-local-panel" style="display:none; background:#f8fafc; padding:10px; border-bottom:1px solid #e2e8f0; font-size:0.85rem; max-height:120px; overflow-y:auto; box-shadow: inset 0 -5px 5px rgba(0,0,0,0.02);">
+            <strong style="color:var(--primary-color);">Ninjas no Local:</strong>
+            <div id="ninjas-local-list" style="margin-top: 5px;">Carregando...</div>
         </div>
         
         <div id="chat-messages"></div>
         
         <div class="chat-footer">
-            <input type="text" id="chat-input" placeholder="Envie um pergaminho..." onkeypress="if(event.key === 'Enter') enviarMensagemChat()">
-            <button onclick="enviarMensagemChat()">
+            <input type="text" id="chat-input" placeholder="Envie um pergaminho..." onkeypress="if(event.key === 'Enter') window.enviarMensagemChat()">
+            <button onclick="window.enviarMensagemChat()">
                 <i class="fa-solid fa-paper-plane"></i>
             </button>
         </div>
