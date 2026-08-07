@@ -1285,17 +1285,9 @@ window.carregarArena = async (inimigoId) => {
             
             // ---> LIGA OS CONTROLES AQUI! <---
             window.carregarControlesBatalha(); 
-        }
-    } catch (e) {
-        console.error("Erro ao puxar dados do inimigo:", e);
-    }
-
-    // ---> LIGA OS CONTROLES AQUI! <---
-            window.carregarControlesBatalha(); 
             
             // ---> LIGA O RADAR DE SINCRONIZAÇÃO AQUI! <---
             window.iniciarRadarDaArena();
-            
         }
     } catch (e) {
         console.error("Erro ao puxar dados do inimigo:", e);
