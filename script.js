@@ -1482,54 +1482,63 @@ window.prepararAtaque = async (jutsu) => {
         return alert("Erro ao canalizar chakra. Tente novamente!");
     }
 
-    // 3. ROLAGEM DE DADOS
+    // 3. ROLAGEM DE DADOS E LÓGICA DE FUNÇÃO
     let resultado = window.rolarDados(jutsu.dano);
     let danoFinal = typeof resultado === 'number' ? resultado : resultado.totalFinal;
     
+    // Verifica se a técnica realmente tem intenção de atacar o inimigo
+    const func = String(jutsu.funcao || '').toLowerCase();
+    const isAtaque = func.includes('ataque');
+
     let textoDados = "";
-    if (typeof resultado === 'object') {
+    if (typeof resultado === 'object' && isAtaque) {
         let sinalBonus = resultado.bonus >= 0 ? '+' : '';
         textoDados = `<span style="color:#7f8c8d; font-size:0.8rem;">(Dados: [${resultado.rolagens.join(', ')}] ${sinalBonus}${resultado.bonus})</span>`;
     }
 
     let msgDano = "";
-    if (danoFinal >= 999999) {
+    if (!isAtaque) {
+        msgDano = "✨ A técnica foi ativada com sucesso!";
+        danoFinal = 0; // Garante que buffs não causem dano acidental
+    } else if (danoFinal >= 999999) {
         msgDano = "💥 **DANO LETAL!** A técnica foi canalizada com perfeição!";
-    } else if (!jutsu.dano || danoFinal === 0) {
-        msgDano = "✨ Técnica conjurada com sucesso!";
     } else {
         msgDano = `💥 O ataque gerou um potencial de **${danoFinal}** de dano! ${textoDados}`;
     }
 
     // 4. REGISTRA A AÇÃO NO LOG DA ARENA LOCAL
     const logArena = document.getElementById('arena-log');
+    let corLogLocal = isAtaque ? '#3498db' : '#2ecc71'; // Azul para ataque, Verde para suporte
+
     logArena.innerHTML += `
-        <div style="background: rgba(52, 152, 219, 0.1); padding: 8px; border-left: 3px solid #3498db; margin-top: 10px; border-radius: 0 4px 4px 0;">
-            <div style="color: #3498db; font-weight: bold;">> Você usou ${jutsu.nome}! <span style="font-size:0.75rem; color:#e74c3c;">(-${custoCp} CP | -${custoSp} SP)</span></div>
-            <div style="color: #e74c3c; margin-top: 3px;">> ${msgDano}</div>
+        <div style="background: rgba(52, 152, 219, 0.1); padding: 8px; border-left: 3px solid ${corLogLocal}; margin-top: 10px; border-radius: 0 4px 4px 0;">
+            <div style="color: ${corLogLocal}; font-weight: bold;">> Você usou ${jutsu.nome}! <span style="font-size:0.75rem; color:#e74c3c;">(-${custoCp} CP | -${custoSp} SP)</span></div>
+            <div style="color: ${isAtaque ? '#e74c3c' : '#27ae60'}; margin-top: 3px;">> ${msgDano}</div>
         </div>
     `;
     logArena.scrollTop = logArena.scrollHeight;
 
-    // 5. TRANSMITE O ATAQUE PARA A SALA DE BATALHA (Para o inimigo ver)
+    // 5. TRANSMITE PARA A SALA DE BATALHA (Avisando se é ataque ou não)
     if (window.currentBattleId) {
         try {
             await updateDoc(doc(db, "desafios_batalha", window.currentBattleId), {
                 ultimaAcao: {
                     atacanteId: auth.currentUser.uid,
                     jutsuNome: jutsu.nome,
-                    jutsuCategoria: jutsu.categoria || 'taijutsu', // Ninjutsu, Taijutsu, etc.
-                    jutsuFuncao: jutsu.funcao || 'ataque',         // Ataque, Defesa, etc.
+                    jutsuCategoria: jutsu.categoria || 'ninjutsu', 
+                    jutsuFuncao: func || 'ataque',         
                     msgDano: msgDano,
                     danoValor: danoFinal || 0, 
                     custoCp: custoCp,
                     custoSp: custoSp,
+                    isAtaque: isAtaque, // <--- O RADAR VAI LER ESTA FLAG AGORA!
                     timestamp: new Date().getTime() 
                 }
             });
-        } catch(e) { console.error("Erro ao transmitir ataque:", e); }
+        } catch(e) { console.error("Erro ao transmitir ação:", e); }
     }
 };
+
 
 // Função auxiliar para limpar a tela da Arena perfeitamente
 window.sairDaArenaVisualmente = () => {
