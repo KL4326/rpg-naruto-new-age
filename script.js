@@ -1531,14 +1531,18 @@ window.prepararAtaque = async (jutsu) => {
                     danoValor: danoFinal || 0, 
                     custoCp: custoCp,
                     custoSp: custoSp,
-                    isAtaque: isAtaque, // <--- O RADAR VAI LER ESTA FLAG AGORA!
+                    isAtaque: isAtaque,
+                    // --- NOVAS REGRAS DE INEVITABILIDADE ---
+                    impossivelEsquivar: jutsu.impossivel_esquivar || false,
+                    impossivelDefender: jutsu.impossivel_defender_fisico || false,
+                    rankEsquivaMinimo: Number(jutsu.rank_esquiva_minimo) || 1,
+                    // ---------------------------------------
                     timestamp: new Date().getTime() 
                 }
             });
         } catch(e) { console.error("Erro ao transmitir ação:", e); }
     }
 };
-
 
 // Função auxiliar para limpar a tela da Arena perfeitamente
 window.sairDaArenaVisualmente = () => {
@@ -1666,18 +1670,48 @@ window.iniciarRadarDaArena = () => {
                     `;
                     logArena.scrollTop = logArena.scrollHeight;
 
-                    // C) PREPARA A TELA DE DEFESA
-                    // Memoriza a força e a natureza do ataque inimigo
-                    window.danoAmeacaAtual = acao.danoValor || 0; 
-                    window.categoriaAmeacaAtual = acao.jutsuCategoria || 'taijutsu'; // <--- ATUALIZADO AQUI
-                    
-                    document.getElementById('arena-controls').style.display = 'none';
-                    document.getElementById('arena-reaction-box').style.display = 'block';
+                    // C) PREPARA A TELA DE DEFESA (SOMENTE SE FOR UM ATAQUE)
+                    if (acao.isAtaque) {
+                        window.danoAmeacaAtual = acao.danoValor || 0; 
+                        window.categoriaAmeacaAtual = acao.jutsuCategoria || 'taijutsu'; 
+                        
+                        // --- LÓGICA DE APAGAR OS BOTÕES (VELOCIDADE E INEVITABILIDADE) ---
+                        const meuSpeed = Number(currentUserData.speed_rank) || 1;
+                        
+                        const btnEsquiva = document.getElementById('btn-reacao-esquivar');
+                        if (btnEsquiva) {
+                            if (acao.impossivelEsquivar || meuSpeed < acao.rankEsquivaMinimo) {
+                                btnEsquiva.disabled = true;
+                                btnEsquiva.style.opacity = '0.4';
+                                btnEsquiva.style.cursor = 'not-allowed';
+                                btnEsquiva.title = acao.impossivelEsquivar ? "Impossível esquivar desta técnica!" : `Requer Velocidade Nível ${acao.rankEsquivaMinimo}`;
+                            } else {
+                                btnEsquiva.disabled = false;
+                                btnEsquiva.style.opacity = '1';
+                                btnEsquiva.style.cursor = 'pointer';
+                                btnEsquiva.title = "";
+                            }
+                        }
 
-                }
-            }
-            
-        } else {
+                        const btnDefesa = document.getElementById('btn-reacao-defender');
+                        if (btnDefesa) {
+                            if (acao.impossivelDefender) {
+                                btnDefesa.disabled = true;
+                                btnDefesa.style.opacity = '0.4';
+                                btnDefesa.style.cursor = 'not-allowed';
+                                btnDefesa.title = "Impossível defender fisicamente desta técnica!";
+                            } else {
+                                btnDefesa.disabled = false;
+                                btnDefesa.style.opacity = '1';
+                                btnDefesa.style.cursor = 'pointer';
+                                btnDefesa.title = "";
+                            }
+                        }
+                        // ---------------------------------------------------------------
+                        
+                        document.getElementById('arena-controls').style.display = 'none';
+                        document.getElementById('arena-reaction-box').style.display = 'block'; 
+                    } else {
             // Se a sala sumir por algum motivo
             window.sairDaArenaVisualmente();
         }
