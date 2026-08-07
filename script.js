@@ -1529,6 +1529,7 @@ window.prepararAtaque = async (jutsu) => {
             });
         } catch(e) { console.error("Erro ao transmitir ataque:", e); }
     }
+};
 
 // Função auxiliar para limpar a tela da Arena perfeitamente
 window.sairDaArenaVisualmente = () => {
