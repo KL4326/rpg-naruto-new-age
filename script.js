@@ -1125,8 +1125,8 @@ window.enviarDesafio = async (alvoId, alvoNome) => {
     try {
         const meuNome = currentUserData?.nome || currentUserData?.apelido || "Ninja";
         
-        // Cria um documento de convite no Firebase
-        await addDoc(collection(db, "desafios_batalha"), {
+        // Cria um documento e GUARDA a referência dele
+        const conviteRef = await addDoc(collection(db, "desafios_batalha"), {
             desafianteId: auth.currentUser.uid,
             desafianteNome: meuNome,
             desafiadoId: alvoId,
@@ -1136,46 +1136,41 @@ window.enviarDesafio = async (alvoId, alvoNome) => {
         });
         
         alert(`Pergaminho de desafio enviado para ${alvoNome}! Aguardando resposta...`);
-        window.escutarRespostaDesafio(auth.currentUser.uid); // Fica aguardando a resposta
+        
+        // --- A MÁGICA AQUI: Passamos o ID exato do novo convite para o Radar ---
+        window.escutarRespostaDesafio(conviteRef.id); 
     } catch (e) {
         console.error("Erro ao enviar desafio", e);
         alert("O chakra falhou ao enviar o convite.");
     }
 };
 
-// 2. Escuta os convites que VOCÊ envia (Para saber se o alvo aceitou ou fugiu)
+// 2. Escuta APENAS o convite específico que você acabou de enviar
 let unsubscribeRespostaDesafio = null;
-window.escutarRespostaDesafio = (meuId) => {
+window.escutarRespostaDesafio = (conviteId) => {
     if (unsubscribeRespostaDesafio) unsubscribeRespostaDesafio();
     
-    const q = query(
-        collection(db, "desafios_batalha"), 
-        where("desafianteId", "==", meuId),
-        where("status", "in", ["aceito", "recusado"])
-    );
-    
-    unsubscribeRespostaDesafio = onSnapshot(q, (snapshot) => {
-        snapshot.docChanges().forEach((change) => {
-            if (change.type === "added" || change.type === "modified") {
-                const resp = change.doc.data();
+    // Agora ele olha para um Documento Único, e não mais para a coleção inteira
+    unsubscribeRespostaDesafio = onSnapshot(doc(db, "desafios_batalha", conviteId), (docSnap) => {
+        if (docSnap.exists()) {
+            const resp = docSnap.data();
+            
+            if (resp.status === 'aceito') {
+                window.currentBattleId = docSnap.id;
+                alert(`⚔️ ${resp.desafiadoNome} aceitou o desafio! A batalha vai começar!`);
+                window.showTab('batalha'); 
+                window.carregarArena(resp.desafiadoId); 
                 
-                if (resp.status === 'aceito') {
-                    window.currentBattleId = change.doc.id;
-                    // Note as crases (`) envolvendo o texto abaixo!
-                    alert(`⚔️ ${resp.desafiadoNome} aceitou o desafio! A batalha vai começar!`);
-                    window.showTab('batalha'); 
-                    window.carregarArena(resp.desafiadoId); 
-                    unsubscribeRespostaDesafio();
-                } else if (resp.status === 'recusado') {
-                    // Note as crases (`) envolvendo o texto abaixo!
-                    alert(`❌ ${resp.desafiadoNome} recusou o seu desafio ou fugiu da luta...`);
-                    unsubscribeRespostaDesafio();
-                }
+                unsubscribeRespostaDesafio(); // Para de escutar
+                deleteDoc(doc(db, "desafios_batalha", docSnap.id)).catch(e => console.log(e)); // Limpa o banco
                 
-                // Limpa o lixo do banco de dados após resolver
-                deleteDoc(doc(db, "desafios_batalha", change.doc.id)).catch(e => console.log(e));
+            } else if (resp.status === 'recusado') {
+                alert(`❌ ${resp.desafiadoNome} recusou o seu desafio ou fugiu da luta...`);
+                
+                unsubscribeRespostaDesafio(); // Para de escutar
+                deleteDoc(doc(db, "desafios_batalha", docSnap.id)).catch(e => console.log(e)); // Limpa o banco
             }
-        });
+        }
     });
 };
 
