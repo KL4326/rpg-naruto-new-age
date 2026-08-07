@@ -214,6 +214,7 @@ onAuthStateChanged(auth, async (user) => {
         
         // ---> LIGA O RADAR DE DESAFIOS AQUI! <---
         window.escutarDesafiosRecebidos(); 
+        window.verificarBatalhaAtiva() // <--- LINHA NOVA: Tenta reconectar à batalha
 
         setTimeout(() => { try { window.renderFeed('all'); } catch(e) {} }, 800); 
         
@@ -1156,12 +1157,15 @@ window.escutarRespostaDesafio = (conviteId) => {
             
             if (resp.status === 'aceito') {
                 window.currentBattleId = docSnap.id;
+                // SALVA NA MEMÓRIA:
+                localStorage.setItem('rpg_battle_id', docSnap.id);
+                localStorage.setItem('rpg_inimigo_id', resp.desafiadoId);
+                
                 alert(`⚔️ ${resp.desafiadoNome} aceitou o desafio! A batalha vai começar!`);
                 window.showTab('batalha'); 
                 window.carregarArena(resp.desafiadoId); 
                 
-                unsubscribeRespostaDesafio(); // Para de escutar o convite
-                // NOTA: Removemos o "deleteDoc" daqui para que a sala continue existindo!
+                unsubscribeRespostaDesafio(); 
                 
             } else if (resp.status === 'recusado') {
                 alert(`❌ ${resp.desafiadoNome} recusou o seu desafio ou fugiu da luta...`);
@@ -1213,8 +1217,14 @@ window.escutarDesafiosRecebidos = () => {
                 document.getElementById('btn-aceitar-desafio').onclick = () => {
                     document.getElementById('modal-desafio').style.display = 'none';
                     window.responderDesafio(conviteId, 'aceito');
-                    window.showTab('batalha'); // <--- LINHA NOVA: Pula pra aba
-                    window.carregarArena(convite.desafianteId); // <--- LINHA NOVA: Inicia a Arena
+                    
+                    window.currentBattleId = conviteId;
+                    // SALVA NA MEMÓRIA:
+                    localStorage.setItem('rpg_battle_id', conviteId);
+                    localStorage.setItem('rpg_inimigo_id', convite.desafianteId);
+                    
+                    window.showTab('batalha'); 
+                    window.carregarArena(convite.desafianteId); 
                 };
                 
                 // Se ele clicar em Recusar
@@ -1527,12 +1537,44 @@ window.sairDaArenaVisualmente = () => {
 // Função auxiliar para limpar a tela da Arena perfeitamente
 window.sairDaArenaVisualmente = () => {
     if (window.escutaArenaAtiva) window.escutaArenaAtiva(); // Desliga o radar
+    
     window.currentBattleId = null;
+    localStorage.removeItem('rpg_battle_id');
+    localStorage.removeItem('rpg_inimigo_id');
+    
     window.showTab('dashboard'); 
     document.getElementById('arena-waiting').style.display = 'block';
     document.getElementById('arena-container').style.display = 'none';
     document.getElementById('arena-log').innerHTML = '<div style="color: #94a3b8; text-align: center;">--- O Ringue está sendo preparado ---</div>';
 };
+
+
+// --- SISTEMA DE RECUPERAÇÃO DE BATALHA (ANTI-F5) ---
+window.verificarBatalhaAtiva = async () => {
+    const battleId = localStorage.getItem('rpg_battle_id');
+    const inimigoId = localStorage.getItem('rpg_inimigo_id');
+    
+    if (battleId && inimigoId) {
+        try {
+            // Verifica no banco se a batalha ainda existe e não foi cancelada
+            const docSnap = await getDoc(doc(db, "desafios_batalha", battleId));
+            
+            if (docSnap.exists() && docSnap.data().status === 'aceito') {
+                console.log("Recuperando batalha em andamento...");
+                window.currentBattleId = battleId;
+                window.showTab('batalha');
+                window.carregarArena(inimigoId); // Recarrega tudo: visual, jutsus e radar!
+            } else {
+                // Se a batalha já acabou enquanto você estava offline
+                localStorage.removeItem('rpg_battle_id');
+                localStorage.removeItem('rpg_inimigo_id');
+            }
+        } catch(e) {
+            console.error("Erro ao recuperar batalha:", e);
+        }
+    }
+};
+
 
 // Abandona a luta e avisa o banco de dados
 window.encerrarBatalha = async () => {
