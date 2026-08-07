@@ -1162,8 +1162,10 @@ window.escutarRespostaDesafio = (meuId) => {
                 if (resp.status === 'aceito') {
                     window.currentBattleId = change.doc.id;
                     alert(`⚔️ ${resp.desafiadoNome} aceitou o desafio! A batalha vai começar!`);
-                    window.showTab('batalha'); // Teleporta para a Arena
+                    window.showTab('batalha'); 
+                    window.carregarArena(resp.desafiadoId); // <--- LINHA NOVA: Inicia a Arena
                     unsubscribeRespostaDesafio();
+                }
                 } else if (resp.status === 'recusado') {
                     alert(`❌ ${resp.desafiadoNome} recusou o seu desafio ou fugiu da luta...`);
                     unsubscribeRespostaDesafio();
@@ -1217,6 +1219,8 @@ window.escutarDesafiosRecebidos = () => {
                 document.getElementById('btn-aceitar-desafio').onclick = () => {
                     document.getElementById('modal-desafio').style.display = 'none';
                     window.responderDesafio(conviteId, 'aceito');
+                    window.showTab('batalha'); // <--- LINHA NOVA: Pula pra aba
+                    window.carregarArena(convite.desafianteId); // <--- LINHA NOVA: Inicia a Arena
                 };
                 
                 // Se ele clicar em Recusar
@@ -1227,6 +1231,67 @@ window.escutarDesafiosRecebidos = () => {
             }
         });
     });
+};
+
+
+// --- FASE 2: VISUAL DA ARENA (HUD) ---
+
+// Função auxiliar para calcular e pintar a porcentagem das barras
+window.atualizarBarraArena = (alvo, tipo, atual, max) => {
+    // Garante que não haverá divisão por zero
+    const maxVal = max > 0 ? max : 1; 
+    const porcentagem = Math.max(0, Math.min(100, (atual / maxVal) * 100));
+    
+    document.getElementById(`arena-${alvo}-${tipo}-txt`).innerText = `${atual}/${max}`;
+    document.getElementById(`arena-${alvo}-${tipo}-bar`).style.width = `${porcentagem}%`;
+};
+
+// Carrega os combatentes para dentro do ringue
+window.carregarArena = async (inimigoId) => {
+    // Troca a tela de espera pela Arena
+    document.getElementById('arena-waiting').style.display = 'none';
+    document.getElementById('arena-container').style.display = 'flex';
+    
+    // 1. CARREGA VOCÊ (O Player Local)
+    document.getElementById('arena-player-nome').innerText = currentUserData.nome || currentUserData.apelido || "Você";
+    document.getElementById('arena-player-img').src = currentUserData.avatar || IMG_PADRAO;
+    
+    // Puxa os dados que você me mostrou que já existem no seu banco
+    const meuHp = currentUserData.vida || 100;
+    const meuCp = currentUserData.chakra || 50;
+    const meuSp = currentUserData.stamina || 50;
+    
+    window.atualizarBarraArena('player', 'hp', meuHp, meuHp);
+    window.atualizarBarraArena('player', 'cp', meuCp, meuCp);
+    window.atualizarBarraArena('player', 'sp', meuSp, meuSp);
+    
+    // 2. BUSCA O INIMIGO NO FIREBASE
+    try {
+        const inimigoSnap = await getDoc(doc(db, "users", inimigoId));
+        if (inimigoSnap.exists()) {
+            const iniData = inimigoSnap.data();
+            
+            document.getElementById('arena-enemy-nome').innerText = iniData.nome || iniData.apelido || "Inimigo";
+            document.getElementById('arena-enemy-img').src = iniData.avatar || IMG_PADRAO;
+            
+            const iniHp = iniData.vida || 100;
+            const iniCp = iniData.chakra || 50;
+            const iniSp = iniData.stamina || 50;
+            
+            window.atualizarBarraArena('enemy', 'hp', iniHp, iniHp);
+            window.atualizarBarraArena('enemy', 'cp', iniCp, iniCp);
+            window.atualizarBarraArena('enemy', 'sp', iniSp, iniSp);
+            
+            // Registra o início da luta no Log
+            document.getElementById('arena-log').innerHTML = `
+                <div style="color: #94a3b8; text-align: center; margin-bottom: 15px;">--- Batalha Iniciada ---</div>
+                <div style="color: #e67e22; margin-bottom: 5px; font-size: 1.1rem; text-align: center;">⚔️ <strong>${currentUserData.nome}</strong> VS <strong>${iniData.nome}</strong> ⚔️</div>
+                <div style="color: #2ecc71;">> Aguardando a primeira ação...</div>
+            `;
+        }
+    } catch (e) {
+        console.error("Erro ao puxar dados do inimigo:", e);
+    }
 };
 
 
