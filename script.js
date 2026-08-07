@@ -3263,13 +3263,13 @@ window.pagarSalariosGeral = async () => {
 // --- MOTOR DE REAÇÃO (DEFESA / ESQUIVA) ---
 window.reagirAtaque = async (acaoDefensiva, jutsuEscolhido = null) => {
     
-    // SE O JOGADOR CLICOU EM "USAR JUTSU" (Abre o menu para escolher)
+    // 1. SE O JOGADOR CLICOU EM "USAR JUTSU" (Abre o menu para escolher)
     if (acaoDefensiva === 'jutsu' && !jutsuEscolhido) {
         const modal = document.getElementById('modal-jutsus-defensivos');
         const lista = document.getElementById('lista-jutsus-defesa');
         lista.innerHTML = '';
 
-        // O SEGREDO AQUI: Filtra os jutsus lendo se contém "defesa" ou "esquiva" na função!
+        // Filtra os jutsus lendo se contém "defesa" ou "esquiva" na função
         const jutsusDefensivos = window.meusJutsusCarregados.filter(j => {
             const func = String(j.funcao || '').toLowerCase();
             return func.includes('defesa') || func.includes('esquiva');
@@ -3285,19 +3285,18 @@ window.reagirAtaque = async (acaoDefensiva, jutsuEscolhido = null) => {
             btn.style.background = '#8e44ad';
             btn.innerHTML = `<strong>${jutsu.nome}</strong><br><span style="font-size:0.75rem;">(-${jutsu.chakra || 0} CP | -${jutsu.stamina || 0} SP)</span>`;
             
-            // Quando clica no jutsu, chama a função de reagir novamente, mas passando o jutsu!
             btn.onclick = () => {
                 modal.style.display = 'none';
-                window.reagirAtaque('jutsu', jutsu); // <-- Manda bala na defesa mágica
+                window.reagirAtaque('jutsu', jutsu); // Inicia a defesa mágica
             };
             lista.appendChild(btn);
         });
 
         modal.style.display = 'flex';
-        return; // Interrompe aqui até o cara escolher o jutsu
+        return; // Interrompe a função até o jogador escolher o jutsu
     }
 
-    // --- CONTINUAÇÃO DA DEFESA NORMAL ---
+    // --- CONTINUAÇÃO DA DEFESA APÓS ESCOLHA ---
     document.getElementById('arena-reaction-box').style.display = 'none';
     document.getElementById('arena-controls').style.display = 'grid'; 
 
@@ -3308,7 +3307,7 @@ window.reagirAtaque = async (acaoDefensiva, jutsuEscolhido = null) => {
     const forca = Number(currentUserData.forca) || 0;
     const defesaBase = Number(currentUserData.defesa) || 0;
 
-    // SE ELE ESCOLHEU UM JUTSU PARA DEFENDER
+    // 2. SE ESCOLHEU UM JUTSU PARA DEFENDER
     if (acaoDefensiva === 'jutsu' && jutsuEscolhido) {
         const custoCp = jutsuEscolhido.chakra ? Math.abs(jutsuEscolhido.chakra) : 0;
         const custoSp = jutsuEscolhido.stamina ? Math.abs(jutsuEscolhido.stamina) : 0;
@@ -3319,12 +3318,10 @@ window.reagirAtaque = async (acaoDefensiva, jutsuEscolhido = null) => {
             return alert(`Recursos insuficientes para usar ${jutsuEscolhido.nome}! Escolha outra defesa.`);
         }
 
-        // Desconta os recursos da técnica de defesa
+        // Gasta os recursos na ficha local
         currentUserData.chakra -= custoCp;
         currentUserData.stamina -= custoSp;
-        // (Nota: você precisará adicionar o updateDoc de Chakra/Stamina no Firebase aqui, igual fizemos no prepararAtaque)
 
-        // Rola os dados do jutsu defensivo (ele precisa ter um campo de "dano" ou "poder" no banco de dados)
         let resultadoDefesa = window.rolarDados(jutsuEscolhido.dano || "d20"); 
         let totalBloqueio = (typeof resultadoDefesa === 'number' ? resultadoDefesa : resultadoDefesa.totalFinal) + defesaBase;
 
@@ -3336,13 +3333,12 @@ window.reagirAtaque = async (acaoDefensiva, jutsuEscolhido = null) => {
             msgDefesa = `✨ Seu [${jutsuEscolhido.nome}] conteve grande parte do golpe, mas alguma força vazou! (Poder defensivo: ${totalBloqueio})`;
         }
     }
-
-    // 3. A LÓGICA DOS DADOS
-    if (acaoDefensiva === 'receber') {
+    // 3. SE ESCOLHEU RECEBER
+    else if (acaoDefensiva === 'receber') {
         msgDefesa = "Você não esboçou reação e aceitou o impacto em cheio!";
     } 
+    // 4. SE ESCOLHEU ESQUIVAR
     else if (acaoDefensiva === 'esquivar') {
-        // Rola 1d20 + Agilidade
         let rolagem = Math.floor(Math.random() * 20) + 1;
         let totalEsquiva = rolagem + agilidade;
         
@@ -3354,22 +3350,19 @@ window.reagirAtaque = async (acaoDefensiva, jutsuEscolhido = null) => {
             msgDefesa = `Você tentou escapar, mas foi pego de raspão! (Rolou ${rolagem} + ${agilidade} Agi = ${totalEsquiva}).`;
         }
     }
+    // 5. SE ESCOLHEU DEFENDER FÍSICO
     else if (acaoDefensiva === 'defender') {
-         // Rola 1d20 + (Força ou Defesa, o que for maior)
         let rolagem = Math.floor(Math.random() * 20) + 1;
-        let bonus = Math.max(forca, defesa); 
+        let bonus = Math.max(forca, defesaBase); 
         let totalDefesa = rolagem + bonus;
 
-        // A REGRA DE OURO DO RPG: Bloquear Ninjutsu puro no braço é fatal!
-        const categoriaAtaque = String(window.categoriaAmeacaAtual).toLowerCase(); // <--- NOME NOVO
+        const categoriaAtaque = String(window.categoriaAmeacaAtual).toLowerCase(); 
         
         if (categoriaAtaque.includes('ninjutsu') || categoriaAtaque.includes('genjutsu')) {
-            // Mitiga no máximo 10% do dano, pois braços não param fogo/raios!
             let reducaoMinima = Math.floor(danoRecebido * 0.1);
             danoRecebido -= reducaoMinima;
             msgDefesa = `🔥 Erro fatal! Você tentou bloquear "${categoriaAtaque}" com os braços! Sua guarda física foi inútil contra a natureza do chakra!`;
         } else {
-            // Taijutsu ou ataques físicos comuns
             danoRecebido -= totalDefesa;
             if (danoRecebido <= 0) {
                 danoRecebido = 0;
@@ -3380,22 +3373,34 @@ window.reagirAtaque = async (acaoDefensiva, jutsuEscolhido = null) => {
         }
     }
 
-    // 4. APLICA O DANO NO HP
+    // 6. APLICA O DANO NO HP E ATUALIZA A TELA
     let hpAtual = currentUserData.vida || 100;
     hpAtual -= danoRecebido;
-    if (hpAtual < 0) hpAtual = 0; // Não deixa ficar negativo
+    if (hpAtual < 0) hpAtual = 0; 
     
-    // Atualiza a barra vermelha na tela
     currentUserData.vida = hpAtual;
-    const txtHp = document.getElementById('arena-player-hp-txt').innerText.split('/');
-    window.atualizarBarraArena('player', 'hp', hpAtual, Number(txtHp[1]));
     
-    // Desconta no Firebase
-    await updateDoc(doc(db, "users", auth.currentUser.uid), {
-        vida: hpAtual
-    });
+    const txtHp = document.getElementById('arena-player-hp-txt').innerText.split('/');
+    const txtCp = document.getElementById('arena-player-cp-txt').innerText.split('/');
+    const maxCp = Number(txtCp[1]) || 1;
+    const txtSp = document.getElementById('arena-player-sp-txt').innerText.split('/');
+    const maxSp = Number(txtSp[1]) || 1;
 
-    // 5. REGISTRA A DEFESA NO LOG
+    // Atualiza as 3 barras de uma vez
+    window.atualizarBarraArena('player', 'hp', hpAtual, Number(txtHp[1]));
+    window.atualizarBarraArena('player', 'cp', currentUserData.chakra, maxCp);
+    window.atualizarBarraArena('player', 'sp', currentUserData.stamina, maxSp);
+    
+    // Salva tudo no Firebase (Vida, e recursos que podem ter sido gastos na defesa)
+    try {
+        await updateDoc(doc(db, "users", auth.currentUser.uid), {
+            vida: hpAtual,
+            chakra: currentUserData.chakra,
+            stamina: currentUserData.stamina
+        });
+    } catch(e) { console.error("Erro ao salvar status pós-defesa:", e); }
+
+    // 7. REGISTRA A DEFESA NO LOG
     const logArena = document.getElementById('arena-log');
     logArena.innerHTML += `
         <div style="background: rgba(241, 196, 15, 0.1); padding: 8px; border-left: 3px solid #f1c40f; margin-top: 10px; border-radius: 4px;">
@@ -3405,8 +3410,7 @@ window.reagirAtaque = async (acaoDefensiva, jutsuEscolhido = null) => {
     `;
     logArena.scrollTop = logArena.scrollHeight;
 
-    // 6. TRANSMITE PARA O INIMIGO SABER QUE VOCÊ DEFENDEU
-    // (Faremos a tela dele ler isso na próxima etapa)
+    // TODO: Transmitir a defesa para o inimigo ler!
 };
 
 
