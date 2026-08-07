@@ -1430,24 +1430,51 @@ window.rolarDados = (danoString) => {
     };
 };
 
-// O Ataque Real (Conecta o botão aos dados e aos custos)
-window.prepararAtaque = (jutsu) => {
-    // Calcula os custos (convertendo negativo para positivo)
+// O Ataque Real (Conecta o botão aos dados, gasta recursos e registra ação)
+window.prepararAtaque = async (jutsu) => {
+    // Calcula os custos (convertendo negativo para positivo, caso venha como -600)
     const custoCp = jutsu.chakra ? Math.abs(jutsu.chakra) : 0;
     const custoSp = jutsu.stamina ? Math.abs(jutsu.stamina) : 0;
 
-    // 1. VERIFICAÇÃO DE RECURSOS
+    // 1. VERIFICAÇÃO DE RECURSOS ATUAIS
     const meuCpAtual = currentUserData.chakra || 0;
     const meuSpAtual = currentUserData.stamina || 0;
 
     if (meuCpAtual < custoCp) {
-        return alert(`🌀 Chakra insuficiente! Você precisa de ${custoCp} para usar ${jutsu.nome}.`);
+        return alert(`🌀 Chakra insuficiente! Você tem ${meuCpAtual} mas precisa de ${custoCp} para usar ${jutsu.nome}.`);
     }
     if (meuSpAtual < custoSp) {
-        return alert(`🍃 Stamina insuficiente! Você precisa de ${custoSp} para usar ${jutsu.nome}.`);
+        return alert(`🍃 Stamina insuficiente! Você tem ${meuSpAtual} mas precisa de ${custoSp} para usar ${jutsu.nome}.`);
     }
 
-    // 2. ROLAGEM DE DANO
+    // 2. DESCONTA OS RECURSOS IMEDIATAMENTE (Visual e Banco de Dados)
+    try {
+        // Atualiza a ficha local
+        currentUserData.chakra -= custoCp;
+        currentUserData.stamina -= custoSp;
+
+        // Puxa os valores máximos das barras que estão desenhadas na tela para calcular a porcentagem
+        const txtCp = document.getElementById('arena-player-cp-txt').innerText.split('/');
+        const maxCp = Number(txtCp[1]) || 1; 
+        const txtSp = document.getElementById('arena-player-sp-txt').innerText.split('/');
+        const maxSp = Number(txtSp[1]) || 1;
+
+        // Atualiza as barras visuais vermelha/azul/verde da Arena
+        window.atualizarBarraArena('player', 'cp', currentUserData.chakra, maxCp);
+        window.atualizarBarraArena('player', 'sp', currentUserData.stamina, maxSp);
+
+        // Desconta direto no Firebase de forma segura
+        await updateDoc(doc(db, "users", auth.currentUser.uid), {
+            chakra: increment(-custoCp),
+            stamina: increment(-custoSp)
+        });
+        
+    } catch (err) {
+        console.error("Erro ao descontar recursos:", err);
+        return alert("Erro ao canalizar chakra. Tente novamente!");
+    }
+
+    // 3. ROLAGEM DE DADOS BÁSICA (Ainda sem modificadores, faremos no próximo passo)
     let resultado = window.rolarDados(jutsu.dano);
     let danoFinal = typeof resultado === 'number' ? resultado : resultado.totalFinal;
     
@@ -1459,27 +1486,22 @@ window.prepararAtaque = (jutsu) => {
 
     let msgDano = "";
     if (danoFinal >= 999999) {
-        msgDano = "💥 **DANO LETAL!** O alvo foi obliterado!";
+        msgDano = "💥 **DANO LETAL!** A técnica foi canalizada com perfeição!";
     } else if (!jutsu.dano || danoFinal === 0) {
-        msgDano = "✨ Técnica de Suporte/Defesa ativada com sucesso!";
+        msgDano = "✨ Técnica conjurada com sucesso!";
     } else {
-        msgDano = `💥 Causou **${danoFinal}** de dano! ${textoDados}`;
+        msgDano = `💥 O ataque gerou um potencial de **${danoFinal}** de dano! ${textoDados}`;
     }
 
-    // 3. REGISTRA A AÇÃO NO LOG DA ARENA
+    // 4. REGISTRA A AÇÃO NO LOG DA ARENA
     const logArena = document.getElementById('arena-log');
-    
     logArena.innerHTML += `
         <div style="background: rgba(52, 152, 219, 0.1); padding: 8px; border-left: 3px solid #3498db; margin-top: 10px; border-radius: 0 4px 4px 0;">
             <div style="color: #3498db; font-weight: bold;">> Você usou ${jutsu.nome}! <span style="font-size:0.75rem; color:#e74c3c;">(-${custoCp} CP | -${custoSp} SP)</span></div>
             <div style="color: #e74c3c; margin-top: 3px;">> ${msgDano}</div>
         </div>
     `;
-    
-    // Rola o chat da arena automaticamente para a última mensagem
     logArena.scrollTop = logArena.scrollHeight;
-
-    // TODO (Próxima Etapa): Descontar os recursos do banco de dados e sincronizar o ataque para o inimigo ver do outro lado da tela!
 };
 
 // Esqueleto para sair da arena
