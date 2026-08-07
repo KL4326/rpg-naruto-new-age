@@ -1161,12 +1161,13 @@ window.escutarRespostaDesafio = (meuId) => {
                 
                 if (resp.status === 'aceito') {
                     window.currentBattleId = change.doc.id;
+                    // Note as crases (`) envolvendo o texto abaixo!
                     alert(`⚔️ ${resp.desafiadoNome} aceitou o desafio! A batalha vai começar!`);
                     window.showTab('batalha'); 
-                    window.carregarArena(resp.desafiadoId); // <--- LINHA NOVA: Inicia a Arena
+                    window.carregarArena(resp.desafiadoId); 
                     unsubscribeRespostaDesafio();
-                }
                 } else if (resp.status === 'recusado') {
+                    // Note as crases (`) envolvendo o texto abaixo!
                     alert(`❌ ${resp.desafiadoNome} recusou o seu desafio ou fugiu da luta...`);
                     unsubscribeRespostaDesafio();
                 }
