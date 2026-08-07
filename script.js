@@ -171,6 +171,7 @@ function calcularTempo(timestamp) { try { if (!timestamp) return "Desconhecido";
 function formatarNum(v) { return Number(v||0).toLocaleString('pt-BR'); }
 window.toggleMobileMenu = () => { document.querySelector('.sidebar').classList.toggle('mobile-active'); document.querySelector('.sidebar-overlay').classList.toggle('active'); };
 
+
 // --- AUTHENTICATION ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
@@ -180,7 +181,7 @@ onAuthStateChanged(auth, async (user) => {
         // --- AJUSTE 1: Lista de Admins para mostrar o botão Painel Kage ---
         const listaAdmins = [
             "admin@rpgnaruto.com",
-            "conselheiro@rpgnaruto.com" // Coloque o email do parceiro aqui
+            "conselheiro@rpgnaruto.com" 
         ];
         if (listaAdmins.includes(user.email)) {
             document.getElementById('btn-admin-panel').style.display = 'flex';
@@ -189,10 +190,8 @@ onAuthStateChanged(auth, async (user) => {
         // --- AJUSTE 2: Deixa o Ninja ONLINE (bolinha verde) ao entrar ---
         if (typeof window.atualizarStatusOnline === 'function') {
             window.atualizarStatusOnline(true);
-
         }
 
-        // Restante da sua lógica de carregamento (intacta)
         await carregarConfiguracoes();
         await carregarCacheItens();
         const docRef = doc(db, "users", user.uid);
@@ -212,13 +211,16 @@ onAuthStateChanged(auth, async (user) => {
         
         carregarTudo();
         window.iniciarEscutaChats();
+        
+        // ---> LIGA O RADAR DE DESAFIOS AQUI! <---
+        window.escutarDesafiosRecebidos(); 
+
         setTimeout(() => { try { window.renderFeed('all'); } catch(e) {} }, 800); 
         
     } else {
         document.getElementById('login-screen').style.display = 'flex';
         document.getElementById('app-container').style.display = 'none';
         
-        // Retorna o botão de login para o estado normal caso o usuário deslogue
         const btnLogin = document.getElementById('btnLogin');
         if (btnLogin) btnLogin.innerText = "Entrar";
     }
@@ -1205,12 +1207,23 @@ window.escutarDesafiosRecebidos = () => {
                 const convite = change.doc.data();
                 const conviteId = change.doc.id;
                 
-                // Se o convite chegou, exibe a janela de decisão
-                if (confirm(`⚔️ AMEAÇA DETECTADA!\n\n${convite.desafianteNome} está te desafiando para um duelo.\nVocê aceita o combate?`)) {
+                // Configura o texto do modal
+                document.getElementById('texto-desafio').innerHTML = `<strong>${convite.desafianteNome}</strong> quer te enfrentar em um duelo.<br><br>Você está pronto para a batalha?`;
+                
+                // Exibe o modal na tela do jogador
+                document.getElementById('modal-desafio').style.display = 'flex';
+                
+                // Se ele clicar em Aceitar
+                document.getElementById('btn-aceitar-desafio').onclick = () => {
+                    document.getElementById('modal-desafio').style.display = 'none';
                     window.responderDesafio(conviteId, 'aceito');
-                } else {
+                };
+                
+                // Se ele clicar em Recusar
+                document.getElementById('btn-recusar-desafio').onclick = () => {
+                    document.getElementById('modal-desafio').style.display = 'none';
                     window.responderDesafio(conviteId, 'recusado');
-                }
+                };
             }
         });
     });
