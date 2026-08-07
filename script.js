@@ -1284,6 +1284,9 @@ window.carregarArena = async (inimigoId) => {
                 <div style="color: #e67e22; margin-bottom: 5px; font-size: 1.1rem; text-align: center;">⚔️ <strong>${currentUserData.nome}</strong> VS <strong>${iniData.nome}</strong> ⚔️</div>
                 <div style="color: #2ecc71;">> Aguardando a primeira ação...</div>
             `;
+            
+            // ---> LIGA OS CONTROLES AQUI! <---
+            window.carregarControlesBatalha(); 
         }
     } catch (e) {
         console.error("Erro ao puxar dados do inimigo:", e);
@@ -3149,22 +3152,6 @@ window.closeChangePasswordModal = () => {
 window.onclick = function(event) {
     if (event.target.classList.contains('modal-overlay-comment')) {
         event.target.style.display = "none";
-    }
-};
-
-// Registra o início da luta no Log
-            document.getElementById('arena-log').innerHTML = `
-                <div style="color: #94a3b8; text-align: center; margin-bottom: 15px;">--- Batalha Iniciada ---</div>
-                <div style="color: #e67e22; margin-bottom: 5px; font-size: 1.1rem; text-align: center;">⚔️ <strong>${currentUserData.nome}</strong> VS <strong>${iniData.nome}</strong> ⚔️</div>
-                <div style="color: #2ecc71;">> Aguardando a primeira ação...</div>
-            `;
-            
-            // ---> LIGA OS CONTROLES AQUI! <---
-            window.carregarControlesBatalha(); 
-            
-        }
-    } catch (e) {
-        console.error("Erro ao puxar dados do inimigo:", e);
     }
 };
 
