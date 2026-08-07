@@ -1289,9 +1289,8 @@ window.carregarArena = async (inimigoId) => {
     } catch (e) {
         console.error("Erro ao puxar dados do inimigo:", e);
     }
-};
 
-// ---> LIGA OS CONTROLES AQUI! <---
+    // ---> LIGA OS CONTROLES AQUI! <---
             window.carregarControlesBatalha(); 
             
             // ---> LIGA O RADAR DE SINCRONIZAÇÃO AQUI! <---
@@ -1302,6 +1301,7 @@ window.carregarArena = async (inimigoId) => {
         console.error("Erro ao puxar dados do inimigo:", e);
     }
 };
+
 
 
 // --- FASE 3: MOTOR DE COMBATE (ATUALIZADO) ---
@@ -1510,6 +1510,16 @@ window.prepararAtaque = async (jutsu) => {
         </div>
     `;
     logArena.scrollTop = logArena.scrollHeight;
+};
+
+// Função auxiliar para limpar a tela da Arena perfeitamente
+window.sairDaArenaVisualmente = () => {
+    if (window.escutaArenaAtiva) window.escutaArenaAtiva(); // Desliga o radar
+    window.currentBattleId = null;
+    window.showTab('dashboard'); 
+    document.getElementById('arena-waiting').style.display = 'block';
+    document.getElementById('arena-container').style.display = 'none';
+    document.getElementById('arena-log').innerHTML = '<div style="color: #94a3b8; text-align: center;">--- O Ringue está sendo preparado ---</div>';
 };
 
 // Função auxiliar para limpar a tela da Arena perfeitamente
