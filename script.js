@@ -190,8 +190,6 @@ onAuthStateChanged(auth, async (user) => {
         if (typeof window.atualizarStatusOnline === 'function') {
             window.atualizarStatusOnline(true);
 
-            window.escutarDesafiosRecebidos();
-
         }
 
         // Restante da sua lógica de carregamento (intacta)
@@ -241,6 +239,46 @@ if (btnLogin) {
         });
     });
 }
+
+
+// 4. O Radar: Fica escutando se alguém te desafia enquanto você está online
+window.escutarDesafiosRecebidos = () => {
+    if (!auth.currentUser) return;
+    
+    const q = query(
+        collection(db, "desafios_batalha"), 
+        where("desafiadoId", "==", auth.currentUser.uid),
+        where("status", "==", "pendente")
+    );
+    
+    onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === "added") {
+                const convite = change.doc.data();
+                const conviteId = change.doc.id;
+                
+                // Configura o texto do modal
+                document.getElementById('texto-desafio').innerHTML = `<strong>${convite.desafianteNome}</strong> quer te enfrentar em um duelo.<br><br>Você está pronto para a batalha?`;
+                
+                // Exibe o modal na tela do jogador
+                document.getElementById('modal-desafio').style.display = 'flex';
+                
+                // Se ele clicar em Aceitar
+                document.getElementById('btn-aceitar-desafio').onclick = () => {
+                    document.getElementById('modal-desafio').style.display = 'none';
+                    window.responderDesafio(conviteId, 'aceito');
+                };
+                
+                // Se ele clicar em Recusar
+                document.getElementById('btn-recusar-desafio').onclick = () => {
+                    document.getElementById('modal-desafio').style.display = 'none';
+                    window.responderDesafio(conviteId, 'recusado');
+                };
+            }
+        });
+    });
+};
+
 
 // --- NAVEGAÇÃO ---
 window.showTab = (t) => {
