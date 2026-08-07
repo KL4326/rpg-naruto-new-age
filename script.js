@@ -1515,9 +1515,10 @@ window.prepararAtaque = async (jutsu) => {
                     atacanteId: auth.currentUser.uid,
                     jutsuNome: jutsu.nome,
                     msgDano: msgDano,
+                    danoValor: danoFinal || 0, // <--- ADICIONAMOS ISSO AQUI
                     custoCp: custoCp,
                     custoSp: custoSp,
-                    timestamp: new Date().getTime() // Cria um carimbo de tempo para o radar saber que é um ataque novo
+                    timestamp: new Date().getTime() 
                 }
             });
         } catch(e) { console.error("Erro ao transmitir ataque:", e); }
@@ -1650,7 +1651,16 @@ window.iniciarRadarDaArena = () => {
                     `;
                     logArena.scrollTop = logArena.scrollHeight;
 
-                    // (No próximo passo, a janela de ESQUIVAR vai abrir bem aqui!)
+                    // C) PREPARA A TELA DE DEFESA
+                    // Memoriza a força do ataque inimigo
+                    window.danoAmeacaAtual = acao.danoValor || 0; 
+                    
+                    // Esconde os jutsus do jogador (para ele não atacar de volta ao mesmo tempo)
+                    document.getElementById('arena-controls').style.display = 'none';
+                    
+                    // Mostra a Caixa de Reação na tela
+                    document.getElementById('arena-reaction-box').style.display = 'block';
+
                 }
             }
             
@@ -3244,6 +3254,86 @@ window.pagarSalariosGeral = async () => {
             btn.innerHTML = '<i class="fa-solid fa-coins"></i> Pagar Salários';
         }
     }
+};
+
+
+// --- MOTOR DE REAÇÃO (DEFESA / ESQUIVA) ---
+window.reagirAtaque = async (acaoDefensiva) => {
+    // 1. Esconde a caixa vermelha e devolve os controles normais
+    document.getElementById('arena-reaction-box').style.display = 'none';
+    document.getElementById('arena-controls').style.display = 'grid'; 
+
+    if (acaoDefensiva === 'jutsu') {
+        return alert("A lista de Jutsus Defensivos será implementada na próxima etapa!");
+    }
+
+    let danoRecebido = window.danoAmeacaAtual || 0;
+    let msgDefesa = "";
+    
+    // 2. Puxa seus modificadores da ficha (Se não existirem, usa 0)
+    const agilidade = Number(currentUserData.agilidade) || 0;
+    const forca = Number(currentUserData.forca) || 0;
+    const defesa = Number(currentUserData.defesa) || 0;
+
+    // 3. A LÓGICA DOS DADOS
+    if (acaoDefensiva === 'receber') {
+        msgDefesa = "Você não esboçou reação e aceitou o impacto em cheio!";
+    } 
+    else if (acaoDefensiva === 'esquivar') {
+        // Rola 1d20 + Agilidade
+        let rolagem = Math.floor(Math.random() * 20) + 1;
+        let totalEsquiva = rolagem + agilidade;
+        
+        if (totalEsquiva >= danoRecebido) {
+            danoRecebido = 0;
+            msgDefesa = `💨 Esquiva Perfeita! Você sumiu da visão do inimigo! (Rolou ${rolagem} + ${agilidade} Agi = ${totalEsquiva}).`;
+        } else {
+            danoRecebido = Math.floor(danoRecebido / 2); // Pelo menos reduz metade do dano
+            msgDefesa = `Você tentou escapar, mas foi pego de raspão! (Rolou ${rolagem} + ${agilidade} Agi = ${totalEsquiva}).`;
+        }
+    }
+    else if (acaoDefensiva === 'defender') {
+         // Rola 1d20 + (Força ou Defesa, o que for maior)
+        let rolagem = Math.floor(Math.random() * 20) + 1;
+        let bonus = Math.max(forca, defesa); 
+        let totalDefesa = rolagem + bonus;
+
+        danoRecebido -= totalDefesa;
+        if (danoRecebido <= 0) {
+            danoRecebido = 0;
+            msgDefesa = `🛡️ Defesa Absoluta! Você bloqueou todo o impacto! (Rolou ${rolagem} + ${bonus} Def = ${totalDefesa}).`;
+        } else {
+            msgDefesa = `🛡️ Você bloqueou parcialmente, mas a força atravessou sua guarda. (Defesa total: ${totalDefesa}).`;
+        }
+    }
+
+    // 4. APLICA O DANO NO HP
+    let hpAtual = currentUserData.vida || 100;
+    hpAtual -= danoRecebido;
+    if (hpAtual < 0) hpAtual = 0; // Não deixa ficar negativo
+    
+    // Atualiza a barra vermelha na tela
+    currentUserData.vida = hpAtual;
+    const txtHp = document.getElementById('arena-player-hp-txt').innerText.split('/');
+    window.atualizarBarraArena('player', 'hp', hpAtual, Number(txtHp[1]));
+    
+    // Desconta no Firebase
+    await updateDoc(doc(db, "users", auth.currentUser.uid), {
+        vida: hpAtual
+    });
+
+    // 5. REGISTRA A DEFESA NO LOG
+    const logArena = document.getElementById('arena-log');
+    logArena.innerHTML += `
+        <div style="background: rgba(241, 196, 15, 0.1); padding: 8px; border-left: 3px solid #f1c40f; margin-top: 10px; border-radius: 4px;">
+            <div style="color: #f1c40f; font-weight: bold;">> ${msgDefesa}</div>
+            ${danoRecebido > 0 ? `<div style="color: #e74c3c;">> Sofreu -${danoRecebido} de Vida!</div>` : ''}
+        </div>
+    `;
+    logArena.scrollTop = logArena.scrollHeight;
+
+    // 6. TRANSMITE PARA O INIMIGO SABER QUE VOCÊ DEFENDEU
+    // (Faremos a tela dele ler isso na próxima etapa)
 };
 
 
