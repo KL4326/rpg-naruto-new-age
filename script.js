@@ -1291,6 +1291,85 @@ window.carregarArena = async (inimigoId) => {
 };
 
 
+// --- FASE 3: MOTOR DE COMBATE ---
+
+// Carrega os Jutsus do jogador e cria os botões na tela
+window.carregarControlesBatalha = () => {
+    const painelControles = document.getElementById('arena-controls');
+    painelControles.innerHTML = ''; // Limpa a mensagem de carregamento
+
+    // Verifica se o jogador tem a lista de jutsus na ficha
+    const jutsus = currentUserData.meusJutsus || [];
+
+    if (jutsus.length === 0) {
+        painelControles.innerHTML = '<p style="color: #777; grid-column: 1 / -1; text-align: center;">Você não possui Jutsus equipados. Use ataques básicos!</p>';
+    } else {
+        // Cria um botão para cada Jutsu que o jogador possui
+        jutsus.forEach(jutsu => {
+            const btn = document.createElement('button');
+            btn.className = 'buy-btn';
+            btn.style.background = '#2c3e50'; 
+            btn.style.display = 'flex';
+            btn.style.flexDirection = 'column';
+            btn.style.alignItems = 'center';
+            btn.style.gap = '4px';
+            btn.style.padding = '10px';
+            btn.style.border = '1px solid #34495e';
+
+            // Monta as tags visuais de custo (Chakra ou Stamina)
+            let custosHTML = [];
+            if (jutsu.chakra > 0) custosHTML.push(`<span style="color: #3498db; text-shadow: 0 0 2px #000;"><i class="fa-solid fa-droplet"></i> ${jutsu.chakra}</span>`);
+            if (jutsu.stamina > 0) custosHTML.push(`<span style="color: #2ecc71; text-shadow: 0 0 2px #000;"><i class="fa-solid fa-leaf"></i> ${jutsu.stamina}</span>`);
+            
+            const custoVisual = custosHTML.length > 0 ? custosHTML.join(' | ') : '<span style="color: #95a5a6;">Sem custo</span>';
+            const danoVisual = jutsu.dano ? `<div style="color: #e74c3c; font-size: 0.7rem; margin-top: 2px;"><i class="fa-solid fa-fire"></i> Dano: ${jutsu.dano}</div>` : '';
+
+            btn.innerHTML = `
+                <strong style="font-size: 0.9rem;">${jutsu.nome || 'Jutsu Desconhecido'}</strong>
+                <div style="font-size: 0.75rem; background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 10px;">${custoVisual}</div>
+                ${danoVisual}
+            `;
+
+            // Ação do clique (O Ataque em si)
+            btn.onclick = () => window.prepararAtaque(jutsu);
+            
+            painelControles.appendChild(btn);
+        });
+    }
+
+    // Adiciona sempre um botão de Ataque Básico (Taijutsu simples) 
+    const btnAtaqueBasico = document.createElement('button');
+    btnAtaqueBasico.className = 'buy-btn';
+    btnAtaqueBasico.style.background = '#8e44ad';
+    btnAtaqueBasico.innerHTML = '<strong>Ataque Básico</strong><br><span style="font-size: 0.75rem;">Usa Força / Agilidade</span>';
+    btnAtaqueBasico.onclick = () => window.prepararAtaque({ nome: "Ataque Básico", tipo: "taijutsu", dano: "d4" });
+    painelControles.appendChild(btnAtaqueBasico);
+    
+    // Botão de Fugir / Encerrar Luta
+    const btnFugir = document.createElement('button');
+    btnFugir.className = 'buy-btn';
+    btnFugir.style.background = '#c0392b';
+    btnFugir.innerHTML = '<i class="fa-solid fa-person-running"></i> Recuar';
+    btnFugir.onclick = () => window.encerrarBatalha();
+    painelControles.appendChild(btnFugir);
+};
+
+// Deixando o esqueleto da função de ataque preparado para o próximo passo
+window.prepararAtaque = (jutsu) => {
+    console.log("Tentando usar o jutsu:", jutsu);
+    alert(`Você preparou o jutsu: ${jutsu.nome}!\n(A lógica de rolar os dados e tirar a vida do inimigo vem a seguir!)`);
+};
+
+// Esqueleto para sair da arena
+window.encerrarBatalha = () => {
+    if(confirm("Deseja mesmo recuar e encerrar o duelo?")) {
+        window.showTab('dashboard'); // Volta pro início
+        document.getElementById('arena-waiting').style.display = 'block';
+        document.getElementById('arena-container').style.display = 'none';
+    }
+};
+
+
 
 async function carregarConquistas() {
     try {
@@ -3073,4 +3152,19 @@ window.onclick = function(event) {
     }
 };
 
+// Registra o início da luta no Log
+            document.getElementById('arena-log').innerHTML = `
+                <div style="color: #94a3b8; text-align: center; margin-bottom: 15px;">--- Batalha Iniciada ---</div>
+                <div style="color: #e67e22; margin-bottom: 5px; font-size: 1.1rem; text-align: center;">⚔️ <strong>${currentUserData.nome}</strong> VS <strong>${iniData.nome}</strong> ⚔️</div>
+                <div style="color: #2ecc71;">> Aguardando a primeira ação...</div>
+            `;
+            
+            // ---> LIGA OS CONTROLES AQUI! <---
+            window.carregarControlesBatalha(); 
+            
+        }
+    } catch (e) {
+        console.error("Erro ao puxar dados do inimigo:", e);
+    }
+};
 
