@@ -1296,51 +1296,73 @@ window.carregarArena = async (inimigoId) => {
 
 // --- FASE 3: MOTOR DE COMBATE ---
 
-// Carrega os Jutsus do jogador e cria os botões na tela
-window.carregarControlesBatalha = () => {
+// --- FASE 3: MOTOR DE COMBATE (ATUALIZADO) ---
+
+// Carrega os Jutsus do jogador buscando da coleção original
+window.carregarControlesBatalha = async () => {
     const painelControles = document.getElementById('arena-controls');
-    painelControles.innerHTML = ''; // Limpa a mensagem de carregamento
+    painelControles.innerHTML = '<p style="color: #777; grid-column: 1 / -1; text-align: center;"><i class="fa-solid fa-spinner fa-spin"></i> Lendo pergaminhos de Jutsus...</p>';
 
-    // Verifica se o jogador tem a lista de jutsus na ficha
-    const jutsus = currentUserData.meusJutsus || [];
+    // Verifica onde estão os jutsus do usuário. Adapte 'jutsus' ou 'meusJutsus' conforme o nome do seu array no Firebase.
+    const listaJutsusUsuario = currentUserData.jutsus || currentUserData.meusJutsus || [];
 
-    if (jutsus.length === 0) {
+    painelControles.innerHTML = ''; // Limpa a mensagem
+
+    if (listaJutsusUsuario.length === 0) {
         painelControles.innerHTML = '<p style="color: #777; grid-column: 1 / -1; text-align: center;">Você não possui Jutsus equipados. Use ataques básicos!</p>';
     } else {
-        // Cria um botão para cada Jutsu que o jogador possui
-        jutsus.forEach(jutsu => {
-            const btn = document.createElement('button');
-            btn.className = 'buy-btn';
-            btn.style.background = '#2c3e50'; 
-            btn.style.display = 'flex';
-            btn.style.flexDirection = 'column';
-            btn.style.alignItems = 'center';
-            btn.style.gap = '4px';
-            btn.style.padding = '10px';
-            btn.style.border = '1px solid #34495e';
+        // Como o usuário só tem os IDs, precisamos buscar o Jutsu completo no Firebase
+        for (const item of listaJutsusUsuario) {
+            try {
+                // Pega o ID (mesmo que o seu array seja de strings simples ou objetos)
+                const jutsuId = typeof item === 'string' ? item : item.id;
+                if (!jutsuId) continue;
 
-            // Monta as tags visuais de custo (Chakra ou Stamina)
-            let custosHTML = [];
-            if (jutsu.chakra > 0) custosHTML.push(`<span style="color: #3498db; text-shadow: 0 0 2px #000;"><i class="fa-solid fa-droplet"></i> ${jutsu.chakra}</span>`);
-            if (jutsu.stamina > 0) custosHTML.push(`<span style="color: #2ecc71; text-shadow: 0 0 2px #000;"><i class="fa-solid fa-leaf"></i> ${jutsu.stamina}</span>`);
-            
-            const custoVisual = custosHTML.length > 0 ? custosHTML.join(' | ') : '<span style="color: #95a5a6;">Sem custo</span>';
-            const danoVisual = jutsu.dano ? `<div style="color: #e74c3c; font-size: 0.7rem; margin-top: 2px;"><i class="fa-solid fa-fire"></i> Dano: ${jutsu.dano}</div>` : '';
+                // Busca o documento completo na coleção "jutsus"
+                const jutsuSnap = await getDoc(doc(db, "jutsus", jutsuId));
 
-            btn.innerHTML = `
-                <strong style="font-size: 0.9rem;">${jutsu.nome || 'Jutsu Desconhecido'}</strong>
-                <div style="font-size: 0.75rem; background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 10px;">${custoVisual}</div>
-                ${danoVisual}
-            `;
+                if (jutsuSnap.exists()) {
+                    const jutsu = jutsuSnap.data();
+                    jutsu.id = jutsuSnap.id; // Guarda a chave para usarmos no motor de dano
+                    
+                    const btn = document.createElement('button');
+                    btn.className = 'buy-btn';
+                    btn.style.background = '#2c3e50'; 
+                    btn.style.display = 'flex';
+                    btn.style.flexDirection = 'column';
+                    btn.style.alignItems = 'center';
+                    btn.style.gap = '4px';
+                    btn.style.padding = '10px';
+                    btn.style.border = '1px solid #34495e';
 
-            // Ação do clique (O Ataque em si)
-            btn.onclick = () => window.prepararAtaque(jutsu);
-            
-            painelControles.appendChild(btn);
-        });
+                    let custosHTML = [];
+                    
+                    // Transforma números negativos em positivos absolutos para exibir bonitinho
+                    const custoChakra = jutsu.chakra ? Math.abs(jutsu.chakra) : 0;
+                    const custoStamina = jutsu.stamina ? Math.abs(jutsu.stamina) : 0;
+
+                    if (custoChakra > 0) custosHTML.push(`<span style="color: #3498db; text-shadow: 0 0 2px #000;"><i class="fa-solid fa-droplet"></i> ${custoChakra}</span>`);
+                    if (custoStamina > 0) custosHTML.push(`<span style="color: #2ecc71; text-shadow: 0 0 2px #000;"><i class="fa-solid fa-leaf"></i> ${custoStamina}</span>`);
+                    
+                    const custoVisual = custosHTML.length > 0 ? custosHTML.join(' | ') : '<span style="color: #95a5a6;">Sem custo</span>';
+                    const danoVisual = jutsu.dano ? `<div style="color: #e74c3c; font-size: 0.7rem; margin-top: 2px;"><i class="fa-solid fa-fire"></i> Dano: ${jutsu.dano}</div>` : '';
+
+                    btn.innerHTML = `
+                        <strong style="font-size: 0.9rem;">${jutsu.nome || 'Jutsu sem nome'}</strong>
+                        <div style="font-size: 0.75rem; background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 10px;">${custoVisual}</div>
+                        ${danoVisual}
+                    `;
+
+                    btn.onclick = () => window.prepararAtaque(jutsu);
+                    painelControles.appendChild(btn);
+                }
+            } catch (err) {
+                console.error(`Erro ao buscar o jutsu ${item}:`, err);
+            }
+        }
     }
 
-    // Adiciona sempre um botão de Ataque Básico (Taijutsu simples) 
+    // Ataque Básico Padrão
     const btnAtaqueBasico = document.createElement('button');
     btnAtaqueBasico.className = 'buy-btn';
     btnAtaqueBasico.style.background = '#8e44ad';
@@ -1348,7 +1370,7 @@ window.carregarControlesBatalha = () => {
     btnAtaqueBasico.onclick = () => window.prepararAtaque({ nome: "Ataque Básico", tipo: "taijutsu", dano: "d4" });
     painelControles.appendChild(btnAtaqueBasico);
     
-    // Botão de Fugir / Encerrar Luta
+    // Botão de Recuar
     const btnFugir = document.createElement('button');
     btnFugir.className = 'buy-btn';
     btnFugir.style.background = '#c0392b';
