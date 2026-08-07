@@ -1379,10 +1379,107 @@ window.carregarControlesBatalha = async () => {
     painelControles.appendChild(btnFugir);
 };
 
-// Deixando o esqueleto da função de ataque preparado para o próximo passo
+// --- MOTOR DE DADOS E DANO ---
+
+// Lê o texto do Firebase ("d6+1", "50" ou "Letal") e converte em números reais
+window.rolarDados = (danoString) => {
+    if (!danoString) return 0;
+    
+    // Transforma tudo em minúsculo e tira os espaços para não ter erro de digitação
+    const str = String(danoString).toLowerCase().trim();
+
+    // 1. Tratamento Especial para Hit Kill
+    if (str === 'letal' || str === 'hit kill') return 999999;
+
+    // 2. Se for um número fixo (Ex: O dano está cadastrado como "100")
+    if (!str.includes('d')) return Number(str) || 0;
+
+    // 3. Se for um dado estilo RPG (Ex: "2d6+5" ou "d8")
+    let [dadosParte, restoParte] = str.split('d');
+    let quantidade = Number(dadosParte) || 1; // Se for só "d6", a quantidade é 1
+    
+    let lados = 0;
+    let bonus = 0;
+
+    if (restoParte.includes('+')) {
+        let partes = restoParte.split('+');
+        lados = Number(partes[0]);
+        bonus = Number(partes[1]);
+    } else if (restoParte.includes('-')) {
+        let partes = restoParte.split('-');
+        lados = Number(partes[0]);
+        bonus = -Number(partes[1]);
+    } else {
+        lados = Number(restoParte);
+    }
+
+    let totalRolado = 0;
+    let historicoRolagens = [];
+    
+    // Rola o dado a quantidade de vezes pedida
+    for(let i = 0; i < quantidade; i++) {
+        let rolagem = Math.floor(Math.random() * lados) + 1;
+        historicoRolagens.push(rolagem);
+        totalRolado += rolagem;
+    }
+    
+    return { 
+        totalFinal: totalRolado + bonus, 
+        rolagens: historicoRolagens, 
+        bonus: bonus 
+    };
+};
+
+// O Ataque Real (Conecta o botão aos dados e aos custos)
 window.prepararAtaque = (jutsu) => {
-    console.log("Tentando usar o jutsu:", jutsu);
-    alert(`Você preparou o jutsu: ${jutsu.nome}!\n(A lógica de rolar os dados e tirar a vida do inimigo vem a seguir!)`);
+    // Calcula os custos (convertendo negativo para positivo)
+    const custoCp = jutsu.chakra ? Math.abs(jutsu.chakra) : 0;
+    const custoSp = jutsu.stamina ? Math.abs(jutsu.stamina) : 0;
+
+    // 1. VERIFICAÇÃO DE RECURSOS
+    const meuCpAtual = currentUserData.chakra || 0;
+    const meuSpAtual = currentUserData.stamina || 0;
+
+    if (meuCpAtual < custoCp) {
+        return alert(`🌀 Chakra insuficiente! Você precisa de ${custoCp} para usar ${jutsu.nome}.`);
+    }
+    if (meuSpAtual < custoSp) {
+        return alert(`🍃 Stamina insuficiente! Você precisa de ${custoSp} para usar ${jutsu.nome}.`);
+    }
+
+    // 2. ROLAGEM DE DANO
+    let resultado = window.rolarDados(jutsu.dano);
+    let danoFinal = typeof resultado === 'number' ? resultado : resultado.totalFinal;
+    
+    let textoDados = "";
+    if (typeof resultado === 'object') {
+        let sinalBonus = resultado.bonus >= 0 ? '+' : '';
+        textoDados = `<span style="color:#7f8c8d; font-size:0.8rem;">(Dados: [${resultado.rolagens.join(', ')}] ${sinalBonus}${resultado.bonus})</span>`;
+    }
+
+    let msgDano = "";
+    if (danoFinal >= 999999) {
+        msgDano = "💥 **DANO LETAL!** O alvo foi obliterado!";
+    } else if (!jutsu.dano || danoFinal === 0) {
+        msgDano = "✨ Técnica de Suporte/Defesa ativada com sucesso!";
+    } else {
+        msgDano = `💥 Causou **${danoFinal}** de dano! ${textoDados}`;
+    }
+
+    // 3. REGISTRA A AÇÃO NO LOG DA ARENA
+    const logArena = document.getElementById('arena-log');
+    
+    logArena.innerHTML += `
+        <div style="background: rgba(52, 152, 219, 0.1); padding: 8px; border-left: 3px solid #3498db; margin-top: 10px; border-radius: 0 4px 4px 0;">
+            <div style="color: #3498db; font-weight: bold;">> Você usou ${jutsu.nome}! <span style="font-size:0.75rem; color:#e74c3c;">(-${custoCp} CP | -${custoSp} SP)</span></div>
+            <div style="color: #e74c3c; margin-top: 3px;">> ${msgDano}</div>
+        </div>
+    `;
+    
+    // Rola o chat da arena automaticamente para a última mensagem
+    logArena.scrollTop = logArena.scrollHeight;
+
+    // TODO (Próxima Etapa): Descontar os recursos do banco de dados e sincronizar o ataque para o inimigo ver do outro lado da tela!
 };
 
 // Esqueleto para sair da arena
