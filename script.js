@@ -189,6 +189,9 @@ onAuthStateChanged(auth, async (user) => {
         // --- AJUSTE 2: Deixa o Ninja ONLINE (bolinha verde) ao entrar ---
         if (typeof window.atualizarStatusOnline === 'function') {
             window.atualizarStatusOnline(true);
+
+            window.escutarDesafiosRecebidos();
+
         }
 
         // Restante da sua lógica de carregamento (intacta)
@@ -1019,9 +1022,17 @@ async function carregarPersonagens() {
             const corBolinha = isOnline ? '#2ecc71' : '#ccc'; 
             const brilhoBolinha = isOnline ? 'box-shadow: 0 0 5px #2ecc71;' : '';
 
-            // ÚNICA DECLARAÇÃO dos botões (Corrige o erro do Console)
+            // Verifica se o alvo está online E se não é o próprio usuário logado
+            const podeDesafiar = isOnline && (d.id !== auth.currentUser.uid);
+
+            // ÚNICA DECLARAÇÃO dos botões
             const botoesHTML = `
                 <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 15px;">
+                    ${podeDesafiar ? `
+                    <button onclick="event.stopPropagation(); window.enviarDesafio('${d.id}', '${u.nome || u.apelido || "Ninja"}')" class="mission-btn-start" style="background: #e67e22; width: 100%; border: none; color: white;">
+                        <i class="fa-solid fa-khanda"></i> Desafiar
+                    </button>
+                    ` : ''}
                     <button onclick="event.stopPropagation(); abrirModalPresentear('${d.id}')" class="mission-btn-start" style="background: var(--primary-color); color: white; width: 100%; border: none;">
                         <i class="fa-solid fa-gift"></i> Presentear
                     </button>
@@ -1036,6 +1047,7 @@ async function carregarPersonagens() {
                 </div>
             `;
 
+            
             // Injeta o conteúdo no card
             div.innerHTML = `
                 <img src="${u.avatar || IMG_PADRAO}" class="card-img-top">
@@ -1062,6 +1074,109 @@ async function carregarPersonagens() {
         c.innerHTML = '<p>Erro ao carregar lista.</p>';
     }
 }
+
+
+// --- SISTEMA DE DESAFIOS (MATCHMAKING) ---
+
+// 1. Envia o convite para o Firebase
+window.enviarDesafio = async (alvoId, alvoNome) => {
+    if (!confirm(`Deseja desafiar ${alvoNome} para um duelo?`)) return;
+
+    try {
+        const meuNome = currentUserData?.nome || currentUserData?.apelido || "Ninja";
+        
+        // Cria um documento de convite no Firebase
+        await addDoc(collection(db, "desafios_batalha"), {
+            desafianteId: auth.currentUser.uid,
+            desafianteNome: meuNome,
+            desafiadoId: alvoId,
+            desafiadoNome: alvoNome,
+            status: 'pendente',
+            timestamp: serverTimestamp()
+        });
+        
+        alert(`Pergaminho de desafio enviado para ${alvoNome}! Aguardando resposta...`);
+        window.escutarRespostaDesafio(auth.currentUser.uid); // Fica aguardando a resposta
+    } catch (e) {
+        console.error("Erro ao enviar desafio", e);
+        alert("O chakra falhou ao enviar o convite.");
+    }
+};
+
+// 2. Escuta os convites que VOCÊ envia (Para saber se o alvo aceitou ou fugiu)
+let unsubscribeRespostaDesafio = null;
+window.escutarRespostaDesafio = (meuId) => {
+    if (unsubscribeRespostaDesafio) unsubscribeRespostaDesafio();
+    
+    const q = query(
+        collection(db, "desafios_batalha"), 
+        where("desafianteId", "==", meuId),
+        where("status", "in", ["aceito", "recusado"])
+    );
+    
+    unsubscribeRespostaDesafio = onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === "added" || change.type === "modified") {
+                const resp = change.doc.data();
+                
+                if (resp.status === 'aceito') {
+                    window.currentBattleId = change.doc.id;
+                    alert(`⚔️ ${resp.desafiadoNome} aceitou o desafio! A batalha vai começar!`);
+                    window.showTab('batalha'); // Teleporta para a Arena
+                    unsubscribeRespostaDesafio();
+                } else if (resp.status === 'recusado') {
+                    alert(`❌ ${resp.desafiadoNome} recusou o seu desafio ou fugiu da luta...`);
+                    unsubscribeRespostaDesafio();
+                }
+                
+                // Limpa o lixo do banco de dados após resolver
+                deleteDoc(doc(db, "desafios_batalha", change.doc.id)).catch(e => console.log(e));
+            }
+        });
+    });
+};
+
+// 3. Responde a um convite recebido
+window.responderDesafio = async (conviteId, resposta) => {
+    try {
+        await updateDoc(doc(db, "desafios_batalha", conviteId), { status: resposta });
+        
+        if (resposta === 'aceito') {
+            window.currentBattleId = conviteId; 
+            alert("⚔️ Você aceitou o duelo! Prepare-se!");
+            window.showTab('batalha'); // Teleporta para a Arena
+        }
+    } catch (e) {
+        console.error("Erro ao responder:", e);
+    }
+};
+
+// 4. O Radar: Fica escutando se alguém te desafia enquanto você está online
+window.escutarDesafiosRecebidos = () => {
+    if (!auth.currentUser) return;
+    
+    const q = query(
+        collection(db, "desafios_batalha"), 
+        where("desafiadoId", "==", auth.currentUser.uid),
+        where("status", "==", "pendente")
+    );
+    
+    onSnapshot(q, (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === "added") {
+                const convite = change.doc.data();
+                const conviteId = change.doc.id;
+                
+                // Se o convite chegou, exibe a janela de decisão
+                if (confirm(`⚔️ AMEAÇA DETECTADA!\n\n${convite.desafianteNome} está te desafiando para um duelo.\nVocê aceita o combate?`)) {
+                    window.responderDesafio(conviteId, 'aceito');
+                } else {
+                    window.responderDesafio(conviteId, 'recusado');
+                }
+            }
+        });
+    });
+};
 
 
 
