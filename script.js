@@ -1150,7 +1150,6 @@ let unsubscribeRespostaDesafio = null;
 window.escutarRespostaDesafio = (conviteId) => {
     if (unsubscribeRespostaDesafio) unsubscribeRespostaDesafio();
     
-    // Agora ele olha para um Documento Único, e não mais para a coleção inteira
     unsubscribeRespostaDesafio = onSnapshot(doc(db, "desafios_batalha", conviteId), (docSnap) => {
         if (docSnap.exists()) {
             const resp = docSnap.data();
@@ -1161,14 +1160,13 @@ window.escutarRespostaDesafio = (conviteId) => {
                 window.showTab('batalha'); 
                 window.carregarArena(resp.desafiadoId); 
                 
-                unsubscribeRespostaDesafio(); // Para de escutar
-                deleteDoc(doc(db, "desafios_batalha", docSnap.id)).catch(e => console.log(e)); // Limpa o banco
+                unsubscribeRespostaDesafio(); // Para de escutar o convite
+                // NOTA: Removemos o "deleteDoc" daqui para que a sala continue existindo!
                 
             } else if (resp.status === 'recusado') {
                 alert(`❌ ${resp.desafiadoNome} recusou o seu desafio ou fugiu da luta...`);
-                
-                unsubscribeRespostaDesafio(); // Para de escutar
-                deleteDoc(doc(db, "desafios_batalha", docSnap.id)).catch(e => console.log(e)); // Limpa o banco
+                unsubscribeRespostaDesafio(); 
+                deleteDoc(doc(db, "desafios_batalha", docSnap.id)).catch(e => console.log(e)); 
             }
         }
     });
@@ -1293,8 +1291,18 @@ window.carregarArena = async (inimigoId) => {
     }
 };
 
+// ---> LIGA OS CONTROLES AQUI! <---
+            window.carregarControlesBatalha(); 
+            
+            // ---> LIGA O RADAR DE SINCRONIZAÇÃO AQUI! <---
+            window.iniciarRadarDaArena();
+            
+        }
+    } catch (e) {
+        console.error("Erro ao puxar dados do inimigo:", e);
+    }
+};
 
-// --- FASE 3: MOTOR DE COMBATE ---
 
 // --- FASE 3: MOTOR DE COMBATE (ATUALIZADO) ---
 
@@ -1504,13 +1512,65 @@ window.prepararAtaque = async (jutsu) => {
     logArena.scrollTop = logArena.scrollHeight;
 };
 
-// Esqueleto para sair da arena
-window.encerrarBatalha = () => {
-    if(confirm("Deseja mesmo recuar e encerrar o duelo?")) {
-        window.showTab('dashboard'); // Volta pro início
-        document.getElementById('arena-waiting').style.display = 'block';
-        document.getElementById('arena-container').style.display = 'none';
+// Função auxiliar para limpar a tela da Arena perfeitamente
+window.sairDaArenaVisualmente = () => {
+    if (window.escutaArenaAtiva) window.escutaArenaAtiva(); // Desliga o radar
+    window.currentBattleId = null;
+    window.showTab('dashboard'); 
+    document.getElementById('arena-waiting').style.display = 'block';
+    document.getElementById('arena-container').style.display = 'none';
+    document.getElementById('arena-log').innerHTML = '<div style="color: #94a3b8; text-align: center;">--- O Ringue está sendo preparado ---</div>';
+};
+
+// Abandona a luta e avisa o banco de dados
+window.encerrarBatalha = async () => {
+    if(confirm("Deseja mesmo recuar e encerrar o duelo? (O inimigo será avisado)")) {
+        
+        // 1. Avisa na Sala de Batalha (Firebase) que você fugiu
+        if (window.currentBattleId) {
+            try {
+                await updateDoc(doc(db, "desafios_batalha", window.currentBattleId), {
+                    status: 'fugiu',
+                    quemFugiu: currentUserData.nome || currentUserData.apelido || "O adversário"
+                });
+            } catch(e) { console.error("Erro ao avisar fuga:", e); }
+        }
+
+        // 2. Tira você da tela
+        window.sairDaArenaVisualmente();
     }
+};
+
+
+window.escutaArenaAtiva = null;
+
+// Escuta tudo o que acontece na Sala de Batalha em tempo real
+window.iniciarRadarDaArena = () => {
+    if (!window.currentBattleId) return;
+    if (window.escutaArenaAtiva) window.escutaArenaAtiva();
+
+    window.escutaArenaAtiva = onSnapshot(doc(db, "desafios_batalha", window.currentBattleId), (docSnap) => {
+        if (docSnap.exists()) {
+            const sala = docSnap.data();
+            
+            // SE O INIMIGO APERTOU RECUAR:
+            if (sala.status === 'fugiu') {
+                alert(`🏃💨 A batalha acabou! ${sala.quemFugiu} recuou da luta!`);
+                
+                // Limpa o lixo do banco de dados já que a luta acabou
+                deleteDoc(doc(db, "desafios_batalha", window.currentBattleId)).catch(e => console.log(e));
+                
+                // Tira o jogador que ficou da arena
+                window.sairDaArenaVisualmente();
+            }
+            
+            // (No próximo passo, adicionaremos aqui: if (sala.status === 'atacando') para abrir a defesa!)
+            
+        } else {
+            // Se a sala sumir por algum motivo externo
+            window.sairDaArenaVisualmente();
+        }
+    });
 };
 
 
