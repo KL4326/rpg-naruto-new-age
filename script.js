@@ -1432,7 +1432,6 @@ window.rolarDados = (danoString) => {
 
 // O Ataque Real (Conecta o botão aos dados, gasta recursos e registra ação)
 window.prepararAtaque = async (jutsu) => {
-    // Calcula os custos (convertendo negativo para positivo, caso venha como -600)
     const custoCp = jutsu.chakra ? Math.abs(jutsu.chakra) : 0;
     const custoSp = jutsu.stamina ? Math.abs(jutsu.stamina) : 0;
 
@@ -1447,34 +1446,29 @@ window.prepararAtaque = async (jutsu) => {
         return alert(`🍃 Stamina insuficiente! Você tem ${meuSpAtual} mas precisa de ${custoSp} para usar ${jutsu.nome}.`);
     }
 
-    // 2. DESCONTA OS RECURSOS IMEDIATAMENTE (Visual e Banco de Dados)
+    // 2. DESCONTA OS RECURSOS IMEDIATAMENTE
     try {
-        // Atualiza a ficha local
         currentUserData.chakra -= custoCp;
         currentUserData.stamina -= custoSp;
 
-        // Puxa os valores máximos das barras que estão desenhadas na tela para calcular a porcentagem
         const txtCp = document.getElementById('arena-player-cp-txt').innerText.split('/');
-        const maxCp = Number(txtCp[1]) || 1; 
+        const maxCp = Number(txtCp[1]) || 1;
         const txtSp = document.getElementById('arena-player-sp-txt').innerText.split('/');
         const maxSp = Number(txtSp[1]) || 1;
 
-        // Atualiza as barras visuais vermelha/azul/verde da Arena
         window.atualizarBarraArena('player', 'cp', currentUserData.chakra, maxCp);
         window.atualizarBarraArena('player', 'sp', currentUserData.stamina, maxSp);
 
-        // Desconta direto no Firebase de forma segura
         await updateDoc(doc(db, "users", auth.currentUser.uid), {
             chakra: increment(-custoCp),
             stamina: increment(-custoSp)
         });
-        
     } catch (err) {
         console.error("Erro ao descontar recursos:", err);
         return alert("Erro ao canalizar chakra. Tente novamente!");
     }
 
-    // 3. ROLAGEM DE DADOS BÁSICA (Ainda sem modificadores, faremos no próximo passo)
+    // 3. ROLAGEM DE DADOS
     let resultado = window.rolarDados(jutsu.dano);
     let danoFinal = typeof resultado === 'number' ? resultado : resultado.totalFinal;
     
@@ -1493,7 +1487,7 @@ window.prepararAtaque = async (jutsu) => {
         msgDano = `💥 O ataque gerou um potencial de **${danoFinal}** de dano! ${textoDados}`;
     }
 
-    // 4. REGISTRA A AÇÃO NO LOG DA ARENA
+    // 4. REGISTRA A AÇÃO NO LOG DA ARENA LOCAL
     const logArena = document.getElementById('arena-log');
     logArena.innerHTML += `
         <div style="background: rgba(52, 152, 219, 0.1); padding: 8px; border-left: 3px solid #3498db; margin-top: 10px; border-radius: 0 4px 4px 0;">
@@ -1502,6 +1496,22 @@ window.prepararAtaque = async (jutsu) => {
         </div>
     `;
     logArena.scrollTop = logArena.scrollHeight;
+
+    // 5. TRANSMITE O ATAQUE PARA A SALA DE BATALHA (Para o inimigo ver)
+    if (window.currentBattleId) {
+        try {
+            await updateDoc(doc(db, "desafios_batalha", window.currentBattleId), {
+                ultimaAcao: {
+                    atacanteId: auth.currentUser.uid,
+                    jutsuNome: jutsu.nome,
+                    msgDano: msgDano,
+                    custoCp: custoCp,
+                    custoSp: custoSp,
+                    timestamp: new Date().getTime() // Cria um carimbo de tempo para o radar saber que é um ataque novo
+                }
+            });
+        } catch(e) { console.error("Erro ao transmitir ataque:", e); }
+    }
 };
 
 // Função auxiliar para limpar a tela da Arena perfeitamente
@@ -1545,31 +1555,65 @@ window.encerrarBatalha = async () => {
 
 
 window.escutaArenaAtiva = null;
+window.ultimoAtaqueRecebido = 0; // Memória para não repetir ataques antigos
 
 // Escuta tudo o que acontece na Sala de Batalha em tempo real
 window.iniciarRadarDaArena = () => {
     if (!window.currentBattleId) return;
     if (window.escutaArenaAtiva) window.escutaArenaAtiva();
 
+    window.ultimoAtaqueRecebido = 0; // Zera a memória ao entrar na arena
+
     window.escutaArenaAtiva = onSnapshot(doc(db, "desafios_batalha", window.currentBattleId), (docSnap) => {
         if (docSnap.exists()) {
             const sala = docSnap.data();
             
-            // SE O INIMIGO APERTOU RECUAR:
+            // 1. SE O INIMIGO APERTOU RECUAR:
             if (sala.status === 'fugiu') {
                 alert(`🏃💨 A batalha acabou! ${sala.quemFugiu} recuou da luta!`);
-                
-                // Limpa o lixo do banco de dados já que a luta acabou
                 deleteDoc(doc(db, "desafios_batalha", window.currentBattleId)).catch(e => console.log(e));
-                
-                // Tira o jogador que ficou da arena
                 window.sairDaArenaVisualmente();
             }
             
-            // (No próximo passo, adicionaremos aqui: if (sala.status === 'atacando') para abrir a defesa!)
+            // 2. SE ALGUÉM ATACOU NA SALA (E é um ataque novo)
+            if (sala.ultimaAcao && sala.ultimaAcao.timestamp > window.ultimoAtaqueRecebido) {
+                window.ultimoAtaqueRecebido = sala.ultimaAcao.timestamp;
+                
+                const acao = sala.ultimaAcao;
+
+                // Verifica se o ataque veio do inimigo (ignora se fui eu mesmo que ataquei)
+                if (acao.atacanteId !== auth.currentUser.uid) {
+                    
+                    // A) Atualiza as barras de Chakra e Stamina do inimigo visualmente
+                    const txtCp = document.getElementById('arena-enemy-cp-txt').innerText.split('/');
+                    const maxCp = Number(txtCp[1]) || 1;
+                    let atualCp = Number(txtCp[0]) - acao.custoCp;
+                    if (atualCp < 0) atualCp = 0; // Não deixa o visual ficar negativo
+
+                    const txtSp = document.getElementById('arena-enemy-sp-txt').innerText.split('/');
+                    const maxSp = Number(txtSp[1]) || 1;
+                    let atualSp = Number(txtSp[0]) - acao.custoSp;
+                    if (atualSp < 0) atualSp = 0;
+
+                    window.atualizarBarraArena('enemy', 'cp', atualCp, maxCp);
+                    window.atualizarBarraArena('enemy', 'sp', atualSp, maxSp);
+
+                    // B) Escreve o ataque no Log da Batalha (com borda vermelha)
+                    const logArena = document.getElementById('arena-log');
+                    logArena.innerHTML += `
+                        <div style="background: rgba(231, 76, 60, 0.1); padding: 8px; border-left: 3px solid #e74c3c; margin-top: 10px; border-radius: 0 4px 4px 0;">
+                            <div style="color: #e74c3c; font-weight: bold;">> O Inimigo usou ${acao.jutsuNome}! <span style="font-size:0.75rem; color:#95a5a6;">(-${acao.custoCp} CP | -${acao.custoSp} SP)</span></div>
+                            <div style="color: #e67e22; margin-top: 3px;">> ${acao.msgDano}</div>
+                        </div>
+                    `;
+                    logArena.scrollTop = logArena.scrollHeight;
+
+                    // (No próximo passo, a janela de ESQUIVAR vai abrir bem aqui!)
+                }
+            }
             
         } else {
-            // Se a sala sumir por algum motivo externo
+            // Se a sala sumir por algum motivo
             window.sairDaArenaVisualmente();
         }
     });
