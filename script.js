@@ -1643,14 +1643,14 @@ window.iniciarRadarDaArena = () => {
                 
                 const acao = sala.ultimaAcao;
 
-                // Verifica se o ataque veio do inimigo (ignora se fui eu mesmo que ataquei)
+                // Verifica se a ação veio do inimigo (ignora se fui eu mesmo)
                 if (acao.atacanteId !== auth.currentUser.uid) {
                     
                     // A) Atualiza as barras de Chakra e Stamina do inimigo visualmente
                     const txtCp = document.getElementById('arena-enemy-cp-txt').innerText.split('/');
                     const maxCp = Number(txtCp[1]) || 1;
                     let atualCp = Number(txtCp[0]) - acao.custoCp;
-                    if (atualCp < 0) atualCp = 0; // Não deixa o visual ficar negativo
+                    if (atualCp < 0) atualCp = 0;
 
                     const txtSp = document.getElementById('arena-enemy-sp-txt').innerText.split('/');
                     const maxSp = Number(txtSp[1]) || 1;
@@ -1660,18 +1660,19 @@ window.iniciarRadarDaArena = () => {
                     window.atualizarBarraArena('enemy', 'cp', atualCp, maxCp);
                     window.atualizarBarraArena('enemy', 'sp', atualSp, maxSp);
 
-                    // B) Escreve o ataque no Log da Batalha (com borda vermelha)
                     const logArena = document.getElementById('arena-log');
-                    logArena.innerHTML += `
-                        <div style="background: rgba(231, 76, 60, 0.1); padding: 8px; border-left: 3px solid #e74c3c; margin-top: 10px; border-radius: 0 4px 4px 0;">
-                            <div style="color: #e74c3c; font-weight: bold;">> O Inimigo usou ${acao.jutsuNome}! <span style="font-size:0.75rem; color:#95a5a6;">(-${acao.custoCp} CP | -${acao.custoSp} SP)</span></div>
-                            <div style="color: #e67e22; margin-top: 3px;">> ${acao.msgDano}</div>
-                        </div>
-                    `;
-                    logArena.scrollTop = logArena.scrollHeight;
 
-                    // C) PREPARA A TELA DE DEFESA (SOMENTE SE FOR UM ATAQUE)
+                    // B) SE FOR UM ATAQUE REAL (Abre defesa e Borda Vermelha)
                     if (acao.isAtaque) {
+                        
+                        logArena.innerHTML += `
+                            <div style="background: rgba(231, 76, 60, 0.1); padding: 8px; border-left: 3px solid #e74c3c; margin-top: 10px; border-radius: 0 4px 4px 0;">
+                                <div style="color: #e74c3c; font-weight: bold;">> O Inimigo usou ${acao.jutsuNome}! <span style="font-size:0.75rem; color:#95a5a6;">(-${acao.custoCp} CP | -${acao.custoSp} SP)</span></div>
+                                <div style="color: #e67e22; margin-top: 3px;">> ${acao.msgDano}</div>
+                            </div>
+                        `;
+                        logArena.scrollTop = logArena.scrollHeight;
+
                         window.danoAmeacaAtual = acao.danoValor || 0; 
                         window.categoriaAmeacaAtual = acao.jutsuCategoria || 'taijutsu'; 
                         
@@ -1711,7 +1712,23 @@ window.iniciarRadarDaArena = () => {
                         
                         document.getElementById('arena-controls').style.display = 'none';
                         document.getElementById('arena-reaction-box').style.display = 'block'; 
+
                     } else {
+                        // C) SE FOR BUFF/SUPORTE (Apenas Log verde/cinza, não abre defesa)
+                        logArena.innerHTML += `
+                            <div style="background: rgba(46, 204, 113, 0.1); padding: 8px; border-left: 3px solid #2ecc71; margin-top: 10px; border-radius: 0 4px 4px 0;">
+                                <div style="color: #2ecc71; font-weight: bold;">> O Inimigo usou ${acao.jutsuNome}! <span style="font-size:0.75rem; color:#95a5a6;">(-${acao.custoCp} CP | -${acao.custoSp} SP)</span></div>
+                                <div style="color: #95a5a6; font-style: italic; margin-top: 5px; font-size: 0.85rem;">
+                                    > ${acao.msgDano} O inimigo está se preparando...
+                                </div>
+                            </div>
+                        `;
+                        logArena.scrollTop = logArena.scrollHeight;
+                    }
+                }
+            }
+            
+        } else {
             // Se a sala sumir por algum motivo
             window.sairDaArenaVisualmente();
         }
