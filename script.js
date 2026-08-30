@@ -2765,7 +2765,7 @@ window.abrirModalCriacao = () => {
 
     // --- BLOCO 2: ESPECÍFICO POR TIPO ---
 
-    // CASO: JUTSUS (Todos os campos recuperados)
+    // CASO: JUTSUS (Todos os campos recuperados + Mecânicas Avançadas)
     if (tipo.includes('jutsus')) {
         html += `
             <div class="input-grid-3">
@@ -2783,8 +2783,36 @@ window.abrirModalCriacao = () => {
                 ${campo('BÔNUS HP', 'cre-hp', 'text', '0')}
                 ${campo('BÔNUS STAMINA', 'cre-b-stamina', 'text', '0')}
             </div>
+            
+            <!-- CAIXA DE MECÂNICAS AVANÇADAS -->
+            <div style="margin-top: 15px; padding: 15px; border: 1px solid #34495e; border-radius: 8px; background: rgba(0,0,0,0.03);">
+                <h4 style="color: #e67e22; margin-top: 0; margin-bottom: 15px; font-size: 0.95rem;"><i class="fa-solid fa-gears"></i> Regras de Combate</h4>
+                
+                <div class="input-grid-2">
+                    ${campo('CATEGORIA', 'cre-categoria-jutsu', 'text', 'ninjutsu, taijutsu...')}
+                    ${campo('FUNÇÃO', 'cre-funcao', 'text', 'ataque, defesa, suporte...')}
+                </div>
+                
+                <div class="input-grid-2">
+                    ${campo('MULTIPLICADOR MAX.', 'cre-multiplicador', 'number', '1')}
+                    ${campo('VELOCIDADE ESQUIVA (1 a 12)', 'cre-rank-esquiva', 'number', '1')}
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; font-weight: bold; color: #555;">
+                        <input type="checkbox" id="cre-imp-esquiva" style="width: 16px; height: 16px;">
+                        Impossível Esquivar (Ex: Amaterasu)
+                    </label>
+
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; font-weight: bold; color: #555;">
+                        <input type="checkbox" id="cre-imp-defender" style="width: 16px; height: 16px;">
+                        Impossível Defender Físico (Ex: Ninjutsus)
+                    </label>
+                </div>
+            </div>
         `;
-    } 
+    }
+        
     // CASO: FERRAMENTAS / LOJA
     else if (tipo.includes('ferramenta') || tipo.includes('loja')) {
         html += `
@@ -2799,6 +2827,7 @@ window.abrirModalCriacao = () => {
             </div>
         `;
     }
+        
     // CASO: MISSÕES / CONQUISTAS
     else if (tipo.includes('missoes') || tipo.includes('conquistas')) {
         html += `
@@ -2866,6 +2895,18 @@ document.getElementById('form-criacao-geral').onsubmit = async (e) => {
             dados.chakra = getVal('cre-chakra') || "";
             dados.bonus_hp = getVal('cre-hp') || "";
             dados.bonus_stamina = getVal('cre-b-stamina') || "";
+            
+            // --- CAPTURANDO AS NOVAS MECÂNICAS ---
+            dados.categoria = getVal('cre-categoria-jutsu') || "ninjutsu";
+            dados.funcao = getVal('cre-funcao') || "ataque";
+            dados.multiplicador_maximo = Number(getVal('cre-multiplicador')) || 1;
+            dados.rank_esquiva_minimo = Number(getVal('cre-rank-esquiva')) || 1;
+            
+            // Tratamento especial para os checkboxes
+            const checkEsquiva = document.getElementById('cre-imp-esquiva');
+            const checkDefesa = document.getElementById('cre-imp-defender');
+            dados.impossivel_esquivar = checkEsquiva ? checkEsquiva.checked : false;
+            dados.impossivel_defender_fisico = checkDefesa ? checkDefesa.checked : false;
         }
     }
 
