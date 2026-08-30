@@ -1457,21 +1457,38 @@ window.rolarDados = (danoString) => {
 
 // O Ataque Real (Conecta o botão aos dados, gasta recursos e registra ação)
 window.prepararAtaque = async (jutsu) => {
-    const custoCp = jutsu.chakra ? Math.abs(jutsu.chakra) : 0;
-    const custoSp = jutsu.stamina ? Math.abs(jutsu.stamina) : 0;
+    
+    // 1. SISTEMA DE MULTIPLICADOR
+    let multiplicador = 1;
+    const maxMulti = Number(jutsu.multiplicador_maximo) || 0;
 
-    // 1. VERIFICAÇÃO DE RECURSOS ATUAIS
+    if (maxMulti > 1) {
+        let resposta = prompt(`Quantas cargas de "${jutsu.nome}" você deseja usar?\n(Mínimo: 1 | Máximo: ${maxMulti})`, "1");
+        
+        // Se o jogador clicar em "Cancelar" no prompt, a função para por aqui
+        if (resposta === null) return; 
+
+        multiplicador = parseInt(resposta);
+        if (isNaN(multiplicador) || multiplicador < 1) multiplicador = 1;
+        if (multiplicador > maxMulti) multiplicador = maxMulti;
+    }
+
+    // Calcula os custos finais baseados na escolha do jogador
+    const custoCp = (jutsu.chakra ? Math.abs(jutsu.chakra) : 0) * multiplicador;
+    const custoSp = (jutsu.stamina ? Math.abs(jutsu.stamina) : 0) * multiplicador;
+
+    // 2. VERIFICAÇÃO DE RECURSOS ATUAIS
     const meuCpAtual = currentUserData.chakra || 0;
     const meuSpAtual = currentUserData.stamina || 0;
 
     if (meuCpAtual < custoCp) {
-        return alert(`🌀 Chakra insuficiente! Você tem ${meuCpAtual} mas precisa de ${custoCp} para usar ${jutsu.nome}.`);
+        return alert(`🌀 Chakra insuficiente! Você tem ${meuCpAtual} mas precisa de ${custoCp} para usar essa quantidade de ${jutsu.nome}.`);
     }
     if (meuSpAtual < custoSp) {
-        return alert(`🍃 Stamina insuficiente! Você tem ${meuSpAtual} mas precisa de ${custoSp} para usar ${jutsu.nome}.`);
+        return alert(`🍃 Stamina insuficiente! Você tem ${meuSpAtual} mas precisa de ${custoSp} para usar essa quantidade de ${jutsu.nome}.`);
     }
 
-    // 2. DESCONTA OS RECURSOS IMEDIATAMENTE
+    // 3. DESCONTA OS RECURSOS IMEDIATAMENTE
     try {
         currentUserData.chakra -= custoCp;
         currentUserData.stamina -= custoSp;
@@ -1493,41 +1510,24 @@ window.prepararAtaque = async (jutsu) => {
         return alert("Erro ao canalizar chakra. Tente novamente!");
     }
 
-    // 3. ROLAGEM DE DADOS E LÓGICA DE FUNÇÃO
-    let resultado = window.rolarDados(jutsu.dano);
-    let danoFinal = typeof resultado === 'number' ? resultado : resultado.totalFinal;
-    
-    // Verifica se a técnica realmente tem intenção de atacar o inimigo
-    const func = String(jutsu.funcao || '').toLowerCase();
-    const isAtaque = func.includes('ataque');
+    // 4. ROLAGEM DE DADOS MÚLTIPLA (Soma os resultados X vezes)
+    let totalDanoFinal = 0;
+    let todasRolagens = [];
+    let bonusTotal = 0;
+    let isLetal = false;
 
-    let textoDados = "";
-    if (typeof resultado === 'object' && isAtaque) {
-        let sinalBonus = resultado.bonus >= 0 ? '+' : '';
-        textoDados = `<span style="color:#7f8c8d; font-size:0.8rem;">(Dados: [${resultado.rolagens.join(', ')}] ${sinalBonus}${resultado.bonus})</span>`;
+    for (let i = 0; i < multiplicador; i++) {
+        let resultado = window.rolarDados(jutsu.dano);
+        if (typeof resultado === 'number') {
+            if (resultado >= 999999) isLetal = true;
+            totalDanoFinal += resultado;
+        } else {
+            if (resultado.totalFinal >= 999999) isLetal = true;
+            totalDanoFinal += resultado.totalFinal;
+            todasRolagens.push(...resultado.rolagens);
+            bonusTotal += resultado.bonus;
+        }
     }
-
-    let msgDano = "";
-    if (!isAtaque) {
-        msgDano = "✨ A técnica foi ativada com sucesso!";
-        danoFinal = 0; // Garante que buffs não causem dano acidental
-    } else if (danoFinal >= 999999) {
-        msgDano = "💥 **DANO LETAL!** A técnica foi canalizada com perfeição!";
-    } else {
-        msgDano = `💥 O ataque gerou um potencial de **${danoFinal}** de dano! ${textoDados}`;
-    }
-
-    // 4. REGISTRA A AÇÃO NO LOG DA ARENA LOCAL
-    const logArena = document.getElementById('arena-log');
-    let corLogLocal = isAtaque ? '#3498db' : '#2ecc71'; // Azul para ataque, Verde para suporte
-
-    logArena.innerHTML += `
-        <div style="background: rgba(52, 152, 219, 0.1); padding: 8px; border-left: 3px solid ${corLogLocal}; margin-top: 10px; border-radius: 0 4px 4px 0;">
-            <div style="color: ${corLogLocal}; font-weight: bold;">> Você usou ${jutsu.nome}! <span style="font-size:0.75rem; color:#e74c3c;">(-${custoCp} CP | -${custoSp} SP)</span></div>
-            <div style="color: ${isAtaque ? '#e74c3c' : '#27ae60'}; margin-top: 3px;">> ${msgDano}</div>
-        </div>
-    `;
-    logArena.scrollTop = logArena.scrollHeight;
 
     // 5. MOLDANDO A NARRATIVA E APLICANDO STATUS PRÓPRIOS
     const func = String(jutsu.funcao || '').toLowerCase();
@@ -1546,8 +1546,7 @@ window.prepararAtaque = async (jutsu) => {
         
         // --- INJETANDO O UPKEEP SE FOR UM MODO ---
         if (func.includes('modo')) {
-            // Sugestão: suga 5% do Chakra Máximo por 3 turnos (você pode customizar depois)
-            const drenoChakra = Math.max(1, Math.floor(currentUserData.max_chakra * 0.05) || 5);
+            const drenoChakra = Math.max(1, Math.floor((currentUserData.max_chakra || 100) * 0.05));
             window.adicionarEfeito(`Manutenção: ${jutsu.nome}`, 'cp', drenoChakra, 3);
         }
         
@@ -1557,6 +1556,43 @@ window.prepararAtaque = async (jutsu) => {
     } else {
         msgDano = `💥 O ataque gerou um potencial de **${totalDanoFinal}** de dano! ${textoDados}`;
     }
+
+    const nomeJutsuDisplay = multiplicador > 1 ? `${jutsu.nome} (x${multiplicador})` : jutsu.nome;
+    let corLogLocal = isAtaque ? '#3498db' : '#2ecc71'; 
+
+    // 6. REGISTRA A AÇÃO NO LOG DA ARENA LOCAL
+    const logArena = document.getElementById('arena-log');
+    logArena.innerHTML += `
+        <div style="background: rgba(52, 152, 219, 0.1); padding: 8px; border-left: 3px solid ${corLogLocal}; margin-top: 10px; border-radius: 0 4px 4px 0;">
+            <div style="color: ${corLogLocal}; font-weight: bold;">> Você usou ${nomeJutsuDisplay}! <span style="font-size:0.75rem; color:#e74c3c;">(-${custoCp} CP | -${custoSp} SP)</span></div>
+            <div style="color: ${isAtaque ? '#e74c3c' : '#27ae60'}; margin-top: 3px;">> ${msgDano}</div>
+        </div>
+    `;
+    logArena.scrollTop = logArena.scrollHeight;
+
+    // 7. TRANSMITE PARA A SALA DE BATALHA (Lendo as regras do banco)
+    if (window.currentBattleId) {
+        try {
+            await updateDoc(doc(db, "desafios_batalha", window.currentBattleId), {
+                ultimaAcao: {
+                    atacanteId: auth.currentUser.uid,
+                    jutsuNome: nomeJutsuDisplay,
+                    jutsuCategoria: jutsu.categoria || 'ninjutsu', 
+                    jutsuFuncao: func || 'ataque',         
+                    msgDano: msgDano,
+                    danoValor: totalDanoFinal || 0, 
+                    custoCp: custoCp,
+                    custoSp: custoSp,
+                    isAtaque: isAtaque,
+                    impossivelEsquivar: jutsu.impossivel_esquivar || false,
+                    impossivelDefender: jutsu.impossivel_defender_fisico || false,
+                    rankEsquivaMinimo: Number(jutsu.rank_esquiva_minimo) || 1,
+                    timestamp: new Date().getTime() 
+                }
+            });
+        } catch(e) { console.error("Erro ao transmitir ação:", e); }
+    }
+};
 
 
 // --- MOTOR DE TURNOS E EFEITOS ---
