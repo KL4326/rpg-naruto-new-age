@@ -1378,17 +1378,6 @@ window.carregarControlesBatalha = async () => {
         }
     }
 
-    // Botão de Passar Turno (NOVO)
-    const btnPassar = document.createElement('button');
-    btnPassar.className = 'buy-btn';
-    btnPassar.style.background = '#27ae60'; // Verde indicando tempo/cura
-    btnPassar.innerHTML = '<strong><i class="fa-solid fa-hourglass-end"></i> Passar Turno</strong><br><span style="font-size: 0.75rem;">Aplica Efeitos e Sangramentos</span>';
-    btnPassar.onclick = () => window.passarTurno();
-    painelControles.appendChild(btnPassar);
-
-    // Botão de Recuar (Já existe no seu código, mantenha ele aqui em baixo)
-    const btnFugir = document.createElement('button');
-
     // Ataque Básico Padrão
     const btnAtaqueBasico = document.createElement('button');
     btnAtaqueBasico.className = 'buy-btn';
@@ -1397,6 +1386,14 @@ window.carregarControlesBatalha = async () => {
     btnAtaqueBasico.onclick = () => window.prepararAtaque({ nome: "Ataque Básico", tipo: "taijutsu", dano: "d4" });
     painelControles.appendChild(btnAtaqueBasico);
     
+    // Botão de Passar Turno (NOVO)
+    const btnPassar = document.createElement('button');
+    btnPassar.className = 'buy-btn';
+    btnPassar.style.background = '#27ae60'; 
+    btnPassar.innerHTML = '<strong><i class="fa-solid fa-hourglass-end"></i> Passar Turno</strong><br><span style="font-size: 0.75rem;">Aplica Efeitos e Sangramentos</span>';
+    btnPassar.onclick = () => window.passarTurno();
+    painelControles.appendChild(btnPassar);
+
     // Botão de Recuar
     const btnFugir = document.createElement('button');
     btnFugir.className = 'buy-btn';
@@ -1404,7 +1401,7 @@ window.carregarControlesBatalha = async () => {
     btnFugir.innerHTML = '<i class="fa-solid fa-person-running"></i> Recuar';
     btnFugir.onclick = () => window.encerrarBatalha();
     painelControles.appendChild(btnFugir);
-};
+}; // <-- Fim da função carregarControlesBatalha
 
 // --- MOTOR DE DADOS E DANO ---
 
