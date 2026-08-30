@@ -1252,6 +1252,8 @@ window.atualizarBarraArena = (alvo, tipo, atual, max) => {
 
 // Carrega os combatentes para dentro do ringue
 window.carregarArena = async (inimigoId) => {
+    window.efeitosAtivos = []; // <--- Inicia a mochila vazia!
+    
     // Troca a tela de espera pela Arena
     document.getElementById('arena-waiting').style.display = 'none';
     document.getElementById('arena-container').style.display = 'flex';
@@ -1375,6 +1377,17 @@ window.carregarControlesBatalha = async () => {
             }
         }
     }
+
+    // Botão de Passar Turno (NOVO)
+    const btnPassar = document.createElement('button');
+    btnPassar.className = 'buy-btn';
+    btnPassar.style.background = '#27ae60'; // Verde indicando tempo/cura
+    btnPassar.innerHTML = '<strong><i class="fa-solid fa-hourglass-end"></i> Passar Turno</strong><br><span style="font-size: 0.75rem;">Aplica Efeitos e Sangramentos</span>';
+    btnPassar.onclick = () => window.passarTurno();
+    painelControles.appendChild(btnPassar);
+
+    // Botão de Recuar (Já existe no seu código, mantenha ele aqui em baixo)
+    const btnFugir = document.createElement('button');
 
     // Ataque Básico Padrão
     const btnAtaqueBasico = document.createElement('button');
@@ -1543,6 +1556,99 @@ window.prepararAtaque = async (jutsu) => {
         } catch(e) { console.error("Erro ao transmitir ação:", e); }
     }
 };
+
+
+// --- MOTOR DE TURNOS E EFEITOS ---
+window.passarTurno = async () => {
+    if (!window.currentBattleId) return;
+
+    let logEfeitos = "";
+    let hpPerdido = 0;
+    let cpGasto = 0;
+    let spGasto = 0;
+
+    // 1. PROCESSA A MOCHILA DE EFEITOS (Lê de trás para frente para poder remover sem quebrar a lista)
+    for (let i = window.efeitosAtivos.length - 1; i >= 0; i--) {
+        let efeito = window.efeitosAtivos[i];
+        
+        if (efeito.tipo === 'hp') hpPerdido += efeito.valor;
+        if (efeito.tipo === 'cp') cpGasto += efeito.valor;
+        if (efeito.tipo === 'sp') spGasto += efeito.valor;
+
+        logEfeitos += `[${efeito.nome}] causou seu efeito. `;
+
+        efeito.turnos -= 1; // O tempo passa...
+        
+        // Se o tempo do efeito acabou, avisa e remove da mochila
+        if (efeito.turnos <= 0) {
+            logEfeitos += `(O efeito de [${efeito.nome}] terminou!) `;
+            window.efeitosAtivos.splice(i, 1); 
+        }
+    }
+
+    if (logEfeitos === "") {
+        logEfeitos = "Você recuou a guarda e encerrou o seu turno em silêncio.";
+    }
+
+    // 2. APLICA AS PERDAS NA FICHA DO JOGADOR
+    let hpAtual = (currentUserData.vida || 100) - hpPerdido;
+    if (hpAtual < 0) hpAtual = 0;
+    
+    let cpAtual = (currentUserData.chakra || 0) - cpGasto;
+    if (cpAtual < 0) cpAtual = 0;
+    
+    let spAtual = (currentUserData.stamina || 0) - spGasto;
+    if (spAtual < 0) spAtual = 0;
+
+    currentUserData.vida = hpAtual;
+    currentUserData.chakra = cpAtual;
+    currentUserData.stamina = spAtual;
+
+    const txtHp = document.getElementById('arena-player-hp-txt').innerText.split('/');
+    const txtCp = document.getElementById('arena-player-cp-txt').innerText.split('/');
+    const txtSp = document.getElementById('arena-player-sp-txt').innerText.split('/');
+
+    window.atualizarBarraArena('player', 'hp', hpAtual, Number(txtHp[1]) || 1);
+    window.atualizarBarraArena('player', 'cp', cpAtual, Number(txtCp[1]) || 1);
+    window.atualizarBarraArena('player', 'sp', spAtual, Number(txtSp[1]) || 1);
+
+    try {
+        await updateDoc(doc(db, "users", auth.currentUser.uid), {
+            vida: hpAtual,
+            chakra: cpAtual,
+            stamina: spAtual
+        });
+    } catch(e) { console.error("Erro ao salvar turno:", e); }
+
+    // 3. AVISA NA TELA LOCAL
+    const logArena = document.getElementById('arena-log');
+    logArena.innerHTML += `
+        <div style="background: rgba(149, 165, 166, 0.1); padding: 8px; border-left: 3px solid #95a5a6; margin-top: 10px; border-radius: 4px;">
+            <div style="color: #95a5a6; font-weight: bold;">> ⏳ Fim do seu Turno</div>
+            <div style="color: #bdc3c7; margin-top: 3px; font-size: 0.85rem;">> ${logEfeitos}</div>
+        </div>
+    `;
+    logArena.scrollTop = logArena.scrollHeight;
+
+    // 4. TRANSMITE PARA O INIMIGO LER (Silencioso, sem abrir tela de defesa)
+    try {
+        await updateDoc(doc(db, "desafios_batalha", window.currentBattleId), {
+            ultimaAcao: {
+                atacanteId: auth.currentUser.uid,
+                jutsuNome: "Fim do Turno",
+                msgDano: logEfeitos,
+                jutsuCategoria: 'suporte', 
+                jutsuFuncao: 'suporte',
+                danoValor: 0,
+                custoCp: 0,
+                custoSp: 0,
+                isAtaque: false, 
+                timestamp: new Date().getTime() 
+            }
+        });
+    } catch(e) { console.error("Erro ao transmitir turno:", e); }
+};
+
 
 // Função auxiliar para limpar a tela da Arena perfeitamente
 window.sairDaArenaVisualmente = () => {
