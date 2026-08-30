@@ -1403,6 +1403,7 @@ window.carregarControlesBatalha = async () => {
     painelControles.appendChild(btnFugir);
 }; // <-- Fim da função carregarControlesBatalha
 
+
 // --- MOTOR DE DADOS E DANO ---
 
 // Lê o texto do Firebase ("d6+1", "50" ou "Letal") e converte em números reais
@@ -1528,31 +1529,34 @@ window.prepararAtaque = async (jutsu) => {
     `;
     logArena.scrollTop = logArena.scrollHeight;
 
-    // 5. TRANSMITE PARA A SALA DE BATALHA (Avisando se é ataque ou não)
-    if (window.currentBattleId) {
-        try {
-            await updateDoc(doc(db, "desafios_batalha", window.currentBattleId), {
-                ultimaAcao: {
-                    atacanteId: auth.currentUser.uid,
-                    jutsuNome: jutsu.nome,
-                    jutsuCategoria: jutsu.categoria || 'ninjutsu', 
-                    jutsuFuncao: func || 'ataque',         
-                    msgDano: msgDano,
-                    danoValor: danoFinal || 0, 
-                    custoCp: custoCp,
-                    custoSp: custoSp,
-                    isAtaque: isAtaque,
-                    // --- NOVAS REGRAS DE INEVITABILIDADE ---
-                    impossivelEsquivar: jutsu.impossivel_esquivar || false,
-                    impossivelDefender: jutsu.impossivel_defender_fisico || false,
-                    rankEsquivaMinimo: Number(jutsu.rank_esquiva_minimo) || 1,
-                    // ---------------------------------------
-                    timestamp: new Date().getTime() 
-                }
-            });
-        } catch(e) { console.error("Erro ao transmitir ação:", e); }
+    // 5. MOLDANDO A NARRATIVA E APLICANDO STATUS PRÓPRIOS
+    const func = String(jutsu.funcao || '').toLowerCase();
+    const isAtaque = func.includes('ataque');
+
+    let textoDados = "";
+    if (todasRolagens.length > 0 && isAtaque) {
+        let sinalBonus = bonusTotal >= 0 ? '+' : '';
+        textoDados = `<span style="color:#7f8c8d; font-size:0.8rem;">(Dados: [${todasRolagens.join(', ')}] ${sinalBonus}${bonusTotal})</span>`;
     }
-};
+
+    let msgDano = "";
+    if (!isAtaque) {
+        msgDano = "✨ A técnica foi ativada com sucesso!";
+        totalDanoFinal = 0; 
+        
+        // --- INJETANDO O UPKEEP SE FOR UM MODO ---
+        if (func.includes('modo')) {
+            // Sugestão: suga 5% do Chakra Máximo por 3 turnos (você pode customizar depois)
+            const drenoChakra = Math.max(1, Math.floor(currentUserData.max_chakra * 0.05) || 5);
+            window.adicionarEfeito(`Manutenção: ${jutsu.nome}`, 'cp', drenoChakra, 3);
+        }
+        
+    } else if (isLetal) {
+        msgDano = "💥 **DANO LETAL!** A técnica foi canalizada com perfeição!";
+        totalDanoFinal = 999999;
+    } else {
+        msgDano = `💥 O ataque gerou um potencial de **${totalDanoFinal}** de dano! ${textoDados}`;
+    }
 
 
 // --- MOTOR DE TURNOS E EFEITOS ---
@@ -1644,6 +1648,29 @@ window.passarTurno = async () => {
             }
         });
     } catch(e) { console.error("Erro ao transmitir turno:", e); }
+};
+
+
+// Função genérica para injetar efeitos (Sangramento, Veneno, Upkeep de Chakra)
+window.adicionarEfeito = (nomeEfeito, tipoRecurso, valorPorTurno, quantidadeTurnos) => {
+    
+    // Injeta na mochila da arena
+    window.efeitosAtivos.push({
+        nome: nomeEfeito,
+        tipo: tipoRecurso, // 'hp' (sangramento/veneno), 'cp' (dreno de chakra), 'sp' (fadiga)
+        valor: Number(valorPorTurno),
+        turnos: Number(quantidadeTurnos)
+    });
+    
+    // Avisa na tela do jogador com uma notificação roxa de status
+    const logArena = document.getElementById('arena-log');
+    logArena.innerHTML += `
+        <div style="background: rgba(155, 89, 182, 0.1); padding: 8px; border-left: 3px solid #9b59b6; margin-top: 10px; border-radius: 4px;">
+            <div style="color: #9b59b6; font-weight: bold;">> 💉 Novo Efeito Ativo: ${nomeEfeito}</div>
+            <div style="color: #bdc3c7; margin-top: 3px; font-size: 0.85rem;">> Você perderá ${valorPorTurno} de ${tipoRecurso.toUpperCase()} por ${quantidadeTurnos} turnos.</div>
+        </div>
+    `;
+    logArena.scrollTop = logArena.scrollHeight;
 };
 
 
