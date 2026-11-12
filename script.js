@@ -20,6 +20,7 @@ let globalItensMap = {};
 let ordenacaoAtual = 'alfabetica';
 let currentGiftTarget = null;
 let currentMentorData = null;
+let currentMentorId = null;
 let globalMentores = {};
 let newMentorImageBase64 = null;
 let currentChatUserId = null;
@@ -209,6 +210,15 @@ window.limparCache = limparCache;
 
 // --- UTILITÁRIOS ---
 function calcularTempo(timestamp) { try { if (!timestamp) return "Desconhecido"; let date = (typeof timestamp.toDate === 'function') ? timestamp.toDate() : new Date(timestamp); if (isNaN(date.getTime())) return "-"; return date.toLocaleDateString('pt-BR'); } catch (e) { return "-"; } }
+// Preço oficial de um item/jutsu (as regras de segurança do Firebase usam a MESMA conta):
+// em EN se tiver preco_en; senão em Ryos, usando a promoção quando for menor.
+function numero(v) { const n = Number(v); return isNaN(n) ? 0 : n; }
+function moedaDe(item) { return numero(item.preco_en) > 0 ? 'essencia_ninja' : 'ryos'; }
+function precoDe(item) {
+    if (moedaDe(item) === 'essencia_ninja') return numero(item.preco_en);
+    const promo = numero(item.preco_promocional), cheio = numero(item.preco);
+    return (promo > 0 && promo < cheio) ? promo : cheio;
+}
 function formatarNum(v) { return Number(v||0).toLocaleString('pt-BR'); }
 window.toggleMobileMenu = () => { document.querySelector('.sidebar').classList.toggle('mobile-active'); document.querySelector('.sidebar-overlay').classList.toggle('active'); };
 
@@ -354,7 +364,7 @@ window.showTab = (t, opcoes = {}) => {
             if(t === 'missoes') carregarMissoes();
             if(t === 'rankings') carregarRankings();
             if(t === 'mentorias') carregarMentorias();
-            if(t === 'admin-panel') { carregarPainelAdmin(); window.carregarDiariosAdmin(); }
+            if(t === 'admin-panel') { carregarPainelAdmin(); window.carregarDiariosAdmin(); window.carregarPremiosPendentesAdmin(); }
 
             if(t === 'loja-premium') {
                 const input = document.getElementById('input-qtd-ryos');
@@ -781,8 +791,6 @@ function criarLinhaStatusCustom(uid, f, l, a, v, m, c) {
     const p=Math.min((v/m)*100,100); 
     return `<div class="battle-row"><div class="battle-row-header"><span>${l}</span><span>${a}</span></div><div class="battle-controls"><div class="battle-actions-row"><div class="battle-mini-btn" onclick="alterarStatus('${uid}','${f}',-5)">-5</div><div class="battle-mini-btn" onclick="alterarStatus('${uid}','${f}',-1)">-1</div></div><span class="battle-val">${v} / <span style="cursor:pointer; border-bottom:1px dotted #ccc;" onclick="editarMaximo('${uid}', 'max_${f}')">${m}</span></span><div class="battle-actions-row"><div class="battle-mini-btn" onclick="alterarStatus('${uid}','${f}',1)">+1</div><div class="battle-mini-btn" onclick="alterarStatus('${uid}','${f}',5)">+5</div></div></div><div class="battle-bar-bg"><div class="battle-bar-fill ${c}" style="width:${p}%;"></div><div class="battle-bar-text">${p.toFixed(0)}%</div></div></div>`; 
 }
-window.editarMaximo = async (uid, field) => { const novo = prompt("Novo valor máximo:"); if(novo && !isNaN(novo)) await updateDoc(doc(db, "users", uid), { [field]: parseInt(novo) }); };
-window.alterarStatus = async (targetUid, stat, valor) => { await updateDoc(doc(db, "users", targetUid), { [stat]: increment(valor) }); };
 function gerarTagsBonus(d) {
     let html = '';
     const stats = ['hp', 'stamina', 'chakra', 'forca', 'defesa', 'agilidade', 'velocidade', 'intelecto', 'constituicao', 'destreza'];
@@ -814,12 +822,11 @@ function criarCardLoja(containerId, dados, id, tipo, buyFn, clickFn) {
     };
 
     let sub = "", buyControlHTML = "", priceHTML = "";
-    const currency = dados.preco_en ? 'EN' : 'Ryos';
-    let finalPrice = currency === 'EN' ? dados.preco_en : dados.preco;
+    const currency = moedaDe(dados) === 'essencia_ninja' ? 'EN' : 'Ryos';
+    let finalPrice = precoDe(dados);
 
     // Lógica de Preço (Promoção ou Normal)
-    if (currency === 'Ryos' && dados.preco_promocional && dados.preco_promocional < dados.preco) {
-        finalPrice = dados.preco_promocional;
+    if (currency === 'Ryos' && finalPrice < numero(dados.preco)) {
         priceHTML = `<p id="price-${id}" class="price-tag"><span style="text-decoration:line-through; color:#999; font-size:0.85em; margin-right:5px;">${formatarNum(dados.preco)}</span><span style="color:var(--primary-color); font-weight:bold;">${formatarNum(finalPrice)} Ryos</span></p>`;
     } else {
         const colorClass = currency === 'EN' ? 'en-price' : '';
@@ -878,7 +885,7 @@ function criarCardLoja(containerId, dados, id, tipo, buyFn, clickFn) {
                 
                 const priceTag = document.getElementById(`price-${id}`);
                 if(priceTag) {
-                    if (currency === 'Ryos' && dados.preco_promocional && dados.preco_promocional < dados.preco) {
+                    if (currency === 'Ryos' && finalPrice < numero(dados.preco)) {
                         priceTag.innerHTML = `<span style="text-decoration:line-through; color:#999; font-size:0.85em; margin-right:5px;">${formatarNum(dados.preco * q)}</span><span style="color:var(--primary-color); font-weight:bold;">${formatarNum(finalPrice * q)} Ryos</span>`;
                     } else {
                         priceTag.innerText = `${formatarNum(finalPrice * q)} ${currency}`; 
@@ -2245,7 +2252,7 @@ window.confirmarPresente = async () => {
     const qtd = Number(document.getElementById('pres-qtd').value);
 
     // Validações de segurança
-    if (isNaN(qtd) || qtd <= 0) return alert("Insira uma quantidade válida!");
+    if (isNaN(qtd) || qtd <= 0 || !Number.isInteger(qtd)) return alert("Insira uma quantidade válida (número inteiro)!");
     if (!currentUserData) return alert("Seus dados não foram carregados. Tente novamente.");
 
     // Verifica se o remetente tem saldo
@@ -2272,9 +2279,12 @@ window.confirmarPresente = async () => {
 
         // Débito e crédito na MESMA operação (ou os dois acontecem, ou nenhum)
         // e com increment(), para não sobrescrever saldos alterados ao mesmo tempo.
+        // O comprovante em "transferencias" é o que as regras de segurança conferem.
+        const refComprovante = doc(collection(db, "transferencias"));
         const lote = writeBatch(db);
-        lote.update(refRemetente, { [tipo]: increment(-qtd) });
-        lote.update(refDestinatario, { [tipo]: increment(qtd) });
+        lote.set(refComprovante, { de: auth.currentUser.uid, para: usuarioDestinoPresente, tipo, qtd, motivo: 'presente', data: serverTimestamp() });
+        lote.update(refRemetente, { [tipo]: increment(-qtd), ultimaTransferencia: refComprovante.id });
+        lote.update(refDestinatario, { [tipo]: increment(qtd), ultimaTransferenciaRecebida: refComprovante.id });
         await lote.commit();
 
         // Atualiza os dados locais para não precisar recarregar a página
@@ -2303,25 +2313,52 @@ window.consumirItem = async (id, nome) => {
     let itemData = globalItensMap[id];
     if (itemData && itemData.type === 'tool' && itemData.stamina > 0) {
         if ((currentUserData.stamina || 0) < itemData.stamina) return alert("Stamina insuficiente!");
-        if(confirm(`Usar ${nome}? Custa ${itemData.stamina} STA`)) await updateDoc(doc(db, "users", auth.currentUser.uid), { [`inventario.${id}`]: increment(-1), stamina: increment(-itemData.stamina) });
+        if(confirm(`Usar ${nome}? Custa ${itemData.stamina} STA`)) await updateDoc(doc(db, "users", auth.currentUser.uid), { [`inventario.${id}`]: increment(-1), stamina: increment(-itemData.stamina), ultimoConsumo: id });
     } else {
-        if(confirm(`Usar ${nome}?`)) await updateDoc(doc(db, "users", auth.currentUser.uid), { [`inventario.${id}`]: increment(-1) }); 
+        if(confirm(`Usar ${nome}?`)) await updateDoc(doc(db, "users", auth.currentUser.uid), { [`inventario.${id}`]: increment(-1), ultimoConsumo: id }); 
     }
 };
-window.comprarJutsu = async (id, p, n, currency) => { 
-    const field = currency === 'EN' ? 'essencia_ninja' : 'ryos';
-    if(!confirm(`Comprar ${n}?`)) return; 
-    if((currentUserData[field]||0) < p) return alert("Sem fundos!"); 
-    await updateDoc(doc(db, "users", auth.currentUser.uid), { [field]: increment(-p), meusJutsus: arrayUnion(id), [`maestrias.${id}`]: 0 }); 
-    alert("Comprado!"); 
+// Lê o item direto do banco na hora da compra (o preço pode ter mudado desde que a loja abriu)
+async function precoAtual(colecao, id) {
+    const snap = await getDoc(doc(db, colecao, id));
+    if (!snap.exists()) throw new Error("Este item não existe mais na loja.");
+    const dados = snap.data();
+    return { moeda: moedaDe(dados), preco: precoDe(dados), dados };
+}
+function nomeMoeda(campo) { return campo === 'essencia_ninja' ? 'EN' : 'Ryos'; }
+
+window.comprarJutsu = async (id, p, n) => {
+    if (!confirm(`Comprar ${n}?`)) return;
+    try {
+        const { moeda, preco, dados } = await precoAtual("jutsus", id);
+        if (preco !== Number(p) && !confirm(`O preço de ${n} mudou para ${formatarNum(preco)} ${nomeMoeda(moeda)}. Comprar mesmo assim?`)) { limparCache("jutsus"); carregarLoja(); return; }
+        if ((currentUserData.nivel || 1) < numero(dados.requisito)) return alert(`Requer nível ${dados.requisito}.`);
+        if ((currentUserData[moeda] || 0) < preco) return alert("Sem fundos!");
+        await updateDoc(doc(db, "users", auth.currentUser.uid), {
+            [moeda]: increment(-preco),
+            meusJutsus: arrayUnion(id),
+            [`maestrias.${id}`]: 0,
+            ultimaCompra: { tipo: 'jutsu', id }   // comprovante conferido pelas regras de segurança
+        });
+        alert("Comprado!");
+    } catch (e) { console.error(e); alert("Não foi possível concluir a compra. " + (e.message || "")); }
 };
-window.comprarMultiplos = async (id, p, n, t, i, currency) => { 
-    const q = parseInt(document.getElementById(i).value)||1; if(q<1) return; const tot=p*q; 
-    const field = currency === 'EN' ? 'essencia_ninja' : 'ryos';
-    if(!confirm(`Comprar ${q}x ${n}?`)) return; 
-    if((currentUserData[field]||0) < tot) return alert("Sem fundos!"); 
-    await updateDoc(doc(db, "users", auth.currentUser.uid), { [field]: increment(-tot), [`inventario.${id}`]: increment(q) }); 
-    alert("Comprado!"); 
+window.comprarMultiplos = async (id, p, n, t, i) => {
+    const q = parseInt(document.getElementById(i).value) || 1; if (q < 1) return;
+    const colecao = t === 'ferramenta' ? 'ferramentas' : 'itens';
+    if (!confirm(`Comprar ${q}x ${n}?`)) return;
+    try {
+        const { moeda, preco } = await precoAtual(colecao, id);
+        if (preco !== Number(p) && !confirm(`O preço de ${n} mudou para ${formatarNum(preco)} ${nomeMoeda(moeda)}. Comprar mesmo assim?`)) { limparCache(colecao); window.showTab(document.querySelector('.tab-content.active').id); return; }
+        const total = preco * q;
+        if ((currentUserData[moeda] || 0) < total) return alert("Sem fundos!");
+        await updateDoc(doc(db, "users", auth.currentUser.uid), {
+            [moeda]: increment(-total),
+            [`inventario.${id}`]: increment(q),
+            ultimaCompra: { tipo: colecao, id }   // comprovante conferido pelas regras de segurança
+        });
+        alert("Comprado!");
+    } catch (e) { console.error(e); alert("Não foi possível concluir a compra. " + (e.message || "")); }
 };
 window.filtrarLojaPorTipo = (t, b) => { lojaAtual = t; document.querySelectorAll('.shop-cat-btn').forEach(x => x.classList.remove('active')); if(b) b.classList.add('active'); carregarLojaItens(); };
 window.atualizarFiltroVila = () => { vilaAtual = document.getElementById('shop-location').value; carregarLojaItens(); };
@@ -2353,18 +2390,24 @@ window.verDetalhesConquista = (id, d, st) => {
 
     document.getElementById('conquistaModal').style.display = 'flex';
 };
-window.solicitarConquista = async (id, btn) => { if(btn) { btn.disabled = true; btn.innerText = "..."; } await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusConquistas.${id}`]: 'solicitado' }); alert("Solicitado!"); };
+window.solicitarConquista = async (id, btn) => { if(btn) { btn.disabled = true; btn.innerText = "..."; } await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusConquistas.${id}`]: 'solicitado', ultimaSolicitacao: id }); alert("Solicitado!"); };
 window.coletarConquista = async (id, ryos, xp, en, btn) => {
     if(btn) btn.disabled = true;
     try {
         const uid = auth.currentUser.uid;
         const userRef = doc(db, "users", uid);
+        // Usa os valores cadastrados no banco (as regras de segurança conferem)
+        const snapC = await getDoc(doc(db, "conquistas", id));
+        if (!snapC.exists()) throw new Error("Conquista não encontrada.");
+        const c = snapC.data();
+        en = numero(c.en);
 
         await updateDoc(userRef, {
-            ryos: increment(ryos || 0),
-            xp: increment(xp || 0),
-            essencia_ninja: increment(en || 0), // ADICIONADO AQUI
-            [`statusConquistas.${id}`]: 'concluido'
+            ryos: increment(numero(c.recompensa)),
+            xp: increment(numero(c.xp)),
+            essencia_ninja: increment(en),
+            [`statusConquistas.${id}`]: 'concluido',
+            ultimaColeta: { tipo: 'conquista', id }
         });
 
         alert(`Conquista Coletada! +${en} Essência Ninja recebida.`);
@@ -2404,22 +2447,28 @@ window.verDetalhesMissao = (id, d, st) => {
     
     document.getElementById('missaoModal').style.display = 'flex'; 
 };
-window.iniciarMissao = async (id, btn) => { if(btn) { btn.disabled=true; btn.innerText="..."; } await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusMissoes.${id}`]: 'em_andamento' }); alert("Iniciada!"); };
+window.iniciarMissao = async (id, btn) => { if(btn) { btn.disabled=true; btn.innerText="..."; } await updateDoc(doc(db, "users", auth.currentUser.uid), { [`statusMissoes.${id}`]: 'em_andamento', ultimaSolicitacao: id }); alert("Iniciada!"); };
 window.coletarRecompensa = async (id, ryos, xp, en, rank, btn) => {
     if(btn) btn.disabled = true;
     try {
         const uid = auth.currentUser.uid;
         const userRef = doc(db, "users", uid);
 
+        // Usa os valores cadastrados no banco (as regras de segurança conferem)
+        const snapM = await getDoc(doc(db, "missoes", id));
+        if (!snapM.exists()) throw new Error("Missão não encontrada.");
+        const m = snapM.data();
+
         // Define qual contador de missão concluída aumentar baseado no Rank
-        const campoRank = `missoes_concluidas_${rank.toLowerCase()}`;
+        const campoRank = `missoes_concluidas_${String(m.rank || 'D').toLowerCase()}`;
 
         await updateDoc(userRef, {
-            ryos: increment(ryos || 0),
-            xp: increment(xp || 0),
-            essencia_ninja: increment(en || 0), // ADICIONADO AQUI
+            ryos: increment(numero(m.recompensa)),
+            xp: increment(numero(m.xp)),
+            essencia_ninja: increment(numero(m.en)),
             [campoRank]: increment(1),
-            [`statusMissoes.${id}`]: 'concluido'
+            [`statusMissoes.${id}`]: 'concluido',
+            ultimaColeta: { tipo: 'missao', id }
         });
 
         alert("Recompensa de Missão recebida com sucesso!");
@@ -2638,6 +2687,7 @@ window.fazerLogout = () => signOut(auth).then(() => location.reload());
 window.abrirModalMentoria = (id) => {
     const mentor = globalMentores[id]; if (!mentor) return;
     currentMentorData = mentor;
+    currentMentorId = id;
     document.getElementById('mentor-name-modal').innerText = mentor.nome;
     document.getElementById('mentor-img-modal').src = mentor.imagem || IMG_PADRAO;
     const container = document.getElementById('mentoria-options-container'); container.innerHTML = '';
@@ -2645,7 +2695,7 @@ window.abrirModalMentoria = (id) => {
         mentor.ensinos.forEach((ensino, index) => {
             const div = document.createElement('div'); div.className = 'mentoria-option';
             div.onclick = () => { const radio = document.getElementById(`ensino-${index}`); if(radio) radio.checked = true; };
-            div.innerHTML = `<input type="radio" name="ensino_escolhido" id="ensino-${index}" value="${index}" class="mentoria-radio"><div style="flex:1;"><div style="font-weight:bold;">${esc(ensino.nome)}</div><div>${formatarNum(ensino.preco)} Ryos</div></div>`;
+            div.innerHTML = `<input type="radio" name="ensino_escolhido" id="ensino-${index}" value="${index}" class="mentoria-radio"><div style="flex:1;"><div style="font-weight:bold;">${esc(ensino.nome)}</div><div>${formatarNum(ensino.preco)} ${ensino.moeda === 'essencia_ninja' ? 'EN' : 'Ryos'}</div></div>`;
             container.appendChild(div);
         });
     }
@@ -2655,14 +2705,27 @@ window.confirmarMentoria = async () => {
     const radios = document.getElementsByName('ensino_escolhido');
     let selectedIndex = -1; for(let i=0; i<radios.length; i++) { if(radios[i].checked) { selectedIndex = parseInt(radios[i].value); break; } }
     if(selectedIndex === -1) return alert("Selecione algo!");
-    const ensino = currentMentorData.ensinos[selectedIndex];
-    const field = ensino.moeda === 'essencia_ninja' ? 'essencia_ninja' : 'ryos';
-    if((currentUserData[field] || 0) < ensino.preco) return alert("Sem fundos!");
     try {
-        await updateDoc(doc(db, "users", auth.currentUser.uid), { [field]: increment(-ensino.preco), aprendizados: arrayUnion(`${currentMentorData.nome} - ${ensino.nome}`) });
-        if (currentMentorData.uid_player) await updateDoc(doc(db, "users", currentMentorData.uid_player), { [field]: increment(ensino.preco) });
+        // Lê o mentor direto do banco (preço atualizado) — as regras conferem o mesmo valor
+        const snapM = await getDoc(doc(db, "mentores", currentMentorId));
+        if (!snapM.exists()) return alert("Mentor não encontrado.");
+        const mentor = snapM.data();
+        const ensino = (mentor.ensinos || [])[selectedIndex];
+        if (!ensino) return alert("Este ensino não está mais disponível.");
+        const field = ensino.moeda === 'essencia_ninja' ? 'essencia_ninja' : 'ryos';
+        const preco = numero(ensino.preco);
+        if ((currentUserData[field] || 0) < preco) return alert("Sem fundos!");
+        const alvo = mentor.uid_player ? mentor.uid_player : null;
+        if (alvo === auth.currentUser.uid) return alert("Você não pode pagar a si mesmo.");
+
+        const refComprovante = doc(collection(db, "transferencias"));
+        const lote = writeBatch(db);
+        lote.set(refComprovante, { de: auth.currentUser.uid, para: alvo, tipo: field, qtd: preco, motivo: 'mentoria', mentorId: currentMentorId, ensinoIdx: selectedIndex, data: serverTimestamp() });
+        lote.update(doc(db, "users", auth.currentUser.uid), { [field]: increment(-preco), aprendizados: arrayUnion(`${mentor.nome} - ${ensino.nome}`), ultimaTransferencia: refComprovante.id });
+        if (alvo) lote.update(doc(db, "users", alvo), { [field]: increment(preco), ultimaTransferenciaRecebida: refComprovante.id });
+        await lote.commit();
         alert(`Aprendeu: ${ensino.nome}!`); document.getElementById('mentoriaModal').style.display = 'none';
-    } catch(e) { alert("Erro: " + e.message); }
+    } catch(e) { console.error(e); alert("Erro: " + e.message); }
 };
 window.editarHistoria = async () => { const n=prompt("Texto:",currentUserData.historiaTexto||""); if(n){ const i=prompt("Imagem:",currentUserData.historiaImagem||""); updateDoc(doc(db,"users",auth.currentUser.uid),{historiaTexto:n,historiaImagem:i}).then(location.reload()); } }
 window.toggleFraseMenu = (el) => { const dropdown = el.nextElementSibling; document.querySelectorAll('.options-dropdown').forEach(d => { if(d !== dropdown) d.classList.remove('active'); }); dropdown.classList.toggle('active'); };
@@ -2844,6 +2907,63 @@ async function carregarPainelAdmin() {
         c.innerHTML = '<p style="color:var(--danger-color);">Erro ao carregar painel.</p>';
     } 
 }
+
+// --- PAINEL KAGE: PRÊMIOS DA ROLETA A ENTREGAR ---
+window.carregarPremiosPendentesAdmin = async () => {
+    const c = document.getElementById('admin-premios-list');
+    if (!c) return;
+    c.innerHTML = '<p style="color:#777; text-align:center;">Procurando prêmios...</p>';
+    try {
+        const s = await lerColecao("users", true);
+        c.innerHTML = '';
+        let total = 0;
+        s.forEach(u => {
+            const d = u.data();
+            (d.premios_pendentes || []).forEach(p => {
+                total++;
+                const nome = p.nome || p.item || "Prêmio";
+                const ehMoeda = p.tipo === 'moeda_ryos' || p.tipo === 'moeda_en';
+                const linha = document.createElement('div');
+                linha.className = 'premio-pendente';
+                linha.innerHTML = `
+                    <div class="premio-info">
+                        <strong>${esc(d.nome || "Ninja")}</strong>
+                        <span>🎁 ${esc(nome)} <small>· ${esc(p.data || "")}${p.pago ? " · giro pago" : ""}</small></span>
+                    </div>
+                    <div class="premio-acoes">
+                        <button class="btn-adm btn-adm-approve" onclick="window.entregarPremio(${jsArg(u.id)}, ${jsArg(p.id)}, true)"><i class="fa-solid fa-check" aria-hidden="true"></i> ${ehMoeda ? 'Creditar' : 'Entregue'}</button>
+                        <button class="btn-adm btn-adm-reject" onclick="window.entregarPremio(${jsArg(u.id)}, ${jsArg(p.id)}, false)" title="Descartar (ex.: prêmio inválido)"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+                    </div>`;
+                c.appendChild(linha);
+            });
+        });
+        if (total === 0) c.innerHTML = '<p style="text-align:center; color:#999; padding: 10px;">Nenhum prêmio aguardando entrega.</p>';
+    } catch (e) {
+        console.error(e);
+        c.innerHTML = '<p style="color:var(--danger-color);">Erro ao carregar prêmios.</p>';
+    }
+};
+
+// entregar=true: credita (Ryos/EN) ou marca item como entregue. entregar=false: descarta.
+window.entregarPremio = async (uid, premioId, entregar) => {
+    if (!entregar && !confirm("Descartar este prêmio sem entregar?")) return;
+    try {
+        const ref = doc(db, "users", uid);
+        const snap = await getDoc(ref);
+        if (!snap.exists()) return;
+        const lista = snap.data().premios_pendentes || [];
+        const premio = lista.find(p => String(p.id) === String(premioId));
+        if (!premio) { alert("Este prêmio já foi resolvido."); return window.carregarPremiosPendentesAdmin(); }
+        const atualizacao = { premios_pendentes: lista.filter(p => String(p.id) !== String(premioId)) };
+        if (entregar) {
+            if (premio.tipo === 'moeda_ryos') atualizacao.ryos = increment(numero(premio.valor));
+            if (premio.tipo === 'moeda_en') atualizacao.essencia_ninja = increment(numero(premio.valor));
+            atualizacao.premios_recebidos = arrayUnion({ ...premio, entregueEm: new Date().toLocaleDateString('pt-BR') });
+        }
+        await updateDoc(ref, atualizacao);
+        window.carregarPremiosPendentesAdmin();
+    } catch (e) { console.error(e); alert("Erro ao atualizar o prêmio."); }
+};
 
 // Carrega a lista de Diários no Painel Kage
 window.carregarDiariosAdmin = () => {
@@ -3922,21 +4042,22 @@ const executarAnimacaoRoleta = async (pago = false) => {
     setTimeout(async () => {
         try {
             const docRef = doc(db, "users", auth.currentUser.uid);
-            let dadosParaAtualizar = {};
-            
-            // Só atualiza a data do último giro se for gratuito
-            if (!pago) dadosParaAtualizar.ultimoGiroRoleta = Date.now();
+            // Todo prêmio fica PENDENTE e o Kage entrega pelo Painel Kage
+            // (o sorteio acontece no navegador, então o banco não pode creditar sozinho).
+            let dadosParaAtualizar = {
+                premios_pendentes: arrayUnion({
+                    id: Date.now(),
+                    nome: premioSorteado.nome,
+                    tipo: premioSorteado.tipo,
+                    valor: premioSorteado.valor,
+                    pago: pago,
+                    data: new Date().toLocaleDateString('pt-BR')
+                })
+            };
+            if (pago) dadosParaAtualizar.essencia_ninja = increment(-15); // giro pago: cobra junto com o registro
+            else dadosParaAtualizar.ultimoGiroRoleta = Date.now();         // giro grátis: marca a semana
 
-            let msgAlerta = `Parabéns! Você ganhou: ${premioSorteado.nome}!`;
-
-            if (premioSorteado.tipo === 'moeda_ryos') {
-                dadosParaAtualizar.ryos = increment(premioSorteado.valor);
-            } else if (premioSorteado.tipo === 'moeda_en') {
-                dadosParaAtualizar.essencia_ninja = increment(premioSorteado.valor);
-            } else {
-                dadosParaAtualizar.premios_pendentes = arrayUnion({ item: premioSorteado.valor, data: new Date().toLocaleDateString(), id: Date.now() });
-                msgAlerta += `\n\nEnvie um print ao Kage para receber este item!`;
-            }
+            const msgAlerta = `Parabéns! Você ganhou: ${premioSorteado.nome}!\n\nSeu prêmio foi registrado e será entregue pelo Kage em breve.`;
 
             await updateDoc(docRef, dadosParaAtualizar);
             
@@ -3969,10 +4090,7 @@ window.girarRoleta = async () => {
 window.girarRoletaPaga = async () => {
     if ((currentUserData.essencia_ninja || 0) < 15) return alert("Saldo insuficiente (15 EN)");
     if (confirm("Gastar 15 EN para girar agora?")) {
-        await updateDoc(doc(db, "users", auth.currentUser.uid), { essencia_ninja: increment(-15) });
-        currentUserData.essencia_ninja -= 15;
-        document.getElementById('en-text').innerText = formatarNum(currentUserData.essencia_ninja);
-        executarAnimacaoRoleta(true);
+        executarAnimacaoRoleta(true); // os 15 EN são cobrados junto com o registro do prêmio
     }
 };
 

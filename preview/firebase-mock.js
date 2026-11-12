@@ -172,7 +172,11 @@ export const updatePassword = async () => {};
 
 // ---------- Firestore ----------
 export const getFirestore = () => ({});
-export const doc = (db, ...segs) => ({ kind: 'doc', col: colKey(segs.slice(0, -1)), id: segs[segs.length - 1] });
+export const doc = (db, ...segs) => {
+    // doc(collection(...)) sem id: gera um id novo, como o Firebase faz
+    if (db && db.kind === 'col') return { kind: 'doc', col: db.col, id: segs[0] || ('id' + Math.random().toString(36).slice(2, 11)) };
+    return { kind: 'doc', col: colKey(segs.slice(0, -1)), id: segs[segs.length - 1] };
+};
 export const collection = (db, ...segs) => ({ kind: 'col', col: colKey(segs) });
 export const where = (field, op, value) => ({ t: 'where', field, op, value });
 export const orderBy = (field, dir = 'asc') => ({ t: 'order', field, dir });

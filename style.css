@@ -724,6 +724,13 @@ body.dark-mode .shop-cat-btn.active { background: #c2410c; border-color: #c2410c
 #admin-panel > div:first-of-type p { color: var(--text-muted) !important; }
 #admin-diarios-list { background: var(--surface) !important; }
 
+.admin-premios-list { display: flex; flex-direction: column; gap: 8px; }
+.premio-pendente { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--gold); border-radius: var(--radius-sm); padding: 10px 12px; }
+.premio-info { display: flex; flex-direction: column; min-width: 0; }
+.premio-info span { color: var(--text-muted); font-weight: 700; }
+.premio-acoes { display: flex; gap: 8px; }
+.premio-acoes .btn-adm { flex: none; padding: 8px 14px; }
+
 /* ---------- 15. BANCO NINJA (loja premium) ---------- */
 #loja-premium { display: none !important; }
 #loja-premium.active { display: flex !important; flex-direction: column; align-items: center; padding-top: 10px; }

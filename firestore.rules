@@ -1,0 +1,383 @@
+rules_version = '2';
+
+// =====================================================================
+//  REGRAS DE SEGURANÇA — RPG NARUTO NEW AGE
+//
+//  Ideia geral:
+//  - Kage/Conselheiro (admins) podem alterar qualquer coisa pelo site.
+//  - Pelo CONSOLE do Firebase você sempre pode editar tudo (o console
+//    ignora estas regras).
+//  - Jogadores só conseguem mudar saldo (Ryos, EN, XP) por operações
+//    "honestas", que estas regras conferem com os dados do banco:
+//      compra no preço cadastrado, presente (sai de um, entra no outro),
+//      recompensa de missão/conquista APROVADA pelo Kage, troca EN→Ryos
+//      na taxa oficial, pagamento de mentoria no preço do mentor.
+//  - Qualquer outra tentativa (ex.: "me dar 1 milhão de Ryos" pelo
+//    console do navegador) é recusada.
+// =====================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------------- Funções gerais ----------------
+    function logado() { return request.auth != null; }
+    function isAdmin() {
+      return logado() && request.auth.token.email in ['admin@rpgnaruto.com', 'conselheiro@rpgnaruto.com'];
+    }
+    function caminho(colecao, id) { return /databases/$(database)/documents/$(colecao)/$(id); }
+    // Números cadastrados às vezes estão como texto ("1000"): converte com segurança
+    function numero(v) { return v is number ? v : (v is string && v.matches('^-?[0-9]+([.][0-9]+)?$') ? float(v) : 0); }
+
+    // ---------------- Catálogos: todos leem, só o Kage escreve ----------------
+    match /jutsus/{id}      { allow read: if logado(); allow write: if isAdmin(); }
+    match /ferramentas/{id} { allow read: if logado(); allow write: if isAdmin(); }
+    match /itens/{id}       { allow read: if logado(); allow write: if isAdmin(); }
+    match /missoes/{id}     { allow read: if logado(); allow write: if isAdmin(); }
+    match /conquistas/{id}  { allow read: if logado(); allow write: if isAdmin(); }
+    match /mentores/{id}    { allow read: if logado(); allow write: if isAdmin(); }
+    match /game_config/{id} { allow read: if logado(); allow write: if isAdmin(); }
+
+    // ---------------- Fichas dos ninjas ----------------
+    match /users/{userId} {
+      function antes()  { return resource.data; }
+      function depois() { return request.resource.data; }
+      function mudou()  { return depois().diff(antes()).affectedKeys(); }
+      function dono()   { return logado() && request.auth.uid == userId; }
+      function valor(m, k, padrao) { return numero(m.get(k, padrao)); }
+
+      // Preço que o site mostra: em EN se o item tiver preco_en; senão Ryos (com promoção)
+      function moedaDe(item) { return numero(item.get('preco_en', 0)) > 0 ? 'essencia_ninja' : 'ryos'; }
+      function precoDe(item) {
+        return moedaDe(item) == 'essencia_ninja'
+          ? numero(item.preco_en)
+          : ((item.get('preco_promocional', null) != null && numero(item.preco_promocional) > 0 && numero(item.preco_promocional) < numero(item.get('preco', 0)))
+              ? numero(item.preco_promocional)
+              : numero(item.get('preco', 0)));
+      }
+      function outraMoeda(m) { return m == 'ryos' ? 'essencia_ninja' : 'ryos'; }
+
+      // XP necessário para subir do nível n (mesma regra do site)
+      function xpNecessario(n) {
+        let cfg = caminho('game_config', 'sistema_nivel');
+        let tabela = exists(cfg) ? get(cfg).data.get('tabela_xp', []) : [];
+        return (tabela.size() > 0 && n <= tabela.size()) ? numero(tabela[n - 1]) : 300;
+      }
+
+      // 1) Dados de perfil e preferências (não mexem em saldo)
+      function perfil() {
+        return mudou().hasOnly(['nome', 'apelido', 'historiaTexto', 'historiaImagem', 'personagem',
+                                'avatar', 'isOnline', 'cenarioAtual', 'postsSalvos']);
+      }
+
+      // 2) Gastar vida/chakra/stamina em combate (só pode DIMINUIR)
+      function naoAumentou(k) { return valor(depois(), k, 0) >= 0 && valor(depois(), k, 0) <= valor(antes(), k, 100); }
+      function gastoEmCombate() {
+        return mudou().hasOnly(['vida', 'chakra', 'stamina'])
+          && naoAumentou('vida') && naoAumentou('chakra') && naoAumentou('stamina');
+      }
+
+      // 3) Subir de nível quando o XP alcança a meta
+      function subirNivel() {
+        return mudou().hasOnly(['nivel', 'xp']) && 'nivel' in mudou() && subirNivelValido(valor(antes(), 'nivel', 1));
+      }
+      function subirNivelValido(nivel) {
+        return depois().nivel == nivel + 1
+          && depois().xp == valor(antes(), 'xp', 0) - xpNecessario(nivel)
+          && depois().xp >= 0;
+      }
+
+      // 4) Usar um item do inventário (quantidade -1)
+      function consumirItem() {
+        return depois().get('ultimoConsumo', null) != null && 'inventario' in mudou()
+          && mudou().hasOnly(['inventario', 'stamina', 'ultimoConsumo']) && consumirItemValido();
+      }
+      function consumirItemValido() {
+        let id = depois().ultimoConsumo;
+        let invAntes = antes().get('inventario', {});
+        let invDepois = depois().get('inventario', {});
+        return mudou().hasOnly(['inventario', 'stamina', 'ultimoConsumo'])
+          && invDepois.diff(invAntes).affectedKeys().hasOnly([id])
+          && invDepois.get(id, 0) == invAntes.get(id, 0) - 1
+          && invDepois.get(id, 0) >= 0
+          && naoAumentou('stamina');
+      }
+
+      // 5) Comprar jutsu: paga exatamente o preço cadastrado e recebe o jutsu
+      function comprarJutsu() {
+        return depois().get('ultimaCompra', null) != null && depois().ultimaCompra.get('tipo', '') == 'jutsu'
+          && mudou().hasOnly(['ryos', 'essencia_ninja', 'meusJutsus', 'maestrias', 'ultimaCompra'])
+          && 'meusJutsus' in mudou() && comprarJutsuValido();
+      }
+      function comprarJutsuValido() {
+        let c = depois().ultimaCompra;
+        let j = get(caminho('jutsus', c.id)).data;
+        let moeda = moedaDe(j);
+        let lista = antes().get('meusJutsus', []);
+        return c.tipo == 'jutsu'
+          && mudou().hasOnly(['ryos', 'essencia_ninja', 'meusJutsus', 'maestrias', 'ultimaCompra'])
+          && !(outraMoeda(moeda) in mudou())
+          && !(c.id in lista)
+          && depois().meusJutsus == lista.concat([c.id])
+          && depois().get('maestrias', {}).diff(antes().get('maestrias', {})).affectedKeys().hasOnly([c.id])
+          && valor(antes(), 'nivel', 1) >= numero(j.get('requisito', 0))
+          && valor(depois(), moeda, 0) == valor(antes(), moeda, 0) - precoDe(j)
+          && valor(depois(), moeda, 0) >= 0;
+      }
+
+      // 6) Comprar itens/ferramentas: paga preço × quantidade e recebe a quantidade
+      function comprarItem() {
+        return depois().get('ultimaCompra', null) != null && depois().ultimaCompra.get('tipo', '') in ['itens', 'ferramentas']
+          && mudou().hasOnly(['ryos', 'essencia_ninja', 'inventario', 'ultimaCompra'])
+          && 'inventario' in mudou() && comprarItemValido();
+      }
+      function comprarItemValido() {
+        let c = depois().ultimaCompra;
+        let item = get(caminho(c.tipo, c.id)).data;
+        let moeda = moedaDe(item);
+        let invAntes = antes().get('inventario', {});
+        let invDepois = depois().get('inventario', {});
+        let qtd = invDepois.get(c.id, 0) - invAntes.get(c.id, 0);
+        return c.tipo in ['itens', 'ferramentas']
+          && mudou().hasOnly(['ryos', 'essencia_ninja', 'inventario', 'ultimaCompra'])
+          && !(outraMoeda(moeda) in mudou())
+          && invDepois.diff(invAntes).affectedKeys().hasOnly([c.id])
+          && qtd is int && qtd >= 1
+          && valor(depois(), moeda, 0) == valor(antes(), moeda, 0) - precoDe(item) * qtd
+          && valor(depois(), moeda, 0) >= 0;
+      }
+
+      // 7) Aceitar missão / pedir conquista (só muda o status para "pedido")
+      function solicitar() {
+        return depois().get('ultimaSolicitacao', null) != null
+          && mudou().hasOnly(['statusMissoes', 'statusConquistas', 'ultimaSolicitacao'])
+          && ('statusMissoes' in mudou() || 'statusConquistas' in mudou()) && solicitarValido();
+      }
+      function solicitarValido() {
+        let id = depois().ultimaSolicitacao;
+        let mAntes = antes().get('statusMissoes', {});
+        let mDepois = depois().get('statusMissoes', {});
+        let cAntes = antes().get('statusConquistas', {});
+        let cDepois = depois().get('statusConquistas', {});
+        return mudou().hasOnly(['statusMissoes', 'statusConquistas', 'ultimaSolicitacao'])
+          && (
+            (mDepois.diff(mAntes).affectedKeys().hasOnly([id]) && cDepois == cAntes
+              && mAntes.get(id, null) == null && mDepois.get(id, '') == 'em_andamento'
+              && exists(caminho('missoes', id)))
+            ||
+            (cDepois.diff(cAntes).affectedKeys().hasOnly([id]) && mDepois == mAntes
+              && cAntes.get(id, null) == null && cDepois.get(id, '') == 'solicitado'
+              && exists(caminho('conquistas', id)))
+          );
+      }
+
+      // 8) Coletar recompensa APROVADA pelo Kage, no valor cadastrado
+      function coletarMissao() {
+        return depois().get('ultimaColeta', null) != null && depois().ultimaColeta.get('tipo', '') == 'missao'
+          && 'statusMissoes' in mudou() && coletarMissaoValido();
+      }
+      function coletarMissaoValido() {
+        let c = depois().ultimaColeta;
+        let m = get(caminho('missoes', c.id)).data;
+        let contador = 'missoes_concluidas_' + string(m.get('rank', 'D')).lower();
+        let sAntes = antes().get('statusMissoes', {});
+        let sDepois = depois().get('statusMissoes', {});
+        return c.tipo == 'missao'
+          && mudou().hasOnly(['ryos', 'xp', 'essencia_ninja', 'statusMissoes', 'ultimaColeta', contador])
+          && sDepois.diff(sAntes).affectedKeys().hasOnly([c.id])
+          && sAntes.get(c.id, '') == 'aprovado' && sDepois.get(c.id, '') == 'concluido'
+          && valor(depois(), 'ryos', 0) == valor(antes(), 'ryos', 0) + valor(m, 'recompensa', 0)
+          && valor(depois(), 'xp', 0) == valor(antes(), 'xp', 0) + valor(m, 'xp', 0)
+          && valor(depois(), 'essencia_ninja', 0) == valor(antes(), 'essencia_ninja', 0) + valor(m, 'en', 0)
+          && valor(depois(), contador, 0) == valor(antes(), contador, 0) + 1;
+      }
+      function coletarConquista() {
+        return depois().get('ultimaColeta', null) != null && depois().ultimaColeta.get('tipo', '') == 'conquista'
+          && 'statusConquistas' in mudou() && coletarConquistaValido();
+      }
+      function coletarConquistaValido() {
+        let c = depois().ultimaColeta;
+        let q = get(caminho('conquistas', c.id)).data;
+        let sAntes = antes().get('statusConquistas', {});
+        let sDepois = depois().get('statusConquistas', {});
+        return c.tipo == 'conquista'
+          && mudou().hasOnly(['ryos', 'xp', 'essencia_ninja', 'statusConquistas', 'ultimaColeta'])
+          && sDepois.diff(sAntes).affectedKeys().hasOnly([c.id])
+          && sAntes.get(c.id, '') == 'aprovado' && sDepois.get(c.id, '') == 'concluido'
+          && valor(depois(), 'ryos', 0) == valor(antes(), 'ryos', 0) + valor(q, 'recompensa', 0)
+          && valor(depois(), 'xp', 0) == valor(antes(), 'xp', 0) + valor(q, 'xp', 0)
+          && valor(depois(), 'essencia_ninja', 0) == valor(antes(), 'essencia_ninja', 0) + valor(q, 'en', 0);
+      }
+
+      // 9) Trocar EN por Ryos na taxa oficial (1 EN = 10 Ryos, arredondando o custo para cima)
+      function trocarEnPorRyos() {
+        let ganho = valor(depois(), 'ryos', 0) - valor(antes(), 'ryos', 0);
+        return mudou().hasOnly(['ryos', 'essencia_ninja'])
+          && ganho > 0 && ganho == math.floor(ganho)
+          && valor(depois(), 'essencia_ninja', 0) == valor(antes(), 'essencia_ninja', 0) - math.ceil(ganho / 10.0)
+          && valor(depois(), 'essencia_ninja', 0) >= 0;
+      }
+
+      // 10) Roleta: registra o prêmio como PENDENTE (o Kage entrega pelo Painel)
+      function novoPremioPendente() {
+        let lista = antes().get('premios_pendentes', []);
+        return depois().premios_pendentes.size() == lista.size() + 1
+          && depois().premios_pendentes.hasAll(lista);
+      }
+      function roletaGratis() {
+        let semana = 7 * 24 * 60 * 60 * 1000;
+        return mudou().hasOnly(['ultimoGiroRoleta', 'premios_pendentes'])
+          && request.time.toMillis() - valor(antes(), 'ultimoGiroRoleta', 0) >= semana
+          && 'ultimoGiroRoleta' in mudou()
+          && depois().ultimoGiroRoleta is number
+          && depois().ultimoGiroRoleta <= request.time.toMillis() + 600000
+          && depois().ultimoGiroRoleta >= request.time.toMillis() - 600000
+          && novoPremioPendente();
+      }
+      function roletaPaga() {
+        return mudou().hasOnly(['essencia_ninja', 'premios_pendentes'])
+          && valor(depois(), 'essencia_ninja', 0) == valor(antes(), 'essencia_ninja', 0) - 15
+          && valor(depois(), 'essencia_ninja', 0) >= 0
+          && novoPremioPendente();
+      }
+
+      // 11) Presente/mentoria — lado de quem PAGA (a transferência é conferida em /transferencias)
+      function pagarTransferencia() {
+        return 'ultimaTransferencia' in mudou()
+          && mudou().hasOnly(['ryos', 'essencia_ninja', 'ultimaTransferencia', 'aprendizados'])
+          && pagarTransferenciaValido();
+      }
+      function pagarTransferenciaValido() {
+        let tid = depois().ultimaTransferencia;
+        let t = getAfter(caminho('transferencias', tid)).data;
+        return mudou().hasOnly(['ryos', 'essencia_ninja', 'ultimaTransferencia', 'aprendizados'])
+          && !exists(caminho('transferencias', tid))
+          && t.de == userId
+          && !(outraMoeda(t.tipo) in mudou())
+          && valor(depois(), t.tipo, 0) == valor(antes(), t.tipo, 0) - t.qtd
+          && valor(depois(), t.tipo, 0) >= 0
+          && (!('aprendizados' in mudou()) || (t.motivo == 'mentoria'
+                && depois().aprendizados.size() == antes().get('aprendizados', []).size() + 1
+                && depois().aprendizados.hasAll(antes().get('aprendizados', []))));
+      }
+      // Presente/mentoria — lado de quem RECEBE (outro jogador escrevendo nesta ficha)
+      function receberTransferencia() {
+        return 'ultimaTransferenciaRecebida' in mudou() && mudou().size() == 2 && receberTransferenciaValido();
+      }
+      function receberTransferenciaValido() {
+        let tid = depois().get('ultimaTransferenciaRecebida', '');
+        let t = getAfter(caminho('transferencias', tid)).data;
+        return tid != '' && !exists(caminho('transferencias', tid))
+          && t.para == userId
+          && mudou().hasOnly([t.tipo, 'ultimaTransferenciaRecebida'])
+          && valor(depois(), t.tipo, 0) == valor(antes(), t.tipo, 0) + t.qtd;
+      }
+
+      allow read: if logado();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin()
+        || (dono() && (perfil() || gastoEmCombate() || subirNivel() || consumirItem()
+                       || comprarJutsu() || comprarItem() || solicitar()
+                       || coletarMissao() || coletarConquista() || trocarEnPorRyos()
+                       || roletaGratis() || roletaPaga() || pagarTransferencia()))
+        || (logado() && !dono() && receberTransferencia());
+    }
+
+    // ---------------- Comprovantes de presentes e mentorias ----------------
+    // Cada presente/mentoria cria um comprovante. Ele só é aceito se, no MESMO envio,
+    // o saldo de quem paga diminuir e o de quem recebe aumentar exatamente o valor.
+    match /transferencias/{tid} {
+      function t() { return request.resource.data; }
+      function quemPaga() { return caminho('users', t().de); }
+      function mentoriaValida() {
+        let m = get(caminho('mentores', t().mentorId)).data;
+        let ensino = m.ensinos[t().ensinoIdx];
+        let alvo = m.get('uid_player', '');
+        return t().qtd == numero(ensino.preco)
+          && t().tipo == (ensino.get('moeda', 'ryos') == 'essencia_ninja' ? 'essencia_ninja' : 'ryos')
+          && t().para == (alvo == '' ? null : alvo);
+      }
+      allow read: if logado() && (isAdmin() || resource.data.de == request.auth.uid || resource.data.para == request.auth.uid);
+      allow create: if logado()
+        && t().keys().hasOnly(['de', 'para', 'tipo', 'qtd', 'motivo', 'data', 'mentorId', 'ensinoIdx'])
+        && t().de == request.auth.uid
+        && t().tipo in ['ryos', 'essencia_ninja']
+        && t().qtd is number && t().qtd > 0
+        && getAfter(quemPaga()).data.get('ultimaTransferencia', '') == tid
+        && numero(getAfter(quemPaga()).data.get(t().tipo, 0)) == numero(get(quemPaga()).data.get(t().tipo, 0)) - t().qtd
+        && (t().para == null || (
+              t().para != t().de
+              && getAfter(caminho('users', t().para)).data.get('ultimaTransferenciaRecebida', '') == tid
+              && numero(getAfter(caminho('users', t().para)).data.get(t().tipo, 0)) == numero(get(caminho('users', t().para)).data.get(t().tipo, 0)) + t().qtd))
+        && ((t().motivo == 'presente' && t().para != null) || (t().motivo == 'mentoria' && mentoriaValida()));
+      allow update, delete: if isAdmin();
+    }
+
+    // ---------------- Feed ----------------
+    match /posts/{postId} {
+      function curtida() {
+        let a = resource.data.get('likes', []).toSet();
+        let d = request.resource.data.get('likes', []).toSet();
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])
+          && d.difference(a).union(a.difference(d)) == [request.auth.uid].toSet();
+      }
+      function comentario() {
+        let velhos = resource.data.get('comentarios', []);
+        let novos = request.resource.data.get('comentarios', []);
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['comentarios'])
+          && novos.size() == velhos.size() + 1
+          && novos.hasAll(velhos)
+          && novos[novos.size() - 1].uid == request.auth.uid;
+      }
+      allow read: if logado();
+      allow create: if logado() && request.resource.data.uid == request.auth.uid
+        && request.resource.data.get('likes', []).size() == 0
+        && request.resource.data.get('comentarios', []).size() == 0;
+      allow update: if isAdmin() || (logado() && (curtida() || comentario()));
+      allow delete: if isAdmin() || (logado() && resource.data.uid == request.auth.uid);
+    }
+
+    // ---------------- Frases ----------------
+    match /frases/{id} {
+      allow read: if logado();
+      allow create: if logado() && request.resource.data.uid == request.auth.uid;
+      allow update: if isAdmin() || (logado() && resource.data.uid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['texto']));
+      allow delete: if isAdmin() || (logado() && resource.data.uid == request.auth.uid);
+    }
+
+    // ---------------- Chats ----------------
+    // Salas: "uidA_uidB" (privado), "diario_uid" (diário com o Mestre), "cenario_x" (grupo)
+    match /chats/{salaId} {
+      function participaDaSala() {
+        return logado() && (isAdmin() || salaId.matches('cenario_.*') || request.auth.uid in salaId.split('_'));
+      }
+      allow get, create, update: if participaDaSala();
+      allow list: if logado() && (isAdmin() || request.auth.uid in resource.data.participantes);
+      allow delete: if isAdmin();
+
+      match /mensagens/{msgId} {
+        allow read: if participaDaSala();
+        allow create: if participaDaSala()
+          && request.resource.data.remetenteId == request.auth.uid
+          && (request.resource.data.tipo in ['rp', 'ooc', 'dice'] || isAdmin());
+        allow update, delete: if isAdmin();
+      }
+    }
+
+    // ---------------- Desafios / Arena ----------------
+    match /desafios_batalha/{id} {
+      function participa() {
+        return logado() && (request.auth.uid == resource.data.desafianteId || request.auth.uid == resource.data.desafiadoId);
+      }
+      allow read: if isAdmin() || resource == null || participa();
+      allow create: if logado() && request.resource.data.desafianteId == request.auth.uid
+        && request.resource.data.status == 'pendente';
+      allow update, delete: if isAdmin() || participa();
+    }
+
+    // Qualquer outra coleção: só o Kage
+    match /{documento=**} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

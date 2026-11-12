@@ -1,3 +1,6 @@
 preview/capturas/
 __pycache__/
 preview/previa-rpg-naruto.html
+testes/node_modules/
+testes/package-lock.json
+*.log
