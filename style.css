@@ -245,6 +245,8 @@ button:focus:not(:focus-visible) { outline: none; }
 }
 .login-box button:hover { background: var(--primary-hover); }
 .login-box button:active { transform: translateY(1px); }
+.login-box button:disabled { opacity: .75; cursor: wait; }
+.login-box input:disabled { opacity: .7; }
 .login-hint { font-size: .85rem; margin-top: 16px; color: var(--text-muted); text-align: center; }
 #msgError { color: var(--danger); font-size: .85rem; margin-top: 8px; text-align: center; font-weight: 700; }
 

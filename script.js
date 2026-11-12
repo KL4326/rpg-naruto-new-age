@@ -279,22 +279,61 @@ onAuthStateChanged(auth, async (user) => {
         document.getElementById('app-container').style.display = 'none';
         
         const btnLogin = document.getElementById('btnLogin');
-        if (btnLogin) btnLogin.innerText = "Entrar";
+        if (btnLogin) { btnLogin.innerText = "Entrar"; btnLogin.disabled = false; }
+        ['emailInput', 'passwordInput'].forEach(id => { const c = document.getElementById(id); if (c) c.disabled = false; });
     }
 });
 
+// Traduz os erros do login do Firebase para mensagens claras em português
+function mensagemErroAuth(err) {
+    const codigo = (err && err.code) || '';
+    switch (codigo) {
+        case 'auth/invalid-credential':
+        case 'auth/invalid-login-credentials':
+        case 'auth/wrong-password':
+        case 'auth/user-not-found':
+            return "E-mail ou senha incorretos. Confira e tente de novo.";
+        case 'auth/invalid-email':
+            return "Esse e-mail não é válido. Confira se digitou certo.";
+        case 'auth/too-many-requests':
+            return "Muitas tentativas seguidas. Por segurança, o login foi bloqueado por alguns minutos. Aguarde e tente de novo com calma.";
+        case 'auth/user-disabled':
+            return "Esta conta foi desativada. Fale com o Kage.";
+        case 'auth/network-request-failed':
+            return "Sem conexão com a internet. Verifique sua rede e tente de novo.";
+        case 'auth/weak-password':
+            return "Senha muito fraca. Use pelo menos 6 caracteres.";
+        case 'auth/requires-recent-login':
+            return "Por segurança, saia e entre de novo antes de trocar a senha.";
+        default:
+            return "Não foi possível entrar agora. Tente novamente em instantes.";
+    }
+}
+
 const btnLogin = document.getElementById('btnLogin');
 if (btnLogin) {
+    const msgErro = document.getElementById('msgError');
+    const campos = [document.getElementById('emailInput'), document.getElementById('passwordInput')];
+    const travarLogin = (travado) => {
+        btnLogin.disabled = travado;
+        btnLogin.innerText = travado ? "Entrando..." : "Entrar";
+        campos.forEach(c => { if (c) c.disabled = travado; });
+    };
+
     btnLogin.addEventListener('click', () => {
-        const e = document.getElementById('emailInput').value;
+        if (btnLogin.disabled) return; // já tem um login em andamento: não envia de novo
+        const e = document.getElementById('emailInput').value.trim();
         const s = document.getElementById('passwordInput').value;
-        if(!e || !s) return alert("Preencha e-mail e senha!");
-        
-        btnLogin.innerText = "Carregando...";
-        signInWithEmailAndPassword(auth, e, s).catch((err) => { 
-            console.error(err); 
-            btnLogin.innerText = "Entrar"; 
-            alert("Erro: " + err.message); 
+        if (msgErro) msgErro.innerText = "";
+        if (!e || !s) { if (msgErro) msgErro.innerText = "Preencha e-mail e senha."; return; }
+
+        travarLogin(true);
+        signInWithEmailAndPassword(auth, e, s).catch((err) => {
+            console.error(err);
+            travarLogin(false);
+            if (msgErro) msgErro.innerText = mensagemErroAuth(err);
+            else alert(mensagemErroAuth(err));
+            document.getElementById('passwordInput')?.focus();
         });
     });
 }
@@ -2733,7 +2772,7 @@ window.adicionarFrase = async () => { const t=document.getElementById('novaFrase
 window.editarFrase = async (id, oldText) => { const n = prompt("Editar:", oldText); if(n) await updateDoc(doc(db, "frases", id), { texto: n }); };
 window.deletarFrase = async (id) => { if(confirm("Excluir?")) await deleteDoc(doc(db, "frases", id)); };
 window.copiarFrase = (t) => { navigator.clipboard.writeText(t).then(() => { const f=document.getElementById('copyFeedback'); f.style.display='block'; setTimeout(()=>f.style.display='none',2000); }); };
-window.salvarNovaSenha = async () => { const p = document.getElementById('new-password').value; if(!p || p.length < 6) return alert("Mínimo 6 caracteres"); try { await updatePassword(auth.currentUser, p); alert("Sucesso!"); closeChangePasswordModal(); } catch(e) { alert("Erro: " + e.message); } };
+window.salvarNovaSenha = async () => { const p = document.getElementById('new-password').value; if(!p || p.length < 6) return alert("Mínimo 6 caracteres"); try { await updatePassword(auth.currentUser, p); alert("Senha alterada com sucesso!"); closeChangePasswordModal(); } catch(e) { console.error(e); alert(mensagemErroAuth(e)); } };
 let unsubscribeFrases = null;
 async function carregarFrases() {
     const c = document.getElementById('frases-list-container');
