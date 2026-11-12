@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, deleteField, addDoc, serverTimestamp, query, orderBy, onSnapshot, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, deleteField, addDoc, serverTimestamp, query, orderBy, onSnapshot, where, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // --- CONFIGURAÇÃO FIREBASE ---
 const firebaseConfig = { apiKey: "AIzaSyC3HOor32_p5Z-iADm0VgZ279rt1kj8ICg", authDomain: "rpg-naruto-5150a.firebaseapp.com", projectId: "rpg-naruto-5150a", storageBucket: "rpg-naruto-5150a.firebasestorage.app", messagingSenderId: "1007094335306", appId: "1:1007094335306:web:ac96fa96f9494f90fd63b3" };
@@ -27,6 +27,14 @@ let unsubscribeChat = null;
 let usuarioDestinoPresente = null;
 
 const IMG_PADRAO = "https://placehold.co/40x40/orange/white?text=N";
+
+// --- SEGURANÇA: escapa qualquer texto vindo do banco antes de inserir no HTML (evita XSS) ---
+function esc(v) {
+    return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+// Para passar um texto como argumento dentro de onclick="..." com segurança
+function jsArg(v) { return esc(JSON.stringify(String(v ?? ''))); }
+window.esc = esc;
 
 const BIJUU_ICONS = {
     "shukaku": "data:image/jpeg;base64,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",
@@ -203,7 +211,6 @@ onAuthStateChanged(auth, async (user) => {
                 if(!currentUserData.meusJutsus) currentUserData.meusJutsus = [];
                 verificarLevelUpAutomatico(currentUserData);
                 atualizarInterface(currentUserData);
-                renderizarBatalha(); 
                 const activeTab = document.querySelector('.tab-content.active');
                 if (activeTab) window.showTab(activeTab.id);
             }
@@ -242,45 +249,6 @@ if (btnLogin) {
         });
     });
 }
-
-
-// 4. O Radar: Fica escutando se alguém te desafia enquanto você está online
-window.escutarDesafiosRecebidos = () => {
-    if (!auth.currentUser) return;
-    
-    const q = query(
-        collection(db, "desafios_batalha"), 
-        where("desafiadoId", "==", auth.currentUser.uid),
-        where("status", "==", "pendente")
-    );
-    
-    onSnapshot(q, (snapshot) => {
-        snapshot.docChanges().forEach((change) => {
-            if (change.type === "added") {
-                const convite = change.doc.data();
-                const conviteId = change.doc.id;
-                
-                // Configura o texto do modal
-                document.getElementById('texto-desafio').innerHTML = `<strong>${convite.desafianteNome}</strong> quer te enfrentar em um duelo.<br><br>Você está pronto para a batalha?`;
-                
-                // Exibe o modal na tela do jogador
-                document.getElementById('modal-desafio').style.display = 'flex';
-                
-                // Se ele clicar em Aceitar
-                document.getElementById('btn-aceitar-desafio').onclick = () => {
-                    document.getElementById('modal-desafio').style.display = 'none';
-                    window.responderDesafio(conviteId, 'aceito');
-                };
-                
-                // Se ele clicar em Recusar
-                document.getElementById('btn-recusar-desafio').onclick = () => {
-                    document.getElementById('modal-desafio').style.display = 'none';
-                    window.responderDesafio(conviteId, 'recusado');
-                };
-            }
-        });
-    });
-};
 
 
 // --- NAVEGAÇÃO ---
@@ -340,7 +308,6 @@ window.showTab = (t) => {
             if(t === 'missoes') carregarMissoes();
             if(t === 'rankings') carregarRankings();
             if(t === 'mentorias') carregarMentorias();
-            if(t === 'admin-panel') carregarPainelAdmin();
             if(t === 'admin-panel') { carregarPainelAdmin(); window.carregarDiariosAdmin(); }
 
             if(t === 'loja-premium') {
@@ -465,10 +432,10 @@ window.renderFeed = async (filtro = 'all') => {
             div.innerHTML = `
                 <div class="post-header">
                     <div class="user-avatar-post">
-                        <img src="${avatarUrl}" alt="Avatar" onerror="this.onerror=null; this.src='${IMG_PADRAO}';">
+                        <img src="${esc(avatarUrl)}" alt="Avatar" onerror="this.onerror=null; this.src='${IMG_PADRAO}';">
                     </div>
                     <div class="post-info">
-                        <span class="post-author">${post.autor || "Ninja"}</span>
+                        <span class="post-author">${esc(post.autor || "Ninja")}</span>
                         <span class="post-time">${tempo}</span>
                     </div>
                     ${auth.currentUser && post.uid === auth.currentUser.uid ? `
@@ -480,9 +447,9 @@ window.renderFeed = async (filtro = 'all') => {
                     </div>` : ''}
                 </div>
                 
-                <div class="post-content" onclick="abrirComentarios('${pid}')" style="cursor:pointer; display:block; padding:10px; color:var(--text-color, #333); min-height:10px; white-space: pre-wrap;">${textoConteudo}</div>
+                <div class="post-content" onclick="abrirComentarios('${pid}')" style="cursor:pointer; display:block; padding:10px; color:var(--text-color, #333); min-height:10px; white-space: pre-wrap;">${esc(textoConteudo)}</div>
                 
-                ${post.imagem ? `<img src="${post.imagem}" class="post-image" onclick="abrirComentarios('${pid}')" style="cursor:pointer; background-color:#f0f0f0;">` : ""}
+                ${post.imagem ? `<img src="${esc(post.imagem)}" class="post-image" onclick="abrirComentarios('${pid}')" style="cursor:pointer; background-color:#f0f0f0;">` : ""}
                 
                 <div class="post-actions">
                     <button class="action-btn" onclick="curtirPost('${pid}')" style="${likeColor}">
@@ -515,8 +482,8 @@ window.abrirComentarios = async (pid) => {
         const textoModal = p.conteudo || p.texto || "";
         
         let htmlContent = "";
-        if (p.imagem) htmlContent += `<img src="${p.imagem}" style="max-width:100%; max-height:80vh; object-fit:contain;">`;
-        if (textoModal) htmlContent += `<div style="padding:20px; color:white; font-size:1.2rem; text-align:center; overflow-y:auto; white-space: pre-wrap;">${textoModal}</div>`;
+        if (p.imagem) htmlContent += `<img src="${esc(p.imagem)}" style="max-width:100%; max-height:80vh; object-fit:contain;">`;
+        if (textoModal) htmlContent += `<div style="padding:20px; color:white; font-size:1.2rem; text-align:center; overflow-y:auto; white-space: pre-wrap;">${esc(textoModal)}</div>`;
         
         contentDiv.innerHTML = htmlContent;
         renderizarListaComentarios(p.comentarios || []);
@@ -530,7 +497,7 @@ function renderizarListaComentarios(lista) {
     lista.forEach(c => {
         const item = document.createElement('div');
         item.style.borderBottom = "1px solid #eee"; item.style.padding = "10px";
-        item.innerHTML = `<div style="font-weight:bold; font-size:0.9rem;">${c.autor}</div><div style="font-size:0.9rem;">${c.texto}</div><div style="font-size:0.7rem; color:#999;">${c.data ? calcularTempo(c.data) : "Agora"}</div>`;
+        item.innerHTML = `<div style="font-weight:bold; font-size:0.9rem;">${esc(c.autor)}</div><div style="font-size:0.9rem;">${esc(c.texto)}</div><div style="font-size:0.7rem; color:#999;">${c.data ? calcularTempo(c.data) : "Agora"}</div>`;
         listDiv.appendChild(item);
     });
 }
@@ -557,9 +524,8 @@ window.curtirPost = async (pid) => {
     try {
         const p = await getDoc(postRef);
         if(p.exists()) {
-            let likes = p.data().likes || [];
-            if(likes.includes(uid)) likes = likes.filter(id => id !== uid); else likes.push(uid);
-            await updateDoc(postRef, { likes: likes });
+            const jaCurtiu = (p.data().likes || []).includes(uid);
+            await updateDoc(postRef, { likes: jaCurtiu ? arrayRemove(uid) : arrayUnion(uid) });
             window.renderFeed('all'); 
         }
     } catch(e) {}
@@ -655,30 +621,10 @@ function atualizarInterface(dados) {
     if(dados.inventario) { for(let id in dados.inventario) { if(globalItensMap[id]) { if(globalItensMap[id].type === 'tool') totalTools += dados.inventario[id]; else totalItems += dados.inventario[id]; } } }
     set('dash-tools', totalTools); set('dash-items', totalItems);
     set('dash-wins', dados.vitorias||0); set('dash-derrotas', dados.derrotas||0); set('dash-draws', dados.empates||0);
-    set('dash-vida', dados.vida||100); set('dash-sanidade', dados.sanidade||100);
-    set('dash-chakra', dados.chakra||100); set('dash-stamina', dados.stamina||100); set('dash-controle', dados.controle_chakra||"Baixo");
+    set('dash-vida', dados.vida ?? 100); set('dash-sanidade', dados.sanidade ?? 100);
+    set('dash-chakra', dados.chakra ?? 100); set('dash-stamina', dados.stamina ?? 100); set('dash-controle', dados.controle_chakra||"Baixo");
     set('dash-forca', dados.forca||10); set('dash-defesa', dados.defesa||10); set('dash-constituicao', dados.constituicao||10);
     set('dash-destreza', dados.destreza||10); set('dash-intelecto', dados.intelecto||10); set('dash-agilidade', dados.agilidade||10); set('dash-velocidade', dados.velocidade||10);
-}
-function renderizarBatalha() {
-    const grid = document.getElementById('battle-grid'); if(!grid) return;
-    onSnapshot(collection(db, "users"), (snapshot) => {
-        grid.innerHTML = '';
-        if(snapshot.empty) { grid.innerHTML = '<p>Sem ninjas.</p>'; return; }
-        snapshot.forEach(docSnap => {
-            const u = docSnap.data(); const uid = docSnap.id;
-            const card = document.createElement('div'); card.className = 'battle-card';
-            card.innerHTML = `
-                <div class="battle-header-info"><img src="${u.avatar || IMG_PADRAO}" class="battle-avatar"><div><div class="battle-name">${u.nome || "Ninja"}</div><div class="battle-char">${u.apelido || "Sem Apelido"} - Nvl ${u.nivel || 1}</div></div></div>
-                <div class="battle-stats-wrapper">
-                    ${criarLinhaStatusCustom(uid, 'vida', 'Vida', 'HP', u.vida||0, u.max_vida||100, 'bar-life')}
-                    ${criarLinhaStatusCustom(uid, 'sanidade', 'Sanidade', 'SAN', u.sanidade||0, u.max_sanidade||100, 'bar-sanidade')}
-                    ${criarLinhaStatusCustom(uid, 'stamina', 'Stamina', 'STA', u.stamina||0, u.max_stamina||100, 'bar-stamina')}
-                    ${criarLinhaStatusCustom(uid, 'chakra', 'Chakra', 'CHK', u.chakra||0, u.max_chakra||100, 'bar-chakra')}
-                </div>`;
-            grid.appendChild(card);
-        });
-    });
 }
 function criarLinhaStatusCustom(uid, f, l, a, v, m, c) { 
     const p=Math.min((v/m)*100,100); 
@@ -689,17 +635,17 @@ window.alterarStatus = async (targetUid, stat, valor) => { await updateDoc(doc(d
 function gerarTagsBonus(d) {
     let html = '';
     const stats = ['hp', 'stamina', 'chakra', 'forca', 'defesa', 'agilidade', 'velocidade', 'intelecto', 'constituicao', 'destreza'];
-    stats.forEach(s => { if(d['bonus_'+s]) html += `<span class="stat-tag tag-buff">+${d['bonus_'+s]} ${s.toUpperCase()}</span>`; });
+    stats.forEach(s => { if(d['bonus_'+s]) html += `<span class="stat-tag tag-buff">+${esc(d['bonus_'+s])} ${s.toUpperCase()}</span>`; });
     return html;
 }
 function criarCard(containerId, dados, id, tipo, clickFn, qtd = null) {
     const c = document.getElementById(containerId); if(!c) return;
     const div = document.createElement('div'); div.className = 'card'; div.onclick = () => clickFn(id, dados);
     let sub = "", extra = "";
-    if(tipo === 'jutsu') { sub = "Rank " + dados.rank; const m = (currentUserData.maestrias && currentUserData.maestrias[id]) ? currentUserData.maestrias[id] : 0; extra = `<span class="maestria-display">Maestria: ${m}</span>`; } 
+    if(tipo === 'jutsu') { sub = "Rank " + dados.rank; const m = (currentUserData.maestrias && currentUserData.maestrias[id]) ? currentUserData.maestrias[id] : 0; extra = `<span class="maestria-display">Maestria: ${esc(m)}</span>`; } 
     else if(tipo === 'ferramenta') sub = dados.dano || "Ferramenta"; else sub = dados.efeito || "Item";
-    if(qtd !== null) extra += `<div class="inventory-controls"><span class="qtd-badge">x${qtd}</span><button class="btn-minus" onclick="consumirItem('${id}', '${dados.nome}'); event.stopPropagation();">-</button></div>`;
-    div.innerHTML = `<img src="${dados.imagem||IMG_PADRAO}" class="card-img-top"><h4>${dados.nome}</h4><small>${sub}</small>${extra}`;
+    if(qtd !== null) extra += `<div class="inventory-controls"><span class="qtd-badge">x${qtd}</span><button class="btn-minus" onclick="consumirItem(${jsArg(id)}, ${jsArg(dados.nome)}); event.stopPropagation();">-</button></div>`;
+    div.innerHTML = `<img src="${esc(dados.imagem||IMG_PADRAO)}" class="card-img-top"><h4>${esc(dados.nome)}</h4><small>${esc(sub)}</small>${extra}`;
     c.appendChild(div);
 }
 function criarCardLoja(containerId, dados, id, tipo, buyFn, clickFn) {
@@ -745,24 +691,24 @@ function criarCardLoja(containerId, dados, id, tipo, buyFn, clickFn) {
             <div class="qtd-container-square">
                 <input type="number" id="qtd-${id}" class="qtd-input-square" value="1" min="1" onclick="event.stopPropagation()">
             </div>
-            <button id="btn-buy-${id}" class="${btnClass}" onclick="event.stopPropagation(); comprarMultiplos('${id}', ${finalPrice}, '${dados.nome}', '${tipo}', 'qtd-${id}', '${currency}')">Comprar x1</button>`; 
+            <button id="btn-buy-${id}" class="${btnClass}" onclick="event.stopPropagation(); comprarMultiplos(${jsArg(id)}, ${Number(finalPrice) || 0}, ${jsArg(dados.nome)}, ${jsArg(tipo)}, ${jsArg('qtd-' + id)}, ${jsArg(currency)})">Comprar x1</button>`; 
     } else { 
         // Para Jutsus (Verificação de Posse e Nível)
         if (isOwned) {
             buyControlHTML = `<button class="buy-btn" disabled>Adquirido</button>`;
         } else if (dados.bloqueadoPorNivel) {
             // Botão cinza e bloqueado se o nível for baixo
-            buyControlHTML = `<button class="buy-btn" disabled style="background:#bdc3c7; cursor:not-allowed;"><i class="fa-solid fa-lock"></i> Nv. ${dados.requisito || 0}</button>`;
+            buyControlHTML = `<button class="buy-btn" disabled style="background:#bdc3c7; cursor:not-allowed;"><i class="fa-solid fa-lock"></i> Nv. ${esc(dados.requisito || 0)}</button>`;
         } else {
             // Botão normal de compra
-            buyControlHTML = `<button class="${btnClass}" onclick="event.stopPropagation(); comprarJutsu('${id}', ${finalPrice}, '${dados.nome}', '${currency}')">Comprar</button>`; 
+            buyControlHTML = `<button class="${btnClass}" onclick="event.stopPropagation(); comprarJutsu(${jsArg(id)}, ${Number(finalPrice) || 0}, ${jsArg(dados.nome)}, ${jsArg(currency)})">Comprar</button>`; 
         }
     }
 
     div.innerHTML = `
-        <img src="${dados.imagem || IMG_PADRAO}" class="card-img-top">
-        <h4>${dados.nome}</h4>
-        <small>${sub}</small>
+        <img src="${esc(dados.imagem || IMG_PADRAO)}" class="card-img-top">
+        <h4>${esc(dados.nome)}</h4>
+        <small>${esc(sub)}</small>
         <div class="stats-row">${bonusTags}</div>
         ${priceHTML}
         ${buyControlHTML}
@@ -1006,7 +952,7 @@ async function carregarMentorias() {
             const m = d.data(); globalMentores[d.id] = m;
             const card = document.createElement('div'); card.className = 'card jutsu-card-click';
             card.onclick = function() { window.abrirModalMentoria(d.id); };
-            card.innerHTML = `<img src="${m.imagem || IMG_PADRAO}" class="card-img-top"><h4>${m.nome}</h4><small>Ver ensinos</small>`;
+            card.innerHTML = `<img src="${esc(m.imagem || IMG_PADRAO)}" class="card-img-top"><h4>${esc(m.nome)}</h4><small>Ver ensinos</small>`;
             if ((m.categoria || "").includes('card')) cCards.appendChild(card); else cTurno.appendChild(card);
         });
     } catch (e) {}
@@ -1070,18 +1016,18 @@ async function carregarPersonagens() {
             const botoesHTML = `
                 <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 15px;">
                     ${podeDesafiar ? `
-                    <button onclick="event.stopPropagation(); window.enviarDesafio('${d.id}', '${u.nome || u.apelido || "Ninja"}')" class="mission-btn-start" style="background: #e67e22; width: 100%; border: none; color: white;">
+                    <button onclick="event.stopPropagation(); window.enviarDesafio(${jsArg(d.id)}, ${jsArg(u.nome || u.apelido || "Ninja")})" class="mission-btn-start" style="background: #e67e22; width: 100%; border: none; color: white;">
                         <i class="fa-solid fa-khanda"></i> Desafiar
                     </button>
                     ` : ''}
-                    <button onclick="event.stopPropagation(); abrirModalPresentear('${d.id}')" class="mission-btn-start" style="background: var(--primary-color); color: white; width: 100%; border: none;">
+                    <button onclick="event.stopPropagation(); abrirModalPresentear(${jsArg(d.id)})" class="mission-btn-start" style="background: var(--primary-color); color: white; width: 100%; border: none;">
                         <i class="fa-solid fa-gift"></i> Presentear
                     </button>
-                    <button onclick="event.stopPropagation(); abrirChat('${d.id}', '${u.nome || u.apelido || "Ninja"}', ${isOnline})" class="mission-btn-start" style="background: #3498db; width: 100%; border: none; color: white;">
+                    <button onclick="event.stopPropagation(); abrirChat(${jsArg(d.id)}, ${jsArg(u.nome || u.apelido || "Ninja")}, ${isOnline})" class="mission-btn-start" style="background: #3498db; width: 100%; border: none; color: white;">
                         <i class="fa-solid fa-comment-dots"></i> Conversar
                     </button>
                     ${isAdmin ? `
-                    <button onclick="event.stopPropagation(); window.abrirPaginaPerfil('${d.id}')" class="mission-btn-start" style="background: #e74c3c; width: 100%; border: none; color: white;">
+                    <button onclick="event.stopPropagation(); window.abrirPaginaPerfil(${jsArg(d.id)})" class="mission-btn-start" style="background: #e74c3c; width: 100%; border: none; color: white;">
                         <i class="fa-solid fa-pen"></i> Editar Ficha
                     </button>
                     ` : ''}
@@ -1091,13 +1037,13 @@ async function carregarPersonagens() {
             
             // Injeta o conteúdo no card
             div.innerHTML = `
-                <img src="${u.avatar || IMG_PADRAO}" class="card-img-top">
+                <img src="${esc(u.avatar || IMG_PADRAO)}" class="card-img-top">
                 <h4 style="display: flex; justify-content: center; align-items: center; gap: 6px;">
                     <span style="display: inline-block; width: 10px; height: 10px; background: ${corBolinha}; border-radius: 50%; ${brilhoBolinha}"></span>
-                    ${u.nome || "Ninja"}
+                    ${esc(u.nome || "Ninja")}
                 </h4>
                 <p style="font-size:0.85em; color:var(--primary-color); font-weight:600; margin-top:5px; margin-bottom:8px;">
-                    ${u.apelido || "Sem clã"}
+                    ${esc(u.apelido || "Sem clã")}
                 </p>
                 <div style="font-size: 0.8rem; font-weight: bold; display: flex; justify-content: center; gap: 8px; align-items: center;">
                     <span style="color: #f1c40f;"><i class="fa-solid fa-coins"></i> ${formatarNum(ryos)}</span>
@@ -1208,7 +1154,7 @@ window.escutarDesafiosRecebidos = () => {
                 const conviteId = change.doc.id;
                 
                 // Configura o texto do modal
-                document.getElementById('texto-desafio').innerHTML = `<strong>${convite.desafianteNome}</strong> quer te enfrentar em um duelo.<br><br>Você está pronto para a batalha?`;
+                document.getElementById('texto-desafio').innerHTML = `<strong>${esc(convite.desafianteNome)}</strong> quer te enfrentar em um duelo.<br><br>Você está pronto para a batalha?`;
                 
                 // Exibe o modal na tela do jogador
                 document.getElementById('modal-desafio').style.display = 'flex';
@@ -1263,13 +1209,16 @@ window.carregarArena = async (inimigoId) => {
     document.getElementById('arena-player-img').src = currentUserData.avatar || IMG_PADRAO;
     
     // Puxa os dados que você me mostrou que já existem no seu banco
-    const meuHp = currentUserData.vida || 100;
-    const meuCp = currentUserData.chakra || 50;
-    const meuSp = currentUserData.stamina || 50;
-    
-    window.atualizarBarraArena('player', 'hp', meuHp, meuHp);
-    window.atualizarBarraArena('player', 'cp', meuCp, meuCp);
-    window.atualizarBarraArena('player', 'sp', meuSp, meuSp);
+    const meuMaxHp = currentUserData.max_vida ?? 100;
+    const meuMaxCp = currentUserData.max_chakra ?? 100;
+    const meuMaxSp = currentUserData.max_stamina ?? 100;
+    const meuHp = currentUserData.vida ?? meuMaxHp;
+    const meuCp = currentUserData.chakra ?? meuMaxCp;
+    const meuSp = currentUserData.stamina ?? meuMaxSp;
+
+    window.atualizarBarraArena('player', 'hp', meuHp, meuMaxHp);
+    window.atualizarBarraArena('player', 'cp', meuCp, meuMaxCp);
+    window.atualizarBarraArena('player', 'sp', meuSp, meuMaxSp);
     
     // 2. BUSCA O INIMIGO NO FIREBASE
     try {
@@ -1280,18 +1229,21 @@ window.carregarArena = async (inimigoId) => {
             document.getElementById('arena-enemy-nome').innerText = iniData.nome || iniData.apelido || "Inimigo";
             document.getElementById('arena-enemy-img').src = iniData.avatar || IMG_PADRAO;
             
-            const iniHp = iniData.vida || 100;
-            const iniCp = iniData.chakra || 50;
-            const iniSp = iniData.stamina || 50;
-            
-            window.atualizarBarraArena('enemy', 'hp', iniHp, iniHp);
-            window.atualizarBarraArena('enemy', 'cp', iniCp, iniCp);
-            window.atualizarBarraArena('enemy', 'sp', iniSp, iniSp);
+            const iniMaxHp = iniData.max_vida ?? 100;
+            const iniMaxCp = iniData.max_chakra ?? 100;
+            const iniMaxSp = iniData.max_stamina ?? 100;
+            const iniHp = iniData.vida ?? iniMaxHp;
+            const iniCp = iniData.chakra ?? iniMaxCp;
+            const iniSp = iniData.stamina ?? iniMaxSp;
+
+            window.atualizarBarraArena('enemy', 'hp', iniHp, iniMaxHp);
+            window.atualizarBarraArena('enemy', 'cp', iniCp, iniMaxCp);
+            window.atualizarBarraArena('enemy', 'sp', iniSp, iniMaxSp);
             
             // Registra o início da luta no Log
             document.getElementById('arena-log').innerHTML = `
                 <div style="color: #94a3b8; text-align: center; margin-bottom: 15px;">--- Batalha Iniciada ---</div>
-                <div style="color: #e67e22; margin-bottom: 5px; font-size: 1.1rem; text-align: center;">⚔️ <strong>${currentUserData.nome}</strong> VS <strong>${iniData.nome}</strong> ⚔️</div>
+                <div style="color: #e67e22; margin-bottom: 5px; font-size: 1.1rem; text-align: center;">⚔️ <strong>${esc(currentUserData.nome)}</strong> VS <strong>${esc(iniData.nome)}</strong> ⚔️</div>
                 <div style="color: #2ecc71;">> Aguardando a primeira ação...</div>
             `;
             
@@ -1357,14 +1309,14 @@ window.carregarControlesBatalha = async () => {
                     const custoChakra = jutsu.chakra ? Math.abs(jutsu.chakra) : 0;
                     const custoStamina = jutsu.stamina ? Math.abs(jutsu.stamina) : 0;
 
-                    if (custoChakra > 0) custosHTML.push(`<span style="color: #3498db; text-shadow: 0 0 2px #000;"><i class="fa-solid fa-droplet"></i> ${custoChakra}</span>`);
-                    if (custoStamina > 0) custosHTML.push(`<span style="color: #2ecc71; text-shadow: 0 0 2px #000;"><i class="fa-solid fa-leaf"></i> ${custoStamina}</span>`);
+                    if (custoChakra > 0) custosHTML.push(`<span style="color: #3498db; text-shadow: 0 0 2px #000;"><i class="fa-solid fa-droplet"></i> ${esc(custoChakra)}</span>`);
+                    if (custoStamina > 0) custosHTML.push(`<span style="color: #2ecc71; text-shadow: 0 0 2px #000;"><i class="fa-solid fa-leaf"></i> ${esc(custoStamina)}</span>`);
                     
                     const custoVisual = custosHTML.length > 0 ? custosHTML.join(' | ') : '<span style="color: #95a5a6;">Sem custo</span>';
-                    const danoVisual = jutsu.dano ? `<div style="color: #e74c3c; font-size: 0.7rem; margin-top: 2px;"><i class="fa-solid fa-fire"></i> Dano: ${jutsu.dano}</div>` : '';
+                    const danoVisual = jutsu.dano ? `<div style="color: #e74c3c; font-size: 0.7rem; margin-top: 2px;"><i class="fa-solid fa-fire"></i> Dano: ${esc(jutsu.dano)}</div>` : '';
 
                     btn.innerHTML = `
-                        <strong style="font-size: 0.9rem;">${jutsu.nome || 'Jutsu sem nome'}</strong>
+                        <strong style="font-size: 0.9rem;">${esc(jutsu.nome || 'Jutsu sem nome')}</strong>
                         <div style="font-size: 0.75rem; background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 10px;">${custoVisual}</div>
                         ${danoVisual}
                     `;
@@ -1383,7 +1335,7 @@ window.carregarControlesBatalha = async () => {
     btnAtaqueBasico.className = 'buy-btn';
     btnAtaqueBasico.style.background = '#8e44ad';
     btnAtaqueBasico.innerHTML = '<strong>Ataque Básico</strong><br><span style="font-size: 0.75rem;">Usa Força / Agilidade</span>';
-    btnAtaqueBasico.onclick = () => window.prepararAtaque({ nome: "Ataque Básico", tipo: "taijutsu", dano: "d4" });
+    btnAtaqueBasico.onclick = () => window.prepararAtaque({ nome: "Ataque Básico", tipo: "taijutsu", categoria: "taijutsu", funcao: "ataque", dano: "d4" });
     painelControles.appendChild(btnAtaqueBasico);
     
     // Botão de Passar Turno (NOVO)
@@ -1557,7 +1509,9 @@ window.prepararAtaque = async (jutsu) => {
         msgDano = `💥 O ataque gerou um potencial de **${totalDanoFinal}** de dano! ${textoDados}`;
     }
 
-    const nomeJutsuDisplay = multiplicador > 1 ? `${jutsu.nome} (x${multiplicador})` : jutsu.nome;
+    const nomeJutsuDisplay = esc(multiplicador > 1 ? `${jutsu.nome} (x${multiplicador})` : jutsu.nome);
+    // Versão em texto puro (sem HTML) da mensagem, que é a enviada ao adversário
+    const msgDanoTexto = msgDano.replace(/<[^>]*>/g, '').replace(/&[a-z#0-9]+;/gi, '');
     let corLogLocal = isAtaque ? '#3498db' : '#2ecc71'; 
 
     // 6. REGISTRA A AÇÃO NO LOG DA ARENA LOCAL
@@ -1579,7 +1533,7 @@ window.prepararAtaque = async (jutsu) => {
                     jutsuNome: nomeJutsuDisplay,
                     jutsuCategoria: jutsu.categoria || 'ninjutsu', 
                     jutsuFuncao: func || 'ataque',         
-                    msgDano: msgDano,
+                    msgDano: msgDanoTexto,
                     danoValor: totalDanoFinal || 0, 
                     custoCp: custoCp,
                     custoSp: custoSp,
@@ -1628,7 +1582,7 @@ window.passarTurno = async () => {
     }
 
     // 2. APLICA AS PERDAS NA FICHA DO JOGADOR
-    let hpAtual = (currentUserData.vida || 100) - hpPerdido;
+    let hpAtual = (currentUserData.vida ?? 100) - hpPerdido;
     if (hpAtual < 0) hpAtual = 0;
     
     let cpAtual = (currentUserData.chakra || 0) - cpGasto;
@@ -1662,7 +1616,7 @@ window.passarTurno = async () => {
     logArena.innerHTML += `
         <div style="background: rgba(149, 165, 166, 0.1); padding: 8px; border-left: 3px solid #95a5a6; margin-top: 10px; border-radius: 4px;">
             <div style="color: #95a5a6; font-weight: bold;">> ⏳ Fim do seu Turno</div>
-            <div style="color: #bdc3c7; margin-top: 3px; font-size: 0.85rem;">> ${logEfeitos}</div>
+            <div style="color: #bdc3c7; margin-top: 3px; font-size: 0.85rem;">> ${esc(logEfeitos)}</div>
         </div>
     `;
     logArena.scrollTop = logArena.scrollHeight;
@@ -1702,23 +1656,13 @@ window.adicionarEfeito = (nomeEfeito, tipoRecurso, valorPorTurno, quantidadeTurn
     const logArena = document.getElementById('arena-log');
     logArena.innerHTML += `
         <div style="background: rgba(155, 89, 182, 0.1); padding: 8px; border-left: 3px solid #9b59b6; margin-top: 10px; border-radius: 4px;">
-            <div style="color: #9b59b6; font-weight: bold;">> 💉 Novo Efeito Ativo: ${nomeEfeito}</div>
+            <div style="color: #9b59b6; font-weight: bold;">> 💉 Novo Efeito Ativo: ${esc(nomeEfeito)}</div>
             <div style="color: #bdc3c7; margin-top: 3px; font-size: 0.85rem;">> Você perderá ${valorPorTurno} de ${tipoRecurso.toUpperCase()} por ${quantidadeTurnos} turnos.</div>
         </div>
     `;
     logArena.scrollTop = logArena.scrollHeight;
 };
 
-
-// Função auxiliar para limpar a tela da Arena perfeitamente
-window.sairDaArenaVisualmente = () => {
-    if (window.escutaArenaAtiva) window.escutaArenaAtiva(); // Desliga o radar
-    window.currentBattleId = null;
-    window.showTab('dashboard'); 
-    document.getElementById('arena-waiting').style.display = 'block';
-    document.getElementById('arena-container').style.display = 'none';
-    document.getElementById('arena-log').innerHTML = '<div style="color: #94a3b8; text-align: center;">--- O Ringue está sendo preparado ---</div>';
-};
 
 // Função auxiliar para limpar a tela da Arena perfeitamente
 window.sairDaArenaVisualmente = () => {
@@ -1798,7 +1742,7 @@ window.iniciarRadarDaArena = () => {
             
             // 1. SE O INIMIGO APERTOU RECUAR:
             if (sala.status === 'fugiu') {
-                alert(`🏃💨 A batalha acabou! ${sala.quemFugiu} recuou da luta!`);
+                alert(`🏃💨 A batalha acabou! ${sala.quemFugiu || 'O adversário'} recuou da luta!`);
                 deleteDoc(doc(db, "desafios_batalha", window.currentBattleId)).catch(e => console.log(e));
                 window.sairDaArenaVisualmente();
             }
@@ -1815,12 +1759,12 @@ window.iniciarRadarDaArena = () => {
                     // A) Atualiza as barras de Chakra e Stamina do inimigo visualmente
                     const txtCp = document.getElementById('arena-enemy-cp-txt').innerText.split('/');
                     const maxCp = Number(txtCp[1]) || 1;
-                    let atualCp = Number(txtCp[0]) - acao.custoCp;
+                    let atualCp = Number(txtCp[0]) - (Number(acao.custoCp) || 0);
                     if (atualCp < 0) atualCp = 0;
 
                     const txtSp = document.getElementById('arena-enemy-sp-txt').innerText.split('/');
                     const maxSp = Number(txtSp[1]) || 1;
-                    let atualSp = Number(txtSp[0]) - acao.custoSp;
+                    let atualSp = Number(txtSp[0]) - (Number(acao.custoSp) || 0);
                     if (atualSp < 0) atualSp = 0;
 
                     window.atualizarBarraArena('enemy', 'cp', atualCp, maxCp);
@@ -1833,13 +1777,13 @@ window.iniciarRadarDaArena = () => {
                         
                         logArena.innerHTML += `
                             <div style="background: rgba(231, 76, 60, 0.1); padding: 8px; border-left: 3px solid #e74c3c; margin-top: 10px; border-radius: 0 4px 4px 0;">
-                                <div style="color: #e74c3c; font-weight: bold;">> O Inimigo usou ${acao.jutsuNome}! <span style="font-size:0.75rem; color:#95a5a6;">(-${acao.custoCp} CP | -${acao.custoSp} SP)</span></div>
-                                <div style="color: #e67e22; margin-top: 3px;">> ${acao.msgDano}</div>
+                                <div style="color: #e74c3c; font-weight: bold;">> O Inimigo usou ${esc(acao.jutsuNome)}! <span style="font-size:0.75rem; color:#95a5a6;">(-${esc(acao.custoCp)} CP | -${esc(acao.custoSp)} SP)</span></div>
+                                <div style="color: #e67e22; margin-top: 3px;">> ${esc(acao.msgDano)}</div>
                             </div>
                         `;
                         logArena.scrollTop = logArena.scrollHeight;
 
-                        window.danoAmeacaAtual = acao.danoValor || 0; 
+                        window.danoAmeacaAtual = Number(acao.danoValor) || 0; 
                         window.categoriaAmeacaAtual = acao.jutsuCategoria || 'taijutsu'; 
                         
                         // --- LÓGICA DE APAGAR OS BOTÕES (VELOCIDADE E INEVITABILIDADE) ---
@@ -1883,9 +1827,9 @@ window.iniciarRadarDaArena = () => {
                         // C) SE FOR BUFF/SUPORTE (Apenas Log verde/cinza, não abre defesa)
                         logArena.innerHTML += `
                             <div style="background: rgba(46, 204, 113, 0.1); padding: 8px; border-left: 3px solid #2ecc71; margin-top: 10px; border-radius: 0 4px 4px 0;">
-                                <div style="color: #2ecc71; font-weight: bold;">> O Inimigo usou ${acao.jutsuNome}! <span style="font-size:0.75rem; color:#95a5a6;">(-${acao.custoCp} CP | -${acao.custoSp} SP)</span></div>
+                                <div style="color: #2ecc71; font-weight: bold;">> O Inimigo usou ${esc(acao.jutsuNome)}! <span style="font-size:0.75rem; color:#95a5a6;">(-${esc(acao.custoCp)} CP | -${esc(acao.custoSp)} SP)</span></div>
                                 <div style="color: #95a5a6; font-style: italic; margin-top: 5px; font-size: 0.85rem;">
-                                    > ${acao.msgDano} O inimigo está se preparando...
+                                    > ${esc(acao.msgDano)} O inimigo está se preparando...
                                 </div>
                             </div>
                         `;
@@ -1951,11 +1895,11 @@ async function carregarConquistas() {
             // Lógica dos botões
             let btn = "";
             if(!st) {
-                btn = `<button class="mission-btn-start" onclick="event.stopPropagation(); window.solicitarConquista('${d.id}', this)">Reivindicar</button>`;
+                btn = `<button class="mission-btn-start" onclick="event.stopPropagation(); window.solicitarConquista(${jsArg(d.id)}, this)">Reivindicar</button>`;
             } else if(st === 'solicitado') {
                 btn = `<button class="mission-btn-wait" onclick="event.stopPropagation();">Aguardando</button>`;
             } else if(st === 'aprovado') {
-                btn = `<button class="mission-btn-collect" onclick="event.stopPropagation(); window.coletarConquista('${d.id}', ${r}, ${x}, ${en}, this)">Coletar</button>`;
+                btn = `<button class="mission-btn-collect" onclick="event.stopPropagation(); window.coletarConquista(${jsArg(d.id)}, ${Number(r) || 0}, ${Number(x) || 0}, ${Number(en) || 0}, this)">Coletar</button>`;
             } else if(st === 'concluido') {
                 btn = `<button class="mission-btn-done" onclick="event.stopPropagation();">Concluído</button>`;
             }
@@ -1964,18 +1908,18 @@ async function carregarConquistas() {
 
             // NOVO LAYOUT DO CARD COM RECOMPENSAS PADRONIZADAS
             k.innerHTML = `
-                <img src="${i.imagem || IMG_PADRAO}" class="card-img-top">
-                <h4 style="margin-bottom: 4px; margin-top: 10px;">${i.titulo}</h4>
+                <img src="${esc(i.imagem || IMG_PADRAO)}" class="card-img-top">
+                <h4 style="margin-bottom: 4px; margin-top: 10px;">${esc(i.titulo)}</h4>
 
                 <div style="display: flex; justify-content: center; gap: 10px; font-size: 0.75rem; font-weight: bold; padding: 8px 0; border-top: 1px solid #f5f5f5; margin-top: 5px;">
                     <span style="color: #2ecc71;" title="XP">
-                        <i class="fa-solid fa-bolt"></i> ${x}
+                        <i class="fa-solid fa-bolt"></i> ${esc(x)}
                     </span>
                     <span style="color: #f1c40f;" title="Ryos">
                         <i class="fa-solid fa-coins"></i> ${formatarNum(r)}
                     </span>
                     <span style="color: #3498db;" title="Essência Ninja">
-                        <i class="fa-regular fa-star"></i> ${en}
+                        <i class="fa-regular fa-star"></i> ${esc(en)}
                     </span>
                 </div>
 
@@ -2037,8 +1981,8 @@ async function carregarMissoes() {
             const k = document.createElement('div'); 
             k.className = 'card jutsu-card-click'; 
             
-            const rankClass = `rank-${(i.rank||'d').toLowerCase()}`;
-            const rankHtml = `<span class="rank-tag ${rankClass}">Rank ${i.rank||'D'}</span>`;
+            const rankClass = `rank-${esc(String(i.rank||'d').toLowerCase())}`;
+            const rankHtml = `<span class="rank-tag ${rankClass}">Rank ${esc(i.rank||'D')}</span>`;
             
             const r = i.recompensa || 0; 
             const x = i.xp || 0; 
@@ -2056,20 +2000,20 @@ async function carregarMissoes() {
             // NOVO LAYOUT DO CARD SIMPLES
             k.innerHTML = `
                 ${rankHtml}
-                <h4 style="margin-bottom: 2px;">${i.titulo}</h4>
+                <h4 style="margin-bottom: 2px;">${esc(i.titulo)}</h4>
                 <p style="font-size:0.75rem; font-weight: bold; color:${statusColor}; text-transform: capitalize; margin-bottom: 8px;">
-                    ${statusLabel}
+                    ${esc(statusLabel)}
                 </p>
                 
                 <div style="display: flex; justify-content: center; gap: 10px; font-size: 0.75rem; font-weight: bold; border-top: 1px solid #eee; padding-top: 8px;">
                     <span style="color: #2ecc71;" title="XP">
-                        <i class="fa-solid fa-bolt"></i> ${x}
+                        <i class="fa-solid fa-bolt"></i> ${esc(x)}
                     </span>
                     <span style="color: #f1c40f;" title="Ryos">
                         <i class="fa-solid fa-coins"></i> ${formatarNum(r)}
                     </span>
                     <span style="color: #3498db;" title="Essência Ninja">
-                        <i class="fa-regular fa-star"></i> ${en}
+                        <i class="fa-regular fa-star"></i> ${esc(en)}
                     </span>
                 </div>
             `; 
@@ -2127,7 +2071,7 @@ function renderRank(c, t, l, f) {
     let h = `<div class="ranking-col"><h3>${t}</h3><table class="ranking-table">`; 
     
     s.forEach((u, i) => {
-        h += `<tr><td>${i+1}. ${u.nome || "Anônimo"}</td><td>${formatarNum(u[f])}</td></tr>`;
+        h += `<tr><td>${i+1}. ${esc(u.nome || "Anônimo")}</td><td>${formatarNum(u[f])}</td></tr>`;
     }); 
     
     h += '</table></div>'; 
@@ -2148,7 +2092,7 @@ window.abrirModalPresentear = (alvoId) => {
 window.confirmarPresente = async () => {
     if (!usuarioDestinoPresente || !auth.currentUser) return;
 
-    const tipo = document.getElementById('pres-tipo').value; // 'ryos' ou 'en'
+    const tipo = document.getElementById('pres-tipo').value; // 'ryos' ou 'essencia_ninja'
     const qtd = Number(document.getElementById('pres-qtd').value);
 
     // Validações de segurança
@@ -2172,24 +2116,17 @@ window.confirmarPresente = async () => {
         const refRemetente = doc(db, "users", auth.currentUser.uid);
         const refDestinatario = doc(db, "users", usuarioDestinoPresente);
 
-        // Pega o saldo atual do amigo
         const snapDestinatario = await getDoc(refDestinatario);
         if (!snapDestinatario.exists()) {
             throw new Error("O ninja destinatário não foi encontrado na vila.");
         }
-        
-        const dadosDestinatario = snapDestinatario.data();
-        const saldoDestinatario = Number(dadosDestinatario[tipo]) || 0;
 
-        // 1. Tira da conta de quem enviou
-        await updateDoc(refRemetente, {
-            [tipo]: saldoAtual - qtd
-        });
-
-        // 2. Coloca na conta de quem recebeu
-        await updateDoc(refDestinatario, {
-            [tipo]: saldoDestinatario + qtd
-        });
+        // Débito e crédito na MESMA operação (ou os dois acontecem, ou nenhum)
+        // e com increment(), para não sobrescrever saldos alterados ao mesmo tempo.
+        const lote = writeBatch(db);
+        lote.update(refRemetente, { [tipo]: increment(-qtd) });
+        lote.update(refDestinatario, { [tipo]: increment(qtd) });
+        await lote.commit();
 
         // Atualiza os dados locais para não precisar recarregar a página
         currentUserData[tipo] = saldoAtual - qtd;
@@ -2254,12 +2191,12 @@ window.verDetalhesConquista = (id, d, st) => {
     a.innerHTML = '';
 
     if(!st) {
-        a.innerHTML = `<button class="mission-btn-start" onclick="window.solicitarConquista('${id}', this)">Reivindicar</button>`;
+        a.innerHTML = `<button class="mission-btn-start" onclick="window.solicitarConquista(${jsArg(id)}, this)">Reivindicar</button>`;
     } else if(st === 'solicitado') {
         a.innerHTML = `<button class="mission-btn-wait">Aguardando</button>`;
     } else if(st === 'aprovado') {
         // Agora passando também o d.en para a coleta
-        a.innerHTML = `<button class="mission-btn-collect" onclick="window.coletarConquista('${id}', ${d.recompensa}, ${d.xp}, ${d.en || 0}, this)">Coletar</button>`;
+        a.innerHTML = `<button class="mission-btn-collect" onclick="window.coletarConquista(${jsArg(id)}, ${Number(d.recompensa) || 0}, ${Number(d.xp) || 0}, ${Number(d.en) || 0}, this)">Coletar</button>`;
     } else {
         a.innerHTML = `<button class="mission-btn-done">Feito</button>`;
     }
@@ -2305,12 +2242,12 @@ window.verDetalhesMissao = (id, d, st) => {
     a.innerHTML = ''; 
 
     if(st === 'neutro') {
-        a.innerHTML = `<button class="mission-btn-start" onclick="window.iniciarMissao('${id}', this)">Aceitar</button>`; 
+        a.innerHTML = `<button class="mission-btn-start" onclick="window.iniciarMissao(${jsArg(id)}, this)">Aceitar</button>`; 
     } else if(st === 'em_andamento') {
         a.innerHTML = `<button class="mission-btn-wait">Em Andamento</button>`; 
     } else if(st === 'aprovado') {
         // Agora passando também o d.en para a coleta
-        a.innerHTML = `<button class="mission-btn-collect" onclick="window.coletarRecompensa('${id}', ${d.recompensa}, ${d.xp}, ${d.en || 0}, '${d.rank || 'D'}', this)">Receber</button>`; 
+        a.innerHTML = `<button class="mission-btn-collect" onclick="window.coletarRecompensa(${jsArg(id)}, ${Number(d.recompensa) || 0}, ${Number(d.xp) || 0}, ${Number(d.en) || 0}, ${jsArg(d.rank || 'D')}, this)">Receber</button>`; 
     } else if(st === 'concluido') {
         a.innerHTML = `<button class="mission-btn-done">Concluído</button>`; 
     }
@@ -2359,12 +2296,12 @@ function abrirModalSimples(t, d) {
     if (t === 'jutsu') {
         document.getElementById(t + '-rank-modal').innerText = "Rank " + d.rank;
         
-        if (d.dano) h += `<span class="jutsu-stat-tag tag-dano">Dano: ${d.dano}</span>`;
-        if (d.defesa) h += `<span class="jutsu-stat-tag tag-defesa" style="background:#2ecc71;">Defesa: ${d.defesa}</span>`;
-        if (d.chakra) h += `<span class="jutsu-stat-tag tag-chakra">Chakra: ${d.chakra}</span>`;
+        if (d.dano) h += `<span class="jutsu-stat-tag tag-dano">Dano: ${esc(d.dano)}</span>`;
+        if (d.defesa) h += `<span class="jutsu-stat-tag tag-defesa" style="background:#2ecc71;">Defesa: ${esc(d.defesa)}</span>`;
+        if (d.chakra) h += `<span class="jutsu-stat-tag tag-chakra">Chakra: ${esc(d.chakra)}</span>`;
         
         // CORREÇÃO AQUI: Adicionado crases e trocado 'dados' por 'd'
-        if (d.stamina) h += `<span class="jutsu-stat-tag tag-stamina">Stamina: ${d.stamina}</span>`;
+        if (d.stamina) h += `<span class="jutsu-stat-tag tag-stamina">Stamina: ${esc(d.stamina)}</span>`;
         
         h += bonusHtml;
         document.getElementById('jutsu-stats-row').innerHTML = h;
@@ -2373,10 +2310,10 @@ function abrirModalSimples(t, d) {
     } else if (t === 'tool') {
         document.getElementById(t + '-rank-modal').innerText = d.dano || "Ferramenta";
         
-        if (d.dano) h += `<span class="jutsu-stat-tag tag-dano">Dano: ${d.dano}</span>`;
+        if (d.dano) h += `<span class="jutsu-stat-tag tag-dano">Dano: ${esc(d.dano)}</span>`;
         
         // CORREÇÃO AQUI: Stamina para ferramentas
-        if (d.stamina) h += `<span class="jutsu-stat-tag tag-stamina">Stamina: ${d.stamina}</span>`;
+        if (d.stamina) h += `<span class="jutsu-stat-tag tag-stamina">Stamina: ${esc(d.stamina)}</span>`;
         
         h += bonusHtml;
         document.getElementById('tool-stats-row').innerHTML = h;
@@ -2520,7 +2457,7 @@ window.abrirModalMentoria = (id) => {
         mentor.ensinos.forEach((ensino, index) => {
             const div = document.createElement('div'); div.className = 'mentoria-option';
             div.onclick = () => { const radio = document.getElementById(`ensino-${index}`); if(radio) radio.checked = true; };
-            div.innerHTML = `<input type="radio" name="ensino_escolhido" id="ensino-${index}" value="${index}" class="mentoria-radio"><div style="flex:1;"><div style="font-weight:bold;">${ensino.nome}</div><div>${formatarNum(ensino.preco)} Ryos</div></div>`;
+            div.innerHTML = `<input type="radio" name="ensino_escolhido" id="ensino-${index}" value="${index}" class="mentoria-radio"><div style="flex:1;"><div style="font-weight:bold;">${esc(ensino.nome)}</div><div>${formatarNum(ensino.preco)} Ryos</div></div>`;
             container.appendChild(div);
         });
     }
@@ -2546,7 +2483,26 @@ window.editarFrase = async (id, oldText) => { const n = prompt("Editar:", oldTex
 window.deletarFrase = async (id) => { if(confirm("Excluir?")) await deleteDoc(doc(db, "frases", id)); };
 window.copiarFrase = (t) => { navigator.clipboard.writeText(t).then(() => { const f=document.getElementById('copyFeedback'); f.style.display='block'; setTimeout(()=>f.style.display='none',2000); }); };
 window.salvarNovaSenha = async () => { const p = document.getElementById('new-password').value; if(!p || p.length < 6) return alert("Mínimo 6 caracteres"); try { await updatePassword(auth.currentUser, p); alert("Sucesso!"); closeChangePasswordModal(); } catch(e) { alert("Erro: " + e.message); } };
-async function carregarFrases() { const c = document.getElementById('frases-list-container'); try { onSnapshot(query(collection(db, "frases"), orderBy("data", "desc")), (s) => { c.innerHTML=''; s.forEach(d=>{ const f=d.data(); const k=document.createElement('div'); k.className='frase-item'; const menu = f.uid === auth.currentUser.uid ? `<div class="options-menu-container"><div class="options-btn" onclick="toggleFraseMenu(this); event.stopPropagation();">...</div><div class="options-dropdown"><div class="options-item" onclick="editarFrase('${d.id}','${f.texto}');event.stopPropagation()">Editar</div><div class="options-item danger" onclick="deletarFrase('${d.id}');event.stopPropagation()">Excluir</div></div></div>` : ''; k.onclick=()=>copiarFrase(f.texto); k.innerHTML=`<div class="frase-content">"${f.texto}"</div><div class="frase-author">- ${f.autor}</div>${menu}`; c.appendChild(k); }); }); } catch(e){} }
+let unsubscribeFrases = null;
+async function carregarFrases() {
+    const c = document.getElementById('frases-list-container');
+    if (!c) return;
+    if (unsubscribeFrases) unsubscribeFrases(); // evita acumular listeners
+    try {
+        unsubscribeFrases = onSnapshot(query(collection(db, "frases"), orderBy("data", "desc")), (s) => {
+            c.innerHTML = '';
+            s.forEach(d => {
+                const f = d.data();
+                const k = document.createElement('div');
+                k.className = 'frase-item';
+                const menu = f.uid === auth.currentUser.uid ? `<div class="options-menu-container"><div class="options-btn" onclick="toggleFraseMenu(this); event.stopPropagation();">...</div><div class="options-dropdown"><div class="options-item" onclick="editarFrase(${jsArg(d.id)}, ${jsArg(f.texto)});event.stopPropagation()">Editar</div><div class="options-item danger" onclick="deletarFrase(${jsArg(d.id)});event.stopPropagation()">Excluir</div></div></div>` : '';
+                k.onclick = () => copiarFrase(f.texto);
+                k.innerHTML = `<div class="frase-content">"${esc(f.texto)}"</div><div class="frase-author">- ${esc(f.autor)}</div>${menu}`;
+                c.appendChild(k);
+            });
+        });
+    } catch(e) { console.error("Erro ao carregar frases:", e); }
+}
 function comprimirImagem(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -2620,35 +2576,35 @@ window.verPerfil = async (uid) => {
         const statsContainer = document.getElementById('other-profile-stats'); 
         statsContainer.innerHTML = `
             <div class="stats-divider">Geral</div>
-            <div class="stat-card"><div class="stat-value">${u.nivel||1}</div><div class="stat-label">Nível</div></div>
-            <div class="stat-card"><div class="stat-value">${u.cargo||'Genin'}</div><div class="stat-label">Cargo</div></div>
-            <div class="stat-card"><div class="stat-value">${u.patente||'Genin'}</div><div class="stat-label">Patente</div></div>
-            <div class="stat-card"><div class="stat-value">${u.rank||'E'}</div><div class="stat-label">Rank</div></div>
-            <div class="stat-card"><div class="stat-value">${u.speed_rank||"E"}</div><div class="stat-label">Rank Vel.</div></div>
-            <div class="stat-card"><div class="stat-value">${u.tipo||'Normal'}</div><div class="stat-label">Tipo</div></div>
+            <div class="stat-card"><div class="stat-value">${esc(u.nivel||1)}</div><div class="stat-label">Nível</div></div>
+            <div class="stat-card"><div class="stat-value">${esc(u.cargo||'Genin')}</div><div class="stat-label">Cargo</div></div>
+            <div class="stat-card"><div class="stat-value">${esc(u.patente||'Genin')}</div><div class="stat-label">Patente</div></div>
+            <div class="stat-card"><div class="stat-value">${esc(u.rank||'E')}</div><div class="stat-label">Rank</div></div>
+            <div class="stat-card"><div class="stat-value">${esc(u.speed_rank||"E")}</div><div class="stat-label">Rank Vel.</div></div>
+            <div class="stat-card"><div class="stat-value">${esc(u.tipo||'Normal')}</div><div class="stat-label">Tipo</div></div>
             
             <div class="stats-divider">Batalha</div>
-            <div class="stat-card"><div class="stat-value">${u.vitorias||0}</div><div class="stat-label">Vitórias</div></div>
-            <div class="stat-card"><div class="stat-value">${u.empates||0}</div><div class="stat-label">Empates</div></div>
-            <div class="stat-card"><div class="stat-value">${u.derrotas||0}</div><div class="stat-label">Derrotas</div></div>
+            <div class="stat-card"><div class="stat-value">${esc(u.vitorias||0)}</div><div class="stat-label">Vitórias</div></div>
+            <div class="stat-card"><div class="stat-value">${esc(u.empates||0)}</div><div class="stat-label">Empates</div></div>
+            <div class="stat-card"><div class="stat-value">${esc(u.derrotas||0)}</div><div class="stat-label">Derrotas</div></div>
             
             <div class="stats-divider">Inventário</div>
             <div style="grid-column: 1 / -1; display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">${invHtml}</div>
             
             <div class="stats-divider">Vitalidade</div>
-            <div class="stat-card"><div class="stat-value">${u.vida||100}</div><div class="stat-label">Vida</div></div>
-            <div class="stat-card"><div class="stat-value">${u.chakra||100}</div><div class="stat-label">Chakra</div></div>
-            <div class="stat-card"><div class="stat-value">${u.stamina||100}</div><div class="stat-label">Stamina</div></div>
-            <div class="stat-card"><div class="stat-value">${u.controle_chakra||"Baixo"}</div><div class="stat-label">Controle</div></div>
+            <div class="stat-card"><div class="stat-value">${esc(u.vida ?? 100)}</div><div class="stat-label">Vida</div></div>
+            <div class="stat-card"><div class="stat-value">${esc(u.chakra ?? 100)}</div><div class="stat-label">Chakra</div></div>
+            <div class="stat-card"><div class="stat-value">${esc(u.stamina ?? 100)}</div><div class="stat-label">Stamina</div></div>
+            <div class="stat-card"><div class="stat-value">${esc(u.controle_chakra||"Baixo")}</div><div class="stat-label">Controle</div></div>
             
             <div class="stats-divider">Atributos</div>
-            <div class="stat-card"><div class="stat-value">${u.forca||10}</div><div class="stat-label">Força</div></div>
-            <div class="stat-card"><div class="stat-value">${u.defesa||10}</div><div class="stat-label">Defesa</div></div>
-            <div class="stat-card"><div class="stat-value">${u.agilidade||10}</div><div class="stat-label">Agilidade</div></div>
-            <div class="stat-card"><div class="stat-value">${u.velocidade||10}</div><div class="stat-label">Velocidade</div></div>
-            <div class="stat-card"><div class="stat-value">${u.intelecto||10}</div><div class="stat-label">Intelecto</div></div>
-            <div class="stat-card"><div class="stat-value">${u.constituicao||10}</div><div class="stat-label">Constituição</div></div>
-            <div class="stat-card"><div class="stat-value">${u.destreza||10}</div><div class="stat-label">Destreza</div></div>
+            <div class="stat-card"><div class="stat-value">${esc(u.forca||10)}</div><div class="stat-label">Força</div></div>
+            <div class="stat-card"><div class="stat-value">${esc(u.defesa||10)}</div><div class="stat-label">Defesa</div></div>
+            <div class="stat-card"><div class="stat-value">${esc(u.agilidade||10)}</div><div class="stat-label">Agilidade</div></div>
+            <div class="stat-card"><div class="stat-value">${esc(u.velocidade||10)}</div><div class="stat-label">Velocidade</div></div>
+            <div class="stat-card"><div class="stat-value">${esc(u.intelecto||10)}</div><div class="stat-label">Intelecto</div></div>
+            <div class="stat-card"><div class="stat-value">${esc(u.constituicao||10)}</div><div class="stat-label">Constituição</div></div>
+            <div class="stat-card"><div class="stat-value">${esc(u.destreza||10)}</div><div class="stat-label">Destreza</div></div>
         `;
         
         document.getElementById('profileModal').style.display = 'flex'; 
@@ -2712,7 +2668,9 @@ window.carregarDiariosAdmin = () => {
     const q = query(collection(db, "chats"), where("participantes", "array-contains", "MESTRE"));
     
     // Usamos onSnapshot para que você veja a notificação de nova mensagem brotar na hora
-    onSnapshot(q, (snapshot) => {
+    // (desliga o listener anterior para não acumular um novo a cada abertura da aba)
+    if (window._unsubDiariosAdmin) window._unsubDiariosAdmin();
+    window._unsubDiariosAdmin = onSnapshot(q, (snapshot) => {
         container.innerHTML = '';
         
         if(snapshot.empty) {
@@ -2740,12 +2698,12 @@ window.carregarDiariosAdmin = () => {
             
             div.innerHTML = `
                 <div style="display:flex; flex-direction:column; overflow: hidden; padding-right: 10px;">
-                    <strong style="color:var(--primary-color); font-size: 1rem;"><i class="fa-solid fa-book-journal-whills"></i> Diário de ${nomePlayer}</strong>
+                    <strong style="color:var(--primary-color); font-size: 1rem;"><i class="fa-solid fa-book-journal-whills"></i> Diário de ${esc(nomePlayer)}</strong>
                     <span style="font-size:0.85rem; color:#777; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                        ${dados.ultimaMensagem || "Nenhuma anotação ainda..."}
+                        ${esc(dados.ultimaMensagem || "Nenhuma anotação ainda...")}
                     </span>
                 </div>
-                ${naoLidas > 0 ? '<span class="unread-badge" style="background:#f1c40f; color:#333;">' + naoLidas + '</span>' : ''}
+                ${naoLidas > 0 ? '<span class="unread-badge" style="background:#f1c40f; color:#333;">' + esc(naoLidas) + '</span>' : ''}
             `;
             container.appendChild(div);
         });
@@ -2773,9 +2731,9 @@ function criarCardAdmin(container, userData, uid, itemId, tipo, funcaoAprovar) {
 
     div.innerHTML = `
         <div class="admin-card-header">
-            <img src="${userData.avatar || IMG_PADRAO}" alt="Avatar">
+            <img src="${esc(userData.avatar || IMG_PADRAO)}" alt="Avatar">
             <div>
-                <h4 style="margin:0; font-size:0.9rem; color:#2d3436;">${userData.nome}</h4>
+                <h4 style="margin:0; font-size:0.9rem; color:#2d3436;">${esc(userData.nome)}</h4>
                 <small style="color:var(--primary-color); font-weight:800; text-transform:uppercase; font-size:0.65rem;">
                     <i class="fa-solid fa-scroll"></i> ${tipo}
                 </small>
@@ -2783,15 +2741,15 @@ function criarCardAdmin(container, userData, uid, itemId, tipo, funcaoAprovar) {
         </div>
 
         <div class="admin-card-id">
-            <strong>ID:</strong> ${itemId}
+            <strong>ID:</strong> ${esc(itemId)}
         </div>
         
         <div class="admin-actions">
-            <button class="btn-adm btn-adm-approve" onclick="${funcaoAprovar}('${uid}','${itemId}')">
+            <button class="btn-adm btn-adm-approve" onclick="${funcaoAprovar}(${jsArg(uid)},${jsArg(itemId)})">
                 <i class="fa-solid fa-check"></i> Aprovar
             </button>
             
-            <button class="btn-adm btn-adm-reject" onclick="window.reprovarSolicitacao('${uid}', '${itemId}', '${tipoSlug}', this)">
+            <button class="btn-adm btn-adm-reject" onclick="window.reprovarSolicitacao(${jsArg(uid)}, ${jsArg(itemId)}, ${jsArg(tipoSlug)}, this)">
                 <i class="fa-solid fa-xmark"></i> Recusar
             </button>
         </div>
@@ -2992,6 +2950,27 @@ window.abrirModalCriacao = () => {
                 ${campo('DEFESA', 'cre-defesa', 'text', '0')}
             </div>
         `;
+
+        // Itens da Loja precisam de categoria (estabelecimento), vila e efeito para aparecerem na loja
+        if (tipo.includes('loja')) {
+            const categoriasLoja = [
+                ['mercado', 'Mercado'], ['comida', 'Restaurantes'], ['remedio', 'Hospital/Farmácia'],
+                ['roupa', 'Roupas'], ['acessorio', 'Acessórios'], ['padaria', 'Padaria'],
+                ['floricultura', 'Floricultura'], ['ferreiro', 'Ferreiro'], ['biblioteca', 'Biblioteca']
+            ];
+            html += `
+                <div class="input-grid-2">
+                    <div class="input-group">
+                        <label>ESTABELECIMENTO</label>
+                        <select id="cre-tipo-loja" style="width:100%; padding:10px; border-radius:10px; border:2px solid #edf2f7; background:#f8fafc;">
+                            ${categoriasLoja.map(([v, n]) => `<option value="${v}">${n}</option>`).join('')}
+                        </select>
+                    </div>
+                    ${campo('VILAS (separadas por vírgula)', 'cre-vila', 'text', 'Global ou Konoha, Suna...')}
+                </div>
+                ${campo('EFEITO', 'cre-efeito', 'text', 'Ex: Recupera 20 de HP')}
+            `;
+        }
     }
         
     // CASO: MISSÕES / CONQUISTAS
@@ -3030,6 +3009,10 @@ document.getElementById('form-criacao-geral').onsubmit = async (e) => {
     
     const gerarSlug = (n) => n.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '_').replace(/[^\w-]+/g, '');
     const customID = gerarSlug(nomeInput);
+    if (!customID) return alert("Preencha um nome/título válido.");
+
+    // A aba "Loja" grava na coleção "itens", que é a que a loja lê
+    const colecao = tipo === 'loja' ? 'itens' : tipo;
     const getVal = (id) => document.getElementById(id) ? document.getElementById(id).value : null;
 
     const restritoArray = (getVal('cre-restrito') || "").split(',').map(n => n.trim()).filter(n => n !== ""); 
@@ -3056,6 +3039,13 @@ document.getElementById('form-criacao-geral').onsubmit = async (e) => {
         dados.defesa = getVal('cre-defesa') || "";
         dados.stamina = getVal('cre-stamina') || "";
         
+        if (tipo === 'loja') {
+            dados.tipo = getVal('cre-tipo-loja') || "mercado";
+            const vilas = (getVal('cre-vila') || "").split(',').map(v => v.trim()).filter(v => v !== "");
+            dados.vila = vilas.length > 0 ? vilas : 'Global';
+            dados.efeito = getVal('cre-efeito') || "";
+        }
+
         if (tipo.includes('jutsus')) {
             dados.rank = getVal('cre-rank') || "";
             dados.chakra = getVal('cre-chakra') || "";
@@ -3077,7 +3067,11 @@ document.getElementById('form-criacao-geral').onsubmit = async (e) => {
     }
 
     try {
-        await setDoc(doc(db, tipo, customID), dados);
+        // Evita apagar sem querer um registro que já existe com o mesmo nome
+        const existente = await getDoc(doc(db, colecao, customID));
+        if (existente.exists() && !confirm(`Já existe um registro "${customID}" em ${colecao}. Deseja SUBSTITUÍ-LO?`)) return;
+
+        await setDoc(doc(db, colecao, customID), dados);
         alert(`Sucesso! ${tipo} criado: ${customID}`);
         location.reload();
     } catch (err) {
@@ -3146,18 +3140,20 @@ window.iniciarEscutaChats = () => {
             div.className = 'chat-list-item';
             div.onclick = () => {
                 window.zerarNaoLidas(docSnap.id);
-                window.abrirChat(outroId, nomeOutro);
+                // O Diário Ninja tem sala própria ("diario_<uid>"), não a sala privada comum
+                if (docSnap.id.startsWith('diario_')) window.abrirDiarioNinja();
+                else window.abrirChat(outroId, nomeOutro);
                 window.toggleChatList(); // Fecha a lista após clicar
             };
 
             div.innerHTML = `
                 <div style="display:flex; flex-direction:column; overflow: hidden; padding-right: 10px;">
-                    <strong style="color:#333; font-size: 0.9rem;">${nomeOutro}</strong>
+                    <strong style="color:#333; font-size: 0.9rem;">${esc(nomeOutro)}</strong>
                     <span style="font-size:0.75rem; color:#777; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                        ${dados.ultimaMensagem || "..."}
+                        ${esc(dados.ultimaMensagem || "...")}
                     </span>
                 </div>
-                ${naoLidas > 0 ? `<span class="unread-badge">${naoLidas}</span>` : ''}
+                ${naoLidas > 0 ? `<span class="unread-badge">${esc(naoLidas)}</span>` : ''}
             `;
             content.appendChild(div);
         });
@@ -3215,7 +3211,8 @@ window.carregarMensagensDaSala = (salaId) => {
             if (dados.tipo === 'dice') classeEstilo = 'msg-dice';
 
             div.className = `chat-msg ${classeEstilo}`;
-            let nomeExibicao = dados.remetenteNome || (ehMinha ? "Você" : "Ninja");
+            let nomeExibicao = esc(dados.remetenteNome || (ehMinha ? "Você" : "Ninja"));
+            const textoSeguro = esc(dados.texto);
             
             // --- NOVO: Extraindo e formatando a data e hora ---
             let dataFormatada = "Enviando..."; // Aparece rapidinho antes do Firebase confirmar
@@ -3231,15 +3228,15 @@ window.carregarMensagensDaSala = (salaId) => {
             // --------------------------------------------------
 
             if (dados.tipo === 'narrador') {
-                div.innerHTML = `<span class="chat-msg-author"><i class="fa-solid fa-scroll"></i> NARRADOR</span>${dados.texto}${htmlTempo}`;
+                div.innerHTML = `<span class="chat-msg-author"><i class="fa-solid fa-scroll"></i> NARRADOR</span>${textoSeguro}${htmlTempo}`;
             } else if (dados.tipo === 'dice') {
-                div.innerHTML = `<strong>${nomeExibicao}</strong><br><span style="font-size:1.2rem;">🎲 ${dados.texto}</span>${htmlTempo}`;
+                div.innerHTML = `<strong>${nomeExibicao}</strong><br><span style="font-size:1.2rem;">🎲 ${textoSeguro}</span>${htmlTempo}`;
             } else if (dados.tipo === 'npc') {
                 // Adiciona um ícone roxo ou da cor que preferir para destacar que é um NPC
-                div.innerHTML = `<span class="chat-msg-author" style="color: #9b59b6;"><i class="fa-solid fa-user-ninja"></i> ${nomeExibicao}</span>${dados.texto}${htmlTempo}`;
+                div.innerHTML = `<span class="chat-msg-author" style="color: #9b59b6;"><i class="fa-solid fa-user-ninja"></i> ${nomeExibicao}</span>${textoSeguro}${htmlTempo}`;
             } else {
                 let labelOOC = dados.tipo === 'ooc' ? ' [OOC]' : '';
-                div.innerHTML = `<span class="chat-msg-author">${nomeExibicao}${labelOOC}</span>${dados.texto}${htmlTempo}`;
+                div.innerHTML = `<span class="chat-msg-author">${nomeExibicao}${labelOOC}</span>${textoSeguro}${htmlTempo}`;
             }
             msgsDiv.appendChild(div);
         });
@@ -3334,8 +3331,8 @@ window.toggleNinjasLocal = async () => {
             list.innerHTML += `
                 <div style="display:flex; align-items:center; gap:8px; margin-top:8px; padding: 4px; border-radius: 4px; background: white; border: 1px solid #eee;">
                     <span style="width:8px; height:8px; background:${corBolinha}; border-radius:50%; box-shadow: 0 0 3px ${corBolinha};"></span>
-                    <strong style="color:var(--text-color);">${u.nome || "Ninja"}</strong>
-                    <span style="font-size:0.7rem; color:#777;">(${u.apelido || "Sem clã"})</span>
+                    <strong style="color:var(--text-color);">${esc(u.nome || "Ninja")}</strong>
+                    <span style="font-size:0.7rem; color:#777;">(${esc(u.apelido || "Sem clã")})</span>
                 </div>
             `;
         });
@@ -3551,7 +3548,7 @@ window.reagirAtaque = async (acaoDefensiva, jutsuEscolhido = null) => {
             const btn = document.createElement('button');
             btn.className = 'buy-btn';
             btn.style.background = '#8e44ad';
-            btn.innerHTML = `<strong>${jutsu.nome}</strong><br><span style="font-size:0.75rem;">(-${jutsu.chakra || 0} CP | -${jutsu.stamina || 0} SP)</span>`;
+            btn.innerHTML = `<strong>${esc(jutsu.nome)}</strong><br><span style="font-size:0.75rem;">(-${esc(jutsu.chakra || 0)} CP | -${esc(jutsu.stamina || 0)} SP)</span>`;
             
             btn.onclick = () => {
                 modal.style.display = 'none';
@@ -3596,9 +3593,9 @@ window.reagirAtaque = async (acaoDefensiva, jutsuEscolhido = null) => {
         danoRecebido -= totalBloqueio;
         if (danoRecebido <= 0) {
             danoRecebido = 0;
-            msgDefesa = `✨ Você usou [${jutsuEscolhido.nome}] e neutralizou completamente o ataque inimigo! (Poder defensivo: ${totalBloqueio})`;
+            msgDefesa = `✨ Você usou [${esc(jutsuEscolhido.nome)}] e neutralizou completamente o ataque inimigo! (Poder defensivo: ${totalBloqueio})`;
         } else {
-            msgDefesa = `✨ Seu [${jutsuEscolhido.nome}] conteve grande parte do golpe, mas alguma força vazou! (Poder defensivo: ${totalBloqueio})`;
+            msgDefesa = `✨ Seu [${esc(jutsuEscolhido.nome)}] conteve grande parte do golpe, mas alguma força vazou! (Poder defensivo: ${totalBloqueio})`;
         }
     }
     // 3. SE ESCOLHEU RECEBER
@@ -3629,7 +3626,7 @@ window.reagirAtaque = async (acaoDefensiva, jutsuEscolhido = null) => {
         if (categoriaAtaque.includes('ninjutsu') || categoriaAtaque.includes('genjutsu')) {
             let reducaoMinima = Math.floor(danoRecebido * 0.1);
             danoRecebido -= reducaoMinima;
-            msgDefesa = `🔥 Erro fatal! Você tentou bloquear "${categoriaAtaque}" com os braços! Sua guarda física foi inútil contra a natureza do chakra!`;
+            msgDefesa = `🔥 Erro fatal! Você tentou bloquear "${esc(categoriaAtaque)}" com os braços! Sua guarda física foi inútil contra a natureza do chakra!`;
         } else {
             danoRecebido -= totalDefesa;
             if (danoRecebido <= 0) {
@@ -3642,7 +3639,7 @@ window.reagirAtaque = async (acaoDefensiva, jutsuEscolhido = null) => {
     }
 
     // 6. APLICA O DANO NO HP E ATUALIZA A TELA
-    let hpAtual = currentUserData.vida || 100;
+    let hpAtual = currentUserData.vida ?? 100;
     hpAtual -= danoRecebido;
     if (hpAtual < 0) hpAtual = 0; 
     
@@ -3745,18 +3742,11 @@ const executarAnimacaoRoleta = async (pago = false) => {
             let msgAlerta = `Parabéns! Você ganhou: ${premioSorteado.nome}!`;
 
             if (premioSorteado.tipo === 'moeda_ryos') {
-                dadosParaAtualizar.ryos = (currentUserData.ryos || 0) + premioSorteado.valor;
-                currentUserData.ryos = dadosParaAtualizar.ryos;
-                document.getElementById('ryos-text').innerText = formatarNum(dadosParaAtualizar.ryos);
+                dadosParaAtualizar.ryos = increment(premioSorteado.valor);
             } else if (premioSorteado.tipo === 'moeda_en') {
-                dadosParaAtualizar.essencia_ninja = (currentUserData.essencia_ninja || 0) + premioSorteado.valor;
-                currentUserData.essencia_ninja = dadosParaAtualizar.essencia_ninja;
-                document.getElementById('en-text').innerText = formatarNum(dadosParaAtualizar.essencia_ninja);
+                dadosParaAtualizar.essencia_ninja = increment(premioSorteado.valor);
             } else {
-                let listaPendentes = currentUserData.premios_pendentes || [];
-                listaPendentes.push({ item: premioSorteado.valor, data: new Date().toLocaleDateString() });
-                dadosParaAtualizar.premios_pendentes = listaPendentes;
-                currentUserData.premios_pendentes = listaPendentes;
+                dadosParaAtualizar.premios_pendentes = arrayUnion({ item: premioSorteado.valor, data: new Date().toLocaleDateString(), id: Date.now() });
                 msgAlerta += `\n\nEnvie um print ao Kage para receber este item!`;
             }
 

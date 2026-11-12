@@ -575,21 +575,6 @@
         </div>
     </div>
 
-    <div id="giftModal" class="modal-overlay-comment" style="z-index: 2005;">
-        <div class="modal-content-card" style="max-width: 320px;">
-            <span class="close-modal" onclick="document.getElementById('giftModal').style.display='none'">&times;</span>
-            <h3 style="color:var(--primary-color); margin-bottom:15px;">Presentear <span id="gift-target-name"></span></h3>
-            <label style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">Moeda:</label>
-            <select id="gift-currency" class="filter-select">
-                <option value="ryos">Ryos</option>
-                <option value="essencia_ninja">Essência Ninja</option>
-            </select>
-            <label style="display:block; text-align:left; margin-bottom:5px; font-weight:bold;">Quantidade:</label>
-            <input type="number" id="gift-amount" class="edit-input" placeholder="Valor" min="1">
-            <button class="buy-btn" onclick="enviarPresente()">Enviar Presente</button>
-        </div>
-    </div>
-    
     <div id="mentoriaModal" class="modal-overlay-comment" style="z-index: 2005;">
         <div class="modal-content-card" style="max-width: 350px;">
             <span class="close-modal" onclick="document.getElementById('mentoriaModal').style.display='none'">&times;</span>
@@ -730,7 +715,7 @@
                 <label style="display: block; font-size: 0.75rem; font-weight: bold; color: #555; margin-bottom: 5px;">O QUE DESEJA ENVIAR?</label>
                 <select id="pres-tipo" style="width: 100%; padding: 10px; border-radius: 10px; border: 2px solid #edf2f7; background: #f8fafc; font-size: 1rem;">
                     <option value="ryos">Ryos</option>
-                    <option value="en">Essência Ninja (EN)</option>
+                    <option value="essencia_ninja">Essência Ninja (EN)</option>
                 </select>
             </div>
 
