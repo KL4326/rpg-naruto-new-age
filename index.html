@@ -73,7 +73,7 @@
             <header>
                 <button id="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Abrir menu"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
                 <nav class="top-nav" aria-label="Seções">
-                    <button id="nav-btn-feed" onclick="showTab('feed')" class="top-btn active">Feed</button>
+                    <button id="nav-btn-feed" onclick="abrirFeed('all')" class="top-btn active">Feed</button>
                     <button id="nav-btn-jutsus" onclick="showTab('jutsus')" class="top-btn">Jutsus</button>
                     <button id="nav-btn-ferramentas" onclick="showTab('ferramentas')" class="top-btn">Ferramentas</button>
                     <button id="nav-btn-historia" onclick="showTab('historia')" class="top-btn">História</button>
@@ -94,8 +94,8 @@
                         <div class="user-info" style="padding:10px 15px; font-weight:bold; border-bottom:1px solid var(--border-color);">...</div>
                         <div class="dropdown-item" role="button" tabindex="0" onclick="window.abrirPaginaPerfil(); document.getElementById('user-menu').classList.remove('show');"><i class="fa-solid fa-user-pen"></i> Editar Perfil</div>
                         <div class="dropdown-item" role="button" tabindex="0" onclick="openChangePasswordModal()"><i class="fa-solid fa-lock"></i> Alterar Senha</div>
-                        <div class="dropdown-item" role="button" tabindex="0" onclick="renderFeed('saved')"><i class="fa-regular fa-bookmark"></i> Salvos</div>
-                        <div class="dropdown-item" role="button" tabindex="0" onclick="renderFeed('all')"><i class="fa-solid fa-globe"></i> Feed Geral</div>
+                        <div class="dropdown-item" role="button" tabindex="0" onclick="abrirFeed('saved')"><i class="fa-regular fa-bookmark"></i> Salvos</div>
+                        <div class="dropdown-item" role="button" tabindex="0" onclick="abrirFeed('all')"><i class="fa-solid fa-globe"></i> Feed Geral</div>
                         <div class="dropdown-item" role="button" tabindex="0" onclick="fazerLogout()" style="color:var(--danger-color);"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sair</div>
                     </div>
                 </div>
@@ -117,6 +117,10 @@
                             <input type="file" id="imageInput" accept="image/*" onchange="handleImageUpload(event)" style="display:none;">
                             <button class="btn-post" onclick="publicarPost()">Publicar</button>
                         </div>
+                    </div>
+                    <div id="feed-filtro-cabecalho" class="feed-filtro-cabecalho" style="display:none;">
+                        <span><i class="fa-solid fa-bookmark" aria-hidden="true"></i> Publicações salvas</span>
+                        <button class="btn-post" onclick="abrirFeed('all')"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Voltar ao feed</button>
                     </div>
                     <div id="feed-container">
                         <p style="text-align:center; color:#777; padding:20px;">Carregando feed...</p>
@@ -539,7 +543,7 @@
                             <div class="stat-grid">
                                 <div class="stat-card"><div class="stat-value" id="dash-nivel">1</div><div class="stat-label">Nível</div></div>
                                 <div class="stat-card"><div class="stat-value" id="dash-patente">Genin</div><div class="stat-label">Patente</div></div>
-                                <div class="stat-card"><div class="stat-value" id="dash-speed-rank">E</div><div class="stat-label">Rank Vel.</div></div>
+                                <div class="stat-card"><div class="stat-value" id="dash-speed-rank">1</div><div class="stat-label">Velocidade (1–12)</div></div>
                                 <div class="stat-card"><div class="stat-value" id="dash-tipo">Normal</div><div class="stat-label">Tipo</div></div>
                             </div>
                         </section>
@@ -614,7 +618,7 @@
 
             <nav class="bottom-nav" aria-label="Navegação rápida">
                 <button id="bottom-btn-dashboard" onclick="showTab('dashboard')"><i class="fa-solid fa-user-ninja" aria-hidden="true"></i><span>Ninja</span></button>
-                <button id="bottom-btn-feed" onclick="showTab('feed')" class="active"><i class="fa-solid fa-newspaper" aria-hidden="true"></i><span>Feed</span></button>
+                <button id="bottom-btn-feed" onclick="abrirFeed('all')" class="active"><i class="fa-solid fa-newspaper" aria-hidden="true"></i><span>Feed</span></button>
                 <button id="bottom-btn-batalha" onclick="showTab('batalha')"><i class="fa-solid fa-khanda" aria-hidden="true"></i><span>Arena</span></button>
                 <button id="bottom-btn-missoes" onclick="showTab('missoes')"><i class="fa-solid fa-scroll" aria-hidden="true"></i><span>Missões</span></button>
                 <button onclick="toggleMobileMenu()" aria-label="Abrir menu completo"><i class="fa-solid fa-bars" aria-hidden="true"></i><span>Menu</span></button>

@@ -580,6 +580,11 @@ body.dark-mode .shop-cat-btn.active { background: #c2410c; border-color: #c2410c
 .action-btn i { font-size: 1.25rem; }
 .action-btn:hover { background: var(--surface-2); color: var(--text); }
 .action-btn .liked, .action-btn.liked { color: var(--danger); }
+.action-btn.btn-salvar { margin-left: auto; }
+.action-btn.btn-salvar.salvo { color: var(--primary); }
+.feed-filtro-cabecalho { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: var(--primary-soft); border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent); color: var(--primary); font-weight: 900; padding: 10px 12px 10px 16px; border-radius: var(--radius); margin-bottom: 16px; }
+.feed-vazio { text-align: center; padding: 40px 20px; color: var(--text-muted); font-weight: 700; line-height: 1.7; }
+.feed-vazio i { font-size: 2rem; color: var(--primary-bright); }
 
 /* ---------- 10. RANKINGS ---------- */
 .rankings-wrapper { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; padding-bottom: 20px; }

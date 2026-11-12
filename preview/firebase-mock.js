@@ -27,14 +27,14 @@ const DB = {
     users: {
         u1: {
             nome: "Kenji Uzumaki", apelido: "Clã Uzumaki", avatar: avatar("K", "#f97316", "#9a3412"),
-            nivel: 4, xp: 820, ryos: 15400, essencia_ninja: 120, cargo: "Chunin", patente: "Chunin", rank: "B", speed_rank: "C", tipo: "Ninjutsu",
+            nivel: 4, xp: 820, ryos: 15400, essencia_ninja: 120, cargo: "Chunin", patente: "Chunin", rank: "B", speed_rank: 7, tipo: "Ninjutsu",
             vida: 140, max_vida: 180, sanidade: 90, max_sanidade: 100, chakra: 210, max_chakra: 260, stamina: 95, max_stamina: 150, controle_chakra: "Médio",
             forca: 14, defesa: 12, constituicao: 15, destreza: 13, intelecto: 11, agilidade: 16, velocidade: 15,
             vitorias: 12, derrotas: 3, empates: 1, elementos: ["vento", "agua"], kekkei_genkai: [], bijuus: [],
             meusJutsus: ["rasengan", "kage_bunshin"], maestrias: { rasengan: 3, kage_bunshin: 5 },
             inventario: { kunai: 8, ramen_ichiraku: 2, pilula_soldado: 3 },
             statusMissoes: { escolta_tazuna: "aprovado", resgatar_gato: "em_andamento" }, statusConquistas: { primeiro_sangue: "concluido" },
-            isOnline: true, cenarioAtual: "vila_folha", salario: 500,
+            isOnline: true, cenarioAtual: "vila_folha", salario: 500, postsSalvos: ["p3"],
             historiaTexto: "Nascido na noite em que a lua ficou vermelha, Kenji cresceu ouvindo histórias sobre o clã Uzumaki e seus selamentos lendários.\n\nHoje, como Chunin da Vila da Folha, ele busca dominar o Rasengan e descobrir o que aconteceu com sua família.",
             pontos_rankeada: 340, missoes_concluidas_d: 9, missoes_concluidas_c: 4, missoes_concluidas_b: 1
         },

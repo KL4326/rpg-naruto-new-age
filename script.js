@@ -299,7 +299,7 @@ window.showTab = (t) => {
 
         // Lógica de carregamento de dados por aba
         if(currentUserData) {
-            if(t === 'feed') window.renderFeed('all');
+            if(t === 'feed') window.renderFeed(filtroFeedAtual);
             if(t === 'personagens') carregarPersonagens();
             if(t === 'mapa') window.carregarMapa();
             if(t === 'frases') carregarFrases();
@@ -398,9 +398,37 @@ window.publicarPost = async () => {
     finally { btn.disabled = false; btn.innerText = "Publicar"; }
 };
 
-window.renderFeed = async (filtro = 'all') => {
+// --- SALVOS: o feed lembra se está mostrando "todos" ou só os "salvos" ---
+let filtroFeedAtual = 'all';
+window.abrirFeed = (filtro = 'all') => {
+    filtroFeedAtual = filtro;
+    document.getElementById('user-menu')?.classList.remove('show');
+    window.showTab('feed');
+};
+window.salvarPost = async (pid) => {
+    if (!auth.currentUser || !currentUserData) return;
+    const salvos = currentUserData.postsSalvos || [];
+    const jaSalvo = salvos.includes(pid);
+    try {
+        await updateDoc(doc(db, "users", auth.currentUser.uid), {
+            postsSalvos: jaSalvo ? arrayRemove(pid) : arrayUnion(pid)
+        });
+        // Atualiza na hora, sem esperar o banco responder
+        currentUserData.postsSalvos = jaSalvo ? salvos.filter(id => id !== pid) : [...salvos, pid];
+        window.renderFeed(filtroFeedAtual);
+    } catch (e) { console.error(e); alert("Não foi possível salvar a publicação."); }
+};
+
+window.renderFeed = async (filtro = filtroFeedAtual) => {
+    filtroFeedAtual = filtro;
     const container = document.getElementById('feed-container');
     if (!container) return;
+    const salvos = (currentUserData && currentUserData.postsSalvos) || [];
+    const soSalvos = filtro === 'saved';
+    const cabecalho = document.getElementById('feed-filtro-cabecalho');
+    if (cabecalho) cabecalho.style.display = soSalvos ? 'flex' : 'none';
+    const criarPost = document.querySelector('#feed .create-post');
+    if (criarPost) criarPost.style.display = soSalvos ? 'none' : '';
     container.innerHTML = '<p style="text-align:center; padding:20px; color:#777;">Atualizando feed...</p>';
 
     try {
@@ -408,14 +436,19 @@ window.renderFeed = async (filtro = 'all') => {
         const querySnapshot = await getDocs(q);
         container.innerHTML = "";
 
-        if (querySnapshot.empty) {
-            container.innerHTML = '<p style="text-align:center; padding:20px;">Nenhuma publicação ainda.</p>';
+        const docsVisiveis = soSalvos ? querySnapshot.docs.filter(d => salvos.includes(d.id)) : querySnapshot.docs;
+
+        if (docsVisiveis.length === 0) {
+            container.innerHTML = soSalvos
+                ? '<p class="feed-vazio"><i class="fa-regular fa-bookmark" aria-hidden="true"></i><br>Você ainda não salvou nenhuma publicação.<br><small>Toque no marcador de um post para guardá-lo aqui.</small></p>'
+                : '<p class="feed-vazio">Nenhuma publicação ainda.</p>';
             return;
         }
 
-        querySnapshot.forEach((docSnap) => {
+        docsVisiveis.forEach((docSnap) => {
             const post = docSnap.data();
             const pid = docSnap.id;
+            const isSalvo = salvos.includes(pid);
 
             // --- CORREÇÃO DOS CAMPOS (Baseado no seu print do Firebase) ---
             
@@ -463,6 +496,9 @@ window.renderFeed = async (filtro = 'all') => {
                     </button>
                     <button class="action-btn" onclick="abrirComentarios('${pid}')">
                         <i class="fa-regular fa-comment"></i> ${post.comentarios ? post.comentarios.length : 0}
+                    </button>
+                    <button class="action-btn btn-salvar ${isSalvo ? 'salvo' : ''}" onclick="salvarPost(${jsArg(pid)})" aria-pressed="${isSalvo}" aria-label="${isSalvo ? 'Remover dos salvos' : 'Salvar publicação'}" title="${isSalvo ? 'Remover dos salvos' : 'Salvar'}">
+                        <i class="${isSalvo ? 'fa-solid' : 'fa-regular'} fa-bookmark" aria-hidden="true"></i>
                     </button>
                 </div>`;
             container.appendChild(div);
@@ -532,11 +568,11 @@ window.curtirPost = async (pid) => {
         if(p.exists()) {
             const jaCurtiu = (p.data().likes || []).includes(uid);
             await updateDoc(postRef, { likes: jaCurtiu ? arrayRemove(uid) : arrayUnion(uid) });
-            window.renderFeed('all'); 
+            window.renderFeed(filtroFeedAtual); 
         }
     } catch(e) {}
 };
-window.deletarPost = async (pid) => { if(confirm("Excluir postagem?")) { await deleteDoc(doc(db, "posts", pid)); window.renderFeed('all'); } };
+window.deletarPost = async (pid) => { if(confirm("Excluir postagem?")) { await deleteDoc(doc(db, "posts", pid)); window.renderFeed(filtroFeedAtual); } };
 
 
 // --- OUTRAS FUNÇÕES ---
@@ -620,7 +656,7 @@ function atualizarInterface(dados) {
     renderizarIcones(dados.bijuus || [], 'dash-bijuu', BIJUU_ICONS, 'Bijuu');
     const set = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
     set('dash-nivel', nivel); set('dash-cargo', dados.cargo||"Genin"); set('dash-patente', dados.patente||"Genin"); 
-    set('dash-rank', dados.rank||"E"); set('dash-speed-rank', dados.speed_rank||"E"); set('dash-tipo', dados.tipo||"Normal"); 
+    set('dash-rank', dados.rank||"E"); set('dash-speed-rank', dados.speed_rank ?? 1); set('dash-tipo', dados.tipo||"Normal"); 
     set('dash-ryos', formatarNum(dados.ryos));
     set('dash-jutsus', (dados.meusJutsus || []).length); 
     let totalItems = 0, totalTools = 0;
@@ -2646,7 +2682,7 @@ window.verPerfil = async (uid) => {
             <div class="stat-card"><div class="stat-value">${esc(u.cargo||'Genin')}</div><div class="stat-label">Cargo</div></div>
             <div class="stat-card"><div class="stat-value">${esc(u.patente||'Genin')}</div><div class="stat-label">Patente</div></div>
             <div class="stat-card"><div class="stat-value">${esc(u.rank||'E')}</div><div class="stat-label">Rank</div></div>
-            <div class="stat-card"><div class="stat-value">${esc(u.speed_rank||"E")}</div><div class="stat-label">Rank Vel.</div></div>
+            <div class="stat-card"><div class="stat-value">${esc(u.speed_rank ?? 1)}</div><div class="stat-label">Rank Vel.</div></div>
             <div class="stat-card"><div class="stat-value">${esc(u.tipo||'Normal')}</div><div class="stat-label">Tipo</div></div>
             
             <div class="stats-divider">Batalha</div>
