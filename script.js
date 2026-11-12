@@ -223,9 +223,41 @@ function formatarNum(v) { return Number(v||0).toLocaleString('pt-BR'); }
 window.toggleMobileMenu = () => { document.querySelector('.sidebar').classList.toggle('mobile-active'); document.querySelector('.sidebar-overlay').classList.toggle('active'); };
 
 
+// --- ANIMAÇÃO DE ENTRADA (Sharingan → Mangekyou) ---
+// Aparece logo após o login e some quando a ficha do ninja chega
+// (fica no mínimo o tempo da transformação, e no máximo 10 s, por segurança).
+const carregamento = { inicio: 0, dadosProntos: false, timers: [] };
+function mostrarCarregamento() {
+    const tela = document.getElementById('tela-carregamento');
+    if (!tela || !tela.hidden) return;
+    const poucoMovimento = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    carregamento.inicio = Date.now();
+    carregamento.dadosProntos = false;
+    carregamento.minimo = poucoMovimento ? 700 : 2600;
+    tela.classList.remove('saindo', 'mangekyou');
+    tela.hidden = false;
+    const frase = document.getElementById('carregamento-frase');
+    if (frase) frase.textContent = 'Despertando o Sharingan';
+    carregamento.timers.push(setTimeout(() => {
+        tela.classList.add('mangekyou');
+        if (frase) frase.textContent = 'Mangekyou desperto! Entrando na vila';
+    }, poucoMovimento ? 0 : 1500));
+    carregamento.timers.push(setTimeout(() => esconderCarregamento(true), 10000));
+}
+function esconderCarregamento(forcar = false) {
+    const tela = document.getElementById('tela-carregamento');
+    if (!tela || tela.hidden) return;
+    const falta = carregamento.minimo - (Date.now() - carregamento.inicio);
+    if (!forcar && falta > 0) { carregamento.timers.push(setTimeout(() => esconderCarregamento(), falta)); return; }
+    carregamento.timers.forEach(clearTimeout); carregamento.timers = [];
+    tela.classList.add('saindo');
+    setTimeout(() => { tela.hidden = true; tela.classList.remove('saindo', 'mangekyou'); }, 650);
+}
+
 // --- AUTHENTICATION ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
+        mostrarCarregamento();
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('app-container').style.display = 'flex';
         
@@ -263,6 +295,9 @@ onAuthStateChanged(auth, async (user) => {
                     window.showTab(activeTab.id, { atualizacao: true });
                 }
                 primeiraCargaFicha = false;
+                esconderCarregamento();
+            } else {
+                esconderCarregamento(); // ficha ainda não criada pelo Kage: não prende a tela
             }
         });
         
