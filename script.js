@@ -15,7 +15,7 @@ let newAvatarBase64 = null;
 let currentOpenPostId = null;
 let globalXpTable = [];
 let vilaAtual = "Konoha";
-let lojaAtual = "geral";
+let lojaAtual = "mercado"; // mesma categoria que aparece marcada na tela
 let globalItensMap = {}; 
 let ordenacaoAtual = 'alfabetica';
 let currentGiftTarget = null;
@@ -286,10 +286,16 @@ window.showTab = (t) => {
         document.querySelectorAll('.sidebar button').forEach(b => b.classList.remove('active'));
 
         // O botão superior ou lateral vai receber a bordinha laranja/destaque automaticamente
+        document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('active'));
         const btnTop = document.getElementById('nav-btn-' + t);
         const btnSide = document.getElementById('side-btn-' + t);
+        const btnBottom = document.getElementById('bottom-btn-' + t);
         if(btnTop) btnTop.classList.add('active');
         if(btnSide) btnSide.classList.add('active');
+        if(btnBottom) btnBottom.classList.add('active');
+        // Volta ao topo ao trocar de aba
+        const area = document.getElementById('content-area');
+        if (area) area.scrollTop = 0;
 
         // Lógica de carregamento de dados por aba
         if(currentUserData) {
@@ -625,6 +631,28 @@ function atualizarInterface(dados) {
     set('dash-chakra', dados.chakra ?? 100); set('dash-stamina', dados.stamina ?? 100); set('dash-controle', dados.controle_chakra||"Baixo");
     set('dash-forca', dados.forca||10); set('dash-defesa', dados.defesa||10); set('dash-constituicao', dados.constituicao||10);
     set('dash-destreza', dados.destreza||10); set('dash-intelecto', dados.intelecto||10); set('dash-agilidade', dados.agilidade||10); set('dash-velocidade', dados.velocidade||10);
+
+    // --- Cabeçalho do painel "Meu Ninja" ---
+    const heroImg = document.getElementById('dash-hero-avatar');
+    if (heroImg && dados.avatar) heroImg.src = dados.avatar;
+    set('dash-hero-nome', dados.nome || dados.apelido || "Ninja");
+    set('dash-hero-apelido', dados.apelido || "");
+
+    // --- Barras de vitalidade (atual / máximo) ---
+    const barra = (recurso, atual, max) => {
+        const m = Number(max) > 0 ? Number(max) : 100;
+        const pct = Math.max(0, Math.min(100, ((Number(atual) || 0) / m) * 100));
+        set(`dash-max-${recurso}`, m);
+        const fill = document.getElementById(`dash-bar-${recurso}`);
+        if (fill) {
+            fill.style.width = pct + '%';
+            fill.parentElement.setAttribute('aria-valuenow', Math.round(pct));
+        }
+    };
+    barra('vida', dados.vida ?? 100, dados.max_vida);
+    barra('chakra', dados.chakra ?? 100, dados.max_chakra);
+    barra('stamina', dados.stamina ?? 100, dados.max_stamina);
+    barra('sanidade', dados.sanidade ?? 100, dados.max_sanidade);
 }
 function criarLinhaStatusCustom(uid, f, l, a, v, m, c) { 
     const p=Math.min((v/m)*100,100); 
@@ -2446,6 +2474,44 @@ window.abrirModalSimples = abrirModalSimples;
 window.openChangePasswordModal = () => { document.getElementById('changePasswordModal').style.display='flex'; document.getElementById('user-menu').classList.remove('show'); };
 window.closeChangePasswordModal = () => document.getElementById('changePasswordModal').style.display='none';
 window.toggleMenu = () => document.getElementById('user-menu').classList.toggle('show');
+
+// --- TEMA CLARO / ESCURO ---
+function atualizarBotaoTema() {
+    const escuro = document.body.classList.contains('dark-mode');
+    const btn = document.getElementById('btn-tema');
+    if (!btn) return;
+    btn.innerHTML = escuro ? '<i class="fa-solid fa-sun" aria-hidden="true"></i>' : '<i class="fa-solid fa-moon" aria-hidden="true"></i>';
+    btn.setAttribute('aria-label', escuro ? 'Ativar modo claro' : 'Ativar modo escuro');
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', escuro ? '#0b0d13' : '#c2410c');
+}
+window.alternarTema = () => {
+    const escuro = document.body.classList.toggle('dark-mode');
+    try { localStorage.setItem('tema', escuro ? 'escuro' : 'claro'); } catch (e) {}
+    atualizarBotaoTema();
+};
+atualizarBotaoTema();
+
+// --- ACESSIBILIDADE: teclado ---
+document.addEventListener('keydown', (e) => {
+    // Enter/Espaço ativam elementos marcados como botão (ex.: "X" de fechar)
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('[role="button"]')) {
+        e.preventDefault();
+        e.target.click();
+    }
+    // Esc fecha janelas abertas e o menu do usuário
+    if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay-comment').forEach(m => { if (getComputedStyle(m).display !== 'none') m.style.display = 'none'; });
+        document.getElementById('user-menu')?.classList.remove('show');
+        if (document.querySelector('.sidebar.mobile-active')) window.toggleMobileMenu();
+    }
+});
+
+// Fecha o menu do usuário ao clicar fora dele
+document.addEventListener('click', (e) => {
+    const menu = document.getElementById('user-menu');
+    if (menu && menu.classList.contains('show') && !e.target.closest('.user-area')) menu.classList.remove('show');
+});
 window.fazerLogout = () => signOut(auth).then(() => location.reload());
 window.abrirModalMentoria = (id) => {
     const mentor = globalMentores[id]; if (!mentor) return;

@@ -2,75 +2,101 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RPG Naruto</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="RPG Naruto New Age — sua ficha ninja, missões, batalhas e a vida na vila.">
+    <meta name="theme-color" content="#c2410c">
+    <title>RPG Naruto · New Age</title>
     <link rel="icon" href="favicon.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Shojumaru&display=swap">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <script>
+        (function () {
+            var t = null; try { t = localStorage.getItem('tema'); } catch (e) {}
+            var escuro = t ? t === 'escuro' : window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches;
+            if (escuro) document.body.classList.add('dark-mode');
+        })();
+    </script>
 
-    <div id="copyFeedback" style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:white; padding:10px 20px; border-radius:20px; z-index:3000; display:none;">Frase copiada!</div>
+    <div id="copyFeedback" role="status" aria-live="polite" style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:white; padding:10px 20px; border-radius:20px; z-index:3000; display:none;">Frase copiada!</div>
 
     <div id="login-screen" class="login-overlay">
         <div class="login-box">
-            <h2>RPG Naruto</h2>
-            <input type="email" id="emailInput" placeholder="E-mail">
-            <input type="password" id="passwordInput" placeholder="Senha">
+            <div class="login-plate" aria-hidden="true"><i class="fa-solid fa-leaf"></i></div>
+            <h1 class="login-title">RPG Naruto</h1>
+            <p class="login-sub">New Age · Entre na vila</p>
+            <label for="emailInput">E-mail</label>
+            <input type="email" id="emailInput" placeholder="seu@email.com" autocomplete="username" onkeydown="if(event.key === 'Enter') document.getElementById('btnLogin').click()">
+            <label for="passwordInput">Senha</label>
+            <input type="password" id="passwordInput" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key === 'Enter') document.getElementById('btnLogin').click()">
             <button id="btnLogin">Entrar</button>
-            <p style="font-size: 12px; margin-top: 15px; color:#777;">Não possui uma conta? Fale com o administrador.</p>
-            <p id="msgError" style="color: red; font-size: 12px; margin-top: 10px;"></p>
+            <p class="login-hint">Não possui uma conta? Fale com o administrador.</p>
+            <p id="msgError" role="alert"></p>
         </div>
     </div>
 
     <div id="app-container" style="display: none;">
         <div class="sidebar-overlay" onclick="toggleMobileMenu()"></div>
         
-        <aside class="sidebar">
-            <div class="logo"><i class="fa-solid fa-scroll"></i> RPG NARUTO</div>
+        <aside class="sidebar" aria-label="Menu principal">
+            <div class="logo">
+                <span class="logo-plate" aria-hidden="true"><i class="fa-solid fa-leaf"></i></span>
+                <span class="logo-text"><span class="logo-title">RPG Naruto</span><span class="logo-sub">New Age</span></span>
+            </div>
             <nav>
-                <button id="side-btn-dashboard" onclick="showTab('dashboard')" class="active"><i class="fa-solid fa-chart-line"></i> Dashboard</button>
-                <button id="side-btn-batalha" onclick="showTab('batalha')"><i class="fa-solid fa-khanda"></i> Batalha</button>
-                <button id="side-btn-diario" onclick="window.abrirDiarioNinja()" style="color: #f1c40f;"><i class="fa-solid fa-book-journal-whills"></i> Diário Ninja</button>
-                <button id="side-btn-mapa" onclick="window.showTab('mapa')"><i class="fa-solid fa-map-location-dot"></i> Mapa</button>
-                <button id="side-btn-inventario" onclick="showTab('inventario')"><i class="fa-solid fa-box-open"></i> Inventário</button>
-                <button id="side-btn-mentorias" onclick="showTab('mentorias')"><i class="fa-solid fa-chalkboard-teacher"></i> Mentorias</button>
-                <button id="side-btn-missoes" onclick="showTab('missoes')"><i class="fa-solid fa-scroll"></i> Missões</button>
-                <button id="side-btn-conquistas" onclick="showTab('conquistas')"><i class="fa-solid fa-trophy"></i> Conquistas</button>
-                <button id="side-btn-personagens" onclick="showTab('personagens')"><i class="fa-solid fa-users"></i> Personagens</button>
-                <button id="side-btn-loja" onclick="showTab('loja')"><i class="fa-solid fa-store"></i> Loja</button>
-                <button id="side-btn-rankings" onclick="showTab('rankings')"><i class="fa-solid fa-trophy"></i> Rankings</button>
-                <button id="btn-admin-panel" onclick="showTab('admin-panel')"><i class="fa-solid fa-user-shield"></i> Painel Kage</button>
+                <p class="nav-group-label">Ninja</p>
+                <button id="side-btn-dashboard" onclick="showTab('dashboard')" class="active"><i class="fa-solid fa-user-ninja" aria-hidden="true"></i> Meu Ninja</button>
+                <button id="side-btn-inventario" onclick="showTab('inventario')"><i class="fa-solid fa-box-open" aria-hidden="true"></i> Inventário</button>
+                <button id="side-btn-diario" onclick="window.abrirDiarioNinja()"><i class="fa-solid fa-book-journal-whills" aria-hidden="true"></i> Diário Ninja</button>
+
+                <p class="nav-group-label">Vila</p>
+                <button id="side-btn-mapa" onclick="window.showTab('mapa')"><i class="fa-solid fa-map-location-dot" aria-hidden="true"></i> Mapa</button>
+                <button id="side-btn-missoes" onclick="showTab('missoes')"><i class="fa-solid fa-scroll" aria-hidden="true"></i> Missões</button>
+                <button id="side-btn-conquistas" onclick="showTab('conquistas')"><i class="fa-solid fa-medal" aria-hidden="true"></i> Conquistas</button>
+                <button id="side-btn-mentorias" onclick="showTab('mentorias')"><i class="fa-solid fa-chalkboard-user" aria-hidden="true"></i> Mentorias</button>
+                <button id="side-btn-loja" onclick="showTab('loja')"><i class="fa-solid fa-store" aria-hidden="true"></i> Loja</button>
+                <button id="side-btn-personagens" onclick="showTab('personagens')"><i class="fa-solid fa-users" aria-hidden="true"></i> Personagens</button>
+
+                <p class="nav-group-label">Combate</p>
+                <button id="side-btn-batalha" onclick="showTab('batalha')"><i class="fa-solid fa-khanda" aria-hidden="true"></i> Arena</button>
+                <button id="side-btn-rankings" onclick="showTab('rankings')"><i class="fa-solid fa-trophy" aria-hidden="true"></i> Rankings</button>
+
+                <button id="btn-admin-panel" onclick="showTab('admin-panel')"><i class="fa-solid fa-user-shield" aria-hidden="true"></i> Painel Kage</button>
             </nav>
         </aside>
 
         <main class="main-content">
             <header>
-                <button id="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fa-solid fa-bars"></i></button>
-                <nav class="top-nav">
+                <button id="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Abrir menu"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
+                <nav class="top-nav" aria-label="Seções">
                     <button id="nav-btn-feed" onclick="showTab('feed')" class="top-btn active">Feed</button>
                     <button id="nav-btn-jutsus" onclick="showTab('jutsus')" class="top-btn">Jutsus</button>
                     <button id="nav-btn-ferramentas" onclick="showTab('ferramentas')" class="top-btn">Ferramentas</button>
                     <button id="nav-btn-historia" onclick="showTab('historia')" class="top-btn">História</button>
                     <button id="nav-btn-frases" onclick="showTab('frases')" class="top-btn">Frases</button>
-                    <button id="nav-btn-loja-premium" onclick="showTab('loja-premium')" class="top-btn">Ryos e Essência Ninja</button>
+                    <button id="nav-btn-loja-premium" onclick="showTab('loja-premium')" class="top-btn">Banco Ninja</button>
                     <button id="nav-btn-premios" onclick="showTab('premios')" class="top-btn"><i class="fa-solid fa-gift"></i> Prêmios</button>
                 </nav>
                 <div class="user-area">
                     <div class="currency-container">
-                        <span class="ryos"><i class="fa-solid fa-coins"></i> <span id="ryos-text">0</span></span>
-                        <span class="essencia"><i class="fa-regular fa-star"></i> <span id="en-text">0</span> EN</span>
+                        <span class="ryos" title="Ryos"><i class="fa-solid fa-coins" aria-hidden="true"></i> <span id="ryos-text">0</span><span class="sr-only"> Ryos</span></span>
+                        <span class="essencia" title="Essência Ninja"><i class="fa-solid fa-star" aria-hidden="true"></i> <span id="en-text">0</span> EN</span>
                     </div>
-                    <div class="profile-circle" onclick="toggleMenu()">
-                        <img id="header-avatar" src="https://placehold.co/40x40/orange/white?text=N" alt="Avatar">
-                    </div>
+                    <button id="btn-tema" class="icon-btn" onclick="window.alternarTema()" aria-label="Ativar modo escuro" title="Alternar modo claro/escuro"><i class="fa-solid fa-moon" aria-hidden="true"></i></button>
+                    <button class="profile-circle" onclick="toggleMenu()" aria-label="Abrir menu do usuário" aria-haspopup="true">
+                        <img id="header-avatar" src="https://placehold.co/40x40/orange/white?text=N" alt="">
+                    </button>
                     <div id="user-menu" class="dropdown-menu">
                         <div class="user-info" style="padding:10px 15px; font-weight:bold; border-bottom:1px solid var(--border-color);">...</div>
-                        <div class="dropdown-item" onclick="window.abrirPaginaPerfil(); document.getElementById('user-menu').classList.remove('show');"><i class="fa-solid fa-user-pen"></i> Editar Perfil</div>
-                        <div class="dropdown-item" onclick="openChangePasswordModal()"><i class="fa-solid fa-lock"></i> Alterar Senha</div>
-                        <div class="dropdown-item" onclick="renderFeed('saved')"><i class="fa-regular fa-bookmark"></i> Salvos</div>
-                        <div class="dropdown-item" onclick="renderFeed('all')"><i class="fa-solid fa-globe"></i> Feed Geral</div>
-                        <div class="dropdown-item" onclick="fazerLogout()" style="color:var(--danger-color);"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sair</div>
+                        <div class="dropdown-item" role="button" tabindex="0" onclick="window.abrirPaginaPerfil(); document.getElementById('user-menu').classList.remove('show');"><i class="fa-solid fa-user-pen"></i> Editar Perfil</div>
+                        <div class="dropdown-item" role="button" tabindex="0" onclick="openChangePasswordModal()"><i class="fa-solid fa-lock"></i> Alterar Senha</div>
+                        <div class="dropdown-item" role="button" tabindex="0" onclick="renderFeed('saved')"><i class="fa-regular fa-bookmark"></i> Salvos</div>
+                        <div class="dropdown-item" role="button" tabindex="0" onclick="renderFeed('all')"><i class="fa-solid fa-globe"></i> Feed Geral</div>
+                        <div class="dropdown-item" role="button" tabindex="0" onclick="fazerLogout()" style="color:var(--danger-color);"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sair</div>
                     </div>
                 </div>
             </header>
@@ -79,7 +105,7 @@
                 
                 <div id="feed" class="tab-content active">
                     <div class="create-post">
-                        <textarea id="postInput" placeholder="No que você está pensando?" rows="2"></textarea>
+                        <textarea id="postInput" aria-label="Escreva uma publicação" placeholder="No que você está pensando, ninja?" rows="2"></textarea>
                         <div id="preview-container" style="display:none; margin-top:10px; position:relative;">
                             <img id="preview-image" src="" style="max-width:100%; max-height:300px; border-radius:4px;">
                             <button onclick="removeImage()" style="position:absolute; top:5px; right:5px; background:rgba(0,0,0,0.6); color:white; border:none; border-radius:50%; width:25px; height:25px;">×</button>
@@ -443,11 +469,24 @@
                 </div>
                 
                 <div id="dashboard" class="tab-content">
-                    <h2>Estatísticas do Ninja</h2>
-                    <div class="level-container">
-                        <div class="level-info"><span id="level-display">Nível 1</span><span id="xp-text-display">0 / 500 XP</span></div>
-                        <div class="xp-bar-bg"><div class="xp-bar-fill" id="xp-bar"></div><div class="xp-text">Progresso</div></div>
-                    </div>
+                    <section class="ninja-hero" aria-label="Resumo do seu ninja">
+                        <div class="ninja-hero-avatar"><img id="dash-hero-avatar" src="https://placehold.co/120x120/orange/white?text=N" alt="Foto do seu ninja"></div>
+                        <div class="ninja-hero-info">
+                            <p class="ninja-hero-kicker">Ficha Ninja</p>
+                            <h2 id="dash-hero-nome" class="ninja-hero-nome">Ninja</h2>
+                            <p id="dash-hero-apelido" class="ninja-hero-apelido"></p>
+                            <div class="ninja-hero-chips">
+                                <span class="chip">Rank <strong id="dash-rank">E</strong></span>
+                                <span class="chip"><i class="fa-solid fa-user-ninja" aria-hidden="true"></i> <span id="dash-cargo">Genin</span></span>
+                                <span class="chip"><i class="fa-solid fa-coins" aria-hidden="true"></i> <span id="dash-ryos">0</span> Ryos</span>
+                            </div>
+                            <div class="level-container">
+                                <div class="level-info"><span id="level-display">Nível 1</span><span id="xp-text-display">0 / 500 XP</span></div>
+                                <div class="xp-bar-bg"><div class="xp-bar-fill" id="xp-bar"></div><div class="xp-text">Experiência</div></div>
+                            </div>
+                        </div>
+                    </section>
+
                     <div class="powers-wrapper">
                         <div class="elementos-container" id="dash-elementos" style="display:none;"></div>
                         <div class="elementos-container" id="dash-kekkei" style="display:none;"></div>
@@ -455,44 +494,78 @@
                         <div class="elementos-container" id="dash-touta" style="display:none;"></div>
                         <div class="elementos-container" id="dash-bijuu" style="display:none;"></div>
                     </div>
-                    <div class="profile-stats-grid">
-                        <div class="stats-divider">Geral</div>
-                        <div class="stat-card"><div class="stat-value" id="dash-nivel">1</div><div class="stat-label">Nível</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-cargo">Genin</div><div class="stat-label">Cargo</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-patente">Genin</div><div class="stat-label">Patente</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-rank">E</div><div class="stat-label">Rank</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-speed-rank">E</div><div class="stat-label">Rank Vel.</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-tipo">Normal</div><div class="stat-label">Tipo</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-ryos">0</div><div class="stat-label">Ryos</div></div>
-                        <div class="stats-divider">Batalha</div>
-                        <div class="stat-card"><div class="stat-value" id="dash-wins">0</div><div class="stat-label">Vitórias</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-draws">0</div><div class="stat-label">Empates</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-derrotas">0</div><div class="stat-label">Derrotas</div></div>
-                        <div class="stats-divider">Inventário</div>
-                        <div class="stat-card"><div class="stat-value" id="dash-jutsus">0</div><div class="stat-label">Jutsus</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-tools">0</div><div class="stat-label">Ferramentas</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-items">0</div><div class="stat-label">Itens</div></div>
-                        <div class="stats-divider">Vitalidade</div>
-                        <div class="stat-card"><div class="stat-value" id="dash-vida">100</div><div class="stat-label">Vida</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-sanidade">100</div><div class="stat-label">Sanidade</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-chakra">100</div><div class="stat-label">Chakra</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-stamina">100</div><div class="stat-label">Stamina</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-controle">Baixo</div><div class="stat-label">Controle Chakra</div></div>
-                        <div class="stats-divider">Atributos</div>
-                        <div class="stat-card"><div class="stat-value" id="dash-forca">10</div><div class="stat-label">Força</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-defesa">10</div><div class="stat-label">Defesa</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-constituicao">10</div><div class="stat-label">Constituição</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-destreza">10</div><div class="stat-label">Destreza</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-intelecto">10</div><div class="stat-label">Intelecto</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-agilidade">10</div><div class="stat-label">Agilidade</div></div>
-                        <div class="stat-card"><div class="stat-value" id="dash-velocidade">10</div><div class="stat-label">Velocidade</div></div>
+
+                    <div class="dash-grid">
+                        <section class="painel">
+                            <h3 class="painel-titulo"><i class="fa-solid fa-heart-pulse" aria-hidden="true"></i> Vitalidade</h3>
+                            <div class="vitals">
+                                <div class="vital vital-hp">
+                                    <div class="vital-top"><span><i class="fa-solid fa-heart" aria-hidden="true"></i> Vida</span><span><strong id="dash-vida">100</strong> / <span id="dash-max-vida">100</span></span></div>
+                                    <div class="vital-bar" role="progressbar" aria-label="Vida" aria-valuemin="0" aria-valuemax="100"><div class="vital-fill" id="dash-bar-vida"></div></div>
+                                </div>
+                                <div class="vital vital-cp">
+                                    <div class="vital-top"><span><i class="fa-solid fa-droplet" aria-hidden="true"></i> Chakra</span><span><strong id="dash-chakra">100</strong> / <span id="dash-max-chakra">100</span></span></div>
+                                    <div class="vital-bar" role="progressbar" aria-label="Chakra" aria-valuemin="0" aria-valuemax="100"><div class="vital-fill" id="dash-bar-chakra"></div></div>
+                                </div>
+                                <div class="vital vital-sp">
+                                    <div class="vital-top"><span><i class="fa-solid fa-person-running" aria-hidden="true"></i> Stamina</span><span><strong id="dash-stamina">100</strong> / <span id="dash-max-stamina">100</span></span></div>
+                                    <div class="vital-bar" role="progressbar" aria-label="Stamina" aria-valuemin="0" aria-valuemax="100"><div class="vital-fill" id="dash-bar-stamina"></div></div>
+                                </div>
+                                <div class="vital vital-san">
+                                    <div class="vital-top"><span><i class="fa-solid fa-brain" aria-hidden="true"></i> Sanidade</span><span><strong id="dash-sanidade">100</strong> / <span id="dash-max-sanidade">100</span></span></div>
+                                    <div class="vital-bar" role="progressbar" aria-label="Sanidade" aria-valuemin="0" aria-valuemax="100"><div class="vital-fill" id="dash-bar-sanidade"></div></div>
+                                </div>
+                            </div>
+                            <p class="vital-extra">Controle de chakra: <strong id="dash-controle">Baixo</strong></p>
+                        </section>
+
+                        <section class="painel">
+                            <h3 class="painel-titulo"><i class="fa-solid fa-fist-raised" aria-hidden="true"></i> Atributos</h3>
+                            <div class="stat-grid">
+                                <div class="stat-card"><div class="stat-value" id="dash-forca">10</div><div class="stat-label">Força</div></div>
+                                <div class="stat-card"><div class="stat-value" id="dash-defesa">10</div><div class="stat-label">Defesa</div></div>
+                                <div class="stat-card"><div class="stat-value" id="dash-constituicao">10</div><div class="stat-label">Constituição</div></div>
+                                <div class="stat-card"><div class="stat-value" id="dash-destreza">10</div><div class="stat-label">Destreza</div></div>
+                                <div class="stat-card"><div class="stat-value" id="dash-intelecto">10</div><div class="stat-label">Intelecto</div></div>
+                                <div class="stat-card"><div class="stat-value" id="dash-agilidade">10</div><div class="stat-label">Agilidade</div></div>
+                                <div class="stat-card"><div class="stat-value" id="dash-velocidade">10</div><div class="stat-label">Velocidade</div></div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div class="dash-grid">
+                        <section class="painel">
+                            <h3 class="painel-titulo"><i class="fa-solid fa-id-badge" aria-hidden="true"></i> Geral</h3>
+                            <div class="stat-grid">
+                                <div class="stat-card"><div class="stat-value" id="dash-nivel">1</div><div class="stat-label">Nível</div></div>
+                                <div class="stat-card"><div class="stat-value" id="dash-patente">Genin</div><div class="stat-label">Patente</div></div>
+                                <div class="stat-card"><div class="stat-value" id="dash-speed-rank">E</div><div class="stat-label">Rank Vel.</div></div>
+                                <div class="stat-card"><div class="stat-value" id="dash-tipo">Normal</div><div class="stat-label">Tipo</div></div>
+                            </div>
+                        </section>
+                        <section class="painel">
+                            <h3 class="painel-titulo"><i class="fa-solid fa-khanda" aria-hidden="true"></i> Batalhas</h3>
+                            <div class="stat-grid">
+                                <div class="stat-card"><div class="stat-value" id="dash-wins">0</div><div class="stat-label">Vitórias</div></div>
+                                <div class="stat-card"><div class="stat-value" id="dash-draws">0</div><div class="stat-label">Empates</div></div>
+                                <div class="stat-card"><div class="stat-value" id="dash-derrotas">0</div><div class="stat-label">Derrotas</div></div>
+                            </div>
+                        </section>
+                        <section class="painel">
+                            <h3 class="painel-titulo"><i class="fa-solid fa-box-open" aria-hidden="true"></i> Inventário</h3>
+                            <div class="stat-grid">
+                                <div class="stat-card"><div class="stat-value" id="dash-jutsus">0</div><div class="stat-label">Jutsus</div></div>
+                                <div class="stat-card"><div class="stat-value" id="dash-tools">0</div><div class="stat-label">Ferramentas</div></div>
+                                <div class="stat-card"><div class="stat-value" id="dash-items">0</div><div class="stat-label">Itens</div></div>
+                            </div>
+                        </section>
                     </div>
                 </div>
-                
+
                 <div id="historia" class="tab-content">
                     <div class="historia-container">
                         <div class="historia-img-container">
-                            <img id="historia-display-img" src="https://img.freepik.com/vetores-gratis/fundo-de-paisagem-de-anime-de-design-plano_23-2149275367.jpg">
+                            <img id="historia-display-img" alt="Imagem da história do personagem" src="https://img.freepik.com/vetores-gratis/fundo-de-paisagem-de-anime-de-design-plano_23-2149275367.jpg">
                             <button class="btn-edit-historia" onclick="window.editarHistoria()"><i class="fa-solid fa-pen"></i> Editar História</button>
                         </div>
                         <hr class="historia-divider">
@@ -503,7 +576,7 @@
                 <div id="frases" class="tab-content">
                     <h2>Frases Marcantes</h2>
                     <div class="frase-input-area">
-                        <input type="text" id="novaFraseInput" placeholder="Digite uma frase icônica...">
+                        <input type="text" id="novaFraseInput" aria-label="Nova frase" placeholder="Digite uma frase icônica...">
                         <button class="btn-post" onclick="window.adicionarFrase()">Adicionar</button>
                     </div>
                     <div class="frases-list" id="frases-list-container"><p style="color:#777; text-align:center;">Carregando frases...</p></div>
@@ -537,10 +610,19 @@
                         </div>
                     </div>
                 </div>
-            </div> </main>
+            </div>
+
+            <nav class="bottom-nav" aria-label="Navegação rápida">
+                <button id="bottom-btn-dashboard" onclick="showTab('dashboard')"><i class="fa-solid fa-user-ninja" aria-hidden="true"></i><span>Ninja</span></button>
+                <button id="bottom-btn-feed" onclick="showTab('feed')" class="active"><i class="fa-solid fa-newspaper" aria-hidden="true"></i><span>Feed</span></button>
+                <button id="bottom-btn-batalha" onclick="showTab('batalha')"><i class="fa-solid fa-khanda" aria-hidden="true"></i><span>Arena</span></button>
+                <button id="bottom-btn-missoes" onclick="showTab('missoes')"><i class="fa-solid fa-scroll" aria-hidden="true"></i><span>Missões</span></button>
+                <button onclick="toggleMobileMenu()" aria-label="Abrir menu completo"><i class="fa-solid fa-bars" aria-hidden="true"></i><span>Menu</span></button>
+            </nav>
+        </main>
     </div> <div class="modal-overlay-comment" id="pixModal" style="z-index: 3000;">
         <div class="modal-content-card" style="max-width: 350px; text-align: center;">
-            <span class="close-modal" onclick="document.getElementById('pixModal').style.display='none'">&times;</span>
+            <span class="close-modal" role="button" tabindex="0" aria-label="Fechar" onclick="document.getElementById('pixModal').style.display='none'">&times;</span>
             <h3 id="pix-title" style="color: #3498db;"></h3>
             <p style="font-size: 0.8rem; margin: 10px 0;">Após o pagamento, envie o comprovante ao Administrador para a liberação.</p>
             <img id="pix-qrcode" src="" style="width: 250px; height: 250px; margin: 15px auto; border: 1px solid #ddd; border-radius: 8px;">
@@ -550,7 +632,7 @@
     
     <div id="novoMentorModal" class="modal-overlay-comment" style="z-index: 2010;">
         <div class="modal-content-card">
-            <span class="close-modal" onclick="document.getElementById('novoMentorModal').style.display='none'">&times;</span>
+            <span class="close-modal" role="button" tabindex="0" aria-label="Fechar" onclick="document.getElementById('novoMentorModal').style.display='none'">&times;</span>
             <h3>Criar Novo Mentor</h3>
             <input type="text" id="new-mentor-name" class="edit-input" placeholder="Nome do Mentor (NPC ou Player)">
             <select id="new-mentor-category" class="filter-select">
@@ -577,7 +659,7 @@
 
     <div id="mentoriaModal" class="modal-overlay-comment" style="z-index: 2005;">
         <div class="modal-content-card" style="max-width: 350px;">
-            <span class="close-modal" onclick="document.getElementById('mentoriaModal').style.display='none'">&times;</span>
+            <span class="close-modal" role="button" tabindex="0" aria-label="Fechar" onclick="document.getElementById('mentoriaModal').style.display='none'">&times;</span>
             <img id="mentor-img-modal" src="" class="jutsu-modal-img">
             <h2 id="mentor-name-modal" style="color:var(--primary-color);"></h2>
             <h4 style="margin: 15px 0 10px; color: #555;">O que você quer aprender?</h4>
@@ -588,7 +670,7 @@
 
     <div class="modal-overlay-comment" id="jutsuModal" style="z-index: 2001;">
         <div class="modal-content-card">
-            <span class="close-modal" onclick="fecharJutsuModal()">&times;</span>
+            <span class="close-modal" role="button" tabindex="0" aria-label="Fechar" onclick="fecharJutsuModal()">&times;</span>
             <img id="jutsu-img-modal" src="" class="jutsu-modal-img">
             <h2 id="jutsu-name-modal" style="color:var(--primary-color);"></h2>
             <div id="jutsu-rank-modal" class="jutsu-modal-rank"></div>
@@ -600,7 +682,7 @@
 
     <div class="modal-overlay-comment" id="conquistaModal" style="z-index: 2001;">
         <div class="modal-content-card" style="border-color: #e6b800; max-width: 500px;">
-            <span class="close-modal" onclick="fecharConquistaModal()">&times;</span>
+            <span class="close-modal" role="button" tabindex="0" aria-label="Fechar" onclick="fecharConquistaModal()">&times;</span>
             <img id="conquista-img-modal" src="" class="jutsu-modal-img" style="border-color:#e6b800; height: 150px;">
             <h2 id="conquista-name-modal" style="color: #e6b800;"></h2>
             <div class="desc-scroll-container">
@@ -619,7 +701,7 @@
     
     <div class="modal-overlay-comment" id="toolModal" style="z-index: 2001;">
         <div class="modal-content-card" style="border-color: #555;">
-            <span class="close-modal" onclick="fecharToolModal()">&times;</span>
+            <span class="close-modal" role="button" tabindex="0" aria-label="Fechar" onclick="fecharToolModal()">&times;</span>
             <img id="tool-img-modal" src="" class="jutsu-modal-img" style="border-color:#555;">
             <h2 id="tool-name-modal" style="color: #333;"></h2>
             <div id="tool-rank-modal" class="jutsu-modal-rank" style="background-color: #555;"></div>
@@ -631,7 +713,7 @@
 
     <div class="modal-overlay-comment" id="itemModal" style="z-index: 2001;">
         <div class="modal-content-card" style="border-color: #2ecc71;">
-            <span class="close-modal" onclick="fecharItemModal()">&times;</span>
+            <span class="close-modal" role="button" tabindex="0" aria-label="Fechar" onclick="fecharItemModal()">&times;</span>
             <img id="item-img-modal" src="" class="jutsu-modal-img" style="border-color:#2ecc71;">
             <h2 id="item-name-modal" style="color: #333;"></h2>
             <div id="item-rank-modal" class="jutsu-modal-rank" style="background-color: #2ecc71;"></div>
@@ -643,7 +725,7 @@
 
     <div class="modal-overlay-comment" id="missaoModal" style="z-index: 2001;">
         <div class="modal-content-card" style="border-color: #e6b800; max-width: 500px;">
-            <span class="close-modal" onclick="fecharMissaoModal()">&times;</span>
+            <span class="close-modal" role="button" tabindex="0" aria-label="Fechar" onclick="fecharMissaoModal()">&times;</span>
             <img id="missao-img-modal" src="" class="jutsu-modal-img" style="border-color:#e6b800; height: 150px;">
             <h2 id="missao-name-modal" style="color: #e6b800;"></h2>
             <div class="desc-scroll-container">
@@ -662,7 +744,7 @@
 
     <div class="modal-overlay-comment" id="profileModal" style="z-index: 2002;">
         <div class="modal-content-profile">
-            <span class="close-modal" onclick="fecharProfileModal()" style="color: white; top: 15px; right: 15px;">&times;</span>
+            <span class="close-modal" role="button" tabindex="0" aria-label="Fechar" onclick="fecharProfileModal()" style="color: white; top: 15px; right: 15px;">&times;</span>
             <div class="profile-header"><div class="profile-avatar-large"><img src="" id="profile-modal-img"></div><h2 id="profile-modal-name" style="color:white;"></h2><p id="profile-modal-char" style="opacity:0.9;"></p></div>
             <div class="profile-body">
                 <div class="powers-wrapper">
@@ -679,14 +761,14 @@
     </div>
     
     <div id="btn-adicionar-geral" style="display: none; position: fixed; bottom: 30px; right: 30px; z-index: 9999;">
-        <button onclick="window.abrirModalCriacao()" style="width: 60px; height: 60px; border-radius: 50%; background: var(--primary-color); color: white; border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.3); cursor: pointer; font-size: 1.5rem; display: flex; align-items: center; justify-content: center;">
+        <button onclick="window.abrirModalCriacao()" aria-label="Criar novo registro" title="Criar novo" style="width: 60px; height: 60px; border-radius: 50%; background: var(--primary-color); color: white; border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.3); cursor: pointer; font-size: 1.5rem; display: flex; align-items: center; justify-content: center;">
             <i class="fa-solid fa-plus"></i>
         </button>
     </div>
 
     <div class="modal-overlay-comment" id="modalCriacaoGeral" style="display: none; align-items: center; justify-content: center; z-index: 10000; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6);">
-        <div class="modal-criacao-container" style="background: #fff; width: 90%; max-width: 550px; border-radius: 15px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); position: relative;">
-            <span class="close-modal" onclick="document.getElementById('modalCriacaoGeral').style.display='none'" style="position: absolute; right: 20px; top: 15px; cursor: pointer; font-size: 24px;">&times;</span>
+        <div class="modal-criacao-container" style="width: 90%; max-width: 550px; border-radius: 15px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); position: relative;">
+            <span class="close-modal" role="button" tabindex="0" aria-label="Fechar" onclick="document.getElementById('modalCriacaoGeral').style.display='none'" style="position: absolute; right: 20px; top: 15px; cursor: pointer; font-size: 24px;">&times;</span>
             
             <h2 id="titulo-modal-criacao" style="margin-top: 0; color: var(--primary-color); font-size: 1.5rem; margin-bottom: 20px;">Editor do Kage</h2>
             
@@ -704,8 +786,8 @@
     </div>
 
     <div class="modal-overlay-comment" id="modalPresentear" style="display: none; align-items: center; justify-content: center; z-index: 10000; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6);">
-        <div class="modal-criacao-container" style="background: #fff; width: 90%; max-width: 400px; border-radius: 15px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); position: relative;">
-            <span onclick="document.getElementById('modalPresentear').style.display='none'" style="position: absolute; right: 20px; top: 15px; cursor: pointer; font-size: 24px;">&times;</span>
+        <div class="modal-criacao-container" style="width: 90%; max-width: 400px; border-radius: 15px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); position: relative;">
+            <span role="button" tabindex="0" aria-label="Fechar" onclick="document.getElementById('modalPresentear').style.display='none'" style="position: absolute; right: 20px; top: 15px; cursor: pointer; font-size: 24px;">&times;</span>
             
             <h2 style="margin-top: 0; color: #f39c12; font-size: 1.5rem; margin-bottom: 20px;">
                 <i class="fa-solid fa-gift"></i> Enviar Presente
@@ -738,8 +820,8 @@
             </div>
             <div>
                 <!-- Novo botão de ver ninjas no local -->
-                <i id="btn-ninjas-local" class="fa-solid fa-users" style="cursor:pointer; margin-right: 15px; display: none;" onclick="window.toggleNinjasLocal()" title="Ver ninjas no local"></i>
-                <span onclick="window.fecharChat()" style="cursor: pointer; font-weight: bold; font-size: 18px;">&times;</span>
+                <i id="btn-ninjas-local" class="fa-solid fa-users" role="button" tabindex="0" aria-label="Ver ninjas no local" style="cursor:pointer; margin-right: 15px; display: none;" onclick="window.toggleNinjasLocal()" title="Ver ninjas no local"></i>
+                <span role="button" tabindex="0" aria-label="Fechar conversa" onclick="window.fecharChat()" style="cursor: pointer; font-weight: bold; font-size: 18px;">&times;</span>
             </div>
         </div>
         
@@ -752,21 +834,21 @@
         <div id="chat-messages"></div>
         
         <div class="chat-footer">
-            <input type="text" id="chat-input" placeholder="Envie um pergaminho..." onkeypress="if(event.key === 'Enter') window.enviarMensagemChat()">
-            <button onclick="window.enviarMensagemChat()">
+            <input type="text" id="chat-input" aria-label="Mensagem" placeholder="Envie um pergaminho..." onkeypress="if(event.key === 'Enter') window.enviarMensagemChat()">
+            <button onclick="window.enviarMensagemChat()" aria-label="Enviar mensagem">
                 <i class="fa-solid fa-paper-plane"></i>
             </button>
         </div>
     </div>
 
-    <div id="chat-list-tab" onclick="window.toggleChatList()">
+    <div id="chat-list-tab" role="button" tabindex="0" aria-label="Abrir conversas" onclick="window.toggleChatList()">
         <i class="fa-solid fa-comments"></i> Chats <span id="total-unread-badge" class="unread-badge-main" style="display:none;">(0)</span>
     </div>
 
     <div id="chat-list-panel" style="display: none;">
         <div class="chat-list-header">
             <strong>Suas Conversas</strong>
-            <span onclick="window.toggleChatList()" style="cursor: pointer; font-size: 1.2rem;">&times;</span>
+            <span role="button" tabindex="0" aria-label="Fechar lista de conversas" onclick="window.toggleChatList()" style="cursor: pointer; font-size: 1.2rem;">&times;</span>
         </div>
         <div id="chat-list-content">
             <p style="text-align:center; color:#999; margin-top:20px; font-size: 0.9rem;">Carregando...</p>
@@ -791,8 +873,8 @@
         </div>
     </div>
     
-    <div class="modal-overlay-comment" id="commentModal"><span class="close-modal" onclick="closeModal()">&times;</span><div class="modal-content-comment"><div class="modal-left" id="modalPostContent"></div><div class="modal-right"><div style="padding: 15px; border-bottom: 1px solid #eee;">Comentários</div><div class="comments-list" id="commentsList"></div><div class="comment-input-area"><input type="text" id="newCommentText" placeholder="Comentar..."><button onclick="submitComment()" style="border:none; background:none; color:var(--primary-color); font-weight:bold;">Enviar</button></div></div></div></div>
-    <div class="modal-overlay-comment" id="changePasswordModal" style="z-index: 2004;"><div class="modal-content-card"><span class="close-modal" onclick="closeChangePasswordModal()" style="color: #333; top: 10px; right: 15px;">&times;</span><h3>Alterar Senha</h3><input type="password" id="new-password" class="edit-input" placeholder="Nova Senha" style="margin-top:20px;"><button class="btn-post" onclick="salvarNovaSenha()" style="width: 100%;">Atualizar Senha</button></div></div>
+    <div class="modal-overlay-comment" id="commentModal"><span class="close-modal" role="button" tabindex="0" aria-label="Fechar" onclick="closeModal()">&times;</span><div class="modal-content-comment"><div class="modal-left" id="modalPostContent"></div><div class="modal-right"><div style="padding: 15px; border-bottom: 1px solid #eee;">Comentários</div><div class="comments-list" id="commentsList"></div><div class="comment-input-area"><input type="text" id="newCommentText" aria-label="Escreva um comentário" placeholder="Comentar..." onkeydown="if(event.key === 'Enter') submitComment()"><button onclick="submitComment()" style="border:none; background:none; color:var(--primary-color); font-weight:bold;">Enviar</button></div></div></div></div>
+    <div class="modal-overlay-comment" id="changePasswordModal" style="z-index: 2004;"><div class="modal-content-card"><span class="close-modal" role="button" tabindex="0" aria-label="Fechar" onclick="closeChangePasswordModal()" style="color: #333; top: 10px; right: 15px;">&times;</span><h3>Alterar Senha</h3><input type="password" id="new-password" class="edit-input" placeholder="Nova Senha" style="margin-top:20px;"><button class="btn-post" onclick="salvarNovaSenha()" style="width: 100%;">Atualizar Senha</button></div></div>
 
     <script type="module" src="script.js"></script>
 </body>
