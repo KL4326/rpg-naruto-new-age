@@ -105,6 +105,11 @@ const DB = {
     desafios_batalha: {}
 };
 
+// Posts antigos extras (para testar o botão "Carregar mais")
+for (let i = 1; i <= 20; i++) {
+    DB.posts['antigo' + i] = { uid: "u5", autor: "Takeshi Nara", autorAvatar: avatar("T", "#15803d", "#14532d"), conteudo: `Registro de treino nº ${i}. Que preguiça...`, likes: [], comentarios: [], data: ts((4 + i) * 86400e3) };
+}
+
 // ---------- Utilitários internos ----------
 function deepClone(v) {
     if (v && typeof v === 'object') {
@@ -171,6 +176,8 @@ export const doc = (db, ...segs) => ({ kind: 'doc', col: colKey(segs.slice(0, -1
 export const collection = (db, ...segs) => ({ kind: 'col', col: colKey(segs) });
 export const where = (field, op, value) => ({ t: 'where', field, op, value });
 export const orderBy = (field, dir = 'asc') => ({ t: 'order', field, dir });
+export const limit = (n) => ({ t: 'limit', n });
+export const startAfter = (d) => ({ t: 'startAfter', id: d.id });
 export const query = (c, ...cons) => ({ kind: 'query', col: c.col, cons });
 
 function getField(d, f) { return f.split('.').reduce((o, k) => (o == null ? undefined : o[k]), d); }
@@ -190,14 +197,18 @@ function runQuery(q) {
             if (c.op === 'array-contains') return Array.isArray(v) && v.includes(c.value);
             return true;
         });
+        if (c.t === 'startAfter') { const i = ids.indexOf(c.id); ids = ids.slice(i + 1); }
+        if (c.t === 'limit') ids = ids.slice(0, c.n);
         if (c.t === 'order') ids.sort((a, b) => { const x = sortVal(getField(col[a], c.field)), y = sortVal(getField(col[b], c.field)); return (x > y ? 1 : x < y ? -1 : 0) * (c.dir === 'desc' ? -1 : 1); });
     }
     const docs = ids.map(id => docSnap(q.col, id));
     return { docs, empty: docs.length === 0, size: docs.length, forEach: (fn) => docs.forEach(fn), docChanges: () => docs.map(d => ({ type: 'added', doc: d })) };
 }
 
-export const getDoc = async (ref) => docSnap(ref.col, ref.id);
-export const getDocs = async (q) => runQuery(q);
+// Contador de leituras (só para medir na prévia)
+window.__leituras = { getDoc: 0, getDocs: 0, docsLidos: 0 };
+export const getDoc = async (ref) => { window.__leituras.getDoc++; window.__leituras.docsLidos++; return docSnap(ref.col, ref.id); };
+export const getDocs = async (q) => { const r = runQuery(q); window.__leituras.getDocs++; window.__leituras.docsLidos += r.size; return r; };
 export const setDoc = async (ref, data, opts = {}) => {
     const col = getCol(ref.col);
     if (!opts.merge || !col[ref.id]) col[ref.id] = {};

@@ -583,6 +583,9 @@ body.dark-mode .shop-cat-btn.active { background: #c2410c; border-color: #c2410c
 .action-btn.btn-salvar { margin-left: auto; }
 .action-btn.btn-salvar.salvo { color: var(--primary); }
 .feed-filtro-cabecalho { display: flex; justify-content: space-between; align-items: center; gap: 10px; background: var(--primary-soft); border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent); color: var(--primary); font-weight: 900; padding: 10px 12px 10px 16px; border-radius: var(--radius); margin-bottom: 16px; }
+.btn-carregar-mais { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 48px; margin: 4px 0 20px; background: var(--surface); color: var(--primary); border: 2px dashed var(--border-strong); border-radius: var(--radius); font-weight: 900; font-size: .95rem; cursor: pointer; transition: .2s; }
+.btn-carregar-mais:hover { border-color: var(--primary-bright); background: var(--primary-soft); }
+.btn-carregar-mais:disabled { opacity: .7; cursor: wait; }
 .feed-vazio { text-align: center; padding: 40px 20px; color: var(--text-muted); font-weight: 700; line-height: 1.7; }
 .feed-vazio i { font-size: 2rem; color: var(--primary-bright); }
 

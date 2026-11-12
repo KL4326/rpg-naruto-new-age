@@ -32,6 +32,17 @@ bloco_firebase = (
 # 2) script.js sem as importações do Firebase real
 script_sem_import = re.sub(r"^import .*?;\s*$", "", script, flags=re.M)
 
+# 2b) Imagens da pasta img/ embutidas no arquivo (para funcionar com dois cliques)
+def embutir(m):
+    caminho = os.path.join(RAIZ, m.group(1))
+    if not os.path.exists(caminho):
+        return m.group(0)
+    ext = caminho.rsplit(".", 1)[-1].lower()
+    mime = {"jpg": "jpeg", "jpeg": "jpeg", "png": "png", "webp": "webp", "gif": "gif"}[ext]
+    dados = base64.b64encode(open(caminho, "rb").read()).decode()
+    return '"data:image/' + mime + ';base64,' + dados + '"'
+script_sem_import = re.sub(r'"(img/[^"]+)"', embutir, script_sem_import)
+
 # 3) Monta o HTML único
 favicon = "data:image/png;base64," + base64.b64encode(open(os.path.join(RAIZ, "favicon.png"), "rb").read()).decode()
 html = html.replace('href="favicon.png"', f'href="{favicon}"', 1)
