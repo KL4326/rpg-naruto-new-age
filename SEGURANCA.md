@@ -20,6 +20,7 @@ O arquivo [`firestore.rules`](firestore.rules) define quem pode alterar o quê n
 | Subir de nível | XP da tabela de níveis descontado |
 | Combate | Vida/chakra/stamina só diminuem |
 | Cofre da Vila | Só sobe com comprovante conferido: 10% de cada compra em Ryos, 20% da recompensa de missão (uma vez por missão), 5% do cofre Competitivo em Ryos e doações (que saem da ficha de quem doa). Só o Kage tira (salários e ajustes) |
+| Arena ao vivo e torneios | Qualquer ninja assiste; apostas e inscrições pagas são conferidas (o valor sai da ficha e entra no bolo no mesmo envio). Na chave do torneio, só o vencedor da luta avança, e só para a vaga certa. Sorteio, W.O. e prêmios: só o Kage |
 | Roleta | Ryos/EN ficam **pendentes** (o Kage credita). Jutsu Rank B, Ferramenta Especial, Arma Ninja e Modificador o **próprio jogador resgata**: o banco confere o Rank B, o item marcado como prêmio e o +1 no atributo, e tira só aquele prêmio da lista |
 | Arena: apostar no Competitivo | Só a própria aposta, no valor do desafio; XP precisa sobrar 10 na barra |
 | Arena: receber o cofre | Só o **vencedor** registrado na luta, só uma vez, no valor exato do cofre |

@@ -132,6 +132,54 @@ service cloud.firestore {
       }
     }
 
+    // ---------------- TORNEIOS (Fase 3) ----------------
+    // torneios/{tid}: o Kage cria, sorteia a chave, marca W.O. e entrega os prêmios.
+    // Jogadores: (1) se inscrevem (pagando a taxa, que vai para o "bolo" do torneio);
+    //            (2) o VENCEDOR de uma partida avança sozinho na chave, com a luta finalizada como prova.
+    match /torneios/{tid} {
+      allow read: if logado();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (logado() && (inscricaoValida() || avancoValido()));
+
+      function taxaDe(t) { return t.get('taxa', null) == null ? 0 : t.taxa.valor; }
+      function inscricaoValida() {
+        let a = resource.data;
+        let n = request.resource.data;
+        let u = request.auth.uid;
+        return a.status == 'inscricoes' && request.time.toMillis() <= a.inscricaoAte
+          && n.diff(a).affectedKeys().hasOnly(['inscritos', 'bolo'])
+          && !(u in a.get('inscritos', {}))
+          && n.inscritos.diff(a.get('inscritos', {})).affectedKeys().hasOnly([u])
+          && n.inscritos[u].keys().hasOnly(['nome', 'em'])
+          && (a.get('maxInscritos', 0) == 0 || a.get('inscritos', {}).size() < a.maxInscritos)
+          && n.get('bolo', 0) == a.get('bolo', 0) + taxaDe(a)
+          && (taxaDe(a) == 0 || getAfter(caminho('users', u)).data.get('ultimaInscricao', '') == tid);
+      }
+      function avancoValido() {
+        let a = resource.data;
+        let n = request.resource.data;
+        let av = n.get('ultimoAvanco', {});
+        return a.status == 'em_andamento' && av.get('partida', '') in a.get('partidas', {})
+          && avancoDaPartida(a, n, av, a.partidas[av.partida], request.auth.uid);
+      }
+      function avancoDaPartida(a, n, av, p, u) {
+        let b = get(caminho('desafios_batalha', av.batalha)).data;
+        return p.get('vencedor', null) == null && u in [p.a, p.b]
+          && b.get('torneio', {}).get('tid', '') == tid && b.torneio.partida == av.partida
+          && b.estado.status == 'finalizada' && b.estado.resultado.get('vencedor', null) == u
+          && n.partidas[av.partida].diff(p).affectedKeys().hasOnly(['vencedor', 'batalha'])
+          && n.partidas[av.partida].vencedor == u && n.partidas[av.partida].batalha == av.batalha
+          && (p.get('final', false) == true
+              ? (n.diff(a).affectedKeys().hasOnly(['partidas', 'ultimoAvanco', 'status', 'campeao', 'vice'])
+                 && n.partidas.diff(a.partidas).affectedKeys().hasOnly([av.partida])
+                 && n.status == 'finalizado' && n.campeao == u && n.vice == (p.a == u ? p.b : p.a))
+              : (n.diff(a).affectedKeys().hasOnly(['partidas', 'ultimoAvanco'])
+                 && n.partidas.diff(a.partidas).affectedKeys().hasOnly([av.partida, p.proxima])
+                 && n.partidas[p.proxima].diff(a.partidas[p.proxima]).affectedKeys().hasOnly([p.lado])
+                 && n.partidas[p.proxima][p.lado] == u));
+      }
+    }
+
     // ---------------- Catálogos: todos leem, só o Kage escreve ----------------
     match /jutsus/{id}      { allow read: if logado(); allow write: if isAdmin(); }
     match /ferramentas/{id} { allow read: if logado(); allow write: if isAdmin(); }
@@ -442,6 +490,20 @@ service cloud.firestore {
           : (venc == ap.lado ? math.floor(ap.liquido * bolo / tot.get(venc, 0)) : 0);
       }
 
+      // 10f) Inscrição paga num torneio (a taxa vai para o bolo do torneio, no mesmo envio)
+      function inscreverTorneio() {
+        return depois().get('ultimaInscricao', null) != null && 'ultimaInscricao' in mudou()
+          && mudou().hasOnly(['ryos', 'essencia_ninja', 'ultimaInscricao']) && inscreverTorneioValido(depois().ultimaInscricao);
+      }
+      function inscreverTorneioValido(tid) {
+        let t0 = get(caminho('torneios', tid)).data;
+        let t1 = getAfter(caminho('torneios', tid)).data;
+        return t0.get('taxa', null) != null && !(userId in t0.get('inscritos', {})) && userId in t1.inscritos
+          && !(outraMoeda(t0.taxa.moeda) in mudou())
+          && valor(depois(), t0.taxa.moeda, 0) == valor(antes(), t0.taxa.moeda, 0) - t0.taxa.valor
+          && valor(depois(), t0.taxa.moeda, 0) >= 0;
+      }
+
       // 11) Presente/mentoria — lado de quem PAGA (a transferência é conferida em /transferencias)
       function pagarTransferencia() {
         return 'ultimaTransferencia' in mudou()
@@ -551,7 +613,7 @@ service cloud.firestore {
         || (dono() && (perfil() || gastoEmCombate() || subirNivel() || consumirItem()
                        || comprarJutsu() || comprarItem() || solicitar()
                        || coletarMissao() || coletarConquista() || trocarEnPorRyos()
-                       || roletaGratis() || roletaPaga() || resgatarPremio() || doarVila() || apostar() || receberAposta() || pagarTransferencia()
+                       || roletaGratis() || roletaPaga() || resgatarPremio() || doarVila() || apostar() || receberAposta() || inscreverTorneio() || pagarTransferencia()
                        || pagarCofre() || receberCofre() || devolverCofre() || contabilizarBatalha()))
         || (logado() && !dono() && receberTransferencia());
     }
@@ -650,7 +712,15 @@ service cloud.firestore {
         && request.resource.data.get('modo', 'amistoso') in ['amistoso', 'rankeada', 'competitivo']
         && (request.resource.data.get('modo', 'amistoso') != 'competitivo' || (
               request.resource.data.aposta.moeda in ['ryos', 'essencia_ninja', 'xp']
-              && request.resource.data.aposta.valor is int && request.resource.data.aposta.valor > 0));
+              && request.resource.data.aposta.valor is int && request.resource.data.aposta.valor > 0))
+        && (request.resource.data.get('torneio', null) == null || partidaDeTorneio(request.resource.data));
+      function partidaDeTorneio(d) {
+        let t = get(caminho('torneios', d.torneio.tid)).data;
+        let p = t.partidas[d.torneio.partida];
+        return t.status == 'em_andamento' && p.get('vencedor', null) == null
+          && d.get('modo', '') == 'rankeada' && d.get('aposta', null) == null
+          && ((p.a == d.desafianteId && p.b == d.desafiadoId) || (p.b == d.desafianteId && p.a == d.desafiadoId));
+      }
       allow update, delete: if isAdmin() || participa();
 
       // Apostas dos espectadores (o id do documento é o uid de quem aposta: uma aposta por luta)

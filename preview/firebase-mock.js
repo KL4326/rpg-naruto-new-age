@@ -117,6 +117,8 @@ const DB = {
         c3: { remetenteId: "u1", remetenteNome: "Kenji Uzumaki", texto: "alguém sabe que horas é o evento?", tipo: "ooc", timestamp: ts(6800e3) }
     },
     desafios_batalha: {
+        final_relampago: { desafianteId: 'u1', desafiadoId: 'u3', desafianteNome: 'Kenji Uzumaki', desafiadoNome: 'Ryo Uchiha', status: 'finalizada', modo: 'rankeada', torneio: { tid: 'relampago', partida: 'r1p0', nome: 'Copa Relâmpago' },
+            contabilizado: { u1: true }, historico: [], estado: { status: 'finalizada', fase: 'fim', turno: 7, ordem: ['u1', 'u3'], lutadores: {}, resultado: { vencedor: 'u1', perdedor: 'u3', empate: false, motivo: 'vida' } } },
         aovivo1: (() => {
             const lut = (uid, nome, vida, chakra, agil, vel, rea) => ({ uid, nome, avatar: '', vida, maxVida: vida, chakra, maxChakra: chakra, stamina: 120, maxStamina: 120,
                 atributos: { forca: 13, defesa: 11, constituicao: 12, destreza: 12, intelecto: 14, agilidade: agil, velocidade: vel, reacao: rea }, efeitos: [], clones: { qtd: 0, reserva: 0, solidos: true }, criacoes: [] });
@@ -129,6 +131,16 @@ const DB = {
     },
     "desafios_batalha/aovivo1/torcida": {
         t4: { nome: 'Takeshi Nara', lado: 'u3', emoji: '🔥', em: agora - 5000, visto: agora + 3600e3 }
+    },
+    torneios: {
+        exame: { nome: 'Exame Chunin', descricao: 'Lutas às 20h. Boa sorte, ninjas!', status: 'inscricoes', criadoEm: agora - 3600e3, inscricaoAte: agora + 2 * 24 * 3600e3,
+            prazoRodadaHoras: 48, maxInscritos: 0, taxa: { moeda: 'ryos', valor: 100 }, premioCofre: 5000, boloParaPremio: true, pctCampeao: 70,
+            premioItem: { col: 'ferramentas', id: 'fuuma', nome: 'Fuuma Shuriken', qtd: 1 }, bolo: 400,
+            inscritos: { u2: { nome: 'Aiko Hyuga', em: 1 }, u3: { nome: 'Ryo Uchiha', em: 2 }, u4: { nome: 'Mei Sabaku', em: 3 }, u5: { nome: 'Takeshi Nara', em: 4 } } },
+        relampago: { nome: 'Copa Relâmpago', status: 'em_andamento', criadoEm: agora - 7200e3, inscricaoAte: agora - 3600e3, prazoRodadaHoras: 24, taxa: null, premioCofre: 2000,
+            boloParaPremio: true, pctCampeao: 70, bolo: 0, sorteadoEm: agora - 3000e3, rodadas: 1,
+            inscritos: { u1: { nome: 'Kenji Uzumaki', em: 1 }, u3: { nome: 'Ryo Uchiha', em: 2 } },
+            partidas: { r1p0: { rodada: 1, a: 'u1', b: 'u3', final: true } } }
     },
     apostas_totais: { aovivo1: { ryos: { u3: 950, u4: 380 } } },
     vila: { banco: { saldo: 1000000 } }
