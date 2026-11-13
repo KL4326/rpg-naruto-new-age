@@ -1335,3 +1335,6 @@ body.menos-movimento .arena-lutador[class*="aura-"], body.menos-movimento .aura-
 .tesouraria-alerta { color: var(--warning); font-weight: 800; }
 .tesouraria-ajustes { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
 @media (max-width: 760px) { .cofre-topo, .cofre-colunas { grid-template-columns: 1fr; } .cofre-saldo strong { font-size: 1.8rem; } }
+.cofre-doar-linha { align-items: stretch; }
+.cofre-doar-linha > input, .cofre-doar-linha > .buy-btn { margin: 0 !important; height: auto; }
+.cofre-doar-linha > .buy-btn { display: inline-flex; align-items: center; justify-content: center; }
