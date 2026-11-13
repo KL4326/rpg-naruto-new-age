@@ -1220,3 +1220,118 @@ body:has(#app-container[style*="none"]) #btn-adicionar-geral { display: none !im
     .bucket-grid { grid-template-columns: repeat(2, 1fr); }
     .input-grid-2, .input-grid-3 { grid-template-columns: 1fr; }
 }
+
+/* ===================== ARENA: AURAS DE MODO, CRIAÇÕES, GENJUTSU E CHAMAS ===================== */
+.arena-lutador { position: relative; }
+.arena-lutador[class*="aura-"] { --aura: #7c3aed; --aura-glow: rgba(124, 58, 237, .45); border-color: var(--aura); box-shadow: 0 0 0 3px var(--aura-glow), 0 0 22px var(--aura-glow); animation: aura-pulso 2.4s ease-in-out infinite; }
+.arena-lutador.aura-sharingan { --aura: #dc2626; --aura-glow: rgba(220, 38, 38, .40); }
+.arena-lutador.aura-mangekyou { --aura: #7f1d1d; --aura-glow: rgba(185, 28, 28, .55); animation-duration: 1.6s; }
+.arena-lutador.aura-sabio { --aura: #ea580c; --aura-glow: rgba(234, 88, 12, .45); }
+.arena-lutador.aura-byakugan { --aura: #64748b; --aura-glow: rgba(147, 197, 253, .65); }
+.arena-lutador.aura-portao { --aura: #16a34a; --aura-glow: rgba(34, 197, 94, .45); }
+.arena-lutador.na-vez[class*="aura-"] { outline: 3px solid var(--primary-bright); outline-offset: 3px; }
+@keyframes aura-pulso { 0%, 100% { box-shadow: 0 0 0 3px var(--aura-glow), 0 0 12px var(--aura-glow); } 50% { box-shadow: 0 0 0 5px var(--aura-glow), 0 0 30px var(--aura-glow); } }
+.arena-lutador.aura-sabio .arena-lutador-topo img { box-shadow: 0 0 0 3px #ea580c; }
+
+/* Símbolo do modo no canto da carta */
+.aura-selo { position: absolute; top: 8px; right: 8px; width: 30px; height: 30px; border-radius: 50%; display: block; }
+.aura-selo::before, .aura-selo::after { content: ""; position: absolute; inset: 0; border-radius: 50%; }
+.aura-selo-sharingan { background: radial-gradient(circle, #111 0 18%, #b91c1c 19% 100%); box-shadow: 0 0 0 2px #111; animation: selo-gira 4s linear infinite; }
+.aura-selo-sharingan::before { background:
+    radial-gradient(circle at 50% 18%, #111 0 11%, transparent 12%),
+    radial-gradient(circle at 22% 66%, #111 0 11%, transparent 12%),
+    radial-gradient(circle at 78% 66%, #111 0 11%, transparent 12%); }
+.aura-selo-mangekyou { background: conic-gradient(#111 0 40deg, #b91c1c 40deg 120deg, #111 120deg 160deg, #b91c1c 160deg 240deg, #111 240deg 280deg, #b91c1c 280deg 360deg); box-shadow: 0 0 0 2px #111, 0 0 10px rgba(185, 28, 28, .8); animation: selo-gira 2.5s linear infinite; }
+.aura-selo-mangekyou::after { inset: 38%; background: #111; }
+.aura-selo-sabio { background: radial-gradient(circle, #111 0 20%, #fbbf24 21% 100%); box-shadow: 0 0 0 3px #ea580c; }
+.aura-selo-sabio::after { inset: 44% 18%; background: #111; border-radius: 2px; }
+.aura-selo-byakugan { background: radial-gradient(circle, #e2e8f0 0 30%, #f8fafc 31% 100%); box-shadow: 0 0 0 2px #94a3b8, 0 0 10px rgba(147, 197, 253, .9); }
+.aura-selo-byakugan::before { background: repeating-conic-gradient(rgba(100, 116, 139, .55) 0 4deg, transparent 4deg 30deg); -webkit-mask: radial-gradient(circle, transparent 40%, #000 41%); mask: radial-gradient(circle, transparent 40%, #000 41%); }
+.aura-selo-portao { background: radial-gradient(circle, #bbf7d0, #16a34a); box-shadow: 0 0 12px rgba(34, 197, 94, .9); }
+.aura-selo-modo { background: radial-gradient(circle, #ddd6fe, #6d28d9); box-shadow: 0 0 10px rgba(124, 58, 237, .8); }
+@keyframes selo-gira { to { transform: rotate(360deg); } }
+.arena-lutador-topo { padding-right: 34px; }
+
+/* Fichas das criações (raízes, pedras...) */
+.arena-fichas { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.arena-ficha { display: inline-flex; align-items: center; gap: 4px; font-size: .78rem; font-weight: 800; padding: 3px 10px 3px 4px; border-radius: 999px; background: var(--surface-2); border: 2px solid var(--border-strong); color: var(--text); }
+.arena-ficha-icone { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: var(--surface); font-size: .9rem; }
+.arena-ficha.surgiu { animation: ficha-surge .5s ease-out; }
+.arena-ficha.quebrou { animation: ficha-quebra .6s ease-out; }
+@keyframes ficha-surge { from { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.12); } to { transform: none; opacity: 1; } }
+@keyframes ficha-quebra { 0% { transform: none; } 20% { transform: translateX(-4px) rotate(-4deg); background: rgba(220, 38, 38, .2); } 40% { transform: translateX(4px) rotate(4deg); } 100% { transform: none; } }
+.arena-criacao { display: flex; flex-direction: column; gap: 6px; }
+.arena-criacao .btn-arena-sec { font-size: .78rem; }
+
+/* Status: genjutsu e chamas */
+.arena-efeito.efeito-genjutsu { background: rgba(124, 58, 237, .14); color: #6d28d9; }
+.arena-efeito.efeito-chamas { background: #1c1917; color: #fda4af; }
+.arena-lutador.em-genjutsu .arena-lutador-topo img { filter: hue-rotate(250deg) saturate(1.6); }
+.arena-lutador.em-chamas::after { content: ""; position: absolute; inset: -2px; border-radius: inherit; pointer-events: none; box-shadow: inset 0 -18px 22px -14px rgba(30, 10, 40, .9), inset 0 -8px 14px -6px rgba(147, 51, 234, .6); animation: chamas-negras 1.2s ease-in-out infinite alternate; }
+@keyframes chamas-negras { from { opacity: .6; } to { opacity: 1; } }
+.arena-aviso.aviso-genjutsu { border-left: 4px solid #7c3aed; background: rgba(124, 58, 237, .08); }
+.arena-aviso.aviso-chamas { border-left: 4px solid #1c1917; background: rgba(28, 25, 23, .07); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+/* Cartas das funções novas */
+.arena-carta.criacao { border-left-color: #65a30d; }
+.arena-carta.kai, .arena-carta.espelho { border-left-color: #7c3aed; }
+.arena-carta.criacao .carta-img { background: linear-gradient(135deg, #d9f99d, #3f6212); }
+.arena-carta.kai .carta-img, .arena-carta.espelho .carta-img { background: linear-gradient(135deg, #e9d5ff, #6b21a8); }
+
+/* Painel Kage: mecânicas especiais */
+.form-avancado { margin-top: 12px; border: 1px dashed var(--border-strong); border-radius: var(--radius-sm); padding: 8px 12px; }
+.form-avancado summary { cursor: pointer; font-weight: 800; }
+.form-avancado[open] summary { margin-bottom: 10px; }
+
+body.menos-movimento .arena-lutador[class*="aura-"], body.menos-movimento .aura-selo, body.menos-movimento .arena-lutador.em-chamas::after { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .arena-lutador[class*="aura-"], .aura-selo, .arena-lutador.em-chamas::after, .arena-ficha { animation: none !important; } }
+
+/* ===================== PRÊMIOS DA ROLETA: RESGATE ===================== */
+.meus-premios { max-width: 720px; margin: 0 auto 28px; }
+.meus-premios-lista { display: flex; flex-direction: column; gap: 10px; }
+.premio-meu { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--gold); border-radius: var(--radius-sm); padding: 10px 14px; box-shadow: var(--shadow-sm); }
+.premio-meu > div { flex: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.premio-meu > div small { width: 100%; color: var(--text-muted); font-weight: 700; }
+.premio-meu-icone { font-size: 1.6rem; }
+.premio-meu .buy-btn { width: auto; padding: 8px 16px; }
+.btn-resgatar { background: linear-gradient(135deg, #f59e0b, #b45309) !important; margin-top: 6px; }
+.modal-resgate-conteudo { max-width: 640px; width: calc(100% - 32px); max-height: 85vh; overflow-y: auto; }
+.resgate-opcoes { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 10px; }
+.resgate-opcao { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px; background: var(--surface-2); border: 2px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; color: var(--text); font: inherit; text-align: center; transition: border-color .2s, transform .2s; }
+.resgate-opcao:hover, .resgate-opcao:focus-visible { border-color: var(--primary-bright); transform: translateY(-2px); }
+.resgate-opcao img { width: 100%; height: 80px; object-fit: cover; border-radius: 8px; }
+.resgate-opcao small { color: var(--text-muted); font-weight: 700; }
+.resgate-icone { font-size: 2rem; line-height: 80px; }
+.admin-titulo-acoes { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.admin-titulo-acoes .section-title { margin: 0; }
+
+/* ===================== COFRE DA VILA ===================== */
+.cofre-vila { max-width: 960px; margin: 0 auto 28px; }
+.cofre-topo { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; }
+.cofre-saldo, .cofre-doar, .cofre-colunas > div { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow-sm); }
+.cofre-saldo { border-top: 4px solid var(--gold); }
+.cofre-saldo > span { font-weight: 800; color: var(--text-muted); text-transform: uppercase; font-size: .8rem; letter-spacing: .05em; }
+.cofre-saldo strong { display: block; font-size: 2.2rem; color: var(--gold); line-height: 1.2; margin: 4px 0; }
+.cofre-saldo strong small { font-size: 1rem; }
+.cofre-saldo p { margin: 0; color: var(--text-muted); font-size: .88rem; }
+.cofre-doar { display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+.cofre-doar-linha { display: flex; gap: 8px; }
+.cofre-doar-linha input { flex: 1; min-width: 0; }
+.cofre-doar-linha .buy-btn { width: auto; padding: 8px 18px; }
+.cofre-doar small { color: var(--text-muted); font-weight: 700; }
+.cofre-colunas { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; margin-top: 14px; }
+.cofre-colunas h4 { margin: 0 0 8px; }
+.cofre-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.cofre-lista li { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: .9rem; }
+.cofre-lista li:last-child { border-bottom: 0; }
+.cofre-lista li span { display: flex; flex-direction: column; }
+.cofre-lista li small { color: var(--text-muted); font-size: .75rem; }
+.cofre-lista li.entrada strong { color: var(--success); }
+.cofre-lista li.saida strong { color: var(--danger); }
+.tesouraria-info { margin: 0 auto 14px; max-width: 520px; }
+.tesouraria-saldo { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; }
+.tesouraria-saldo strong { font-size: 1.4rem; color: var(--gold); }
+.tesouraria-folha { margin-top: 8px; font-size: .9rem; }
+.tesouraria-alerta { color: var(--warning); font-weight: 800; }
+.tesouraria-ajustes { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
+@media (max-width: 760px) { .cofre-topo, .cofre-colunas { grid-template-columns: 1fr; } .cofre-saldo strong { font-size: 1.8rem; } }

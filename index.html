@@ -173,6 +173,7 @@
                         <h2 style="color: var(--primary-color);">Centro de Recompensas</h2>
                         <p style="color: #777;">Gire a Roleta Semanal para ganhar prêmios incríveis!</p>
                     </div>
+                    <div id="meus-premios" class="meus-premios" aria-live="polite"></div>
                                 
                     <div class="roleta-wrapper">
                         <div class="roleta-pointer"><i class="fa-solid fa-caret-down"></i></div>
@@ -412,15 +413,23 @@
                             <i class="fa-solid fa-sack-dollar"></i> Tesouraria da Vila
                         </h3>
                         <p style="font-size: 0.85rem; color: #555; margin-bottom: 15px;">
-                            Pague o salário de todos os ninjas da vila com um único comando. O valor depositado será baseado no campo "Salário" da ficha de cada jogador.
+                            Os salários saem do <strong>Cofre da Vila</strong>, conforme o campo "Salário" de cada ficha. Se o cofre não cobrir a folha, cada ninja recebe a mesma porcentagem do seu salário.
                         </p>
+                        <div id="tesouraria-info" class="tesouraria-info"><p style="color:#777;">Abrindo o cofre...</p></div>
                         <button id="btn-pagar-salarios" class="buy-btn" style="background: #2ecc71; max-width: 250px; margin: 0 auto; font-size: 1.1rem;" onclick="window.pagarSalariosGeral()">
                             <i class="fa-solid fa-coins"></i> Pagar Salários
                         </button>
+                        <div class="tesouraria-ajustes">
+                            <button class="btn-arena-sec" onclick="window.ajustarCofre(1)"><i class="fa-solid fa-plus" aria-hidden="true"></i> Depositar no cofre</button>
+                            <button class="btn-arena-sec" onclick="window.ajustarCofre(-1)"><i class="fa-solid fa-minus" aria-hidden="true"></i> Retirar do cofre</button>
+                        </div>
                     </div>
                     <!-- FIM DO MÓDULO -->
                 
-                    <h3 class="section-title">Aprovações Pendentes</h3>
+                    <div class="admin-titulo-acoes">
+                        <h3 class="section-title">Aprovações Pendentes</h3>
+                        <button class="btn-arena-sec perigo" onclick="window.limparTodasAprovacoes()"><i class="fa-solid fa-trash" aria-hidden="true"></i> Recusar todas</button>
+                    </div>
                     <div class="bucket-grid" id="admin-missoes-grid"><p>Carregando...</p></div>
                     
                     <h3 class="section-title" style="margin-top: 30px;">Jutsus, Ferramentas e Itens (backup e importação)</h3>
@@ -435,7 +444,10 @@
                         <div id="catalogo-previa"></div>
                     </div>
 
-                    <h3 class="section-title" style="margin-top: 30px;">Prêmios da Roleta a Entregar</h3>
+                    <div class="admin-titulo-acoes" style="margin-top: 30px;">
+                        <h3 class="section-title">Prêmios da Roleta a Entregar</h3>
+                        <button class="btn-arena-sec perigo" onclick="window.limparTodosPremios()"><i class="fa-solid fa-trash" aria-hidden="true"></i> Descartar todos</button>
+                    </div>
                     <div id="admin-premios-list" class="admin-premios-list">
                         <p style="color:#777; text-align: center; margin: 10px 0;">Procurando prêmios...</p>
                     </div>
@@ -564,8 +576,9 @@
                 <div id="loja-premium" class="tab-content">
                     <div class="premium-header">
                         <h2>Banco Central do RPG</h2>
-                        <p>Troque sua Essência Ninja por Ryos ou adquira mais Essência.</p>
+                        <p>O cofre da vila, doações, e a troca de Essência Ninja por Ryos.</p>
                     </div>
+                    <div id="cofre-vila" class="cofre-vila"><p class="arena-vazio">Abrindo o cofre...</p></div>
 
                     <div class="premium-grid">
                         <div class="premium-card">
@@ -872,12 +885,21 @@
     </div>
 
     <!-- Configurar ataque: cargas (multiplicador) e clones -->
+    <div id="modal-resgate" class="modal-arena" role="dialog" aria-modal="true" aria-labelledby="resgate-titulo" style="display: none;">
+        <div class="modal-arena-caixa modal-resgate-conteudo">
+            <span class="close-modal" role="button" tabindex="0" aria-label="Fechar" onclick="document.getElementById('modal-resgate').style.display='none'">&times;</span>
+            <h3 id="resgate-titulo">Resgatar prêmio</h3>
+            <p id="resgate-ajuda" class="form-ajuda"></p>
+            <div id="resgate-opcoes" class="resgate-opcoes"></div>
+        </div>
+    </div>
+
     <div id="modal-config-ataque" class="modal-arena" role="dialog" aria-modal="true" aria-labelledby="config-ataque-nome" style="display: none;">
         <div class="modal-arena-caixa">
             <span class="close-modal" role="button" tabindex="0" aria-label="Fechar" onclick="document.getElementById('modal-config-ataque').style.display='none'">&times;</span>
             <h3 id="config-ataque-nome">Ataque</h3>
             <div class="input-grid-2">
-                <div class="input-group" id="config-ataque-cargas-grupo"><label for="config-ataque-cargas">Cargas (repetições)</label><input type="number" id="config-ataque-cargas" class="edit-input" min="1" value="1" oninput="window.atualizarConfigAtaque()"></div>
+                <div class="input-group" id="config-ataque-cargas-grupo"><label for="config-ataque-cargas" id="config-ataque-cargas-rotulo">Cargas (repetições)</label><input type="number" id="config-ataque-cargas" class="edit-input" min="1" value="1" oninput="window.atualizarConfigAtaque()"></div>
                 <div class="input-group" id="config-ataque-clones-grupo"><label for="config-ataque-clones">Clones atacando junto</label><input type="number" id="config-ataque-clones" class="edit-input" min="0" value="0" oninput="window.atualizarConfigAtaque()"></div>
             </div>
             <p id="config-ataque-clones-aviso" class="desafio-saldo"></p>

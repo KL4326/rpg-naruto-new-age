@@ -28,6 +28,79 @@ service cloud.firestore {
     // Números cadastrados às vezes estão como texto ("1000"): converte com segurança
     function numero(v) { return v is number ? v : (v is string && v.matches('^-?[0-9]+([.][0-9]+)?$') ? float(v) : 0); }
 
+    // Preço/moeda de um item do catálogo (iguais aos da ficha, mas usados também pelo cofre)
+    function moedaItem(item) { return numero(item.get('preco_en', 0)) > 0 ? 'essencia_ninja' : 'ryos'; }
+    function precoItem(item) {
+      return moedaItem(item) == 'essencia_ninja'
+        ? numero(item.preco_en)
+        : ((item.get('preco_promocional', null) != null && numero(item.preco_promocional) > 0 && numero(item.preco_promocional) < numero(item.get('preco', 0)))
+            ? numero(item.preco_promocional)
+            : numero(item.get('preco', 0)));
+    }
+
+    // ---------------- COFRE DA VILA ----------------
+    // vila/banco = { saldo, ultimoMov }. Cada entrada de dinheiro vem com um comprovante
+    // em vila_movimentos, e as regras conferem de onde ele veio e o valor exato:
+    //   imposto_loja (10% da compra em Ryos), missao (20% da recompensa),
+    //   arena (5% do cofre Competitivo em Ryos) e doacao (sai da ficha de quem doa).
+    // Saídas (salários) e ajustes: só o Kage.
+    match /vila/{vid} {
+      allow read: if logado();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (logado() && vid == 'banco' && entradaValida(request.resource.data.get('ultimoMov', '')));
+      function entradaValida(mid) {
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['saldo', 'ultimoMov'])
+          && mid != '' && !exists(caminho('vila_movimentos', mid)) && existsAfter(caminho('vila_movimentos', mid))
+          && request.resource.data.saldo == resource.data.saldo + getAfter(caminho('vila_movimentos', mid)).data.valor;
+      }
+    }
+    match /vila_movimentos/{mid} {
+      function m() { return request.resource.data; }
+      function eu() { return caminho('users', request.auth.uid); }
+      function bancoSobe() {
+        return getAfter(caminho('vila', 'banco')).data.get('ultimoMov', '') == mid
+          && getAfter(caminho('vila', 'banco')).data.saldo == get(caminho('vila', 'banco')).data.saldo + m().valor;
+      }
+      // Doação: o mesmo valor sai da ficha de quem doa
+      function doacaoOk() {
+        return getAfter(eu()).data.get('ultimaDoacao', '') == mid
+          && numero(get(eu()).data.get('ryos', 0)) - numero(getAfter(eu()).data.get('ryos', 0)) == m().valor;
+      }
+      // Imposto da loja: 10% (para baixo) de uma compra em Ryos feita NESTE envio
+      function impostoOk() {
+        let c = getAfter(eu()).data.get('ultimaCompra', {});
+        return c.get('mov', '') == mid && get(eu()).data.get('ultimaCompra', {}).get('mov', '') != mid
+          && impostoValor(c, get(caminho(c.tipo == 'jutsu' ? 'jutsus' : c.tipo, c.id)).data);
+      }
+      function impostoValor(c, item) {
+        let qtd = c.tipo == 'jutsu' ? 1 : getAfter(eu()).data.inventario.get(c.id, 0) - get(eu()).data.get('inventario', {}).get(c.id, 0);
+        return moedaItem(item) == 'ryos' && m().valor == math.floor(precoItem(item) * qtd / 10.0);
+      }
+      // Missão: 20% da recompensa, uma vez por missão (o id do comprovante é fixo)
+      function missaoOk() {
+        let c = getAfter(eu()).data.get('ultimaColeta', {});
+        return c.get('tipo', '') == 'missao' && mid == 'missao_' + request.auth.uid + '_' + c.id
+          && get(eu()).data.get('statusMissoes', {}).get(c.id, '') == 'aprovado'
+          && getAfter(eu()).data.statusMissoes.get(c.id, '') == 'concluido'
+          && m().valor == math.floor(numero(get(caminho('missoes', c.id)).data.get('recompensa', 0)) / 5.0);
+      }
+      // Arena: 5% do cofre Competitivo em Ryos, quando o vencedor recebe (uma vez por luta)
+      function arenaOk() {
+        let b = get(caminho('desafios_batalha', m().ref)).data;
+        return mid == 'arena_' + m().ref && b.aposta.moeda == 'ryos'
+          && b.get('cofrePago', false) != true && getAfter(caminho('desafios_batalha', m().ref)).data.get('cofrePago', false) == true
+          && m().valor == math.floor((b.cofre.get(b.desafianteId, 0) + b.cofre.get(b.desafiadoId, 0)) / 20.0);
+      }
+      allow read: if logado();
+      allow create: if isAdmin() || (logado()
+        && m().keys().hasOnly(['uid', 'nome', 'tipo', 'valor', 'data', 'ref'])
+        && m().uid == request.auth.uid && m().valor is int && m().valor > 0 && m().data == request.time
+        && bancoSobe()
+        && ((m().tipo == 'doacao' && doacaoOk()) || (m().tipo == 'imposto_loja' && impostoOk())
+            || (m().tipo == 'missao' && missaoOk()) || (m().tipo == 'arena' && arenaOk())));
+      allow update, delete: if isAdmin();
+    }
+
     // ---------------- Catálogos: todos leem, só o Kage escreve ----------------
     match /jutsus/{id}      { allow read: if logado(); allow write: if isAdmin(); }
     match /ferramentas/{id} { allow read: if logado(); allow write: if isAdmin(); }
@@ -240,6 +313,69 @@ service cloud.firestore {
           && novoPremioPendente();
       }
 
+      // 10b) Resgatar sozinho um prêmio da roleta (sem esperar o Kage):
+      //   "Jutsu Rank B"          → um jutsu Rank B (que ele ainda não tem e pode usar)
+      //   "Ferramenta Especial" / "Arma Ninja" → 1 unidade de um item marcado com premio_roleta
+      //   "Modificador de Atributo" → +50 no atributo escolhido (ou no máximo de Vida/Chakra/Stamina)
+      // O prêmio sai da lista (só aquele, pela posição) no MESMO envio.
+      function tipoPremio(p) { return p.get('valor', p.get('item', '')); }
+      function resgatarPremio() {
+        return depois().get('ultimoResgate', null) != null && 'premios_pendentes' in mudou() && resgatarPremioValido(depois().ultimoResgate);
+      }
+      function resgatarPremioValido(r) {
+        let lista = antes().get('premios_pendentes', []);
+        return r.indice is int && r.indice >= 0 && r.indice < lista.size()
+          && depois().premios_pendentes == semPosicao(lista, r.indice)
+          && (resgateJutsu(r, tipoPremio(lista[r.indice])) || resgateItem(r, tipoPremio(lista[r.indice])) || resgateAtributo(r, tipoPremio(lista[r.indice])));
+      }
+      // A lista sem o item da posição i (cortes vazios dão erro nas regras, por isso os testes)
+      function semPosicao(lista, i) {
+        return (i == 0 ? [] : lista[0:i]).concat(i + 1 >= lista.size() ? [] : lista[i + 1:lista.size()]);
+      }
+      function resgateJutsu(r, tipo) {
+        return r.tipo == 'jutsu' && tipo == 'Jutsu Rank B'
+          && mudou().hasOnly(['meusJutsus', 'premios_pendentes', 'ultimoResgate']) && resgateJutsuValido(r);
+      }
+      function resgateJutsuValido(r) {
+        let j = get(caminho('jutsus', r.id)).data;
+        let lista = antes().get('meusJutsus', []);
+        return string(j.get('rank', '')).upper() == 'B'
+          && !(r.id in lista) && depois().meusJutsus == lista.concat([r.id])
+          && (j.get('restrito_a', null) == null || j.restrito_a.size() == 0 || antes().get('nome', '') in j.restrito_a);
+      }
+      function resgateItem(r, tipo) {
+        return r.tipo in ['ferramentas', 'itens'] && tipo in ['Ferramenta Especial', 'Arma Ninja']
+          && mudou().hasOnly(['inventario', 'premios_pendentes', 'ultimoResgate']) && resgateItemValido(r, tipo);
+      }
+      function resgateItemValido(r, tipo) {
+        let item = get(caminho(r.tipo, r.id)).data;
+        let invA = antes().get('inventario', {});
+        let invD = depois().get('inventario', {});
+        return item.get('premio_roleta', '') == tipo
+          && invD.diff(invA).affectedKeys().hasOnly([r.id])
+          && invD.get(r.id, 0) == invA.get(r.id, 0) + 1;
+      }
+      function resgateAtributo(r, tipo) {
+        return r.tipo == 'atributo' && tipo == 'Modificador de Atributo'
+          && r.id in ['forca', 'defesa', 'constituicao', 'destreza', 'intelecto', 'agilidade', 'max_vida', 'max_chakra', 'max_stamina']
+          && mudou().hasOnly([r.id, 'premios_pendentes', 'ultimoResgate'])
+          && depois().get(r.id, 0) is number
+          && depois().get(r.id, 0) == valor(antes(), r.id, 0) + 50;
+      }
+
+      // 10c) Doar Ryos para o Cofre da Vila (o comprovante em vila_movimentos confere o valor)
+      function doarVila() {
+        return depois().get('ultimaDoacao', null) != null && mudou().hasOnly(['ryos', 'ultimaDoacao', 'doado_vila'])
+          && doarVilaValido(depois().ultimaDoacao);
+      }
+      function doarVilaValido(mid) {
+        let v = valor(antes(), 'ryos', 0) - valor(depois(), 'ryos', 0);
+        return v > 0 && valor(depois(), 'ryos', 0) >= 0
+          && !exists(caminho('vila_movimentos', mid)) && existsAfter(caminho('vila_movimentos', mid))
+          && getAfter(caminho('vila_movimentos', mid)).data.valor == v
+          && valor(depois(), 'doado_vila', 0) == valor(antes(), 'doado_vila', 0) + v;
+      }
+
       // 11) Presente/mentoria — lado de quem PAGA (a transferência é conferida em /transferencias)
       function pagarTransferencia() {
         return 'ultimaTransferencia' in mudou()
@@ -300,7 +436,11 @@ service cloud.firestore {
         let m = b.aposta.moeda;
         return b.estado.status == 'finalizada' && b.estado.resultado.vencedor == userId
           && b.get('cofrePago', false) != true && getAfter(batalha(bid)).data.get('cofrePago', false) == true
-          && valor(depois(), m, 0) == valor(antes(), m, 0) + b.cofre.get(b.desafianteId, 0) + b.cofre.get(b.desafiadoId, 0);
+          && valor(depois(), m, 0) == valor(antes(), m, 0) + premioDoCofre(m, b.cofre.get(b.desafianteId, 0) + b.cofre.get(b.desafiadoId, 0));
+      }
+      // Em Ryos, 5% do cofre vai para o Cofre da Vila (se ele existir)
+      function premioDoCofre(m, total) {
+        return (m == 'ryos' && exists(caminho('vila', 'banco'))) ? total - math.floor(total / 20.0) : total;
       }
       // Devolve a própria aposta (convite recusado/cancelado, luta anulada ou empate)
       function devolverCofre() {
@@ -345,7 +485,7 @@ service cloud.firestore {
         || (dono() && (perfil() || gastoEmCombate() || subirNivel() || consumirItem()
                        || comprarJutsu() || comprarItem() || solicitar()
                        || coletarMissao() || coletarConquista() || trocarEnPorRyos()
-                       || roletaGratis() || roletaPaga() || pagarTransferencia()
+                       || roletaGratis() || roletaPaga() || resgatarPremio() || doarVila() || pagarTransferencia()
                        || pagarCofre() || receberCofre() || devolverCofre() || contabilizarBatalha()))
         || (logado() && !dono() && receberTransferencia());
     }
