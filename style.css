@@ -696,32 +696,55 @@ body.dark-mode .shop-cat-btn.active { background: #c2410c; border-color: #c2410c
 .arena-ameaca-carta { grid-row: span 3; }
 .arena-ameaca-carta .carta-img { height: 96px; margin: 0; background: linear-gradient(135deg, #fecaca, #b91c1c); box-shadow: 0 0 0 3px var(--hp); }
 
-/* Palco das animações (por cima de tudo; um toque pula) */
-.arena-anim { position: fixed; inset: 0; z-index: 9500; pointer-events: none; }
-.arena-anim.ativo { pointer-events: auto; cursor: pointer; }
-.anim-carta {
-    position: fixed; width: 170px; padding: 8px; border-radius: 14px; text-align: center;
-    background: linear-gradient(160deg, #fff7ed, #fed7aa); color: #231b14;
-    border: 3px solid #1b1e2b; box-shadow: 0 0 0 3px #f97316, 0 18px 40px rgba(0, 0, 0, .45), 0 0 40px rgba(249, 115, 22, .55);
-    transform: translate(-50%, -50%); will-change: transform, opacity;
+/* Mesa de cartas: embaixo de cada lutador, cartas do turno atual e do anterior */
+.arena-mesa {
+    position: relative; display: grid; grid-template-columns: 1fr 40px 1fr; gap: 12px;
+    background: radial-gradient(circle at 50% 0%, rgba(249, 115, 22, .14), transparent 60%), linear-gradient(180deg, #3b2316, #24150d);
+    border: 2px solid #5b3a24; border-radius: var(--radius); padding: 10px 12px 12px; min-height: 196px;
+    box-shadow: inset 0 2px 12px rgba(0, 0, 0, .45);
 }
-.anim-carta .carta-img { height: 110px; }
-.anim-carta.funcao-ataque { box-shadow: 0 0 0 3px #ef4444, 0 18px 40px rgba(0, 0, 0, .45), 0 0 40px rgba(239, 68, 68, .6); }
-.anim-carta.funcao-defesa, .anim-carta.escudo { box-shadow: 0 0 0 3px #eab308, 0 18px 40px rgba(0, 0, 0, .45), 0 0 40px rgba(234, 179, 8, .6); }
-.anim-carta.funcao-esquiva { box-shadow: 0 0 0 3px #3b82f6, 0 18px 40px rgba(0, 0, 0, .45), 0 0 40px rgba(59, 130, 246, .6); }
-.anim-carta.funcao-modo { box-shadow: 0 0 0 3px #8b5cf6, 0 18px 40px rgba(0, 0, 0, .45), 0 0 40px rgba(139, 92, 246, .6); }
-.anim-carta.funcao-suporte, .anim-carta.funcao-item { box-shadow: 0 0 0 3px #22c55e, 0 18px 40px rgba(0, 0, 0, .45), 0 0 40px rgba(34, 197, 94, .6); }
-.anim-carta.pequena { width: 120px; padding: 6px; }
-.anim-carta.pequena .carta-img { height: 76px; }
-.anim-carta-nome { font-weight: 900; font-size: .95rem; line-height: 1.2; }
-.anim-carta.pequena .anim-carta-nome { font-size: .8rem; }
-.anim-carta-resumo { font-weight: 800; font-size: .8rem; color: #9a3412; margin-top: 2px; }
-.anim-texto { position: fixed; font-family: var(--font-display); font-size: 1.7rem; white-space: nowrap; text-shadow: 0 2px 0 #000, 0 0 14px rgba(0, 0, 0, .6); pointer-events: none; }
+.mesa-titulo { color: #fcd9b6; font-size: .72rem; font-weight: 900; letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 6px; }
+.mesa-cartas { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start; }
+.mesa-vazia { color: rgba(252, 217, 182, .5); font-size: .82rem; font-weight: 700; padding: 16px 0; }
+.mesa-carta {
+    position: relative; width: 112px; padding: 5px; border-radius: 10px; text-align: center;
+    background: linear-gradient(160deg, #fff7ed, #fed7aa); color: #231b14;
+    border: 2px solid #1b1e2b; box-shadow: 0 0 0 2px #f97316, 0 6px 14px rgba(0, 0, 0, .45);
+}
+.mesa-carta .carta-img { position: relative; display: block; width: 100%; overflow: hidden; height: 70px; margin-bottom: 3px; border-radius: 6px; }
+.mesa-carta-resumo { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.mesa-carta.funcao-ataque { box-shadow: 0 0 0 2px #ef4444, 0 6px 14px rgba(0, 0, 0, .45); }
+.mesa-carta.funcao-ataque .carta-img { background: linear-gradient(135deg, #fecaca, #b91c1c); }
+.mesa-carta.funcao-defesa { box-shadow: 0 0 0 2px #eab308, 0 6px 14px rgba(0, 0, 0, .45); }
+.mesa-carta.funcao-defesa .carta-img { background: linear-gradient(135deg, #fde68a, #a16207); }
+.mesa-carta.funcao-esquiva { box-shadow: 0 0 0 2px #3b82f6, 0 6px 14px rgba(0, 0, 0, .45); }
+.mesa-carta.funcao-esquiva .carta-img { background: linear-gradient(135deg, #bfdbfe, #1d4ed8); }
+.mesa-carta.funcao-modo { box-shadow: 0 0 0 2px #8b5cf6, 0 6px 14px rgba(0, 0, 0, .45); }
+.mesa-carta.funcao-modo .carta-img { background: linear-gradient(135deg, #ddd6fe, #6d28d9); }
+.mesa-carta.funcao-suporte, .mesa-carta.funcao-item { box-shadow: 0 0 0 2px #22c55e, 0 6px 14px rgba(0, 0, 0, .45); }
+.mesa-carta.funcao-suporte .carta-img, .mesa-carta.funcao-item .carta-img { background: linear-gradient(135deg, #bbf7d0, #15803d); }
+.mesa-carta.funcao-receber { box-shadow: 0 0 0 2px #64748b, 0 6px 14px rgba(0, 0, 0, .45); }
+.mesa-carta.anterior { opacity: .55; filter: saturate(.6); transform: scale(.94); }
+.mesa-carta.aguardando, .mesa-resultado.aguardando { visibility: hidden; }
+.mesa-carta-nome { font-weight: 900; font-size: .78rem; line-height: 1.15; }
+.mesa-carta-resumo { font-weight: 800; font-size: .7rem; color: #9a3412; margin-top: 1px; }
+.mesa-resultado { margin-top: 4px; font-size: .7rem; font-weight: 900; padding: 2px 4px; border-radius: 6px; color: #fff; }
+.mesa-resultado.r-acerto { background: #b91c1c; }
+.mesa-resultado.r-parcial { background: #c2410c; }
+.mesa-resultado.r-esquiva { background: #1d4ed8; }
+.mesa-resultado.r-defesa { background: #a16207; }
+.anim-texto { position: absolute; z-index: 5; font-family: var(--font-display); font-size: 1.5rem; white-space: nowrap; text-shadow: 0 2px 0 #000, 0 0 14px rgba(0, 0, 0, .7); pointer-events: none; }
 .anim-texto.dano { color: #f87171; }
 .anim-texto.esquiva { color: #93c5fd; }
 .anim-texto.defesa { color: #fde047; }
 .anim-texto.clone { color: #fdba74; }
-.anim-escudo, .anim-fumaca { position: fixed; font-size: 3.2rem; transform: translate(-50%, -50%); filter: drop-shadow(0 4px 10px rgba(0, 0, 0, .5)); }
+
+/* Selo de usos/quantidade e motivo de indisponibilidade nas cartas de ação */
+.arena-carta { position: relative; }
+.carta-usos { position: absolute; top: 14px; right: 16px; background: rgba(15, 15, 25, .82); color: #fff; font-size: .72rem; font-weight: 900; padding: 1px 8px; border-radius: 999px; }
+.carta-motivo { font-size: .72rem; font-weight: 900; color: var(--text-muted); background: var(--surface-3); padding: 1px 8px; border-radius: 999px; }
+.arena-carta.inativa { border-left-color: #64748b; }
+.arena-carta:disabled { opacity: .55; }
 
 /* "Reduzir animações" ligado no menu: o site fica sem voos, giros e tremores */
 body.menos-movimento *, body.menos-movimento *::before, body.menos-movimento *::after { transition-duration: .01ms !important; animation-iteration-count: 1 !important; }
@@ -781,10 +804,17 @@ body.menos-movimento .estado-opcao { color: var(--success); }
     .arena-carta .carta-img { height: 56px; }
     .arena-ameaca { grid-template-columns: 70px 1fr; }
     .arena-ameaca-carta .carta-img { height: 70px; }
-    .anim-carta { width: 140px; }
-    .anim-carta .carta-img { height: 88px; }
-    .anim-carta.pequena { width: 100px; }
-    .anim-carta.pequena .carta-img { height: 62px; }
+    .arena-mesa { grid-template-columns: 1fr 1fr; gap: 8px; padding: 8px; min-height: 0; }
+    .mesa-meio { display: none; }
+    .mesa-titulo { font-size: .62rem; letter-spacing: .6px; }
+    .mesa-cartas { gap: 6px; }
+    .mesa-carta { width: 72px; padding: 3px; }
+    .mesa-carta .carta-img { height: 40px; }
+    .mesa-carta .carta-img::before { font-size: 1.3rem; }
+    .mesa-vazia { padding: 6px 0; font-size: .7rem; }
+    .mesa-carta-nome { font-size: .66rem; }
+    .mesa-carta-resumo, .mesa-resultado { font-size: .6rem; }
+    .anim-texto { font-size: 1.1rem; }
     .carta-info { font-size: .7rem; }
     .arena-ameaca { padding: 10px; }
     .arena-ameaca-titulo { font-size: .95rem; }
