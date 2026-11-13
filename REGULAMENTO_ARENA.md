@@ -96,6 +96,10 @@ Campos extras (todos opcionais):
 - **Efeito** (suporte/modo): `ataque`, `defesa`, `velocidade`, `reacao`, `cura`, `chakra` ou `clones`. Para vários bônus juntos, use o campo `bonus` (ex.: `{ "ataque": 10, "velocidade": 1 }`).
 - **Duração** (turnos) e **Manutenção** (chakra por turno).
 - **Sangramento**: dano por turno e quantos turnos dura, aplicado quando o ataque acerta.
+- **Custo na arena** (`custo_chakra`, `custo_stamina`): números que a luta cobra. Têm prioridade sobre os campos `chakra`/`stamina`, que podem continuar com o texto do RP (ex.: "-200 para ativar | -100 por turno").
+- **Bônus na arena** (`bonus_arena`): igual ao `bonus`, mas deixa o `bonus` livre para texto (ex.: "+3 em Percepção").
+- **Sem uso na arena** (`uso_arena: false`): jutsu/item utilitário (Transformação, comida, upgrades). Aparece bloqueado na luta.
+- **Cura** (`cura`) e **recuperação** (`recupera_chakra`, `recupera_stamina`). Em jutsus, `bonus_hp`/`bonus_chakra` **não** curam (são bônus de ficha); em itens, continuam curando.
 
 ### Clones
 - O jutsu de clone cria **N clones**. **O chakra gasto vira a reserva deles.**
@@ -104,7 +108,7 @@ Campos extras (todos opcionais):
 - **Clone sólido** recebe um golpe no lugar do dono e estoura.
 
 ### Itens na arena
-- **Ferramentas** (kunai, shuriken, selos...) são ataques que usam **Destreza**.
+- **Ferramentas** (kunai, shuriken, selos...) são ataques que usam **Destreza**. Armas vendidas como item (ex.: ferreiro) também viram ataque se tiverem **Poder**.
 - **Itens de recuperação** (pílulas, comida) recuperam Vida/Chakra/Stamina e contam como ação.
 - Item **gasto ao usar** sai do inventário. Item **recuperável** (ex.: katana) não sai.
 

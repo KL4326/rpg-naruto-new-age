@@ -281,6 +281,34 @@ caso('Anim: tempo de reação esgotado também anima o acerto', () => {
     igual(animDe(r.eventos, 'impacto')[0].resultado, 'acerto');
 });
 
+// ---------- Campos do catálogo (custo_chakra, uso_arena, bonus_arena) ----------
+caso('custo_chakra tem prioridade sobre o texto do chakra', () => {
+    igual(R.custosDoJutsu({ chakra: '-200 para ativar | -100 por turno', custo_chakra: 200 }), { chakra: 200, stamina: 0 });
+    igual(R.custosDoJutsu({ chakra: -400, stamina: '-50 (Por golpe)', custo_stamina: 50 }), { chakra: 400, stamina: 50 });
+    igual(R.custosDoJutsu({ chakra: -400 }), { chakra: 400, stamina: 0 });
+});
+caso('custo_chakra é o que sai do chakra na luta', () => {
+    const e = novo();
+    const { estado } = R.aplicarAcao(e, 'A', { tipo: 'jutsu', jutsu: { ...SOCO, chakra: 'texto qualquer', custo_chakra: 7 } }, T0);
+    igual(estado.lutadores.A.chakra, 200 - 7);
+});
+caso('uso_arena: false bloqueia o jutsu e o item', () => {
+    lanca(() => R.aplicarAcao(novo(), 'A', { tipo: 'jutsu', jutsu: jutsu({ nome: 'Transformação', funcao: 'suporte', uso_arena: false }) }, T0), 'não tem uso na arena');
+    lanca(() => R.aplicarAcao(novo(), 'A', { tipo: 'item', item: { ...PILULA, uso_arena: false } }, T0), 'não tem uso na arena');
+    igual([R.usoNaArena({}), R.usoNaArena({ uso_arena: false })], [true, false]);
+});
+caso('bonus_arena vale mais que o texto do campo bonus', () => {
+    igual(R.bonusDoJutsu({ bonus: '+3 em Percepção (DES)', bonus_arena: { reacao: 2 } }), { reacao: 2 });
+    igual(R.bonusDoJutsu({ bonus: '+3 em Percepção (DES)' }), {});
+});
+caso('bonus_hp/bonus_chakra de JUTSU não curam (só itens curam por eles)', () => {
+    const e = novo(); e.lutadores.A.vida = 100;
+    const { estado } = R.aplicarAcao(e, 'A', { tipo: 'jutsu', jutsu: jutsu({ nome: 'Modo', funcao: 'modo', bonus_hp: 50, custo_chakra: 10 }) }, T0);
+    igual(estado.lutadores.A.vida, 100);
+    const e2 = novo(); e2.lutadores.A.vida = 100;
+    igual(R.aplicarAcao(e2, 'A', { tipo: 'jutsu', jutsu: jutsu({ nome: 'Palma', funcao: 'suporte', cura: 50, custo_chakra: 10 }) }, T0).estado.lutadores.A.vida, 150);
+});
+
 caso('XP apostável deixa 10 na barra (30 → 20)', () => igual(R.xpApostavel(30), 20));
 
 console.log(`\n${ok}/${ok + falhas} testes do motor passaram`);

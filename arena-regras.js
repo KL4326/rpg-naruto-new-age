@@ -104,9 +104,11 @@ export function necessidadesDoJutsu(j) {
 
 // Bônus que um suporte/modo concede: { ataque, defesa, velocidade, reacao }
 export function bonusDoJutsu(j) {
-    if (j?.bonus && typeof j.bonus === 'object') {
+    // bonus_arena tem prioridade: assim o campo "bonus" pode continuar como texto do RP
+    const fonte = [j?.bonus_arena, j?.bonus].find(x => x && typeof x === 'object' && !Array.isArray(x));
+    if (fonte) {
         const b = {};
-        for (const k of ['ataque', 'defesa', 'velocidade', 'reacao']) if (j.bonus[k]) b[k] = num(j.bonus[k]);
+        for (const k of ['ataque', 'defesa', 'velocidade', 'reacao']) if (num(fonte[k])) b[k] = num(fonte[k]);
         return b;
     }
     const efeito = String(j?.efeito ?? '').toLowerCase();
@@ -114,8 +116,16 @@ export function bonusDoJutsu(j) {
     return {};
 }
 
+// custo_chakra / custo_stamina (números da arena) têm prioridade sobre
+// chakra / stamina, que muitas vezes são texto do RP ("-200 por turno").
 export function custosDoJutsu(j) {
-    return { chakra: Math.abs(num(j?.chakra)), stamina: Math.abs(num(j?.stamina)) };
+    const valor = (arena, rp) => Math.abs(arena !== undefined && arena !== null && arena !== '' ? num(arena) : num(rp));
+    return { chakra: valor(j?.custo_chakra, j?.chakra), stamina: valor(j?.custo_stamina, j?.stamina) };
+}
+
+// uso_arena: false = jutsu/item utilitário, que não faz nada numa luta (ex.: Transformação)
+export function usoNaArena(j) {
+    return j?.uso_arena !== false;
 }
 
 // ---------------- estado ----------------
@@ -345,9 +355,10 @@ function acaoSuporte(estado, uid, jutsu, eventos) {
     const poder = poderDoJutsu(jutsu);
 
     // Cura / recuperação imediata
-    const cura = num(jutsu.cura) || (efeito === 'cura' ? poder : 0) || num(jutsu.bonus_hp);
-    const recChakra = num(jutsu.recupera_chakra) || (efeito === 'chakra' ? poder : 0) || num(jutsu.bonus_chakra);
-    const recStamina = num(jutsu.recupera_stamina) || num(jutsu.bonus_stamina);
+    const ehItem = jutsu.tipoItem === 'item';
+    const cura = num(jutsu.cura) || (efeito === 'cura' ? poder : 0) || (ehItem ? num(jutsu.bonus_hp) : 0);
+    const recChakra = num(jutsu.recupera_chakra) || (efeito === 'chakra' ? poder : 0) || (ehItem ? num(jutsu.bonus_chakra) : 0);
+    const recStamina = num(jutsu.recupera_stamina) || (ehItem ? num(jutsu.bonus_stamina) : 0);
     if (cura > 0) { const antes = l.vida; l.vida = Math.min(l.maxVida, l.vida + cura); partes.push(`+${l.vida - antes} Vida`); }
     if (recChakra > 0) { const antes = l.chakra; l.chakra = Math.min(l.maxChakra, l.chakra + recChakra); partes.push(`+${l.chakra - antes} Chakra`); }
     if (recStamina > 0) { const antes = l.stamina; l.stamina = Math.min(l.maxStamina, l.stamina + recStamina); partes.push(`+${l.stamina - antes} Stamina`); }
@@ -523,6 +534,7 @@ export function aplicarAcao(estadoAtual, uid, acao, agora = Date.now()) {
         exigirVez(estado, uid, 'acao');
         if (estado.acoesRestantes <= 0) throw erro('Você já usou suas 3 ações neste turno. Passe o turno.');
         const j = t === 'item' ? { ...acao.item, tipoItem: acao.item.tipoItem } : acao.jutsu;
+        if (!usoNaArena(j)) throw erro(`[${j?.nome || 'Isso'}] não tem uso na arena.`);
         const ehAtaque = t === 'item' ? acao.item.tipoItem === 'ferramenta' && poderDoJutsu(j) > 0 : funcaoDoJutsu(j) === 'ataque';
         if (!ehAtaque && t === 'jutsu' && ['defesa', 'esquiva'].includes(funcaoDoJutsu(j))) throw erro('Jutsus de defesa e esquiva são usados na hora de reagir a um ataque.');
         if (ehAtaque) acaoAtaque(estado, uid, j, acao, eventos);

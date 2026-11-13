@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, deleteField, addDoc, serverTimestamp, query, orderBy, onSnapshot, where, writeBatch, limit, startAfter, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { ARENA, aplicarAcao, criarEstadoInicial, outro, previaAtaque, avaliarReacao, resultadoEsquiva, alguemAusente, bonusAtivos, funcaoDoJutsu, poderDoJutsu, necessidadesDoJutsu, custosDoJutsu, bonusDoJutsu, nomeBonus, xpApostavel } from "./arena-regras.js";
+import { ARENA, aplicarAcao, criarEstadoInicial, outro, previaAtaque, avaliarReacao, resultadoEsquiva, alguemAusente, bonusAtivos, funcaoDoJutsu, poderDoJutsu, necessidadesDoJutsu, custosDoJutsu, bonusDoJutsu, nomeBonus, xpApostavel, usoNaArena } from "./arena-regras.js";
 
 // --- CONFIGURAÇÃO FIREBASE ---
 const firebaseConfig = { apiKey: "AIzaSyC3HOor32_p5Z-iADm0VgZ279rt1kj8ICg", authDomain: "rpg-naruto-5150a.firebaseapp.com", projectId: "rpg-naruto-5150a", storageBucket: "rpg-naruto-5150a.firebasestorage.app", messagingSenderId: "1007094335306", appId: "1:1007094335306:web:ac96fa96f9494f90fd63b3" };
@@ -983,6 +983,11 @@ function aplicarEscalaPersonalizada(dadosJutsu) {
             if (p) {
                 if (p.chakra !== undefined) dadosFinais.chakra = p.chakra;
                 if (p.stamina !== undefined) dadosFinais.stamina = p.stamina;
+                // custo da arena: usa o valor próprio do jogador, ou o chakra/stamina dele se forem números
+                if (p.custo_chakra !== undefined) dadosFinais.custo_chakra = p.custo_chakra;
+                else if (p.chakra !== undefined && dadosFinais.custo_chakra !== undefined && Number.isFinite(Number(p.chakra))) dadosFinais.custo_chakra = Math.abs(Number(p.chakra));
+                if (p.custo_stamina !== undefined) dadosFinais.custo_stamina = p.custo_stamina;
+                else if (p.stamina !== undefined && dadosFinais.custo_stamina !== undefined && Number.isFinite(Number(p.stamina))) dadosFinais.custo_stamina = Math.abs(Number(p.stamina));
                 if (p.dano !== undefined) dadosFinais.dano = p.dano;
                 if (p.descricao !== undefined) dadosFinais.descricao = p.descricao;
             }
@@ -1616,11 +1621,12 @@ function todosItensDoInventario() {
         if (!(qtd > 0)) continue;
         const info = globalItensMap[id];
         if (!info) continue;
-        if (info.type === 'tool') {
-            itens.push({ ...info, id, qtd, tipoItem: 'ferramenta', usavel: poderDoJutsu(info) > 0 });
+        // Ferramentas e também armas vendidas como item (ex.: ferreiro) com Poder cadastrado
+        if (info.type === 'tool' || numero(info.poder) > 0) {
+            itens.push({ ...info, id, qtd, tipoItem: 'ferramenta', usavel: usoNaArena(info) && poderDoJutsu(info) > 0 });
         } else {
-            const recupera = numero(info.bonus_hp) || numero(info.bonus_chakra) || numero(info.bonus_stamina) || numero(info.cura) || numero(info.recupera_chakra);
-            itens.push({ ...info, id, qtd, tipoItem: 'item', usavel: !!recupera });
+            const recupera = numero(info.bonus_hp) || numero(info.bonus_chakra) || numero(info.bonus_stamina) || numero(info.cura) || numero(info.recupera_chakra) || numero(info.recupera_stamina);
+            itens.push({ ...info, id, qtd, tipoItem: 'item', usavel: usoNaArena(info) && !!recupera });
         }
     }
     return itens;
@@ -1818,7 +1824,10 @@ function htmlAcoes(e, me) {
         const c = custosDoJutsu(j);
         const usos = usosPossiveis(me, c);
         let motivo = '', detalhe = '', destaque = '';
-        if (f === 'defesa' || f === 'esquiva') {
+        if (!usoNaArena(j)) {
+            destaque = 'Utilitário';
+            motivo = 'Sem uso na arena';
+        } else if (f === 'defesa' || f === 'esquiva') {
             motivo = 'Usado ao reagir';
             destaque = f === 'defesa' ? `🛡️ absorve ${me.atributos.defesa + bonusAtivos(me).defesa + poderDoJutsu(j)}` : `💨 +${poderDoJutsu(j)} Velocidade`;
             detalhe = custoTexto(c);
@@ -1836,7 +1845,7 @@ function htmlAcoes(e, me) {
             detalhe = `${custoTexto(c)}${numero(j.custo_por_turno) ? ` · ${numero(j.custo_por_turno)} CP/turno` : ''}`;
             motivo = ativo ? 'Ativo' : (semAcoes ? 'Sem ações' : (usos === 0 ? 'Sem chakra/stamina' : ''));
         }
-        jutsus.push(`<button class="arena-carta ${f}" ${motivo ? 'disabled' : ''} onclick="window.arenaUsarJutsu(${i})">
+        jutsus.push(`<button class="arena-carta ${usoNaArena(j) ? f : 'inativa'}" ${motivo ? 'disabled' : ''} onclick="window.arenaUsarJutsu(${i})">
             ${imgCarta(j.imagem, f)}${seloUsos(usos)}<strong>${esc(j.nome)}</strong><span class="carta-tag">${esc(destaque)}</span>
             <span class="carta-info">${esc(detalhe)}</span>${motivo ? `<span class="carta-motivo">${esc(motivo)}</span>` : ''}</button>`);
     });
@@ -1846,9 +1855,9 @@ function htmlAcoes(e, me) {
         const ehAtaque = it.tipoItem === 'ferramenta';
         const c = custosDoJutsu(it);
         let destaque, motivo = '';
-        if (!it.usavel) { destaque = it.efeito || (it.type === 'tool' ? 'Ferramenta' : 'Item'); motivo = 'Sem uso em batalha'; }
+        if (!it.usavel) { destaque = (typeof it.efeito === 'string' && it.efeito) || (it.type === 'tool' ? 'Ferramenta' : 'Item'); motivo = 'Sem uso em batalha'; }
         else if (ehAtaque) { destaque = `💥 ${previaAtaque(me, it, 1, 0).dano}${numero(it.multiplicador_maximo) > 1 ? ` ×até ${numero(it.multiplicador_maximo)}` : ''}`; motivo = semAcoes ? 'Sem ações' : (semAtaque ? 'Já atacou neste turno' : (me.stamina < c.stamina ? 'Sem stamina' : '')); }
-        else { destaque = [numero(it.bonus_hp) && `+${numero(it.bonus_hp)} Vida`, numero(it.bonus_chakra) && `+${numero(it.bonus_chakra)} Chakra`, numero(it.bonus_stamina) && `+${numero(it.bonus_stamina)} Stamina`].filter(Boolean).join(', '); motivo = semAcoes ? 'Sem ações' : ''; }
+        else { const vida = numero(it.cura) || numero(it.bonus_hp), ck = numero(it.recupera_chakra) || numero(it.bonus_chakra), sp = numero(it.recupera_stamina) || numero(it.bonus_stamina); destaque = [vida && `+${vida} Vida`, ck && `+${ck} Chakra`, sp && `+${sp} Stamina`].filter(Boolean).join(', '); motivo = semAcoes ? 'Sem ações' : ''; }
         return `<button class="arena-carta ${it.usavel ? (ehAtaque ? 'ataque' : 'item') : 'inativa'}" ${motivo ? 'disabled' : ''} onclick="window.arenaUsarItem('${esc(it.id)}')">
             ${imgCarta(it.imagem, ehAtaque ? 'ataque' : 'item')}<span class="carta-usos" title="Quantidade no inventário">x${it.qtd}</span><strong>${esc(it.nome)}</strong><span class="carta-tag">${esc(destaque)}</span>
             <span class="carta-info">${it.usavel ? (it.recuperavel ? 'Recuperável' : 'Gasta ao usar') + (c.stamina ? ` · ${c.stamina} SP` : '') : ''}</span>${motivo ? `<span class="carta-motivo">${esc(motivo)}</span>` : ''}</button>`;
@@ -1881,7 +1890,7 @@ function htmlReacao(e, me) {
         }
         arena.jutsus.forEach((j, i) => {
             const f = funcaoDoJutsu(j);
-            if (f !== 'esquiva' && f !== 'defesa') return;
+            if ((f !== 'esquiva' && f !== 'defesa') || !usoNaArena(j)) return;
             const c = custosDoJutsu(j);
             const semRecurso = me.chakra < c.chakra || me.stamina < c.stamina;
             if (f === 'esquiva') {
@@ -3666,6 +3675,7 @@ window.abrirModalCriacao = () => {
                 <div class="form-checks">
                     <label><input type="checkbox" id="cre-imp-esquiva"> Impossível esquivar (ex.: Amaterasu)</label>
                     <label><input type="checkbox" id="cre-imp-defender"> Impossível defender fisicamente</label>
+                    <label><input type="checkbox" id="cre-sem-arena"> Sem uso na arena (utilitário, ex.: Transformação)</label>
                 </div>
             </div>
         `;
@@ -3812,6 +3822,7 @@ document.getElementById('form-criacao-geral').onsubmit = async (e) => {
             campoNum('cre-manutencao', 'custo_por_turno');
             dados.impossivel_esquivar = !!document.getElementById('cre-imp-esquiva')?.checked;
             dados.impossivel_defender_fisico = !!document.getElementById('cre-imp-defender')?.checked;
+            if (document.getElementById('cre-sem-arena')?.checked) dados.uso_arena = false;
         }
     }
 
