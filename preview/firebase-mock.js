@@ -27,32 +27,34 @@ const DB = {
     users: {
         u1: {
             nome: "Kenji Uzumaki", apelido: "Clã Uzumaki", avatar: avatar("K", "#f97316", "#9a3412"),
-            nivel: 4, xp: 820, ryos: 15400, essencia_ninja: 120, cargo: "Chunin", patente: "Chunin", rank: "B", speed_rank: 7, tipo: "Ninjutsu",
+            nivel: 4, xp: 820, ryos: 15400, essencia_ninja: 120, cargo: "Chunin", patente: "Chunin", rank: "B", speed_rank: 7, reacao: 6, tipo: "Ninjutsu",
             vida: 140, max_vida: 180, sanidade: 90, max_sanidade: 100, chakra: 210, max_chakra: 260, stamina: 95, max_stamina: 150, controle_chakra: "Médio",
             forca: 14, defesa: 12, constituicao: 15, destreza: 13, intelecto: 11, agilidade: 16, velocidade: 15,
             vitorias: 12, derrotas: 3, empates: 1, elementos: ["vento", "agua"], kekkei_genkai: [], bijuus: [],
-            meusJutsus: ["rasengan", "kage_bunshin"], maestrias: { rasengan: 3, kage_bunshin: 5 },
-            inventario: { kunai: 8, ramen_ichiraku: 2, pilula_soldado: 3 },
+            meusJutsus: ["rasengan", "kage_bunshin", "kawarimi", "goukakyuu", "parede_agua", "modo_sabio"], maestrias: { rasengan: 3, kage_bunshin: 5 },
+            inventario: { kunai: 8, shuriken: 6, ramen_ichiraku: 2, pilula_soldado: 3 },
             statusMissoes: { escolta_tazuna: "aprovado", resgatar_gato: "em_andamento" }, statusConquistas: { primeiro_sangue: "concluido" },
             isOnline: true, cenarioAtual: "vila_folha", salario: 500, postsSalvos: ["p3"],
             historiaTexto: "Nascido na noite em que a lua ficou vermelha, Kenji cresceu ouvindo histórias sobre o clã Uzumaki e seus selamentos lendários.\n\nHoje, como Chunin da Vila da Folha, ele busca dominar o Rasengan e descobrir o que aconteceu com sua família.",
             pontos_rankeada: 340, missoes_concluidas_d: 9, missoes_concluidas_c: 4, missoes_concluidas_b: 1
         },
-        u2: { nome: "Aiko Hyuga", apelido: "Clã Hyuga", avatar: avatar("A", "#8b5cf6", "#3b0764"), nivel: 5, xp: 300, ryos: 22100, essencia_ninja: 40, isOnline: true, vitorias: 18, pontos_rankeada: 410, missoes_concluidas_d: 12, kekkei_genkai: ["byakugan"], cenarioAtual: "vila_folha" },
+        u2: { nome: "Aiko Hyuga", apelido: "Clã Hyuga", avatar: avatar("A", "#8b5cf6", "#3b0764"), nivel: 5, xp: 300, forca: 13, defesa: 12, intelecto: 12, destreza: 12, agilidade: 14, speed_rank: 6, reacao: 7, max_vida: 160, max_chakra: 180, max_stamina: 120, ryos: 22100, essencia_ninja: 40, isOnline: true, vitorias: 18, pontos_rankeada: 410, missoes_concluidas_d: 12, kekkei_genkai: ["byakugan"], cenarioAtual: "vila_folha" },
         u3: { nome: "Ryo Uchiha", apelido: "Clã Uchiha", avatar: avatar("R", "#dc2626", "#450a0a"), nivel: 6, xp: 900, ryos: 9800, essencia_ninja: 210, isOnline: false, vitorias: 25, pontos_rankeada: 520, missoes_concluidas_b: 4 },
         u4: { nome: "Mei Sabaku", apelido: "Vila da Areia", avatar: avatar("M", "#d97706", "#78350f"), nivel: 3, xp: 120, ryos: 6400, essencia_ninja: 15, isOnline: true, vitorias: 6, pontos_rankeada: 150 },
         u5: { nome: "Takeshi Nara", apelido: "Clã Nara", avatar: avatar("T", "#15803d", "#14532d"), nivel: 4, xp: 450, ryos: 13200, essencia_ninja: 60, isOnline: false, vitorias: 9, pontos_rankeada: 260, missoes_concluidas_c: 7 }
     },
     jutsus: {
-        rasengan: { nome: "Rasengan", rank: "A", preco: 12000, requisito: 3, dano: "3d8+4", chakra: "40", stamina: "", funcao: "ataque", categoria: "ninjutsu", imagem: img("Rasengan", "#0ea5e9", "#1e3a8a", "🌀"), descricao: "Uma esfera de chakra girando em alta velocidade." },
-        kage_bunshin: { nome: "Kage Bunshin", rank: "B", preco: 6000, requisito: 1, dano: "", chakra: "25", funcao: "suporte", categoria: "ninjutsu", imagem: img("Kage Bunshin", "#f97316", "#7c2d12", "👥"), descricao: "Cria clones sólidos do usuário." },
+        rasengan: { nome: "Rasengan", rank: "A", preco: 12000, requisito: 3, poder: 38, chakra: "35", stamina: "", funcao: "ataque", categoria: "ninjutsu", reacao_necessaria: 6, velocidade_necessaria: 7, imagem: img("Rasengan", "#0ea5e9", "#1e3a8a", "🌀"), descricao: "Uma esfera de chakra girando em alta velocidade." },
+        kage_bunshin: { nome: "Kage Bunshin", rank: "B", preco: 6000, requisito: 1, chakra: "40", funcao: "suporte", categoria: "ninjutsu", clones: 2, imagem: img("Kage Bunshin", "#f97316", "#7c2d12", "👥"), descricao: "Cria clones sólidos do usuário." },
+        parede_agua: { nome: "Suiton: Parede de Água", rank: "C", preco: 3000, requisito: 2, poder: 28, chakra: "18", funcao: "defesa", categoria: "ninjutsu", imagem: img("Parede de Água", "#0ea5e9", "#164e63", "🌊"), descricao: "Uma muralha de água bloqueia o golpe." },
+        modo_sabio: { nome: "Modo Sábio", rank: "S", preco: 40000, requisito: 4, chakra: "30", custo_por_turno: 8, funcao: "modo", categoria: "senjutsu", bonus: { ataque: 10, reacao: 2, velocidade: 1 }, imagem: img("Modo Sábio", "#f97316", "#713f12", "🐸"), descricao: "Energia natural aumenta força, percepção e velocidade." },
         chidori: { nome: "Chidori", rank: "A", preco: 14000, requisito: 5, dano: "3d10", chakra: "45", funcao: "ataque", categoria: "ninjutsu", imagem: img("Chidori", "#60a5fa", "#1e1b4b", "⚡"), descricao: "Chakra de raio concentrado na mão." },
-        goukakyuu: { nome: "Katon: Goukakyuu", rank: "C", preco: 3500, preco_promocional: 2800, requisito: 2, dano: "2d6+2", chakra: "20", funcao: "ataque", categoria: "ninjutsu", imagem: img("Goukakyuu", "#ef4444", "#7f1d1d", "🔥"), descricao: "Uma grande bola de fogo." },
-        kawarimi: { nome: "Kawarimi", rank: "E", preco: 500, requisito: 1, dano: "d6", chakra: "5", funcao: "esquiva", categoria: "ninjutsu", imagem: img("Kawarimi", "#a3a3a3", "#404040", "🪵"), descricao: "Troca de lugar com um objeto." }
+        goukakyuu: { nome: "Katon: Goukakyuu", rank: "C", preco: 3500, preco_promocional: 2800, requisito: 2, poder: 26, chakra: "20", funcao: "ataque", categoria: "ninjutsu", reacao_necessaria: 4, velocidade_necessaria: 6, imagem: img("Goukakyuu", "#ef4444", "#7f1d1d", "🔥"), descricao: "Uma grande bola de fogo." },
+        kawarimi: { nome: "Kawarimi", rank: "E", preco: 500, requisito: 1, poder: 2, chakra: "8", funcao: "esquiva", categoria: "ninjutsu", imagem: img("Kawarimi", "#a3a3a3", "#404040", "🪵"), descricao: "Troca de lugar com um objeto." }
     },
     ferramentas: {
-        kunai: { nome: "Kunai", preco: 100, dano: "d4", stamina: 2, imagem: img("Kunai", "#64748b", "#1e293b", "🗡️"), descricao: "Lâmina ninja básica." },
-        shuriken: { nome: "Shuriken", preco: 80, dano: "d4", stamina: 1, imagem: img("Shuriken", "#475569", "#0f172a", "✴️"), descricao: "Estrela de arremesso." },
+        kunai: { nome: "Kunai", preco: 100, poder: 6, stamina: 2, multiplicador_maximo: 2, imagem: img("Kunai", "#64748b", "#1e293b", "🗡️"), descricao: "Lâmina ninja básica." },
+        shuriken: { nome: "Shuriken", preco: 80, poder: 4, stamina: 1, multiplicador_maximo: 3, imagem: img("Shuriken", "#475569", "#0f172a", "✴️"), descricao: "Estrela de arremesso." },
         kibaku: { nome: "Selo Explosivo", preco: 450, dano: "2d6", stamina: 3, requisito: 2, imagem: img("Selo Explosivo", "#b45309", "#451a03", "📜"), descricao: "Pergaminho que explode." }
     },
     itens: {
@@ -239,6 +241,18 @@ export const writeBatch = () => {
         delete: (ref) => ops.push(() => deleteDoc(ref)),
         commit: async () => { for (const op of ops) await op(); }
     };
+};
+export const runTransaction = async (db, fn) => {
+    const ops = [];
+    const tx = {
+        get: (ref) => getDoc(ref),
+        update: (ref, data) => { ops.push(() => updateDoc(ref, data)); return tx; },
+        set: (ref, data, o) => { ops.push(() => setDoc(ref, data, o)); return tx; },
+        delete: (ref) => { ops.push(() => deleteDoc(ref)); return tx; }
+    };
+    const r = await fn(tx);
+    for (const op of ops) await op();
+    return r;
 };
 export const onSnapshot = (target, cb) => {
     const fire = () => cb(target.kind === 'doc' ? docSnap(target.col, target.id) : runQuery(target));

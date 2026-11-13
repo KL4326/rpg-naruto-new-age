@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, deleteField, addDoc, serverTimestamp, query, orderBy, onSnapshot, where, writeBatch, limit, startAfter } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, deleteField, addDoc, serverTimestamp, query, orderBy, onSnapshot, where, writeBatch, limit, startAfter, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { ARENA, aplicarAcao, criarEstadoInicial, outro, previaAtaque, avaliarReacao, resultadoEsquiva, alguemAusente, funcaoDoJutsu, poderDoJutsu, necessidadesDoJutsu, custosDoJutsu, bonusDoJutsu, nomeBonus, xpApostavel } from "./arena-regras.js";
 
 // --- CONFIGURAÇÃO FIREBASE ---
 const firebaseConfig = { apiKey: "AIzaSyC3HOor32_p5Z-iADm0VgZ279rt1kj8ICg", authDomain: "rpg-naruto-5150a.firebaseapp.com", projectId: "rpg-naruto-5150a", storageBucket: "rpg-naruto-5150a.firebasestorage.app", messagingSenderId: "1007094335306", appId: "1:1007094335306:web:ac96fa96f9494f90fd63b3" };
@@ -426,6 +427,7 @@ window.showTab = (t, opcoes = {}) => {
             if(t === 'feed') window.renderFeed(filtroFeedAtual);
             if(t === 'personagens') carregarPersonagens();
             if(t === 'mapa') window.carregarMapa();
+            if(t === 'batalha') window.carregarLobbyArena();
             if(t === 'frases') carregarFrases();
             if(t === 'inventario') carregarInventario();
             if(t === 'loja') carregarLojaItens();
@@ -827,7 +829,7 @@ function atualizarInterface(dados) {
     renderizarIcones(dados.bijuus || [], 'dash-bijuu', BIJUU_ICONS, 'Bijuu');
     const set = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
     set('dash-nivel', nivel); set('dash-cargo', dados.cargo||"Genin"); set('dash-patente', dados.patente||"Genin"); 
-    set('dash-rank', dados.rank||"E"); set('dash-speed-rank', dados.speed_rank ?? 1); set('dash-tipo', dados.tipo||"Normal"); 
+    set('dash-rank', dados.rank||"E"); set('dash-speed-rank', dados.speed_rank ?? 1); set('dash-reacao', dados.reacao ?? 1); set('dash-tipo', dados.tipo||"Normal"); 
     set('dash-ryos', formatarNum(dados.ryos));
     set('dash-jutsus', (dados.meusJutsus || []).length); 
     let totalItems = 0, totalTools = 0;
@@ -1295,786 +1297,727 @@ async function carregarPersonagens() {
 }
 
 
-// --- SISTEMA DE DESAFIOS (MATCHMAKING) ---
+// =====================================================================
+//  ARENA v2 — desafios, batalha por turnos e resultado
+//  As regras ficam em arena-regras.js; aqui fica a tela e o banco.
+// =====================================================================
 
-// 1. Envia o convite para o Firebase
-window.enviarDesafio = async (alvoId, alvoNome) => {
-    if (!confirm(`Deseja desafiar ${alvoNome} para um duelo?`)) return;
+const NOMES_MODO = { amistoso: 'Amistoso', rankeada: 'Rankeada', competitivo: 'Competitivo' };
+const NOMES_MOEDA = { ryos: 'Ryos', essencia_ninja: 'EN', xp: 'XP' };
+const arena = {
+    id: null, dados: null, unsub: null, tick: null, batida: null,
+    jutsus: [], offset: 0, ultimoTempoEsgotado: 0, ultimaPresenca: 0,
+    enviando: false, posLutaFeito: {}, ataqueEmConfig: null
+};
+const agoraArena = () => Date.now() + arena.offset;
+const minhaUid = () => auth.currentUser && auth.currentUser.uid;
+const descricaoAposta = (d) => d && d.modo === 'competitivo' && d.aposta ? `${formatarNum(d.aposta.valor)} ${NOMES_MOEDA[d.aposta.moeda] || ''}` : '';
+const batalhaAtiva = (d) => d && d.status === 'aceito' && d.estado && d.estado.status === 'em_andamento';
+const ehLegado = (d) => d && d.status === 'aceito' && !d.estado;
 
+// ---------------- 1. Criar desafio (escolha do modo) ----------------
+let alvoDesafio = null;
+window.enviarDesafio = (alvoId, alvoNome) => {
+    if (!auth.currentUser) return;
+    if (alvoId === minhaUid()) return alert("Você não pode desafiar a si mesmo!");
+    alvoDesafio = { id: alvoId, nome: alvoNome };
+    document.getElementById('novo-desafio-alvo').innerText = alvoNome;
+    document.querySelector('input[name="modo-desafio"][value="amistoso"]').checked = true;
+    document.getElementById('desafio-valor').value = '';
+    window.atualizarFormDesafio();
+    document.getElementById('modal-novo-desafio').style.display = 'flex';
+};
+window.atualizarFormDesafio = () => {
+    const modo = document.querySelector('input[name="modo-desafio"]:checked').value;
+    document.getElementById('desafio-competitivo').style.display = modo === 'competitivo' ? 'block' : 'none';
+    const moeda = document.getElementById('desafio-moeda').value;
+    const saldo = moeda === 'xp' ? xpApostavel(currentUserData.xp) : (currentUserData[moeda] || 0);
+    document.getElementById('desafio-saldo').innerText = moeda === 'xp'
+        ? `Você pode apostar até ${formatarNum(saldo)} XP (precisa sobrar ${ARENA.xpMinimoNaBarra} XP na barra do nível).`
+        : `Seu saldo: ${formatarNum(saldo)} ${NOMES_MOEDA[moeda]}.`;
+};
+window.confirmarNovoDesafio = async () => {
+    const modo = document.querySelector('input[name="modo-desafio"]:checked').value;
+    const eu = minhaUid();
+    let aposta = null;
+    if (modo === 'competitivo') {
+        const moeda = document.getElementById('desafio-moeda').value;
+        const valor = Math.floor(Number(document.getElementById('desafio-valor').value));
+        const limite = moeda === 'xp' ? xpApostavel(currentUserData.xp) : (currentUserData[moeda] || 0);
+        if (!valor || valor < 1) return alert("Informe quanto vale a luta.");
+        if (valor > limite) return alert(`Você só pode apostar até ${formatarNum(limite)} ${NOMES_MOEDA[moeda]}.`);
+        aposta = { moeda, valor };
+    }
+    const btn = document.getElementById('btn-confirmar-desafio');
+    btn.disabled = true;
     try {
-        const meuNome = currentUserData?.nome || currentUserData?.apelido || "Ninja";
-        
-        // Cria um documento e GUARDA a referência dele
-        const conviteRef = await addDoc(collection(db, "desafios_batalha"), {
-            desafianteId: auth.currentUser.uid,
-            desafianteNome: meuNome,
-            desafiadoId: alvoId,
-            desafiadoNome: alvoNome,
-            status: 'pendente',
-            timestamp: serverTimestamp()
-        });
-        
-        alert(`Pergaminho de desafio enviado para ${alvoNome}! Aguardando resposta...`);
-        
-        // --- A MÁGICA AQUI: Passamos o ID exato do novo convite para o Radar ---
-        window.escutarRespostaDesafio(conviteRef.id); 
+        // Um ninja só luta uma batalha por vez
+        const minhas = await listarMinhasBatalhas();
+        if (minhas.some(b => batalhaAtiva(b.dados))) { alert("Você já tem uma batalha em andamento. Termine-a antes de desafiar alguém."); return; }
+
+        const ref = doc(collection(db, "desafios_batalha"));
+        const dados = {
+            desafianteId: eu, desafianteNome: currentUserData.nome || currentUserData.apelido || "Ninja",
+            desafiadoId: alvoDesafio.id, desafiadoNome: alvoDesafio.nome,
+            status: 'pendente', modo, aposta, cofre: {}, criadoEm: Date.now(), timestamp: serverTimestamp()
+        };
+        if (aposta) {
+            // A parte de quem desafia já vai para o cofre da luta
+            dados.cofre = { [eu]: aposta.valor };
+            const lote = writeBatch(db);
+            lote.set(ref, dados);
+            lote.update(doc(db, "users", eu), { [aposta.moeda]: increment(-aposta.valor), ultimoCofre: ref.id });
+            await lote.commit();
+        } else {
+            await setDoc(ref, dados);
+        }
+        document.getElementById('modal-novo-desafio').style.display = 'none';
+        alert(`Pergaminho de desafio enviado para ${alvoDesafio.nome}! Aguardando resposta...`);
+        escutarMeuConvite(ref.id);
     } catch (e) {
         console.error("Erro ao enviar desafio", e);
         alert("O chakra falhou ao enviar o convite.");
-    }
+    } finally { btn.disabled = false; }
 };
 
-// 2. Escuta APENAS o convite específico que você acabou de enviar
-let unsubscribeRespostaDesafio = null;
-window.escutarRespostaDesafio = (conviteId) => {
-    if (unsubscribeRespostaDesafio) unsubscribeRespostaDesafio();
-    
-    unsubscribeRespostaDesafio = onSnapshot(doc(db, "desafios_batalha", conviteId), (docSnap) => {
-        if (docSnap.exists()) {
-            const resp = docSnap.data();
-            
-            if (resp.status === 'aceito') {
-                window.currentBattleId = docSnap.id;
-                // SALVA NA MEMÓRIA:
-                localStorage.setItem('rpg_battle_id', docSnap.id);
-                localStorage.setItem('rpg_inimigo_id', resp.desafiadoId);
-                
-                alert(`⚔️ ${resp.desafiadoNome} aceitou o desafio! A batalha vai começar!`);
-                window.showTab('batalha'); 
-                window.carregarArena(resp.desafiadoId); 
-                
-                unsubscribeRespostaDesafio(); 
-                
-            } else if (resp.status === 'recusado') {
-                alert(`❌ ${resp.desafiadoNome} recusou o seu desafio ou fugiu da luta...`);
-                unsubscribeRespostaDesafio(); 
-                deleteDoc(doc(db, "desafios_batalha", docSnap.id)).catch(e => console.log(e)); 
-            }
+// Quem desafiou acompanha a resposta do convite
+let unsubMeuConvite = null;
+function escutarMeuConvite(id) {
+    if (unsubMeuConvite) unsubMeuConvite();
+    unsubMeuConvite = onSnapshot(doc(db, "desafios_batalha", id), (s) => {
+        if (!s.exists()) return;
+        const d = s.data();
+        if (d.status === 'aceito' && d.estado) {
+            unsubMeuConvite(); unsubMeuConvite = null;
+            alert(`⚔️ ${d.desafiadoNome} aceitou o desafio! A batalha vai começar!`);
+            window.abrirBatalha(id);
+        } else if (d.status === 'recusado') {
+            unsubMeuConvite(); unsubMeuConvite = null;
+            alert(`❌ ${d.desafiadoNome} recusou o seu desafio.`);
+            devolverMeuCofre(id, d);
         }
     });
-};
+}
 
-// 3. Responde a um convite recebido
-window.responderDesafio = async (conviteId, resposta) => {
-    try {
-        await updateDoc(doc(db, "desafios_batalha", conviteId), { status: resposta });
-        
-        if (resposta === 'aceito') {
-            window.currentBattleId = conviteId; 
-            alert("⚔️ Você aceitou o duelo! Prepare-se!");
-            window.showTab('batalha'); // Teleporta para a Arena
-        }
-    } catch (e) {
-        console.error("Erro ao responder:", e);
-    }
-};
-
-// 4. O Radar: Fica escutando se alguém te desafia enquanto você está online
+// ---------------- 2. Receber convites ----------------
 window.escutarDesafiosRecebidos = () => {
     if (!auth.currentUser) return;
-    
-    const q = query(
-        collection(db, "desafios_batalha"), 
-        where("desafiadoId", "==", auth.currentUser.uid),
-        where("status", "==", "pendente")
-    );
-    
+    const q = query(collection(db, "desafios_batalha"), where("desafiadoId", "==", minhaUid()), where("status", "==", "pendente"));
     onSnapshot(q, (snapshot) => {
         snapshot.docChanges().forEach((change) => {
-            if (change.type === "added") {
-                const convite = change.doc.data();
-                const conviteId = change.doc.id;
-                
-                // Configura o texto do modal
-                document.getElementById('texto-desafio').innerHTML = `<strong>${esc(convite.desafianteNome)}</strong> quer te enfrentar em um duelo.<br><br>Você está pronto para a batalha?`;
-                
-                // Exibe o modal na tela do jogador
-                document.getElementById('modal-desafio').style.display = 'flex';
-                
-                // Se ele clicar em Aceitar
-                document.getElementById('btn-aceitar-desafio').onclick = () => {
-                    document.getElementById('modal-desafio').style.display = 'none';
-                    window.responderDesafio(conviteId, 'aceito');
-                    
-                    window.currentBattleId = conviteId;
-                    // SALVA NA MEMÓRIA:
-                    localStorage.setItem('rpg_battle_id', conviteId);
-                    localStorage.setItem('rpg_inimigo_id', convite.desafianteId);
-                    
-                    window.showTab('batalha'); 
-                    window.carregarArena(convite.desafianteId); 
-                };
-                
-                // Se ele clicar em Recusar
-                document.getElementById('btn-recusar-desafio').onclick = () => {
-                    document.getElementById('modal-desafio').style.display = 'none';
-                    window.responderDesafio(conviteId, 'recusado');
-                };
-            }
+            if (change.type !== "added") return;
+            mostrarConvite(change.doc.id, change.doc.data());
         });
     });
 };
+function mostrarConvite(id, convite) {
+    const modo = convite.modo || 'amistoso';
+    let texto = `<strong>${esc(convite.desafianteNome)}</strong> quer te enfrentar em um duelo <strong>${NOMES_MODO[modo]}</strong>.`;
+    let podeAceitar = true;
+    if (modo === 'rankeada') texto += `<br><small>Vale pontos de Rankeada (+${ARENA.pontosVitoria} para quem vencer, −${ARENA.pontosDerrota} para quem perder).</small>`;
+    if (modo === 'competitivo' && convite.aposta) {
+        const { moeda, valor } = convite.aposta;
+        const limite = moeda === 'xp' ? xpApostavel(currentUserData?.xp) : (currentUserData?.[moeda] || 0);
+        texto += `<br><br>💰 Valendo <strong>${formatarNum(valor)} ${NOMES_MOEDA[moeda]}</strong> de cada um. Quem vencer leva <strong>${formatarNum(valor * 2)}</strong>.`;
+        if (limite < valor) { podeAceitar = false; texto += `<br><span style="color:var(--danger);">Você não tem saldo suficiente para aceitar.</span>`; }
+    }
+    texto += '<br><br>Você está pronto para a batalha?';
+    document.getElementById('texto-desafio').innerHTML = texto;
+    document.getElementById('modal-desafio').style.display = 'flex';
+    const btnAceitar = document.getElementById('btn-aceitar-desafio');
+    btnAceitar.style.display = podeAceitar ? '' : 'none';
+    btnAceitar.onclick = async () => {
+        btnAceitar.disabled = true;
+        try { await aceitarDesafio(id); document.getElementById('modal-desafio').style.display = 'none'; }
+        catch (e) { console.error(e); alert(e.message || "Não foi possível aceitar o desafio."); }
+        finally { btnAceitar.disabled = false; }
+    };
+    document.getElementById('btn-recusar-desafio').onclick = async () => {
+        document.getElementById('modal-desafio').style.display = 'none';
+        try { await updateDoc(doc(db, "desafios_batalha", id), { status: 'recusado' }); } catch (e) { console.error(e); }
+    };
+}
 
+async function aceitarDesafio(id) {
+    const eu = minhaUid();
+    const minhas = await listarMinhasBatalhas();
+    if (minhas.some(b => batalhaAtiva(b.dados))) throw new Error("Você já tem uma batalha em andamento. Termine-a antes de aceitar outra.");
+    const ref = doc(db, "desafios_batalha", id);
+    const snap = await getDoc(ref);
+    if (!snap.exists() || snap.data().status !== 'pendente') throw new Error("Esse desafio não está mais disponível.");
+    const d = snap.data();
+    const fichaDesafiante = (await getDoc(doc(db, "users", d.desafianteId))).data() || {};
+    const minhaFicha = (await getDoc(doc(db, "users", eu))).data() || {};
+    const { estado, eventos } = criarEstadoInicial(fichaDesafiante, d.desafianteId, minhaFicha, eu, agoraArena());
+    const atualizacao = {
+        status: 'aceito', estado, iniciadaEm: Date.now(), atualizadoEm: serverTimestamp(),
+        historico: eventos.map(e => ({ ...e, t: Date.now() }))
+    };
+    if (d.modo === 'competitivo' && d.aposta) {
+        const { moeda, valor } = d.aposta;
+        const limite = moeda === 'xp' ? xpApostavel(minhaFicha.xp) : (minhaFicha[moeda] || 0);
+        if (limite < valor) throw new Error("Saldo insuficiente para aceitar este desafio.");
+        // A parte de quem aceita também vai para o cofre
+        atualizacao[`cofre.${eu}`] = valor;
+        const lote = writeBatch(db);
+        lote.update(ref, atualizacao);
+        lote.update(doc(db, "users", eu), { [moeda]: increment(-valor), ultimoCofre: id });
+        await lote.commit();
+    } else {
+        await updateDoc(ref, atualizacao);
+    }
+    window.abrirBatalha(id);
+}
 
-// --- FASE 2: VISUAL DA ARENA (HUD) ---
+// ---------------- 3. Lobby: minhas batalhas e convites ----------------
+async function listarMinhasBatalhas() {
+    const eu = minhaUid();
+    const [a, b] = await Promise.all([
+        getDocs(query(collection(db, "desafios_batalha"), where("desafianteId", "==", eu))),
+        getDocs(query(collection(db, "desafios_batalha"), where("desafiadoId", "==", eu)))
+    ]);
+    return [...a.docs, ...b.docs].map(s => ({ id: s.id, dados: s.data() }));
+}
 
-// Função auxiliar para calcular e pintar a porcentagem das barras
-window.atualizarBarraArena = (alvo, tipo, atual, max) => {
-    // Garante que não haverá divisão por zero
-    const maxVal = max > 0 ? max : 1; 
-    const porcentagem = Math.max(0, Math.min(100, (atual / maxVal) * 100));
-    
-    document.getElementById(`arena-${alvo}-${tipo}-txt`).innerText = `${atual}/${max}`;
-    document.getElementById(`arena-${alvo}-${tipo}-bar`).style.width = `${porcentagem}%`;
+window.carregarLobbyArena = async () => {
+    const lista = document.getElementById('arena-lobby-lista');
+    if (!lista || !auth.currentUser) return;
+    if (arena.id) return; // já está numa luta aberta
+    lista.innerHTML = '<p class="arena-lobby-vazio">Procurando batalhas...</p>';
+    try {
+        const eu = minhaUid();
+        const todas = await listarMinhasBatalhas();
+        // Pendências de cofre (convites recusados/cancelados, lutas terminadas)
+        for (const b of todas) {
+            if (['recusado', 'cancelado', 'anulada'].includes(b.dados.status)) devolverMeuCofre(b.id, b.dados);
+            if (b.dados.status === 'finalizada' || b.dados.estado?.status === 'finalizada') posLuta(b.id, b.dados);
+        }
+        const ativas = todas.filter(b => batalhaAtiva(b.dados));
+        const enviados = todas.filter(b => b.dados.status === 'pendente' && b.dados.desafianteId === eu);
+        const legado = todas.filter(b => ehLegado(b.dados));
+        lista.innerHTML = '';
+        if (!ativas.length && !enviados.length && !legado.length) {
+            lista.innerHTML = '<p class="arena-lobby-vazio">Nenhuma batalha em andamento. Desafie um ninja na aba <strong>Personagens</strong>!</p>';
+        }
+        ativas.forEach(b => {
+            const adv = b.dados.desafianteId === eu ? b.dados.desafiadoNome : b.dados.desafianteNome;
+            const minhaVez = b.dados.estado.vez === eu;
+            lista.appendChild(itemLobby(`⚔️ Batalha contra <strong>${esc(adv)}</strong>`, `${NOMES_MODO[b.dados.modo || 'amistoso']}${descricaoAposta(b.dados) ? ' · ' + descricaoAposta(b.dados) : ''} · Turno ${b.dados.estado.turno}${minhaVez ? ' · <strong>sua vez</strong>' : ''}`,
+                'Continuar', () => window.abrirBatalha(b.id)));
+        });
+        enviados.forEach(b => lista.appendChild(itemLobby(`📜 Convite para <strong>${esc(b.dados.desafiadoNome)}</strong>`, `${NOMES_MODO[b.dados.modo || 'amistoso']}${descricaoAposta(b.dados) ? ' · ' + descricaoAposta(b.dados) : ''} · aguardando resposta`,
+            'Cancelar', async () => {
+                if (!confirm("Cancelar este convite?")) return;
+                await updateDoc(doc(db, "desafios_batalha", b.id), { status: 'cancelado' });
+                await devolverMeuCofre(b.id, { ...b.dados, status: 'cancelado' });
+                window.carregarLobbyArena();
+            }, true)));
+        legado.forEach(b => lista.appendChild(itemLobby(`🕰️ Batalha do sistema antigo`, 'Essa luta foi criada antes da nova arena e não pode ser continuada.',
+            'Encerrar', async () => { await updateDoc(doc(db, "desafios_batalha", b.id), { status: 'cancelado' }); window.carregarLobbyArena(); }, true)));
+        atualizarIndicadorArena(ativas.length > 0);
+        if (enviados.length) escutarMeuConvite(enviados[0].id);
+    } catch (e) {
+        console.error(e);
+        lista.innerHTML = '<p class="arena-lobby-vazio">Não foi possível carregar suas batalhas.</p>';
+    }
+};
+function itemLobby(titulo, sub, rotulo, acao, secundario = false) {
+    const div = document.createElement('div');
+    div.className = 'arena-lobby-item';
+    div.innerHTML = `<div><div class="arena-lobby-titulo">${titulo}</div><div class="arena-lobby-sub">${sub}</div></div>`;
+    const b = document.createElement('button');
+    b.className = secundario ? 'btn-arena-sec' : 'btn-post';
+    b.textContent = rotulo;
+    b.onclick = acao;
+    div.appendChild(b);
+    return div;
+}
+function atualizarIndicadorArena(ativa) {
+    document.querySelectorAll('#side-btn-batalha, #bottom-btn-batalha').forEach(b => b.classList.toggle('luta-ativa', !!ativa));
+}
+// Ao entrar no site: avisa se há batalha em andamento (o botão da Arena fica pulsando)
+window.verificarBatalhaAtiva = async () => {
+    try {
+        const todas = await listarMinhasBatalhas();
+        atualizarIndicadorArena(todas.some(b => batalhaAtiva(b.dados)));
+        for (const b of todas) {
+            if (['recusado', 'cancelado', 'anulada'].includes(b.dados.status)) devolverMeuCofre(b.id, b.dados);
+            if (b.dados.status === 'finalizada' || b.dados.estado?.status === 'finalizada') posLuta(b.id, b.dados);
+            if (b.dados.status === 'pendente' && b.dados.desafianteId === minhaUid()) escutarMeuConvite(b.id);
+        }
+    } catch (e) { console.error("Erro ao verificar batalhas:", e); }
 };
 
-// Carrega os combatentes para dentro do ringue
-window.carregarArena = async (inimigoId) => {
-    window.efeitosAtivos = []; // <--- Inicia a mochila vazia!
-    
-    // Troca a tela de espera pela Arena
+// ---------------- 4. Abrir a batalha ----------------
+window.abrirBatalha = async (id) => {
+    fecharBatalha(false);
+    arena.id = id;
+    window.showTab('batalha');
     document.getElementById('arena-waiting').style.display = 'none';
     document.getElementById('arena-container').style.display = 'flex';
-    
-    // 1. CARREGA VOCÊ (O Player Local)
-    document.getElementById('arena-player-nome').innerText = currentUserData.nome || currentUserData.apelido || "Você";
-    document.getElementById('arena-player-img').src = currentUserData.avatar || IMG_PADRAO;
-    
-    // Puxa os dados que você me mostrou que já existem no seu banco
-    const meuMaxHp = currentUserData.max_vida ?? 100;
-    const meuMaxCp = currentUserData.max_chakra ?? 100;
-    const meuMaxSp = currentUserData.max_stamina ?? 100;
-    const meuHp = currentUserData.vida ?? meuMaxHp;
-    const meuCp = currentUserData.chakra ?? meuMaxCp;
-    const meuSp = currentUserData.stamina ?? meuMaxSp;
+    document.getElementById('arena-log').innerHTML = '';
+    await carregarJutsusDaArena();
+    // Sinal de presença: enquanto o jogador estiver com a arena aberta e visível
+    const baterPresenca = () => {
+        const naArena = document.getElementById('batalha')?.classList.contains('active') && document.visibilityState === 'visible';
+        if (naArena && arena.dados && batalhaAtiva(arena.dados)) enviarAcao({ tipo: 'presenca' }, true);
+    };
+    arena.unsub = onSnapshot(doc(db, "desafios_batalha", id), (s) => {
+        if (!s.exists()) { fecharBatalha(true); return; }
+        const d = s.data();
+        // Calibra o relógio deste aparelho com o do servidor, usando só a resposta
+        // de uma jogada que ESTE aparelho acabou de gravar (o horário ainda é "fresco")
+        if (!s.metadata?.hasPendingWrites && arena.gravouEm && Date.now() - arena.gravouEm < 3000
+            && d.atualizadoEm && typeof d.atualizadoEm.toMillis === 'function') {
+            arena.offset = d.atualizadoEm.toMillis() - arena.gravouEm;
+            arena.gravouEm = null;
+        }
+        const primeiraVez = !arena.dados;
+        arena.dados = d;
+        renderArena();
+        if (primeiraVez) baterPresenca(); // avisa logo que voltou (retoma a luta se estava pausada)
+        if (d.estado?.status === 'finalizada') posLuta(id, d);
+    });
+    baterPresenca();
+    arena.batida = setInterval(baterPresenca, 10000);
+    arena.tick = setInterval(tickArena, 500);
+};
 
-    window.atualizarBarraArena('player', 'hp', meuHp, meuMaxHp);
-    window.atualizarBarraArena('player', 'cp', meuCp, meuMaxCp);
-    window.atualizarBarraArena('player', 'sp', meuSp, meuMaxSp);
-    
-    // 2. BUSCA O INIMIGO NO FIREBASE
+function fecharBatalha(voltarAoLobby = true) {
+    if (arena.unsub) arena.unsub();
+    clearInterval(arena.tick); clearInterval(arena.batida);
+    Object.assign(arena, { id: null, dados: null, unsub: null, tick: null, batida: null });
+    if (voltarAoLobby) {
+        document.getElementById('arena-waiting').style.display = 'block';
+        document.getElementById('arena-container').style.display = 'none';
+        window.carregarLobbyArena();
+    }
+}
+window.sairDaArena = () => fecharBatalha(true);
+
+async function carregarJutsusDaArena() {
+    const ids = (currentUserData.meusJutsus || []).filter(Boolean);
+    const lista = await Promise.all(ids.map(id => lerDoCatalogo("jutsus", id).catch(() => null)));
+    arena.jutsus = lista.filter(Boolean).map(j => aplicarEscalaPersonalizada(j));
+}
+
+function itensDaArena() {
+    const inv = currentUserData?.inventario || {};
+    const itens = [];
+    for (const [id, qtd] of Object.entries(inv)) {
+        if (!(qtd > 0)) continue;
+        const info = globalItensMap[id];
+        if (!info) continue;
+        if (info.type === 'tool') {
+            if (poderDoJutsu(info) > 0) itens.push({ ...info, id, qtd, tipoItem: 'ferramenta' });
+        } else if (numero(info.bonus_hp) || numero(info.bonus_chakra) || numero(info.bonus_stamina) || numero(info.cura) || numero(info.recupera_chakra)) {
+            itens.push({ ...info, id, qtd, tipoItem: 'item' });
+        }
+    }
+    return itens;
+}
+
+// ---------------- 5. Enviar jogadas (transação no banco) ----------------
+async function enviarAcao(acao, silencioso = false) {
+    if (!arena.id) return false;
+    const ref = doc(db, "desafios_batalha", arena.id);
     try {
-        const inimigoSnap = await getDoc(doc(db, "users", inimigoId));
-        if (inimigoSnap.exists()) {
-            const iniData = inimigoSnap.data();
-            
-            document.getElementById('arena-enemy-nome').innerText = iniData.nome || iniData.apelido || "Inimigo";
-            document.getElementById('arena-enemy-img').src = iniData.avatar || IMG_PADRAO;
-            
-            const iniMaxHp = iniData.max_vida ?? 100;
-            const iniMaxCp = iniData.max_chakra ?? 100;
-            const iniMaxSp = iniData.max_stamina ?? 100;
-            const iniHp = iniData.vida ?? iniMaxHp;
-            const iniCp = iniData.chakra ?? iniMaxCp;
-            const iniSp = iniData.stamina ?? iniMaxSp;
+        await runTransaction(db, async (tx) => {
+            const s = await tx.get(ref);
+            if (!s.exists()) throw new Error("A batalha não existe mais.");
+            const d = s.data();
+            if (!d.estado) throw new Error("Batalha sem estado.");
+            const { estado, eventos } = aplicarAcao(d.estado, minhaUid(), acao, agoraArena());
+            const novos = eventos.map(e => ({ ...e, t: Date.now() }));
+            const upd = { estado, atualizadoEm: serverTimestamp() };
+            if (novos.length) upd.historico = [...(d.historico || []), ...novos].slice(-ARENA.historicoMax);
+            if (estado.status === 'finalizada' && d.status !== 'finalizada') { upd.status = 'finalizada'; upd.finalizadaEm = Date.now(); }
+            tx.update(ref, upd);
+        });
+        arena.gravouEm = Date.now();
+        return true;
+    } catch (e) {
+        if (!silencioso) { console.error(e); alert(e.regra ? e.message : ("Não foi possível realizar a ação. " + (e.message || ""))); }
+        return false;
+    }
+}
 
-            window.atualizarBarraArena('enemy', 'hp', iniHp, iniMaxHp);
-            window.atualizarBarraArena('enemy', 'cp', iniCp, iniMaxCp);
-            window.atualizarBarraArena('enemy', 'sp', iniSp, iniMaxSp);
-            
-            // Registra o início da luta no Log
-            document.getElementById('arena-log').innerHTML = `
-                <div style="color: #94a3b8; text-align: center; margin-bottom: 15px;">--- Batalha Iniciada ---</div>
-                <div style="color: #e67e22; margin-bottom: 5px; font-size: 1.1rem; text-align: center;">⚔️ <strong>${esc(currentUserData.nome)}</strong> VS <strong>${esc(iniData.nome)}</strong> ⚔️</div>
-                <div style="color: #2ecc71;">> Aguardando a primeira ação...</div>
-            `;
-            
-            // ---> LIGA OS CONTROLES AQUI! <---
-            window.carregarControlesBatalha(); 
-            
-            // ---> LIGA O RADAR DE SINCRONIZAÇÃO AQUI! <---
-            window.iniciarRadarDaArena();
+function tickArena() {
+    const d = arena.dados;
+    if (!d || !d.estado) return;
+    const e = d.estado;
+    atualizarCronometro(e);
+    if (e.status !== 'em_andamento') return;
+    const agora = agoraArena();
+    // Tempo esgotado: qualquer um dos dois registra (o motor confere se acabou mesmo)
+    if (!e.pausada && agora > e.prazo + 1500 && Date.now() - arena.ultimoTempoEsgotado > 4000) {
+        arena.ultimoTempoEsgotado = Date.now();
+        enviarAcao({ tipo: 'tempo_esgotado' }, true);
+    }
+    // Verifica pausa/retomada a cada 5 s
+    if (Date.now() - arena.ultimaPresenca > 5000) {
+        arena.ultimaPresenca = Date.now();
+        const naArena = document.getElementById('batalha')?.classList.contains('active') && document.visibilityState === 'visible';
+        const precisaPausar = !e.pausada && alguemAusente(e, agora);
+        const podeRetomar = e.pausada && !alguemAusente(e, agora);
+        if (naArena && (precisaPausar || podeRetomar)) enviarAcao({ tipo: 'presenca' }, true);
+    }
+}
+
+function atualizarCronometro(e) {
+    const barra = document.getElementById('arena-timer-fill');
+    const texto = document.getElementById('arena-timer-txt');
+    if (!barra || !texto) return;
+    if (e.status !== 'em_andamento') { barra.style.width = '0%'; texto.textContent = ''; return; }
+    if (e.pausada) { barra.style.width = '100%'; barra.className = 'arena-timer-fill pausado'; texto.textContent = '⏸️ Pausada'; return; }
+    const total = e.fase === 'reacao' ? ARENA.tempoReacaoMs : ARENA.tempoAcaoMs;
+    const resta = Math.max(0, e.prazo - agoraArena());
+    barra.style.width = (resta / total * 100) + '%';
+    barra.className = 'arena-timer-fill' + (resta < 5000 ? ' urgente' : '');
+    texto.textContent = Math.ceil(resta / 1000) + 's';
+}
+
+// ---------------- 6. Desenhar a arena ----------------
+function barraRecurso(rotulo, atual, max, classe) {
+    const pct = max > 0 ? Math.max(0, Math.min(100, atual / max * 100)) : 0;
+    return `<div class="arena-recurso ${classe}"><div class="arena-recurso-topo"><span>${rotulo}</span><span>${Math.max(0, Math.round(atual))}/${max}</span></div><div class="arena-recurso-barra"><div style="width:${pct}%"></div></div></div>`;
+}
+function cartaoLutador(l, souEu, ehVez) {
+    const efeitos = (l.efeitos || []).map(e => {
+        const b = Object.entries(e.bonus || {}).filter(([, v]) => v).map(([k, v]) => `+${v} ${nomeBonus(k)}`).join(', ');
+        const turnos = e.turnos === null || e.turnos === undefined ? '∞' : e.turnos + 't';
+        const cls = e.tipo === 'sangramento' ? 'efeito-ruim' : (e.tipo === 'modo' ? 'efeito-modo' : '');
+        return `<span class="arena-efeito ${cls}" title="${esc(b || e.nome)}">${esc(e.nome)} · ${turnos}${e.custoPorTurno ? ` · −${e.custoPorTurno}CP` : ''}</span>`;
+    }).join('');
+    const clones = l.clones?.qtd ? `<span class="arena-efeito efeito-clone">👥 ${l.clones.qtd} clone${l.clones.qtd > 1 ? 's' : ''} · ${l.clones.reserva} CP</span>` : '';
+    return `
+        <div class="arena-lutador ${souEu ? 'eu' : 'oponente'} ${ehVez ? 'na-vez' : ''}">
+            <div class="arena-lutador-topo">
+                <img src="${esc(l.avatar || IMG_PADRAO)}" alt="" onerror="this.src='${IMG_PADRAO}'">
+                <div><div class="arena-lutador-nome">${esc(l.nome)}${souEu ? ' <small>(você)</small>' : ''}</div>
+                <div class="arena-lutador-stats">Reação ${l.atributos.reacao} · Velocidade ${l.atributos.velocidade}</div></div>
+            </div>
+            ${barraRecurso('Vida', l.vida, l.maxVida, 'r-vida')}
+            ${barraRecurso('Chakra', l.chakra, l.maxChakra, 'r-chakra')}
+            ${barraRecurso('Stamina', l.stamina, l.maxStamina, 'r-stamina')}
+            <div class="arena-efeitos">${efeitos}${clones}</div>
+        </div>`;
+}
+
+function renderArena() {
+    const d = arena.dados;
+    if (!d || !d.estado) return;
+    const e = d.estado, eu = minhaUid(), adv = outro(e, eu);
+    const L = e.lutadores, me = L[eu], ele = L[adv];
+    if (!me || !ele) return;
+
+    // Topo
+    const modo = d.modo || 'amistoso';
+    document.getElementById('arena-modo').innerHTML = `${NOMES_MODO[modo]}${descricaoAposta(d) ? ` · 💰 ${descricaoAposta(d)} cada` : ''}`;
+    let situacao;
+    if (e.status === 'finalizada') situacao = 'Batalha encerrada';
+    else if (e.pausada) situacao = '⏸️ Pausada — aguardando os dois ninjas na arena';
+    else if (e.fase === 'reacao') situacao = adv === e.vez ? '⚠️ Reaja ao ataque!' : `Aguardando ${esc(ele.nome)} reagir...`;
+    else situacao = e.vez === eu ? '🔥 Sua vez!' : `Vez de ${esc(ele.nome)}...`;
+    document.getElementById('arena-situacao').innerHTML = `Turno ${e.turno} · ${situacao}`;
+
+    // Lutadores
+    document.getElementById('arena-lutadores').innerHTML =
+        cartaoLutador(me, true, e.status === 'em_andamento' && ((e.fase === 'acao' && e.vez === eu) || (e.fase === 'reacao' && e.vez !== eu))) +
+        '<div class="arena-vs">VS</div>' +
+        cartaoLutador(ele, false, e.status === 'em_andamento' && ((e.fase === 'acao' && e.vez === adv) || (e.fase === 'reacao' && e.vez !== adv)));
+
+    // Painel central
+    const painel = document.getElementById('arena-painel');
+    if (e.status === 'finalizada') painel.innerHTML = htmlResultado(d, eu);
+    else if (e.pausada) painel.innerHTML = `<div class="arena-aviso">⏸️ A batalha está pausada porque um dos ninjas saiu da arena. Ela continua de onde parou quando os dois voltarem.</div>`;
+    else if (e.fase === 'reacao' && e.vez === adv) painel.innerHTML = htmlReacao(e, me);
+    else if (e.fase === 'acao' && e.vez === eu) painel.innerHTML = htmlAcoes(e, me);
+    else painel.innerHTML = `<div class="arena-aviso"><i class="fa-solid fa-hourglass-half" aria-hidden="true"></i> ${e.fase === 'reacao' ? `${esc(ele.nome)} está reagindo ao seu ataque...` : `${esc(ele.nome)} está fazendo a jogada dele...`}</div>`;
+
+    // Rodapé
+    const rodape = document.getElementById('arena-rodape');
+    if (e.status === 'finalizada') {
+        rodape.innerHTML = `<button class="btn-post" onclick="window.sairDaArena()"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Voltar ao lobby</button>`;
+    } else {
+        let empate = `<button class="btn-arena-sec" onclick="window.arenaAcao('propor_empate')">🤝 Propor empate</button>`;
+        if (e.propostaEmpate === adv) empate = `<span class="arena-proposta">${esc(ele.nome)} propôs empate:</span><button class="btn-arena-sec" onclick="window.arenaAcao('aceitar_empate')">Aceitar</button><button class="btn-arena-sec" onclick="window.arenaAcao('recusar_empate')">Recusar</button>`;
+        else if (e.propostaEmpate === eu) empate = `<span class="arena-proposta">Empate proposto. Aguardando resposta...</span>`;
+        rodape.innerHTML = `
+            ${e.fase === 'acao' && e.vez === eu && !e.pausada ? `<button class="buy-btn arena-btn-passar" onclick="window.arenaAcao('passar')"><i class="fa-solid fa-forward" aria-hidden="true"></i> Passar turno</button>` : ''}
+            <div class="arena-rodape-sec">${empate}<button class="btn-arena-sec perigo" onclick="window.arenaDesistir()">🏳️ Desistir</button><button class="btn-arena-sec" onclick="window.sairDaArena()" title="Sair da arena (a luta fica pausada)">Sair</button></div>`;
+    }
+
+    // Histórico
+    const log = document.getElementById('arena-log');
+    const hist = d.historico || [];
+    if (log.dataset.qtd !== String(hist.length)) {
+        log.innerHTML = hist.map(h => `<div class="log-item log-${h.tipo}${h.de === eu ? ' log-meu' : ''}">${esc(h.texto)}</div>`).join('');
+        log.dataset.qtd = String(hist.length);
+        log.scrollTop = log.scrollHeight;
+    }
+    atualizarCronometro(e);
+}
+
+function custoTexto(c) {
+    return [c.chakra ? `${c.chakra} CP` : '', c.stamina ? `${c.stamina} SP` : ''].filter(Boolean).join(' · ') || 'sem custo';
+}
+
+function htmlAcoes(e, me) {
+    const semAcoes = e.acoesRestantes <= 0;
+    const semAtaque = e.ataquesRestantes <= 0;
+    const ataques = [], suportes = [];
+    arena.jutsus.forEach((j, i) => {
+        const f = funcaoDoJutsu(j);
+        if (f === 'defesa' || f === 'esquiva') return;
+        const c = custosDoJutsu(j);
+        const semRecurso = me.chakra < c.chakra || me.stamina < c.stamina;
+        if (f === 'ataque') {
+            const p = previaAtaque(me, j, 1, 0), nec = necessidadesDoJutsu(j);
+            const bloqueado = semAcoes || semAtaque || semRecurso;
+            ataques.push(`<button class="arena-carta ataque" ${bloqueado ? 'disabled' : ''} onclick="window.arenaUsarJutsu(${i})">
+                <strong>${esc(j.nome)}</strong><span class="carta-dano">💥 ${p.dano}${numero(j.multiplicador_maximo) > 1 ? ` ×até ${numero(j.multiplicador_maximo)}` : ''}</span>
+                <span class="carta-info">${esc(custoTexto(c))} · Reação ${nec.reacao} · Vel. ${nec.velocidade}</span></button>`);
+        } else {
+            const ativo = f === 'modo' && (me.efeitos || []).some(x => x.id === (j.id || j.nome));
+            const bloqueado = semAcoes || semRecurso || ativo;
+            const b = Object.entries(bonusDoJutsu(j)).map(([k, v]) => `+${v} ${nomeBonus(k)}`);
+            if (numero(j.clones) || String(j.efeito).toLowerCase() === 'clones') b.push(`${numero(j.clones) || poderDoJutsu(j)} clones`);
+            if (numero(j.cura) || String(j.efeito).toLowerCase() === 'cura') b.push(`+${numero(j.cura) || poderDoJutsu(j)} Vida`);
+            suportes.push(`<button class="arena-carta ${f}" ${bloqueado ? 'disabled' : ''} onclick="window.arenaUsarJutsu(${i})">
+                <strong>${esc(j.nome)}</strong><span class="carta-tag">${f === 'modo' ? (ativo ? 'Ativo' : 'Modo') : 'Suporte'}</span>
+                <span class="carta-info">${esc(custoTexto(c))}${numero(j.custo_por_turno) ? ` · ${numero(j.custo_por_turno)} CP/turno` : ''}${b.length ? ' · ' + esc(b.join(', ')) : ''}</span></button>`);
+        }
+    });
+    // Ataque básico (sempre disponível)
+    const basico = { id: '_basico', nome: 'Ataque Básico', funcao: 'ataque', categoria: 'taijutsu', poder: 0, stamina: 5, rank: 'E' };
+    const pb = previaAtaque(me, basico, 1, 0);
+    ataques.unshift(`<button class="arena-carta ataque" ${semAcoes || semAtaque || me.stamina < 5 ? 'disabled' : ''} onclick="window.arenaUsarJutsu(-1)">
+        <strong>Ataque Básico</strong><span class="carta-dano">💥 ${pb.dano}</span><span class="carta-info">5 SP · Força</span></button>`);
+    // Itens do inventário
+    itensDaArena().forEach(it => {
+        const ehAtaque = it.tipoItem === 'ferramenta';
+        const c = custosDoJutsu(it);
+        const bloqueado = semAcoes || (ehAtaque && semAtaque) || me.stamina < c.stamina;
+        const txt = ehAtaque ? `💥 ${previaAtaque(me, it, 1, 0).dano}${numero(it.multiplicador_maximo) > 1 ? ` ×até ${numero(it.multiplicador_maximo)}` : ''}` :
+            [numero(it.bonus_hp) && `+${numero(it.bonus_hp)} Vida`, numero(it.bonus_chakra) && `+${numero(it.bonus_chakra)} Chakra`, numero(it.bonus_stamina) && `+${numero(it.bonus_stamina)} Stamina`].filter(Boolean).join(', ');
+        const html = `<button class="arena-carta ${ehAtaque ? 'ataque' : 'item'}" ${bloqueado ? 'disabled' : ''} onclick="window.arenaUsarItem('${esc(it.id)}')">
+            <strong>${esc(it.nome)} <small>x${it.qtd}</small></strong><span class="${ehAtaque ? 'carta-dano' : 'carta-tag'}">${esc(txt)}</span>
+            <span class="carta-info">${it.recuperavel ? 'Recuperável' : 'Gasta ao usar'}${c.stamina ? ` · ${c.stamina} SP` : ''}</span></button>`;
+        (ehAtaque ? ataques : suportes).push(html);
+    });
+    const modosAtivos = (me.efeitos || []).filter(x => x.tipo === 'modo').map(x =>
+        `<button class="btn-arena-sec" onclick="window.arenaDesativar('${esc(x.id)}')">⏹️ Desativar ${esc(x.nome)}</button>`).join('');
+    return `
+        <div class="arena-contador">Ações: <strong>${e.acoesRestantes}/${ARENA.acoesPorTurno}</strong> · Ataque: <strong>${semAtaque ? 'já usado' : 'disponível'}</strong></div>
+        <h4 class="arena-secao">⚔️ Ataques</h4><div class="arena-cartas">${ataques.join('')}</div>
+        <h4 class="arena-secao">✨ Suporte, modos e itens</h4><div class="arena-cartas">${suportes.join('') || '<p class="arena-vazio">Nenhum jutsu de suporte ou item utilizável.</p>'}</div>
+        ${modosAtivos ? `<div class="arena-modos-ativos">${modosAtivos}</div>` : ''}`;
+}
+
+function htmlReacao(e, me) {
+    const atk = e.ataquePendente;
+    const av = avaliarReacao(me, atk);
+    const atacante = e.lutadores[atk.de];
+    const opcoes = [];
+    const vidaApos = (dano) => Math.max(0, me.vida - dano);
+    opcoes.push(`<button class="arena-carta receber" onclick="window.arenaReagir('receber')"><strong>Receber o golpe</strong><span class="carta-dano">−${atk.dano} Vida</span><span class="carta-info">fica com ${vidaApos(atk.dano)}</span></button>`);
+    if (av.percebe) {
+        if (av.podeEsquivar) {
+            const r = resultadoEsquiva(av.velocidade, atk.velocidadeNecessaria);
+            opcoes.push(`<button class="arena-carta esquiva" onclick="window.arenaReagir('esquivar')"><strong>Esquivar</strong><span class="carta-tag">Velocidade ${av.velocidade} × ${atk.velocidadeNecessaria}</span><span class="carta-info">${esc(r.texto)} (−${Math.round(atk.dano * r.fator)})</span></button>`);
+        }
+        if (av.podeDefenderFisico) {
+            const dano = Math.max(0, atk.dano - av.defesaBase);
+            opcoes.push(`<button class="arena-carta defesa" onclick="window.arenaReagir('defender')"><strong>Defender (físico)</strong><span class="carta-tag">absorve ${av.defesaBase}</span><span class="carta-info">−${dano} Vida</span></button>`);
+        }
+        arena.jutsus.forEach((j, i) => {
+            const f = funcaoDoJutsu(j);
+            if (f !== 'esquiva' && f !== 'defesa') return;
+            const c = custosDoJutsu(j);
+            const semRecurso = me.chakra < c.chakra || me.stamina < c.stamina;
+            if (f === 'esquiva') {
+                if (!av.podeEsquivar) return;
+                const vel = av.velocidade + poderDoJutsu(j);
+                const r = resultadoEsquiva(vel, atk.velocidadeNecessaria);
+                opcoes.push(`<button class="arena-carta esquiva" ${semRecurso ? 'disabled' : ''} onclick="window.arenaReagir('esquivar', ${i})"><strong>${esc(j.nome)}</strong><span class="carta-tag">Velocidade ${vel} × ${atk.velocidadeNecessaria}</span><span class="carta-info">${esc(r.texto)} · ${esc(custoTexto(c))}</span></button>`);
+            } else {
+                const abs = av.defesaBase + poderDoJutsu(j);
+                opcoes.push(`<button class="arena-carta defesa" ${semRecurso ? 'disabled' : ''} onclick="window.arenaReagir('defender', ${i})"><strong>${esc(j.nome)}</strong><span class="carta-tag">absorve ${abs}</span><span class="carta-info">−${Math.max(0, atk.dano - abs)} Vida · ${esc(custoTexto(c))}</span></button>`);
+            }
+        });
+    }
+    const avisos = [];
+    if (!av.percebe) avisos.push(`Sua Reação (${av.reacao}) é menor que a necessária (${atk.reacaoNecessaria}): você não percebe o golpe a tempo.`);
+    if (atk.impossivelEsquivar) avisos.push('Este ataque é impossível de esquivar.');
+    if (me.clones?.qtd && me.clones.solidos) avisos.push(`Se você for atingido, um dos seus ${me.clones.qtd} clones recebe o golpe no seu lugar.`);
+    return `
+        <div class="arena-ameaca">
+            <div class="arena-ameaca-titulo">⚠️ ${esc(atacante.nome)} usou <strong>${esc(atk.nome)}</strong>!</div>
+            <div class="arena-ameaca-info">💥 ${atk.dano} de dano · Reação necessária ${atk.reacaoNecessaria} (você tem ${av.reacao}) · Velocidade necessária ${atk.velocidadeNecessaria} (você tem ${av.velocidade})</div>
+            ${avisos.map(a => `<div class="arena-ameaca-aviso">${esc(a)}</div>`).join('')}
+        </div>
+        <div class="arena-cartas">${opcoes.join('')}</div>`;
+}
+
+function htmlResultado(d, eu) {
+    const r = d.estado.resultado || {};
+    let titulo, cls;
+    if (r.empate) { titulo = '🤝 Empate'; cls = 'empate'; }
+    else if (r.vencedor === eu) { titulo = '🏆 Vitória!'; cls = 'vitoria'; }
+    else { titulo = '💀 Derrota'; cls = 'derrota'; }
+    const motivo = { vida: 'por nocaute', chakra: 'por esgotamento de chakra', desistencia: 'por desistência', acordo: 'por acordo', 'nocaute duplo': 'os dois caíram juntos' }[r.motivo] || '';
+    let premio = '';
+    if (d.modo === 'rankeada') premio = r.empate ? 'Rankeada: sem alteração de pontos.' : (r.vencedor === eu ? `+${ARENA.pontosVitoria} pontos de Rankeada` : `−${ARENA.pontosDerrota} pontos de Rankeada`);
+    if (d.modo === 'competitivo' && d.aposta) {
+        const total = Object.values(d.cofre || {}).reduce((a, b) => a + numero(b), 0);
+        premio = r.empate ? `Cada um recebe sua aposta de volta (${formatarNum(d.aposta.valor)} ${NOMES_MOEDA[d.aposta.moeda]}).`
+            : (r.vencedor === eu ? `Você levou o cofre: +${formatarNum(total)} ${NOMES_MOEDA[d.aposta.moeda]}` : `Você perdeu ${formatarNum(d.aposta.valor)} ${NOMES_MOEDA[d.aposta.moeda]}.`);
+    }
+    return `<div class="arena-resultado ${cls}"><div class="arena-resultado-titulo">${titulo}</div><div>${esc(motivo)}</div>${premio ? `<div class="arena-resultado-premio">${esc(premio)}</div>` : ''}</div>`;
+}
+
+// ---------------- 7. Botões da arena ----------------
+const confirmaEsgotar = (me, chakra) => me.chakra - chakra > 0 || confirm(`⚠️ Isso vai esgotar todo o seu chakra e você vai desmaiar (derrota). Usar mesmo assim?`);
+window.arenaAcao = (tipo) => enviarAcao({ tipo });
+window.arenaDesistir = () => { if (confirm("Desistir da batalha? Isso conta como derrota.")) enviarAcao({ tipo: 'desistir' }); };
+window.arenaDesativar = (id) => enviarAcao({ tipo: 'desativar', efeitoId: id });
+
+window.arenaUsarJutsu = (i) => {
+    const e = arena.dados.estado, me = e.lutadores[minhaUid()];
+    const j = i === -1 ? { id: '_basico', nome: 'Ataque Básico', funcao: 'ataque', categoria: 'taijutsu', poder: 0, stamina: 5, rank: 'E' } : arena.jutsus[i];
+    if (!j) return;
+    const ehAtaque = funcaoDoJutsu(j) === 'ataque';
+    if (ehAtaque && (numero(j.multiplicador_maximo) > 1 || me.clones?.qtd)) return abrirConfigAtaque({ tipo: 'jutsu', jutsu: j });
+    if (!confirmaEsgotar(me, custosDoJutsu(j).chakra)) return;
+    enviarAcao({ tipo: 'jutsu', jutsu: j });
+};
+window.arenaUsarItem = async (id) => {
+    const it = itensDaArena().find(x => x.id === id);
+    if (!it) return;
+    const e = arena.dados.estado, me = e.lutadores[minhaUid()];
+    if (it.tipoItem === 'ferramenta' && (numero(it.multiplicador_maximo) > 1 || me.clones?.qtd)) return abrirConfigAtaque({ tipo: 'item', item: it });
+    await usarItem(it, {});
+};
+async function usarItem(it, extra) {
+    const ok = await enviarAcao({ tipo: 'item', item: it, ...extra });
+    if (!ok || it.recuperavel) return;
+    // Item gasto sai do inventário (uma unidade por carga usada)
+    const usados = Math.max(1, numero(extra.cargas) || 1);
+    for (let k = 0; k < usados; k++) {
+        try { await updateDoc(doc(db, "users", minhaUid()), { [`inventario.${it.id}`]: increment(-1), ultimoConsumo: it.id }); } catch (err) { console.error(err); }
+    }
+}
+
+// Janela para escolher cargas (multiplicador) e clones de um ataque
+function abrirConfigAtaque(acao) {
+    arena.ataqueEmConfig = acao;
+    const j = acao.jutsu || acao.item;
+    const me = arena.dados.estado.lutadores[minhaUid()];
+    const maxCargas = Math.max(1, numero(j.multiplicador_maximo) || 1);
+    const maxCargasItem = acao.item && !acao.item.recuperavel ? Math.min(maxCargas, acao.item.qtd) : maxCargas;
+    document.getElementById('config-ataque-nome').innerText = j.nome;
+    const cargas = document.getElementById('config-ataque-cargas');
+    cargas.max = maxCargasItem; cargas.value = 1;
+    document.getElementById('config-ataque-cargas-grupo').style.display = maxCargasItem > 1 ? '' : 'none';
+    // Só entram os clones que a reserva de chakra deles consegue pagar
+    const custoClone = Math.max(custosDoJutsu(j).chakra, ARENA.custoMinimoClone);
+    const clonesPagaveis = Math.min(me.clones?.qtd || 0, Math.floor((me.clones?.reserva || 0) / custoClone));
+    const clones = document.getElementById('config-ataque-clones');
+    clones.max = clonesPagaveis; clones.value = clonesPagaveis;
+    clones.disabled = clonesPagaveis === 0;
+    document.getElementById('config-ataque-clones-grupo').style.display = me.clones?.qtd ? '' : 'none';
+    document.getElementById('config-ataque-clones-aviso').textContent = me.clones?.qtd && clonesPagaveis < me.clones.qtd
+        ? `A reserva dos clones (${me.clones.reserva} CP) paga ${clonesPagaveis} de ${me.clones.qtd} clones neste golpe (${custoClone} CP cada).` : '';
+    window.atualizarConfigAtaque();
+    document.getElementById('modal-config-ataque').style.display = 'flex';
+}
+window.atualizarConfigAtaque = () => {
+    const acao = arena.ataqueEmConfig; if (!acao) return;
+    const j = acao.jutsu || acao.item;
+    const me = arena.dados.estado.lutadores[minhaUid()];
+    const cargas = Math.max(1, Math.min(numero(document.getElementById('config-ataque-cargas').max) || 1, Math.floor(numero(document.getElementById('config-ataque-cargas').value)) || 1));
+    const clones = Math.max(0, Math.min(numero(document.getElementById('config-ataque-clones').max) || 0, Math.floor(numero(document.getElementById('config-ataque-clones').value)) || 0));
+    const p = previaAtaque(me, j, cargas, clones);
+    document.getElementById('config-ataque-previa').innerHTML =
+        `💥 <strong>${p.dano}</strong> de dano (${p.golpes} golpe${p.golpes > 1 ? 's' : ''} de ${p.porGolpe})<br>Custo: ${p.chakra} CP · ${p.stamina} SP${clones ? ` · clones gastam ${p.custoClones} CP da reserva (${me.clones.reserva})` : ''}`;
+    return { cargas, clones, p };
+};
+window.confirmarConfigAtaque = async () => {
+    const acao = arena.ataqueEmConfig; if (!acao) return;
+    const { cargas, clones, p } = window.atualizarConfigAtaque();
+    const me = arena.dados.estado.lutadores[minhaUid()];
+    if (!confirmaEsgotar(me, p.chakra)) return;
+    document.getElementById('modal-config-ataque').style.display = 'none';
+    arena.ataqueEmConfig = null;
+    if (acao.tipo === 'item') await usarItem(acao.item, { cargas, clones });
+    else await enviarAcao({ tipo: 'jutsu', jutsu: acao.jutsu, cargas, clones });
+};
+
+window.arenaReagir = (opcao, i) => {
+    const j = i === undefined ? null : arena.jutsus[i];
+    const me = arena.dados.estado.lutadores[minhaUid()];
+    if (j && !confirmaEsgotar(me, custosDoJutsu(j).chakra)) return;
+    enviarAcao({ tipo: 'reagir', opcao, jutsu: j });
+};
+
+// ---------------- 8. Depois da luta: estatísticas e cofre ----------------
+async function posLuta(id, d) {
+    const eu = minhaUid();
+    if (!eu || !d.estado || d.estado.status !== 'finalizada') return;
+    if (arena.posLutaFeito[id]) return;
+    arena.posLutaFeito[id] = true;
+    const r = d.estado.resultado || {};
+    const ref = doc(db, "desafios_batalha", id);
+    try {
+        // 1) Estatísticas (uma única vez por jogador)
+        if (!(d.contabilizado && d.contabilizado[eu])) {
+            const ficha = (await getDoc(doc(db, "users", eu))).data() || {};
+            const upd = { ultimaBatalhaContabilizada: id };
+            if (r.empate) upd.empates = increment(1);
+            else if (r.vencedor === eu) upd.vitorias = increment(1);
+            else upd.derrotas = increment(1);
+            if (d.modo === 'rankeada' && !r.empate) {
+                upd.pontos_rankeada = r.vencedor === eu ? numero(ficha.pontos_rankeada) + ARENA.pontosVitoria : Math.max(0, numero(ficha.pontos_rankeada) - ARENA.pontosDerrota);
+            }
+            if ((d.modo || 'amistoso') === 'amistoso' && r.vencedor === eu) upd.pontos_amistoso = increment(1);
+            const lote = writeBatch(db);
+            lote.update(ref, { [`contabilizado.${eu}`]: true });
+            lote.update(doc(db, "users", eu), upd);
+            await lote.commit();
+        }
+        // 2) Cofre do competitivo
+        if (d.modo === 'competitivo' && d.aposta) {
+            if (r.empate) await devolverMeuCofre(id, d);
+            else if (r.vencedor === eu && !d.cofrePago) {
+                const total = Object.values(d.cofre || {}).reduce((a, b) => a + numero(b), 0);
+                const lote = writeBatch(db);
+                lote.update(ref, { cofrePago: true });
+                lote.update(doc(db, "users", eu), { [d.aposta.moeda]: increment(total), ultimoCofre: id });
+                await lote.commit();
+            }
         }
     } catch (e) {
-        console.error("Erro ao puxar dados do inimigo:", e);
+        console.error("Erro ao registrar o resultado:", e);
+        arena.posLutaFeito[id] = false;
     }
-};
+}
 
-
-
-// --- FASE 3: MOTOR DE COMBATE (ATUALIZADO) ---
-
-// Carrega os Jutsus do jogador buscando da coleção original
-window.carregarControlesBatalha = async () => {
-    window.meusJutsusCarregados = [];
-    
-    const painelControles = document.getElementById('arena-controls');
-    painelControles.innerHTML = '<p style="color: #777; grid-column: 1 / -1; text-align: center;"><i class="fa-solid fa-spinner fa-spin"></i> Lendo pergaminhos de Jutsus...</p>';
-
-    // Verifica onde estão os jutsus do usuário. Adapte 'jutsus' ou 'meusJutsus' conforme o nome do seu array no Firebase.
-    const listaJutsusUsuario = currentUserData.jutsus || currentUserData.meusJutsus || [];
-
-    painelControles.innerHTML = ''; // Limpa a mensagem
-
-    if (listaJutsusUsuario.length === 0) {
-        painelControles.innerHTML = '<p style="color: #777; grid-column: 1 / -1; text-align: center;">Você não possui Jutsus equipados. Use ataques básicos!</p>';
-    } else {
-        // Como o usuário só tem os IDs, precisamos buscar o Jutsu completo no Firebase
-        for (const item of listaJutsusUsuario) {
-            try {
-                // Pega o ID (mesmo que o seu array seja de strings simples ou objetos)
-                const jutsuId = typeof item === 'string' ? item : item.id;
-                if (!jutsuId) continue;
-
-                // Busca o documento completo na coleção "jutsus"
-                const jutsu = await lerDoCatalogo("jutsus", jutsuId);
-
-                if (jutsu) {
-                    
-                    window.meusJutsusCarregados.push(jutsu);
-                    
-                    const btn = document.createElement('button');
-                    btn.className = 'buy-btn';
-                    btn.style.background = '#2c3e50'; 
-                    btn.style.display = 'flex';
-                    btn.style.flexDirection = 'column';
-                    btn.style.alignItems = 'center';
-                    btn.style.gap = '4px';
-                    btn.style.padding = '10px';
-                    btn.style.border = '1px solid #34495e';
-
-                    let custosHTML = [];
-                    
-                    // Transforma números negativos em positivos absolutos para exibir bonitinho
-                    const custoChakra = jutsu.chakra ? Math.abs(jutsu.chakra) : 0;
-                    const custoStamina = jutsu.stamina ? Math.abs(jutsu.stamina) : 0;
-
-                    if (custoChakra > 0) custosHTML.push(`<span style="color: #3498db; text-shadow: 0 0 2px #000;"><i class="fa-solid fa-droplet"></i> ${esc(custoChakra)}</span>`);
-                    if (custoStamina > 0) custosHTML.push(`<span style="color: #2ecc71; text-shadow: 0 0 2px #000;"><i class="fa-solid fa-leaf"></i> ${esc(custoStamina)}</span>`);
-                    
-                    const custoVisual = custosHTML.length > 0 ? custosHTML.join(' | ') : '<span style="color: #95a5a6;">Sem custo</span>';
-                    const danoVisual = jutsu.dano ? `<div style="color: #e74c3c; font-size: 0.7rem; margin-top: 2px;"><i class="fa-solid fa-fire"></i> Dano: ${esc(jutsu.dano)}</div>` : '';
-
-                    btn.innerHTML = `
-                        <strong style="font-size: 0.9rem;">${esc(jutsu.nome || 'Jutsu sem nome')}</strong>
-                        <div style="font-size: 0.75rem; background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 10px;">${custoVisual}</div>
-                        ${danoVisual}
-                    `;
-
-                    btn.onclick = () => window.prepararAtaque(jutsu);
-                    painelControles.appendChild(btn);
-                }
-            } catch (err) {
-                console.error(`Erro ao buscar o jutsu ${item}:`, err);
-            }
-        }
-    }
-
-    // Ataque Básico Padrão
-    const btnAtaqueBasico = document.createElement('button');
-    btnAtaqueBasico.className = 'buy-btn';
-    btnAtaqueBasico.style.background = '#8e44ad';
-    btnAtaqueBasico.innerHTML = '<strong>Ataque Básico</strong><br><span style="font-size: 0.75rem;">Usa Força / Agilidade</span>';
-    btnAtaqueBasico.onclick = () => window.prepararAtaque({ nome: "Ataque Básico", tipo: "taijutsu", categoria: "taijutsu", funcao: "ataque", dano: "d4" });
-    painelControles.appendChild(btnAtaqueBasico);
-    
-    // Botão de Passar Turno (NOVO)
-    const btnPassar = document.createElement('button');
-    btnPassar.className = 'buy-btn';
-    btnPassar.style.background = '#27ae60'; 
-    btnPassar.innerHTML = '<strong><i class="fa-solid fa-hourglass-end"></i> Passar Turno</strong><br><span style="font-size: 0.75rem;">Aplica Efeitos e Sangramentos</span>';
-    btnPassar.onclick = () => window.passarTurno();
-    painelControles.appendChild(btnPassar);
-
-    // Botão de Recuar
-    const btnFugir = document.createElement('button');
-    btnFugir.className = 'buy-btn';
-    btnFugir.style.background = '#c0392b';
-    btnFugir.innerHTML = '<i class="fa-solid fa-person-running"></i> Recuar';
-    btnFugir.onclick = () => window.encerrarBatalha();
-    painelControles.appendChild(btnFugir);
-}; // <-- Fim da função carregarControlesBatalha
-
-
-// --- MOTOR DE DADOS E DANO ---
-
-// Lê o texto do Firebase ("d6+1", "50" ou "Letal") e converte em números reais
-window.rolarDados = (danoString) => {
-    if (!danoString) return 0;
-    
-    // Transforma tudo em minúsculo e tira os espaços para não ter erro de digitação
-    const str = String(danoString).toLowerCase().trim();
-
-    // 1. Tratamento Especial para Hit Kill
-    if (str === 'letal' || str === 'hit kill') return 999999;
-
-    // 2. Se for um número fixo (Ex: O dano está cadastrado como "100")
-    if (!str.includes('d')) return Number(str) || 0;
-
-    // 3. Se for um dado estilo RPG (Ex: "2d6+5" ou "d8")
-    let [dadosParte, restoParte] = str.split('d');
-    let quantidade = Number(dadosParte) || 1; // Se for só "d6", a quantidade é 1
-    
-    let lados = 0;
-    let bonus = 0;
-
-    if (restoParte.includes('+')) {
-        let partes = restoParte.split('+');
-        lados = Number(partes[0]);
-        bonus = Number(partes[1]);
-    } else if (restoParte.includes('-')) {
-        let partes = restoParte.split('-');
-        lados = Number(partes[0]);
-        bonus = -Number(partes[1]);
-    } else {
-        lados = Number(restoParte);
-    }
-
-    let totalRolado = 0;
-    let historicoRolagens = [];
-    
-    // Rola o dado a quantidade de vezes pedida
-    for(let i = 0; i < quantidade; i++) {
-        let rolagem = Math.floor(Math.random() * lados) + 1;
-        historicoRolagens.push(rolagem);
-        totalRolado += rolagem;
-    }
-    
-    return { 
-        totalFinal: totalRolado + bonus, 
-        rolagens: historicoRolagens, 
-        bonus: bonus 
-    };
-};
-
-// O Ataque Real (Conecta o botão aos dados, gasta recursos e registra ação)
-window.prepararAtaque = async (jutsu) => {
-    
-    // 1. SISTEMA DE MULTIPLICADOR
-    let multiplicador = 1;
-    const maxMulti = Number(jutsu.multiplicador_maximo) || 0;
-
-    if (maxMulti > 1) {
-        let resposta = prompt(`Quantas cargas de "${jutsu.nome}" você deseja usar?\n(Mínimo: 1 | Máximo: ${maxMulti})`, "1");
-        
-        // Se o jogador clicar em "Cancelar" no prompt, a função para por aqui
-        if (resposta === null) return; 
-
-        multiplicador = parseInt(resposta);
-        if (isNaN(multiplicador) || multiplicador < 1) multiplicador = 1;
-        if (multiplicador > maxMulti) multiplicador = maxMulti;
-    }
-
-    // Calcula os custos finais baseados na escolha do jogador
-    const custoCp = (jutsu.chakra ? Math.abs(jutsu.chakra) : 0) * multiplicador;
-    const custoSp = (jutsu.stamina ? Math.abs(jutsu.stamina) : 0) * multiplicador;
-
-    // 2. VERIFICAÇÃO DE RECURSOS ATUAIS
-    const meuCpAtual = currentUserData.chakra || 0;
-    const meuSpAtual = currentUserData.stamina || 0;
-
-    if (meuCpAtual < custoCp) {
-        return alert(`🌀 Chakra insuficiente! Você tem ${meuCpAtual} mas precisa de ${custoCp} para usar essa quantidade de ${jutsu.nome}.`);
-    }
-    if (meuSpAtual < custoSp) {
-        return alert(`🍃 Stamina insuficiente! Você tem ${meuSpAtual} mas precisa de ${custoSp} para usar essa quantidade de ${jutsu.nome}.`);
-    }
-
-    // 3. DESCONTA OS RECURSOS IMEDIATAMENTE
+// Devolve a minha parte do cofre (convite recusado/cancelado, empate ou luta anulada)
+async function devolverMeuCofre(id, d) {
+    const eu = minhaUid();
+    const minha = numero(d.cofre?.[eu]);
+    if (!minha || !d.aposta || (d.cofreDevolvido && d.cofreDevolvido[eu]) || d.cofrePago) return;
+    const chave = 'dev-' + id;
+    if (arena.posLutaFeito[chave]) return;
+    arena.posLutaFeito[chave] = true;
     try {
-        currentUserData.chakra -= custoCp;
-        currentUserData.stamina -= custoSp;
-
-        const txtCp = document.getElementById('arena-player-cp-txt').innerText.split('/');
-        const maxCp = Number(txtCp[1]) || 1;
-        const txtSp = document.getElementById('arena-player-sp-txt').innerText.split('/');
-        const maxSp = Number(txtSp[1]) || 1;
-
-        window.atualizarBarraArena('player', 'cp', currentUserData.chakra, maxCp);
-        window.atualizarBarraArena('player', 'sp', currentUserData.stamina, maxSp);
-
-        await updateDoc(doc(db, "users", auth.currentUser.uid), {
-            chakra: increment(-custoCp),
-            stamina: increment(-custoSp)
-        });
-    } catch (err) {
-        console.error("Erro ao descontar recursos:", err);
-        return alert("Erro ao canalizar chakra. Tente novamente!");
-    }
-
-    // 4. ROLAGEM DE DADOS MÚLTIPLA (Soma os resultados X vezes)
-    let totalDanoFinal = 0;
-    let todasRolagens = [];
-    let bonusTotal = 0;
-    let isLetal = false;
-
-    for (let i = 0; i < multiplicador; i++) {
-        let resultado = window.rolarDados(jutsu.dano);
-        if (typeof resultado === 'number') {
-            if (resultado >= 999999) isLetal = true;
-            totalDanoFinal += resultado;
-        } else {
-            if (resultado.totalFinal >= 999999) isLetal = true;
-            totalDanoFinal += resultado.totalFinal;
-            todasRolagens.push(...resultado.rolagens);
-            bonusTotal += resultado.bonus;
-        }
-    }
-
-    // 5. MOLDANDO A NARRATIVA E APLICANDO STATUS PRÓPRIOS
-    const func = String(jutsu.funcao || '').toLowerCase();
-    const isAtaque = func.includes('ataque');
-
-    let textoDados = "";
-    if (todasRolagens.length > 0 && isAtaque) {
-        let sinalBonus = bonusTotal >= 0 ? '+' : '';
-        textoDados = `<span style="color:#7f8c8d; font-size:0.8rem;">(Dados: [${todasRolagens.join(', ')}] ${sinalBonus}${bonusTotal})</span>`;
-    }
-
-    let msgDano = "";
-    if (!isAtaque) {
-        msgDano = "✨ A técnica foi ativada com sucesso!";
-        totalDanoFinal = 0; 
-        
-        // --- INJETANDO O UPKEEP SE FOR UM MODO ---
-        if (func.includes('modo')) {
-            const drenoChakra = Math.max(1, Math.floor((currentUserData.max_chakra || 100) * 0.05));
-            window.adicionarEfeito(`Manutenção: ${jutsu.nome}`, 'cp', drenoChakra, 3);
-        }
-        
-    } else if (isLetal) {
-        msgDano = "💥 **DANO LETAL!** A técnica foi canalizada com perfeição!";
-        totalDanoFinal = 999999;
-    } else {
-        msgDano = `💥 O ataque gerou um potencial de **${totalDanoFinal}** de dano! ${textoDados}`;
-    }
-
-    const nomeJutsuDisplay = esc(multiplicador > 1 ? `${jutsu.nome} (x${multiplicador})` : jutsu.nome);
-    // Versão em texto puro (sem HTML) da mensagem, que é a enviada ao adversário
-    const msgDanoTexto = msgDano.replace(/<[^>]*>/g, '').replace(/&[a-z#0-9]+;/gi, '');
-    let corLogLocal = isAtaque ? '#3498db' : '#2ecc71'; 
-
-    // 6. REGISTRA A AÇÃO NO LOG DA ARENA LOCAL
-    const logArena = document.getElementById('arena-log');
-    logArena.innerHTML += `
-        <div style="background: rgba(52, 152, 219, 0.1); padding: 8px; border-left: 3px solid ${corLogLocal}; margin-top: 10px; border-radius: 0 4px 4px 0;">
-            <div style="color: ${corLogLocal}; font-weight: bold;">> Você usou ${nomeJutsuDisplay}! <span style="font-size:0.75rem; color:#e74c3c;">(-${custoCp} CP | -${custoSp} SP)</span></div>
-            <div style="color: ${isAtaque ? '#e74c3c' : '#27ae60'}; margin-top: 3px;">> ${msgDano}</div>
-        </div>
-    `;
-    logArena.scrollTop = logArena.scrollHeight;
-
-    // 7. TRANSMITE PARA A SALA DE BATALHA (Lendo as regras do banco)
-    if (window.currentBattleId) {
-        try {
-            await updateDoc(doc(db, "desafios_batalha", window.currentBattleId), {
-                ultimaAcao: {
-                    atacanteId: auth.currentUser.uid,
-                    jutsuNome: nomeJutsuDisplay,
-                    jutsuCategoria: jutsu.categoria || 'ninjutsu', 
-                    jutsuFuncao: func || 'ataque',         
-                    msgDano: msgDanoTexto,
-                    danoValor: totalDanoFinal || 0, 
-                    custoCp: custoCp,
-                    custoSp: custoSp,
-                    isAtaque: isAtaque,
-                    impossivelEsquivar: jutsu.impossivel_esquivar || false,
-                    impossivelDefender: jutsu.impossivel_defender_fisico || false,
-                    rankEsquivaMinimo: Number(jutsu.rank_esquiva_minimo) || 1,
-                    timestamp: new Date().getTime() 
-                }
-            });
-        } catch(e) { console.error("Erro ao transmitir ação:", e); }
-    }
-};
-
-
-// --- MOTOR DE TURNOS E EFEITOS ---
-window.passarTurno = async () => {
-    if (!window.currentBattleId) return;
-
-    let logEfeitos = "";
-    let hpPerdido = 0;
-    let cpGasto = 0;
-    let spGasto = 0;
-
-    // 1. PROCESSA A MOCHILA DE EFEITOS (Lê de trás para frente para poder remover sem quebrar a lista)
-    for (let i = window.efeitosAtivos.length - 1; i >= 0; i--) {
-        let efeito = window.efeitosAtivos[i];
-        
-        if (efeito.tipo === 'hp') hpPerdido += efeito.valor;
-        if (efeito.tipo === 'cp') cpGasto += efeito.valor;
-        if (efeito.tipo === 'sp') spGasto += efeito.valor;
-
-        logEfeitos += `[${efeito.nome}] causou seu efeito. `;
-
-        efeito.turnos -= 1; // O tempo passa...
-        
-        // Se o tempo do efeito acabou, avisa e remove da mochila
-        if (efeito.turnos <= 0) {
-            logEfeitos += `(O efeito de [${efeito.nome}] terminou!) `;
-            window.efeitosAtivos.splice(i, 1); 
-        }
-    }
-
-    if (logEfeitos === "") {
-        logEfeitos = "Você recuou a guarda e encerrou o seu turno em silêncio.";
-    }
-
-    // 2. APLICA AS PERDAS NA FICHA DO JOGADOR
-    let hpAtual = (currentUserData.vida ?? 100) - hpPerdido;
-    if (hpAtual < 0) hpAtual = 0;
-    
-    let cpAtual = (currentUserData.chakra || 0) - cpGasto;
-    if (cpAtual < 0) cpAtual = 0;
-    
-    let spAtual = (currentUserData.stamina || 0) - spGasto;
-    if (spAtual < 0) spAtual = 0;
-
-    currentUserData.vida = hpAtual;
-    currentUserData.chakra = cpAtual;
-    currentUserData.stamina = spAtual;
-
-    const txtHp = document.getElementById('arena-player-hp-txt').innerText.split('/');
-    const txtCp = document.getElementById('arena-player-cp-txt').innerText.split('/');
-    const txtSp = document.getElementById('arena-player-sp-txt').innerText.split('/');
-
-    window.atualizarBarraArena('player', 'hp', hpAtual, Number(txtHp[1]) || 1);
-    window.atualizarBarraArena('player', 'cp', cpAtual, Number(txtCp[1]) || 1);
-    window.atualizarBarraArena('player', 'sp', spAtual, Number(txtSp[1]) || 1);
-
-    try {
-        await updateDoc(doc(db, "users", auth.currentUser.uid), {
-            vida: hpAtual,
-            chakra: cpAtual,
-            stamina: spAtual
-        });
-    } catch(e) { console.error("Erro ao salvar turno:", e); }
-
-    // 3. AVISA NA TELA LOCAL
-    const logArena = document.getElementById('arena-log');
-    logArena.innerHTML += `
-        <div style="background: rgba(149, 165, 166, 0.1); padding: 8px; border-left: 3px solid #95a5a6; margin-top: 10px; border-radius: 4px;">
-            <div style="color: #95a5a6; font-weight: bold;">> ⏳ Fim do seu Turno</div>
-            <div style="color: #bdc3c7; margin-top: 3px; font-size: 0.85rem;">> ${esc(logEfeitos)}</div>
-        </div>
-    `;
-    logArena.scrollTop = logArena.scrollHeight;
-
-    // 4. TRANSMITE PARA O INIMIGO LER (Silencioso, sem abrir tela de defesa)
-    try {
-        await updateDoc(doc(db, "desafios_batalha", window.currentBattleId), {
-            ultimaAcao: {
-                atacanteId: auth.currentUser.uid,
-                jutsuNome: "Fim do Turno",
-                msgDano: logEfeitos,
-                jutsuCategoria: 'suporte', 
-                jutsuFuncao: 'suporte',
-                danoValor: 0,
-                custoCp: 0,
-                custoSp: 0,
-                isAtaque: false, 
-                timestamp: new Date().getTime() 
-            }
-        });
-    } catch(e) { console.error("Erro ao transmitir turno:", e); }
-};
-
-
-// Função genérica para injetar efeitos (Sangramento, Veneno, Upkeep de Chakra)
-window.adicionarEfeito = (nomeEfeito, tipoRecurso, valorPorTurno, quantidadeTurnos) => {
-    
-    // Injeta na mochila da arena
-    window.efeitosAtivos.push({
-        nome: nomeEfeito,
-        tipo: tipoRecurso, // 'hp' (sangramento/veneno), 'cp' (dreno de chakra), 'sp' (fadiga)
-        valor: Number(valorPorTurno),
-        turnos: Number(quantidadeTurnos)
-    });
-    
-    // Avisa na tela do jogador com uma notificação roxa de status
-    const logArena = document.getElementById('arena-log');
-    logArena.innerHTML += `
-        <div style="background: rgba(155, 89, 182, 0.1); padding: 8px; border-left: 3px solid #9b59b6; margin-top: 10px; border-radius: 4px;">
-            <div style="color: #9b59b6; font-weight: bold;">> 💉 Novo Efeito Ativo: ${esc(nomeEfeito)}</div>
-            <div style="color: #bdc3c7; margin-top: 3px; font-size: 0.85rem;">> Você perderá ${valorPorTurno} de ${tipoRecurso.toUpperCase()} por ${quantidadeTurnos} turnos.</div>
-        </div>
-    `;
-    logArena.scrollTop = logArena.scrollHeight;
-};
-
-
-// Função auxiliar para limpar a tela da Arena perfeitamente
-window.sairDaArenaVisualmente = () => {
-    if (window.escutaArenaAtiva) window.escutaArenaAtiva(); // Desliga o radar
-    
-    window.currentBattleId = null;
-    localStorage.removeItem('rpg_battle_id');
-    localStorage.removeItem('rpg_inimigo_id');
-    
-    window.showTab('dashboard'); 
-    document.getElementById('arena-waiting').style.display = 'block';
-    document.getElementById('arena-container').style.display = 'none';
-    document.getElementById('arena-log').innerHTML = '<div style="color: #94a3b8; text-align: center;">--- O Ringue está sendo preparado ---</div>';
-};
-
-
-// --- SISTEMA DE RECUPERAÇÃO DE BATALHA (ANTI-F5) ---
-window.verificarBatalhaAtiva = async () => {
-    const battleId = localStorage.getItem('rpg_battle_id');
-    const inimigoId = localStorage.getItem('rpg_inimigo_id');
-    
-    if (battleId && inimigoId) {
-        try {
-            // Verifica no banco se a batalha ainda existe e não foi cancelada
-            const docSnap = await getDoc(doc(db, "desafios_batalha", battleId));
-            
-            if (docSnap.exists() && docSnap.data().status === 'aceito') {
-                console.log("Recuperando batalha em andamento...");
-                window.currentBattleId = battleId;
-                window.showTab('batalha');
-                window.carregarArena(inimigoId); // Recarrega tudo: visual, jutsus e radar!
-            } else {
-                // Se a batalha já acabou enquanto você estava offline
-                localStorage.removeItem('rpg_battle_id');
-                localStorage.removeItem('rpg_inimigo_id');
-            }
-        } catch(e) {
-            console.error("Erro ao recuperar batalha:", e);
-        }
-    }
-};
-
-
-// Abandona a luta e avisa o banco de dados
-window.encerrarBatalha = async () => {
-    if(confirm("Deseja mesmo recuar e encerrar o duelo? (O inimigo será avisado)")) {
-        
-        // 1. Avisa na Sala de Batalha (Firebase) que você fugiu
-        if (window.currentBattleId) {
-            try {
-                await updateDoc(doc(db, "desafios_batalha", window.currentBattleId), {
-                    status: 'fugiu',
-                    quemFugiu: currentUserData.nome || currentUserData.apelido || "O adversário"
-                });
-            } catch(e) { console.error("Erro ao avisar fuga:", e); }
-        }
-
-        // 2. Tira você da tela
-        window.sairDaArenaVisualmente();
-    }
-};
-
-
-window.escutaArenaAtiva = null;
-window.ultimoAtaqueRecebido = 0; // Memória para não repetir ataques antigos
-
-// Escuta tudo o que acontece na Sala de Batalha em tempo real
-window.iniciarRadarDaArena = () => {
-    if (!window.currentBattleId) return;
-    if (window.escutaArenaAtiva) window.escutaArenaAtiva();
-
-    window.ultimoAtaqueRecebido = 0; // Zera a memória ao entrar na arena
-
-    window.escutaArenaAtiva = onSnapshot(doc(db, "desafios_batalha", window.currentBattleId), (docSnap) => {
-        if (docSnap.exists()) {
-            const sala = docSnap.data();
-            
-            // 1. SE O INIMIGO APERTOU RECUAR:
-            if (sala.status === 'fugiu') {
-                alert(`🏃💨 A batalha acabou! ${sala.quemFugiu || 'O adversário'} recuou da luta!`);
-                deleteDoc(doc(db, "desafios_batalha", window.currentBattleId)).catch(e => console.log(e));
-                window.sairDaArenaVisualmente();
-            }
-            
-            // 2. SE ALGUÉM ATACOU NA SALA (E é um ataque novo)
-            if (sala.ultimaAcao && sala.ultimaAcao.timestamp > window.ultimoAtaqueRecebido) {
-                window.ultimoAtaqueRecebido = sala.ultimaAcao.timestamp;
-                
-                const acao = sala.ultimaAcao;
-
-                // Verifica se a ação veio do inimigo (ignora se fui eu mesmo)
-                if (acao.atacanteId !== auth.currentUser.uid) {
-                    
-                    // A) Atualiza as barras de Chakra e Stamina do inimigo visualmente
-                    const txtCp = document.getElementById('arena-enemy-cp-txt').innerText.split('/');
-                    const maxCp = Number(txtCp[1]) || 1;
-                    let atualCp = Number(txtCp[0]) - (Number(acao.custoCp) || 0);
-                    if (atualCp < 0) atualCp = 0;
-
-                    const txtSp = document.getElementById('arena-enemy-sp-txt').innerText.split('/');
-                    const maxSp = Number(txtSp[1]) || 1;
-                    let atualSp = Number(txtSp[0]) - (Number(acao.custoSp) || 0);
-                    if (atualSp < 0) atualSp = 0;
-
-                    window.atualizarBarraArena('enemy', 'cp', atualCp, maxCp);
-                    window.atualizarBarraArena('enemy', 'sp', atualSp, maxSp);
-
-                    const logArena = document.getElementById('arena-log');
-
-                    // B) SE FOR UM ATAQUE REAL (Abre defesa e Borda Vermelha)
-                    if (acao.isAtaque) {
-                        
-                        logArena.innerHTML += `
-                            <div style="background: rgba(231, 76, 60, 0.1); padding: 8px; border-left: 3px solid #e74c3c; margin-top: 10px; border-radius: 0 4px 4px 0;">
-                                <div style="color: #e74c3c; font-weight: bold;">> O Inimigo usou ${esc(acao.jutsuNome)}! <span style="font-size:0.75rem; color:#95a5a6;">(-${esc(acao.custoCp)} CP | -${esc(acao.custoSp)} SP)</span></div>
-                                <div style="color: #e67e22; margin-top: 3px;">> ${esc(acao.msgDano)}</div>
-                            </div>
-                        `;
-                        logArena.scrollTop = logArena.scrollHeight;
-
-                        window.danoAmeacaAtual = Number(acao.danoValor) || 0; 
-                        window.categoriaAmeacaAtual = acao.jutsuCategoria || 'taijutsu'; 
-                        
-                        // --- LÓGICA DE APAGAR OS BOTÕES (VELOCIDADE E INEVITABILIDADE) ---
-                        const meuSpeed = Number(currentUserData.speed_rank) || 1;
-                        
-                        const btnEsquiva = document.getElementById('btn-reacao-esquivar');
-                        if (btnEsquiva) {
-                            if (acao.impossivelEsquivar || meuSpeed < acao.rankEsquivaMinimo) {
-                                btnEsquiva.disabled = true;
-                                btnEsquiva.style.opacity = '0.4';
-                                btnEsquiva.style.cursor = 'not-allowed';
-                                btnEsquiva.title = acao.impossivelEsquivar ? "Impossível esquivar desta técnica!" : `Requer Velocidade Nível ${acao.rankEsquivaMinimo}`;
-                            } else {
-                                btnEsquiva.disabled = false;
-                                btnEsquiva.style.opacity = '1';
-                                btnEsquiva.style.cursor = 'pointer';
-                                btnEsquiva.title = "";
-                            }
-                        }
-
-                        const btnDefesa = document.getElementById('btn-reacao-defender');
-                        if (btnDefesa) {
-                            if (acao.impossivelDefender) {
-                                btnDefesa.disabled = true;
-                                btnDefesa.style.opacity = '0.4';
-                                btnDefesa.style.cursor = 'not-allowed';
-                                btnDefesa.title = "Impossível defender fisicamente desta técnica!";
-                            } else {
-                                btnDefesa.disabled = false;
-                                btnDefesa.style.opacity = '1';
-                                btnDefesa.style.cursor = 'pointer';
-                                btnDefesa.title = "";
-                            }
-                        }
-                        // ---------------------------------------------------------------
-                        
-                        document.getElementById('arena-controls').style.display = 'none';
-                        document.getElementById('arena-reaction-box').style.display = 'block'; 
-
-                    } else {
-                        // C) SE FOR BUFF/SUPORTE (Apenas Log verde/cinza, não abre defesa)
-                        logArena.innerHTML += `
-                            <div style="background: rgba(46, 204, 113, 0.1); padding: 8px; border-left: 3px solid #2ecc71; margin-top: 10px; border-radius: 0 4px 4px 0;">
-                                <div style="color: #2ecc71; font-weight: bold;">> O Inimigo usou ${esc(acao.jutsuNome)}! <span style="font-size:0.75rem; color:#95a5a6;">(-${esc(acao.custoCp)} CP | -${esc(acao.custoSp)} SP)</span></div>
-                                <div style="color: #95a5a6; font-style: italic; margin-top: 5px; font-size: 0.85rem;">
-                                    > ${esc(acao.msgDano)} O inimigo está se preparando...
-                                </div>
-                            </div>
-                        `;
-                        logArena.scrollTop = logArena.scrollHeight;
-                    }
-                }
-            }
-            
-        } else {
-            // Se a sala sumir por algum motivo
-            window.sairDaArenaVisualmente();
-        }
-    });
-};
-
+        const lote = writeBatch(db);
+        lote.update(doc(db, "desafios_batalha", id), { [`cofreDevolvido.${eu}`]: true });
+        lote.update(doc(db, "users", eu), { [d.aposta.moeda]: increment(minha), ultimoCofre: id });
+        await lote.commit();
+    } catch (e) { console.error("Erro ao devolver o cofre:", e); arena.posLutaFeito[chave] = false; }
+}
 
 
 async function carregarConquistas() {
@@ -2569,7 +2512,12 @@ function abrirModalSimples(t, d) {
     if (t === 'jutsu') {
         document.getElementById(t + '-rank-modal').innerText = "Rank " + d.rank;
         
-        if (d.dano) h += `<span class="jutsu-stat-tag tag-dano">Dano: ${esc(d.dano)}</span>`;
+        const funcao = funcaoDoJutsu(d);
+        const nomesFuncao = { ataque: '⚔️ Ataque', defesa: '🛡️ Defesa', esquiva: '💨 Esquiva', suporte: '✨ Suporte', modo: '🌀 Modo' };
+        h += `<span class="jutsu-stat-tag" style="background:#334155;">${nomesFuncao[funcao]}</span>`;
+        if (poderDoJutsu(d)) h += `<span class="jutsu-stat-tag tag-dano">Poder: ${esc(poderDoJutsu(d))}</span>`;
+        if (funcao === 'ataque') { const nec = necessidadesDoJutsu(d); h += `<span class="jutsu-stat-tag" style="background:#7c3aed;">Reação ${nec.reacao} · Vel. ${nec.velocidade}</span>`; }
+        if (d.custo_por_turno) h += `<span class="jutsu-stat-tag tag-chakra">Manutenção: ${esc(d.custo_por_turno)} CP/turno</span>`;
         if (d.defesa) h += `<span class="jutsu-stat-tag tag-defesa" style="background:#2ecc71;">Defesa: ${esc(d.defesa)}</span>`;
         if (d.chakra) h += `<span class="jutsu-stat-tag tag-chakra">Chakra: ${esc(d.chakra)}</span>`;
         
@@ -2746,7 +2694,7 @@ document.addEventListener('keydown', (e) => {
     }
     // Esc fecha janelas abertas e o menu do usuário
     if (e.key === 'Escape') {
-        document.querySelectorAll('.modal-overlay-comment').forEach(m => { if (getComputedStyle(m).display !== 'none') m.style.display = 'none'; });
+        document.querySelectorAll('.modal-overlay-comment, .modal-arena:not(#modal-desafio)').forEach(m => { if (getComputedStyle(m).display !== 'none') m.style.display = 'none'; });
         document.getElementById('user-menu')?.classList.remove('show');
         if (document.querySelector('.sidebar.mobile-active')) window.toggleMobileMenu();
     }
@@ -2905,7 +2853,8 @@ window.verPerfil = async (uid) => {
             <div class="stat-card"><div class="stat-value">${esc(u.cargo||'Genin')}</div><div class="stat-label">Cargo</div></div>
             <div class="stat-card"><div class="stat-value">${esc(u.patente||'Genin')}</div><div class="stat-label">Patente</div></div>
             <div class="stat-card"><div class="stat-value">${esc(u.rank||'E')}</div><div class="stat-label">Rank</div></div>
-            <div class="stat-card"><div class="stat-value">${esc(u.speed_rank ?? 1)}</div><div class="stat-label">Rank Vel.</div></div>
+            <div class="stat-card"><div class="stat-value">${esc(u.speed_rank ?? 1)}</div><div class="stat-label">Velocidade</div></div>
+            <div class="stat-card"><div class="stat-value">${esc(u.reacao ?? 1)}</div><div class="stat-label">Reação</div></div>
             <div class="stat-card"><div class="stat-value">${esc(u.tipo||'Normal')}</div><div class="stat-label">Tipo</div></div>
             
             <div class="stats-divider">Batalha</div>
@@ -2981,6 +2930,97 @@ async function carregarPainelAdmin() {
         c.innerHTML = '<p style="color:var(--danger-color);">Erro ao carregar painel.</p>';
     } 
 }
+
+// --- PAINEL KAGE: EXPORTAR / IMPORTAR JUTSUS, FERRAMENTAS E ITENS ---
+const COLECOES_CATALOGO = ['jutsus', 'ferramentas', 'itens'];
+window.exportarCatalogo = async () => {
+    const btn = document.getElementById('btn-exportar-catalogo');
+    if (btn) { btn.disabled = true; btn.innerText = 'Exportando...'; }
+    try {
+        const pacote = { formato: 'rpg-naruto-catalogo', versao: 1, exportadoEm: new Date().toISOString() };
+        for (const col of COLECOES_CATALOGO) {
+            const snap = await getDocs(collection(db, col));
+            pacote[col] = {};
+            snap.forEach(d => { pacote[col][d.id] = d.data(); });
+        }
+        const blob = new Blob([JSON.stringify(pacote, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `catalogo-rpg-naruto-${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+        const total = COLECOES_CATALOGO.reduce((n, c) => n + Object.keys(pacote[c]).length, 0);
+        document.getElementById('catalogo-status').innerHTML = `✅ Arquivo baixado com ${total} registros (${COLECOES_CATALOGO.map(c => `${Object.keys(pacote[c]).length} ${c}`).join(', ')}).`;
+    } catch (e) {
+        console.error(e);
+        alert("Erro ao exportar: " + e.message);
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-download" aria-hidden="true"></i> Exportar'; }
+    }
+};
+
+let importacaoPendente = null;
+window.lerArquivoImportacao = async (ev) => {
+    const arquivo = ev.target.files[0];
+    ev.target.value = '';
+    if (!arquivo) return;
+    const area = document.getElementById('catalogo-previa');
+    try {
+        const pacote = JSON.parse(await arquivo.text());
+        if (!COLECOES_CATALOGO.some(c => pacote[c] && typeof pacote[c] === 'object')) throw new Error('O arquivo não tem jutsus, ferramentas nem itens.');
+        const mudancas = [];
+        for (const col of COLECOES_CATALOGO) {
+            if (!pacote[col]) continue;
+            const atuais = {};
+            (await getDocs(collection(db, col))).forEach(d => { atuais[d.id] = d.data(); });
+            for (const [id, novo] of Object.entries(pacote[col])) {
+                if (!novo || typeof novo !== 'object') continue;
+                const atual = atuais[id];
+                const campos = Object.keys(novo).filter(k => JSON.stringify(novo[k]) !== JSON.stringify(atual ? atual[k] : undefined));
+                if (!campos.length) continue;
+                mudancas.push({ col, id, novo: !atual, nome: novo.nome || atual?.nome || novo.titulo || id, campos, dados: Object.fromEntries(campos.map(k => [k, novo[k]])), antes: atual || {} });
+            }
+        }
+        importacaoPendente = mudancas;
+        if (!mudancas.length) { area.innerHTML = '<p class="arena-vazio">Nada para mudar: tudo no arquivo já é igual ao banco.</p>'; return; }
+        const fmt = (v) => v === undefined ? '<em>vazio</em>' : esc(typeof v === 'object' ? JSON.stringify(v) : String(v));
+        area.innerHTML = `
+            <p class="form-ajuda">Revise o que vai mudar. Desmarque o que não quiser importar. Nada é apagado: só campos novos ou alterados.</p>
+            <div class="importacao-lista">${mudancas.map((m, i) => `
+                <details class="importacao-item">
+                    <summary><label><input type="checkbox" class="importacao-check" data-i="${i}" checked> <strong>${esc(m.nome)}</strong> <small>(${esc(m.col)}${m.novo ? ' · NOVO' : ''} · ${m.campos.length} campo${m.campos.length > 1 ? 's' : ''})</small></label></summary>
+                    <table class="importacao-tabela">${m.campos.map(k => `<tr><td>${esc(k)}</td><td>${fmt(m.antes[k])}</td><td>→</td><td><strong>${fmt(m.dados[k])}</strong></td></tr>`).join('')}</table>
+                </details>`).join('')}</div>
+            <div class="importacao-acoes">
+                <button class="buy-btn" onclick="window.confirmarImportacao()"><i class="fa-solid fa-file-import" aria-hidden="true"></i> Importar selecionados</button>
+                <button class="btn-arena-sec" onclick="document.getElementById('catalogo-previa').innerHTML=''">Cancelar</button>
+            </div>`;
+    } catch (e) {
+        console.error(e);
+        area.innerHTML = `<p style="color:var(--danger);font-weight:700;">Não foi possível ler o arquivo: ${esc(e.message)}</p>`;
+    }
+};
+
+window.confirmarImportacao = async () => {
+    if (!importacaoPendente) return;
+    const escolhidos = [...document.querySelectorAll('.importacao-check:checked')].map(c => importacaoPendente[Number(c.dataset.i)]);
+    if (!escolhidos.length) return alert("Nenhum registro selecionado.");
+    if (!confirm(`Importar ${escolhidos.length} registro(s) para o banco?`)) return;
+    try {
+        for (let i = 0; i < escolhidos.length; i += 400) {
+            const lote = writeBatch(db);
+            escolhidos.slice(i, i + 400).forEach(m => lote.set(doc(db, m.col, m.id), m.dados, { merge: true }));
+            await lote.commit();
+        }
+        limparCache();
+        importacaoPendente = null;
+        document.getElementById('catalogo-previa').innerHTML = '';
+        document.getElementById('catalogo-status').innerHTML = `✅ ${escolhidos.length} registro(s) importado(s) com sucesso.`;
+    } catch (e) {
+        console.error(e);
+        alert("Erro ao importar: " + e.message);
+    }
+};
 
 // --- PAINEL KAGE: PRÊMIOS DA ROLETA A ENTREGAR ---
 window.carregarPremiosPendentesAdmin = async () => {
@@ -3271,49 +3311,48 @@ window.abrirModalCriacao = () => {
 
     // --- BLOCO 2: ESPECÍFICO POR TIPO ---
 
-    // CASO: JUTSUS (Todos os campos recuperados + Mecânicas Avançadas)
+    // CASO: JUTSUS — campos da arena (veja REGULAMENTO_ARENA.md)
+    const selecao = (label, id, opcoes) => `
+        <div class="input-group"><label for="${id}">${label}</label>
+            <select id="${id}">${opcoes.map(([v, n]) => `<option value="${v}">${n}</option>`).join('')}</select></div>`;
+    const ajuda = (t) => `<p class="form-ajuda">${t}</p>`;
     if (tipo.includes('jutsus')) {
         html += `
             <div class="input-grid-3">
                 ${campo('PREÇO (RYOS)', 'cre-preco', 'number', '0')}
                 ${campo('REQUISITO (NV)', 'cre-requisito', 'number', '1')}
-                ${campo('RANK', 'cre-rank', 'text', 'Ex: A')}
+                ${selecao('RANK', 'cre-rank', [['E', 'E'], ['D', 'D'], ['C', 'C'], ['B', 'B'], ['A', 'A'], ['S', 'S']])}
             </div>
-            <div class="input-grid-3">
-                ${campo('DANO', 'cre-dano', 'text', '0')}
-                ${campo('DEFESA', 'cre-defesa', 'text', '0')}
-                ${campo('CHAKRA', 'cre-chakra', 'text', '0')}
-            </div>
-            <div class="input-grid-3">
-                ${campo('STAMINA', 'cre-stamina', 'text', '0')}
-                ${campo('BÔNUS HP', 'cre-hp', 'text', '0')}
-                ${campo('BÔNUS STAMINA', 'cre-b-stamina', 'text', '0')}
-            </div>
-            
-            <!-- CAIXA DE MECÂNICAS AVANÇADAS -->
-            <div style="margin-top: 15px; padding: 15px; border: 1px solid #34495e; border-radius: 8px; background: rgba(0,0,0,0.03);">
-                <h4 style="color: #e67e22; margin-top: 0; margin-bottom: 15px; font-size: 0.95rem;"><i class="fa-solid fa-gears"></i> Regras de Combate</h4>
-                
+            <div class="form-caixa">
+                <h4><i class="fa-solid fa-khanda" aria-hidden="true"></i> Arena</h4>
                 <div class="input-grid-2">
-                    ${campo('CATEGORIA', 'cre-categoria-jutsu', 'text', 'ninjutsu, taijutsu...')}
-                    ${campo('FUNÇÃO', 'cre-funcao', 'text', 'ataque, defesa, suporte...')}
+                    ${selecao('FUNÇÃO', 'cre-funcao', [['ataque', '⚔️ Ataque'], ['defesa', '🛡️ Defesa'], ['esquiva', '💨 Esquiva/Escape'], ['suporte', '✨ Suporte'], ['modo', '🌀 Modo / Doujutsu']])}
+                    ${selecao('CATEGORIA', 'cre-categoria-jutsu', [['ninjutsu', 'Ninjutsu (soma Intelecto)'], ['taijutsu', 'Taijutsu (soma Força)'], ['genjutsu', 'Genjutsu (soma Intelecto)'], ['bukijutsu', 'Bukijutsu (soma Destreza)'], ['kenjutsu', 'Kenjutsu (soma Destreza)'], ['fuuinjutsu', 'Fuuinjutsu (soma Intelecto)'], ['senjutsu', 'Senjutsu (soma Intelecto)']])}
                 </div>
-                
+                <div class="input-grid-3">
+                    ${campo('PODER', 'cre-poder', 'number', 'Ex: 30')}
+                    ${campo('CUSTO CHAKRA', 'cre-chakra', 'number', '0')}
+                    ${campo('CUSTO STAMINA', 'cre-stamina', 'number', '0')}
+                </div>
+                ${ajuda('<strong>Poder</strong>: no ataque é o dano (somado ao atributo da categoria); na defesa é quanto absorve (somado à Defesa); na esquiva é quanto soma na Velocidade; no suporte/modo é o valor do bônus.')}
                 <div class="input-grid-2">
-                    ${campo('MULTIPLICADOR MAX.', 'cre-multiplicador', 'number', '1')}
-                    ${campo('VELOCIDADE ESQUIVA (1 a 12)', 'cre-rank-esquiva', 'number', '1')}
+                    ${campo('REAÇÃO NECESSÁRIA (1-12)', 'cre-reacao', 'number', 'vazio = padrão do Rank')}
+                    ${campo('VELOCIDADE NECESSÁRIA (1-12)', 'cre-velocidade', 'number', 'vazio = padrão do Rank')}
                 </div>
-
-                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
-                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; font-weight: bold; color: #555;">
-                        <input type="checkbox" id="cre-imp-esquiva" style="width: 16px; height: 16px;">
-                        Impossível Esquivar (Ex: Amaterasu)
-                    </label>
-
-                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; font-weight: bold; color: #555;">
-                        <input type="checkbox" id="cre-imp-defender" style="width: 16px; height: 16px;">
-                        Impossível Defender Físico (Ex: Ninjutsus)
-                    </label>
+                <div class="input-grid-3">
+                    ${campo('MULTIPLICADOR MÁX.', 'cre-multiplicador', 'number', '1')}
+                    ${campo('SANGRAMENTO (DANO/TURNO)', 'cre-sangramento', 'number', '0')}
+                    ${campo('SANGRAMENTO (TURNOS)', 'cre-sangramento-turnos', 'number', '2')}
+                </div>
+                <div class="input-grid-3">
+                    ${selecao('EFEITO (SUPORTE/MODO)', 'cre-efeito-jutsu', [['', '—'], ['ataque', '+ Ataque'], ['defesa', '+ Defesa'], ['velocidade', '+ Velocidade'], ['reacao', '+ Reação'], ['cura', 'Cura (Vida)'], ['chakra', 'Recupera Chakra'], ['clones', 'Clones']])}
+                    ${campo('DURAÇÃO (TURNOS)', 'cre-duracao', 'number', 'modo: vazio = até desativar')}
+                    ${campo('MANUTENÇÃO (CP/TURNO)', 'cre-manutencao', 'number', '0')}
+                </div>
+                ${ajuda('<strong>Clones</strong>: escolha o efeito "Clones" e coloque no Poder quantos clones são criados. O chakra gasto vira a reserva deles.')}
+                <div class="form-checks">
+                    <label><input type="checkbox" id="cre-imp-esquiva"> Impossível esquivar (ex.: Amaterasu)</label>
+                    <label><input type="checkbox" id="cre-imp-defender"> Impossível defender fisicamente</label>
                 </div>
             </div>
         `;
@@ -3325,11 +3364,16 @@ window.abrirModalCriacao = () => {
             <div class="input-grid-3">
                 ${campo('PREÇO', 'cre-preco', 'number', '0')}
                 ${campo('REQUISITO (NV)', 'cre-requisito', 'number', '1')}
-                ${campo('DANO', 'cre-dano', 'text', '0')}
+                ${campo(tipo.includes('ferramenta') ? 'PODER (DANO)' : 'DEFESA', tipo.includes('ferramenta') ? 'cre-poder' : 'cre-defesa', 'number', '0')}
             </div>
-            <div class="input-grid-2">
-                ${campo('STAMINA', 'cre-stamina', 'text', '0')}
-                ${campo('DEFESA', 'cre-defesa', 'text', '0')}
+            <div class="input-grid-3">
+                ${campo('CUSTO STAMINA', 'cre-stamina', 'number', '0')}
+                ${tipo.includes('ferramenta') ? campo('MULTIPLICADOR MÁX.', 'cre-multiplicador', 'number', 'Ex: 3 shurikens') : campo('RECUPERA VIDA', 'cre-hp', 'number', '0')}
+                ${tipo.includes('ferramenta') ? '' : campo('RECUPERA CHAKRA', 'cre-b-chakra', 'number', '0')}
+            </div>
+            ${tipo.includes('ferramenta') ? '' : `<div class="input-grid-3">${campo('RECUPERA STAMINA', 'cre-b-stamina', 'number', '0')}</div>`}
+            <div class="form-checks">
+                <label><input type="checkbox" id="cre-recuperavel"> Recuperável na arena (volta para o inventário, ex.: katana). Desmarcado = gasta ao usar (ex.: shuriken, pílula).</label>
             </div>
         `;
 
@@ -3417,9 +3461,17 @@ document.getElementById('form-criacao-geral').onsubmit = async (e) => {
         dados.nome = nomeInput;
         dados.preco = Number(getVal('cre-preco')) || 0;
         dados.requisito = Number(getVal('cre-requisito')) || 0;
-        dados.dano = getVal('cre-dano') || "";
-        dados.defesa = getVal('cre-defesa') || "";
-        dados.stamina = getVal('cre-stamina') || "";
+        const numOuVazio = (id) => { const v = getVal(id); return v === null || v === "" ? null : Number(v); };
+        dados.stamina = Number(getVal('cre-stamina')) || 0;
+        if (!tipo.includes('jutsus')) {
+            if (numOuVazio('cre-poder') !== null) dados.poder = numOuVazio('cre-poder');
+            if (numOuVazio('cre-defesa') !== null) dados.defesa = numOuVazio('cre-defesa');
+            if (numOuVazio('cre-multiplicador') !== null) dados.multiplicador_maximo = numOuVazio('cre-multiplicador');
+            if (numOuVazio('cre-hp')) dados.bonus_hp = numOuVazio('cre-hp');
+            if (numOuVazio('cre-b-chakra')) dados.bonus_chakra = numOuVazio('cre-b-chakra');
+            if (numOuVazio('cre-b-stamina')) dados.bonus_stamina = numOuVazio('cre-b-stamina');
+            dados.recuperavel = !!document.getElementById('cre-recuperavel')?.checked;
+        }
         
         if (tipo === 'loja') {
             dados.tipo = getVal('cre-tipo-loja') || "mercado";
@@ -3429,22 +3481,24 @@ document.getElementById('form-criacao-geral').onsubmit = async (e) => {
         }
 
         if (tipo.includes('jutsus')) {
-            dados.rank = getVal('cre-rank') || "";
-            dados.chakra = getVal('cre-chakra') || "";
-            dados.bonus_hp = getVal('cre-hp') || "";
-            dados.bonus_stamina = getVal('cre-b-stamina') || "";
-            
-            // --- CAPTURANDO AS NOVAS MECÂNICAS ---
-            dados.categoria = getVal('cre-categoria-jutsu') || "ninjutsu";
+            dados.rank = getVal('cre-rank') || "D";
             dados.funcao = getVal('cre-funcao') || "ataque";
-            dados.multiplicador_maximo = Number(getVal('cre-multiplicador')) || 1;
-            dados.rank_esquiva_minimo = Number(getVal('cre-rank-esquiva')) || 1;
-            
-            // Tratamento especial para os checkboxes
-            const checkEsquiva = document.getElementById('cre-imp-esquiva');
-            const checkDefesa = document.getElementById('cre-imp-defender');
-            dados.impossivel_esquivar = checkEsquiva ? checkEsquiva.checked : false;
-            dados.impossivel_defender_fisico = checkDefesa ? checkDefesa.checked : false;
+            dados.categoria = getVal('cre-categoria-jutsu') || "ninjutsu";
+            dados.poder = Number(getVal('cre-poder')) || 0;
+            dados.chakra = Number(getVal('cre-chakra')) || 0;
+            const campoNum = (id, chave) => { const v = numOuVazio(id); if (v !== null && v !== 0) dados[chave] = v; };
+            campoNum('cre-reacao', 'reacao_necessaria');
+            campoNum('cre-velocidade', 'velocidade_necessaria');
+            campoNum('cre-multiplicador', 'multiplicador_maximo');
+            campoNum('cre-sangramento', 'sangramento');
+            if (dados.sangramento) dados.sangramento_turnos = numOuVazio('cre-sangramento-turnos') || 2;
+            const efeito = getVal('cre-efeito-jutsu');
+            if (efeito === 'clones') dados.clones = dados.poder;
+            else if (efeito) dados.efeito = efeito;
+            campoNum('cre-duracao', 'duracao');
+            campoNum('cre-manutencao', 'custo_por_turno');
+            dados.impossivel_esquivar = !!document.getElementById('cre-imp-esquiva')?.checked;
+            dados.impossivel_defender_fisico = !!document.getElementById('cre-imp-defender')?.checked;
         }
     }
 
@@ -3904,160 +3958,6 @@ window.pagarSalariosGeral = async () => {
             btn.innerHTML = '<i class="fa-solid fa-coins"></i> Pagar Salários';
         }
     }
-};
-
-
-// --- MOTOR DE REAÇÃO (DEFESA / ESQUIVA) ---
-window.reagirAtaque = async (acaoDefensiva, jutsuEscolhido = null) => {
-    
-    // 1. SE O JOGADOR CLICOU EM "USAR JUTSU" (Abre o menu para escolher)
-    if (acaoDefensiva === 'jutsu' && !jutsuEscolhido) {
-        const modal = document.getElementById('modal-jutsus-defensivos');
-        const lista = document.getElementById('lista-jutsus-defesa');
-        lista.innerHTML = '';
-
-        // Filtra os jutsus lendo se contém "defesa" ou "esquiva" na função
-        const jutsusDefensivos = window.meusJutsusCarregados.filter(j => {
-            const func = String(j.funcao || '').toLowerCase();
-            return func.includes('defesa') || func.includes('esquiva');
-        });
-
-        if (jutsusDefensivos.length === 0) {
-            return alert("Você não possui nenhum Jutsu com a função 'defesa' ou 'esquiva' equipados!");
-        }
-
-        jutsusDefensivos.forEach(jutsu => {
-            const btn = document.createElement('button');
-            btn.className = 'buy-btn';
-            btn.style.background = '#8e44ad';
-            btn.innerHTML = `<strong>${esc(jutsu.nome)}</strong><br><span style="font-size:0.75rem;">(-${esc(jutsu.chakra || 0)} CP | -${esc(jutsu.stamina || 0)} SP)</span>`;
-            
-            btn.onclick = () => {
-                modal.style.display = 'none';
-                window.reagirAtaque('jutsu', jutsu); // Inicia a defesa mágica
-            };
-            lista.appendChild(btn);
-        });
-
-        modal.style.display = 'flex';
-        return; // Interrompe a função até o jogador escolher o jutsu
-    }
-
-    // --- CONTINUAÇÃO DA DEFESA APÓS ESCOLHA ---
-    document.getElementById('arena-reaction-box').style.display = 'none';
-    document.getElementById('arena-controls').style.display = 'grid'; 
-
-    let danoRecebido = window.danoAmeacaAtual || 0;
-    let msgDefesa = "";
-    
-    const agilidade = Number(currentUserData.agilidade) || 0;
-    const forca = Number(currentUserData.forca) || 0;
-    const defesaBase = Number(currentUserData.defesa) || 0;
-
-    // 2. SE ESCOLHEU UM JUTSU PARA DEFENDER
-    if (acaoDefensiva === 'jutsu' && jutsuEscolhido) {
-        const custoCp = jutsuEscolhido.chakra ? Math.abs(jutsuEscolhido.chakra) : 0;
-        const custoSp = jutsuEscolhido.stamina ? Math.abs(jutsuEscolhido.stamina) : 0;
-
-        if ((currentUserData.chakra || 0) < custoCp || (currentUserData.stamina || 0) < custoSp) {
-            document.getElementById('arena-reaction-box').style.display = 'block'; 
-            document.getElementById('arena-controls').style.display = 'none';
-            return alert(`Recursos insuficientes para usar ${jutsuEscolhido.nome}! Escolha outra defesa.`);
-        }
-
-        // Gasta os recursos na ficha local
-        currentUserData.chakra -= custoCp;
-        currentUserData.stamina -= custoSp;
-
-        let resultadoDefesa = window.rolarDados(jutsuEscolhido.dano || "d20"); 
-        let totalBloqueio = (typeof resultadoDefesa === 'number' ? resultadoDefesa : resultadoDefesa.totalFinal) + defesaBase;
-
-        danoRecebido -= totalBloqueio;
-        if (danoRecebido <= 0) {
-            danoRecebido = 0;
-            msgDefesa = `✨ Você usou [${esc(jutsuEscolhido.nome)}] e neutralizou completamente o ataque inimigo! (Poder defensivo: ${totalBloqueio})`;
-        } else {
-            msgDefesa = `✨ Seu [${esc(jutsuEscolhido.nome)}] conteve grande parte do golpe, mas alguma força vazou! (Poder defensivo: ${totalBloqueio})`;
-        }
-    }
-    // 3. SE ESCOLHEU RECEBER
-    else if (acaoDefensiva === 'receber') {
-        msgDefesa = "Você não esboçou reação e aceitou o impacto em cheio!";
-    } 
-    // 4. SE ESCOLHEU ESQUIVAR
-    else if (acaoDefensiva === 'esquivar') {
-        let rolagem = Math.floor(Math.random() * 20) + 1;
-        let totalEsquiva = rolagem + agilidade;
-        
-        if (totalEsquiva >= danoRecebido) {
-            danoRecebido = 0;
-            msgDefesa = `💨 Esquiva Perfeita! Você sumiu da visão do inimigo! (Rolou ${rolagem} + ${agilidade} Agi = ${totalEsquiva}).`;
-        } else {
-            danoRecebido = Math.floor(danoRecebido / 2); // Pelo menos reduz metade do dano
-            msgDefesa = `Você tentou escapar, mas foi pego de raspão! (Rolou ${rolagem} + ${agilidade} Agi = ${totalEsquiva}).`;
-        }
-    }
-    // 5. SE ESCOLHEU DEFENDER FÍSICO
-    else if (acaoDefensiva === 'defender') {
-        let rolagem = Math.floor(Math.random() * 20) + 1;
-        let bonus = Math.max(forca, defesaBase); 
-        let totalDefesa = rolagem + bonus;
-
-        const categoriaAtaque = String(window.categoriaAmeacaAtual).toLowerCase(); 
-        
-        if (categoriaAtaque.includes('ninjutsu') || categoriaAtaque.includes('genjutsu')) {
-            let reducaoMinima = Math.floor(danoRecebido * 0.1);
-            danoRecebido -= reducaoMinima;
-            msgDefesa = `🔥 Erro fatal! Você tentou bloquear "${esc(categoriaAtaque)}" com os braços! Sua guarda física foi inútil contra a natureza do chakra!`;
-        } else {
-            danoRecebido -= totalDefesa;
-            if (danoRecebido <= 0) {
-                danoRecebido = 0;
-                msgDefesa = `🛡️ Defesa Absoluta! Você bloqueou o ataque físico com perfeição! (Rolou ${rolagem} + ${bonus} = ${totalDefesa}).`;
-            } else {
-                msgDefesa = `🛡️ Você bloqueou parcialmente o golpe físico. (Defesa total: ${totalDefesa}).`;
-            }
-        }
-    }
-
-    // 6. APLICA O DANO NO HP E ATUALIZA A TELA
-    let hpAtual = currentUserData.vida ?? 100;
-    hpAtual -= danoRecebido;
-    if (hpAtual < 0) hpAtual = 0; 
-    
-    currentUserData.vida = hpAtual;
-    
-    const txtHp = document.getElementById('arena-player-hp-txt').innerText.split('/');
-    const txtCp = document.getElementById('arena-player-cp-txt').innerText.split('/');
-    const maxCp = Number(txtCp[1]) || 1;
-    const txtSp = document.getElementById('arena-player-sp-txt').innerText.split('/');
-    const maxSp = Number(txtSp[1]) || 1;
-
-    // Atualiza as 3 barras de uma vez
-    window.atualizarBarraArena('player', 'hp', hpAtual, Number(txtHp[1]));
-    window.atualizarBarraArena('player', 'cp', currentUserData.chakra, maxCp);
-    window.atualizarBarraArena('player', 'sp', currentUserData.stamina, maxSp);
-    
-    // Salva tudo no Firebase (Vida, e recursos que podem ter sido gastos na defesa)
-    try {
-        await updateDoc(doc(db, "users", auth.currentUser.uid), {
-            vida: hpAtual,
-            chakra: currentUserData.chakra,
-            stamina: currentUserData.stamina
-        });
-    } catch(e) { console.error("Erro ao salvar status pós-defesa:", e); }
-
-    // 7. REGISTRA A DEFESA NO LOG
-    const logArena = document.getElementById('arena-log');
-    logArena.innerHTML += `
-        <div style="background: rgba(241, 196, 15, 0.1); padding: 8px; border-left: 3px solid #f1c40f; margin-top: 10px; border-radius: 4px;">
-            <div style="color: #f1c40f; font-weight: bold;">> ${msgDefesa}</div>
-            ${danoRecebido > 0 ? `<div style="color: #e74c3c;">> Sofreu -${danoRecebido} de Vida!</div>` : ''}
-        </div>
-    `;
-    logArena.scrollTop = logArena.scrollHeight;
-
-    // TODO: Transmitir a defesa para o inimigo ler!
 };
 
 

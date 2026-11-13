@@ -590,16 +590,150 @@ body.dark-mode .shop-cat-btn.active { background: #c2410c; border-color: #c2410c
 .rank-d { background-color: #facc15; color: #1c1917; } .rank-e { background-color: #64748b; }
 
 /* ---------- 8. ARENA ---------- */
-#batalha #arena-container > div:first-child { background: var(--surface) !important; }
-#arena-controls .buy-btn { min-height: 64px; }
-#arena-reaction-box { background: rgba(220, 38, 38, .1) !important; }
-#arena-reaction-text { color: var(--text) !important; }
-#arena-waiting { background: var(--surface); border: 2px dashed var(--border-strong); border-radius: 20px; }
-#arena-waiting i { color: var(--border-strong) !important; }
+.arena-lobby { background: var(--surface); border: 2px dashed var(--border-strong); border-radius: 20px; padding: 20px; }
+.arena-lobby-intro { color: var(--text-muted); font-weight: 600; margin-bottom: 14px; }
+.arena-lobby-vazio { color: var(--text-muted); text-align: center; padding: 18px; font-weight: 700; }
+.arena-lobby-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; background: var(--surface-2); border: 1px solid var(--border); border-left: 4px solid var(--primary-bright); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 10px; }
+.arena-lobby-titulo { font-weight: 800; }
+.arena-lobby-sub { color: var(--text-muted); font-size: .88rem; font-weight: 600; }
+.btn-arena-sec { background: var(--surface-2); color: var(--text); border: 1px solid var(--border-strong); border-radius: 999px; padding: 8px 14px; min-height: 40px; font-weight: 800; cursor: pointer; }
+.btn-arena-sec:hover { border-color: var(--primary-bright); }
+.btn-arena-sec.perigo { color: var(--danger); }
 
-/* Restos do painel de batalha antigo (mantidos por compatibilidade) */
-.battle-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-.battle-card { background: #1a1a1a; color: #fff; border-radius: 15px; padding: 15px; }
+.arena-container { flex-direction: column; gap: 14px; }
+.arena-topo-fixo { display: flex; flex-direction: column; gap: 10px; }
+.arena-topo { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.arena-modo { background: var(--primary-soft); color: var(--primary); font-weight: 900; padding: 6px 14px; border-radius: 999px; font-size: .88rem; }
+.arena-situacao { font-weight: 900; font-size: 1.05rem; }
+.arena-timer { position: relative; height: 22px; background: var(--surface-3); border-radius: 999px; overflow: hidden; border: 1px solid var(--border); }
+.arena-timer-fill { height: 100%; background: linear-gradient(90deg, #fb923c, #c2410c); transition: width .5s linear; }
+.arena-timer-fill.urgente { background: linear-gradient(90deg, #f87171, #b91c1c); animation: pulsoUrgente .6s ease-in-out infinite alternate; }
+.arena-timer-fill.pausado { background: repeating-linear-gradient(45deg, #94a3b8, #94a3b8 10px, #cbd5e1 10px, #cbd5e1 20px); }
+.arena-timer-txt { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: .8rem; color: var(--text); }
+@keyframes pulsoUrgente { from { opacity: .7; } to { opacity: 1; } }
+
+.arena-lutadores { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: stretch; }
+.arena-vs { align-self: center; font-family: var(--font-display); font-size: 2rem; color: var(--primary-bright); }
+.arena-lutador { background: var(--surface); border: 2px solid var(--border); border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow-sm); transition: border-color .3s, box-shadow .3s; }
+.arena-lutador.na-vez { border-color: var(--primary-bright); box-shadow: 0 0 0 4px var(--primary-soft), var(--shadow); }
+.arena-lutador-topo { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.arena-lutador-topo img { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary-bright); }
+.arena-lutador.oponente .arena-lutador-topo img { border-color: var(--hp); }
+.arena-lutador-nome { font-weight: 900; }
+.arena-lutador-nome small { color: var(--text-muted); font-weight: 700; }
+.arena-lutador-stats { font-size: .78rem; color: var(--text-muted); font-weight: 700; }
+.arena-recurso { margin-bottom: 6px; }
+.arena-recurso-topo { display: flex; justify-content: space-between; font-size: .75rem; font-weight: 900; margin-bottom: 2px; }
+.arena-recurso-barra { height: 10px; background: var(--surface-3); border-radius: 999px; overflow: hidden; }
+.arena-recurso-barra > div { height: 100%; border-radius: 999px; transition: width .5s ease; }
+.r-vida .arena-recurso-barra > div { background: linear-gradient(90deg, #f87171, var(--hp)); }
+.r-chakra .arena-recurso-barra > div { background: linear-gradient(90deg, #60a5fa, var(--chakra)); }
+.r-stamina .arena-recurso-barra > div { background: linear-gradient(90deg, #4ade80, var(--stamina)); }
+.arena-efeitos { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.arena-efeito { font-size: .72rem; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: var(--en-soft); color: var(--en); }
+.arena-efeito.efeito-modo { background: rgba(220, 38, 38, .12); color: var(--hp); }
+.arena-efeito.efeito-ruim { background: rgba(185, 28, 28, .15); color: #b91c1c; }
+.arena-efeito.efeito-clone { background: var(--primary-soft); color: var(--primary); }
+
+.arena-painel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow-sm); }
+.arena-aviso { color: var(--text-muted); font-weight: 800; text-align: center; padding: 14px; }
+.arena-contador { font-weight: 700; margin-bottom: 4px; }
+.arena-secao { font-size: .8rem; font-weight: 900; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text-muted); margin: 12px 0 8px; }
+.arena-cartas { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.arena-carta {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left;
+    background: var(--surface-2); color: var(--text); border: 2px solid var(--border); border-left-width: 5px;
+    border-radius: 12px; padding: 10px 12px; min-height: 76px; cursor: pointer; font-size: .9rem;
+    transition: transform .15s, border-color .15s, box-shadow .15s;
+}
+.arena-carta:hover:not(:disabled) { transform: translateY(-2px); box-shadow: var(--shadow); }
+.arena-carta:disabled { opacity: .45; cursor: not-allowed; }
+.arena-carta.ataque { border-left-color: var(--hp); }
+.arena-carta.suporte, .arena-carta.item { border-left-color: var(--stamina); }
+.arena-carta.modo { border-left-color: #7c3aed; }
+.arena-carta.esquiva { border-left-color: var(--chakra); }
+.arena-carta.defesa { border-left-color: var(--gold); }
+.arena-carta.receber { border-left-color: #64748b; }
+.carta-dano { color: var(--hp); font-weight: 900; }
+.carta-tag { color: var(--primary); font-weight: 800; font-size: .82rem; }
+.carta-info { color: var(--text-muted); font-size: .76rem; font-weight: 700; }
+.arena-vazio { color: var(--text-muted); font-weight: 600; }
+.arena-modos-ativos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.arena-ameaca { background: rgba(220, 38, 38, .1); border: 2px solid var(--hp); border-radius: 12px; padding: 12px; margin-bottom: 12px; }
+.arena-ameaca-titulo { font-weight: 900; font-size: 1.05rem; color: var(--hp); }
+.arena-ameaca-info { font-weight: 700; font-size: .88rem; margin-top: 4px; }
+.arena-ameaca-aviso { font-weight: 700; font-size: .85rem; color: var(--text-muted); margin-top: 4px; }
+.arena-rodape { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.arena-rodape .arena-btn-passar { width: auto; min-width: 180px; margin: 0; }
+.arena-rodape-sec { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-left: auto; }
+.arena-proposta { font-weight: 800; font-size: .88rem; }
+.arena-log { background: #12141c; color: #e2e8f0; border-radius: 12px; padding: 12px; max-height: 260px; overflow-y: auto; font-size: .9rem; line-height: 1.5; border-left: 5px solid var(--primary-bright); }
+.log-item { padding: 3px 0; border-bottom: 1px solid rgba(255, 255, 255, .05); }
+.log-turno { color: #fdba74; font-weight: 900; text-align: center; margin-top: 6px; }
+.log-ataque { color: #fca5a5; } .log-dano { color: #f87171; font-weight: 800; }
+.log-reacao { color: #93c5fd; } .log-suporte { color: #86efac; } .log-efeito { color: #c4b5fd; }
+.log-sistema { color: #94a3b8; font-style: italic; } .log-queda, .log-fim { color: #fde68a; font-weight: 900; }
+.arena-resultado { text-align: center; padding: 20px; border-radius: 14px; font-weight: 800; }
+.arena-resultado-titulo { font-family: var(--font-display); font-size: 2.2rem; margin-bottom: 4px; }
+.arena-resultado.vitoria { background: rgba(21, 128, 61, .12); color: var(--success); }
+.arena-resultado.derrota { background: rgba(185, 28, 28, .12); color: var(--hp); }
+.arena-resultado.empate { background: var(--surface-2); color: var(--text); }
+.arena-resultado-premio { margin-top: 10px; font-size: 1.05rem; color: var(--text); }
+
+/* Botão da Arena pulsa quando há batalha em andamento */
+.luta-ativa { position: relative; }
+.luta-ativa::after { content: ""; position: absolute; top: 10px; right: 12px; width: 10px; height: 10px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 0 0 rgba(239, 68, 68, .7); animation: aoVivo 1.4s infinite; }
+.bottom-nav .luta-ativa::after { top: 6px; right: 22%; }
+@keyframes aoVivo { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, .7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+
+/* Janelas da arena (desafio, convite, configurar ataque) */
+.modal-arena { position: fixed; inset: 0; z-index: 9999; background: rgba(10, 8, 6, .78); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 12px; }
+.modal-arena[style*="none"] { display: none !important; }
+.modal-arena-caixa { position: relative; background: var(--surface); color: var(--text); border-radius: 20px; border-top: 6px solid var(--primary-bright); padding: 24px; width: 100%; max-width: 440px; max-height: 92vh; overflow-y: auto; box-shadow: var(--shadow-lg); animation: modalShow .25s ease; text-align: center; }
+.modal-arena-caixa h3 { font-weight: 900; margin-bottom: 12px; font-size: 1.3rem; }
+.modal-arena-icone { font-size: 2.6rem; color: var(--primary-bright); margin-bottom: 8px; }
+.modal-arena-botoes { display: flex; gap: 10px; margin-top: 16px; }
+#texto-desafio { line-height: 1.6; }
+.modos-desafio { display: flex; flex-direction: column; gap: 8px; text-align: left; margin-bottom: 12px; }
+.modo-opcao { display: flex; gap: 10px; align-items: flex-start; padding: 12px; border: 2px solid var(--border); border-radius: 12px; cursor: pointer; background: var(--surface-2); }
+.modo-opcao:has(input:checked) { border-color: var(--primary-bright); background: var(--primary-soft); }
+.modo-opcao input { margin-top: 4px; accent-color: var(--primary); width: 18px; height: 18px; }
+.modo-opcao span { display: flex; flex-direction: column; }
+.modo-opcao small { color: var(--text-muted); font-weight: 600; }
+.desafio-competitivo { text-align: left; }
+.desafio-competitivo label { font-size: .75rem; font-weight: 900; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px; }
+.desafio-saldo { font-size: .85rem; color: var(--text-muted); font-weight: 700; margin-bottom: 12px; }
+.config-ataque-previa { background: var(--surface-2); border-radius: 12px; padding: 10px; margin: 6px 0 14px; font-weight: 700; }
+#modal-config-ataque label { font-size: .75rem; font-weight: 900; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 4px; text-align: left; }
+
+@media (max-width: 768px) {
+    /* Celular: cronômetro e situação ficam presos no topo enquanto rola a tela */
+    .arena-topo-fixo { position: sticky; top: -14px; z-index: 5; background: var(--bg); padding: 8px 0 6px; margin: -8px 0 0; }
+    .arena-topo { font-size: .9rem; }
+    .arena-situacao { font-size: .95rem; }
+    /* Lutadores lado a lado, compactos */
+    .arena-lutadores { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .arena-vs { display: none; }
+    .arena-lutador { padding: 10px; }
+    .arena-lutador-topo { gap: 6px; margin-bottom: 6px; }
+    .arena-lutador-topo img { width: 36px; height: 36px; border-width: 2px; }
+    .arena-lutador-nome { font-size: .85rem; line-height: 1.2; }
+    .arena-lutador-nome small { display: none; }
+    .arena-lutador-stats { font-size: .68rem; }
+    .arena-recurso-topo { font-size: .66rem; }
+    .arena-recurso-barra { height: 7px; }
+    .arena-efeito { font-size: .64rem; padding: 1px 6px; }
+    /* Cartas em 2 colunas */
+    .arena-painel { padding: 10px; }
+    .arena-cartas { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .arena-carta { padding: 8px 10px; min-height: 64px; font-size: .82rem; }
+    .carta-info { font-size: .7rem; }
+    .arena-ameaca { padding: 10px; }
+    .arena-ameaca-titulo { font-size: .95rem; }
+    .arena-ameaca-info { font-size: .8rem; }
+    .arena-rodape .arena-btn-passar { width: 100%; }
+    .arena-rodape-sec { margin-left: 0; }
+}
 
 /* ---------- 9. FEED ---------- */
 #feed { max-width: 620px; margin: 0 auto; width: 100%; }
@@ -785,6 +919,24 @@ body.dark-mode .shop-cat-btn.active { background: #c2410c; border-color: #c2410c
 .premio-info span { color: var(--text-muted); font-weight: 700; }
 .premio-acoes { display: flex; gap: 8px; }
 .premio-acoes .btn-adm { flex: none; padding: 8px 14px; }
+
+.catalogo-caixa { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+.catalogo-botoes { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 8px 0; }
+.catalogo-botoes .btn-arena-sec { display: inline-flex; align-items: center; gap: 6px; }
+.importacao-lista { display: flex; flex-direction: column; gap: 6px; max-height: 420px; overflow-y: auto; margin: 8px 0; }
+.importacao-item { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; }
+.importacao-item summary { cursor: pointer; }
+.importacao-item small { color: var(--text-muted); }
+.importacao-tabela { width: 100%; font-size: .82rem; margin-top: 6px; border-collapse: collapse; }
+.importacao-tabela td { padding: 3px 6px; border-top: 1px solid var(--border); vertical-align: top; overflow-wrap: anywhere; }
+.importacao-tabela td:first-child { font-family: ui-monospace, monospace; color: var(--text-muted); }
+.importacao-acoes { display: flex; gap: 10px; align-items: center; }
+.importacao-acoes .buy-btn { width: auto; margin: 0; }
+.form-caixa { border: 1px solid var(--border-strong); border-radius: 12px; padding: 14px; margin: 10px 0 14px; background: var(--surface-2); }
+.form-caixa h4 { color: var(--primary); margin-bottom: 10px; font-size: .95rem; }
+.form-ajuda { font-size: .82rem; color: var(--text-muted); font-weight: 600; margin: -4px 0 10px; line-height: 1.5; }
+.form-checks { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.form-checks label { display: flex !important; align-items: center; gap: 8px; text-transform: none !important; font-size: .88rem !important; letter-spacing: 0 !important; color: var(--text) !important; }
 
 /* ---------- 15. BANCO NINJA (loja premium) ---------- */
 #loja-premium { display: none !important; }

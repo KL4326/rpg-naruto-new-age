@@ -195,6 +195,50 @@ await caso('Ver desafios recebidos', true, () => getDocs(query(collection(dbB(),
 await caso('Aceitar desafio', true, () => updateDoc(doc(dbB(), 'desafios_batalha', 'd1'), { status: 'aceito' }));
 await caso('Intruso mexer no desafio', false, () => updateDoc(doc(env.authenticatedContext('intruso').firestore(), 'desafios_batalha', 'd1'), { status: 'aceito' }));
 
+// ---------- Arena: cofre do competitivo e resultado ----------
+const batalhaFinal = (extra = {}) => ({ desafianteId: A, desafiadoId: B, status: 'finalizada', modo: 'competitivo', aposta: { moeda: 'ryos', valor: 100 }, cofre: { [A]: 100, [B]: 100 },
+  estado: { status: 'finalizada', resultado: { vencedor: A, perdedor: B, empate: false } }, ...extra });
+const semearBatalha = (id, dados) => env.withSecurityRulesDisabled(c => setDoc(doc(c.firestore(), 'desafios_batalha', id), dados));
+function desafioCompetitivo(dbX, valor, pago = valor, moeda = 'ryos') {
+  const ref = doc(collection(dbX, 'desafios_batalha'));
+  const b = writeBatch(dbX);
+  b.set(ref, { desafianteId: A, desafiadoId: B, status: 'pendente', modo: 'competitivo', aposta: { moeda, valor }, cofre: { [A]: valor } });
+  b.update(doc(dbX, 'users', A), { [moeda]: increment(-pago), ultimoCofre: ref.id });
+  return b.commit();
+}
+await caso('Arena: desafio amistoso', true, () => addDoc(collection(dbA(), 'desafios_batalha'), { desafianteId: A, desafiadoId: B, status: 'pendente', modo: 'amistoso', cofre: {} }));
+await caso('Arena: desafiar a si mesmo', false, () => addDoc(collection(dbA(), 'desafios_batalha'), { desafianteId: A, desafiadoId: A, status: 'pendente', modo: 'amistoso' }));
+await caso('Arena: competitivo paga a aposta para o cofre', true, () => desafioCompetitivo(dbA(), 100));
+await caso('Arena: competitivo pagando MENOS que a aposta', false, () => desafioCompetitivo(dbA(), 100, 10));
+await caso('Arena: apostar XP deixando menos de 10 na barra', false, () => desafioCompetitivo(dbA(), 895, 895, 'xp'));
+await caso('Arena: apostar XP deixando 10 na barra', true, () => desafioCompetitivo(dbA(), 890, 890, 'xp'));
+await caso('Arena: quem aceita paga a parte dele', true, async () => {
+  await semearBatalha('c1', { desafianteId: A, desafiadoId: B, status: 'pendente', modo: 'competitivo', aposta: { moeda: 'ryos', valor: 50 }, cofre: { [A]: 50 } });
+  const db = dbB();
+  const b = writeBatch(db);
+  b.update(doc(db, 'desafios_batalha', 'c1'), { status: 'aceito', 'cofre.jogadorB': 50 });
+  b.update(doc(db, 'users', B), { ryos: increment(-50), ultimoCofre: 'c1' });
+  return b.commit();
+});
+const receber = (dbX, uid, total) => { const b = writeBatch(dbX); b.update(doc(dbX, 'desafios_batalha', 'f1'), { cofrePago: true }); b.update(doc(dbX, 'users', uid), { ryos: increment(total), ultimoCofre: 'f1' }); return b.commit(); };
+await caso('Arena: vencedor recebe o cofre inteiro', true, async () => { await semearBatalha('f1', batalhaFinal()); return receber(dbA(), A, 200); });
+await caso('Arena: PERDEDOR tenta receber o cofre', false, async () => { await semearBatalha('f1', batalhaFinal()); return receber(dbB(), B, 200); });
+await caso('Arena: vencedor tenta receber MAIS que o cofre', false, async () => { await semearBatalha('f1', batalhaFinal()); return receber(dbA(), A, 5000); });
+await caso('Arena: receber o cofre duas vezes', false, async () => { await semearBatalha('f1', batalhaFinal({ cofrePago: true })); return receber(dbA(), A, 200); });
+const devolver = (dbX, uid, id, v) => { const b = writeBatch(dbX); b.update(doc(dbX, 'desafios_batalha', id), { [`cofreDevolvido.${uid}`]: true }); b.update(doc(dbX, 'users', uid), { ryos: increment(v), ultimoCofre: id }); return b.commit(); };
+await caso('Arena: convite recusado devolve a aposta', true, async () => { await semearBatalha('r1', { desafianteId: A, desafiadoId: B, status: 'recusado', modo: 'competitivo', aposta: { moeda: 'ryos', valor: 100 }, cofre: { [A]: 100 } }); return devolver(dbA(), A, 'r1', 100); });
+await caso('Arena: empate devolve a aposta de cada um', true, async () => { await semearBatalha('e1', batalhaFinal({ estado: { status: 'finalizada', resultado: { vencedor: null, perdedor: null, empate: true } } })); return devolver(dbB(), B, 'e1', 100); });
+await caso('Arena: perdedor tenta "devolver" a aposta', false, async () => { await semearBatalha('f1', batalhaFinal()); return devolver(dbB(), B, 'f1', 100); });
+await caso('Arena: devolver duas vezes', false, async () => { await semearBatalha('r1', { desafianteId: A, desafiadoId: B, status: 'recusado', modo: 'competitivo', aposta: { moeda: 'ryos', valor: 100 }, cofre: { [A]: 100 }, cofreDevolvido: { [A]: true } }); return devolver(dbA(), A, 'r1', 100); });
+const contar = (dbX, uid, id, upd) => { const b = writeBatch(dbX); b.update(doc(dbX, 'desafios_batalha', id), { [`contabilizado.${uid}`]: true }); b.update(doc(dbX, 'users', uid), { ...upd, ultimaBatalhaContabilizada: id }); return b.commit(); };
+const rank = (extra = {}) => batalhaFinal({ modo: 'rankeada', aposta: null, cofre: {}, ...extra });
+await caso('Arena: vencedor da rankeada +1 vitória e +25 pontos', true, async () => { await semearBatalha('k1', rank()); return contar(dbA(), A, 'k1', { vitorias: increment(1), pontos_rankeada: 25 }); });
+await caso('Arena: perdedor da rankeada +1 derrota e −15 (não fica negativo)', true, async () => { await semearBatalha('k1', rank()); return contar(dbB(), B, 'k1', { derrotas: increment(1), pontos_rankeada: 0 }); });
+await caso('Arena: perdedor tenta contar VITÓRIA', false, async () => { await semearBatalha('k1', rank()); return contar(dbB(), B, 'k1', { vitorias: increment(1) }); });
+await caso('Arena: vencedor tenta +100 pontos', false, async () => { await semearBatalha('k1', rank()); return contar(dbA(), A, 'k1', { vitorias: increment(1), pontos_rankeada: 100 }); });
+await caso('Arena: contar a mesma luta duas vezes', false, async () => { await semearBatalha('k1', rank({ contabilizado: { [A]: true } })); return contar(dbA(), A, 'k1', { vitorias: increment(1), pontos_rankeada: 25 }); });
+await caso('Arena: empate amistoso +1 empate', true, async () => { await semearBatalha('a1', rank({ modo: 'amistoso', estado: { status: 'finalizada', resultado: { vencedor: null, perdedor: null, empate: true } } })); return contar(dbA(), A, 'a1', { empates: increment(1) }); });
+
 await env.cleanup();
 const falhas = resultados.filter(r => r[0] === '❌');
 resultados.forEach(r => console.log(r[0], r[1]));

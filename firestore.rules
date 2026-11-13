@@ -272,13 +272,81 @@ service cloud.firestore {
           && valor(depois(), t.tipo, 0) == valor(antes(), t.tipo, 0) + t.qtd;
       }
 
+      // 12) ARENA — cofre do modo Competitivo e resultado das lutas
+      function batalha(id) { return caminho('desafios_batalha', id); }
+      function participaDe(b) { return b.desafianteId == userId || b.desafiadoId == userId; }
+      function minimoDaMoeda(m) { return m == 'xp' ? 10 : 0; }   // XP: precisa sobrar 10 na barra do nível
+      function moedaDoCofre() { return mudou().hasOnly(['ryos', 'essencia_ninja', 'xp', 'ultimoCofre']) && mudou().size() <= 2; }
+
+      // Paga a própria aposta para o cofre (ao desafiar ou ao aceitar)
+      function pagarCofre() {
+        return depois().get('ultimoCofre', null) != null && moedaDoCofre() && pagarCofreValido(depois().ultimoCofre);
+      }
+      function pagarCofreValido(bid) {
+        let b = getAfter(batalha(bid)).data;
+        let m = b.aposta.moeda;
+        return participaDe(b)
+          && (!exists(batalha(bid)) || get(batalha(bid)).data.get('cofre', {}).get(userId, null) == null)
+          && b.cofre[userId] == b.aposta.valor
+          && valor(depois(), m, 0) == valor(antes(), m, 0) - b.aposta.valor
+          && valor(depois(), m, 0) >= minimoDaMoeda(m);
+      }
+      // Vencedor recebe o cofre inteiro (uma única vez)
+      function receberCofre() {
+        return depois().get('ultimoCofre', null) != null && moedaDoCofre() && receberCofreValido(depois().ultimoCofre);
+      }
+      function receberCofreValido(bid) {
+        let b = get(batalha(bid)).data;
+        let m = b.aposta.moeda;
+        return b.estado.status == 'finalizada' && b.estado.resultado.vencedor == userId
+          && b.get('cofrePago', false) != true && getAfter(batalha(bid)).data.get('cofrePago', false) == true
+          && valor(depois(), m, 0) == valor(antes(), m, 0) + b.cofre.get(b.desafianteId, 0) + b.cofre.get(b.desafiadoId, 0);
+      }
+      // Devolve a própria aposta (convite recusado/cancelado, luta anulada ou empate)
+      function devolverCofre() {
+        return depois().get('ultimoCofre', null) != null && moedaDoCofre() && devolverCofreValido(depois().ultimoCofre);
+      }
+      function devolverCofreValido(bid) {
+        let b = get(batalha(bid)).data;
+        let m = b.aposta.moeda;
+        return participaDe(b)
+          && (b.status in ['recusado', 'cancelado', 'anulada'] || (b.get('estado', null) != null && b.estado.status == 'finalizada' && b.estado.resultado.empate == true))
+          && b.get('cofrePago', false) != true
+          && b.get('cofreDevolvido', {}).get(userId, false) != true
+          && getAfter(batalha(bid)).data.get('cofreDevolvido', {}).get(userId, false) == true
+          && valor(depois(), m, 0) == valor(antes(), m, 0) + b.cofre.get(userId, 0);
+      }
+      // Vitórias, derrotas, empates e pontos (uma única vez por luta)
+      function contabilizarBatalha() {
+        return depois().get('ultimaBatalhaContabilizada', null) != null
+          && mudou().hasOnly(['vitorias', 'derrotas', 'empates', 'pontos_rankeada', 'pontos_amistoso', 'ultimaBatalhaContabilizada'])
+          && contabilizarValido(depois().ultimaBatalhaContabilizada);
+      }
+      function mais1(k, condicao) { return valor(depois(), k, 0) == valor(antes(), k, 0) + (condicao ? 1 : 0); }
+      function contabilizarValido(bid) {
+        let b = get(batalha(bid)).data;
+        let r = b.estado.resultado;
+        let modo = b.get('modo', 'amistoso');
+        let venci = r.vencedor == userId;
+        let perdi = r.get('perdedor', null) == userId;
+        let pontos = valor(antes(), 'pontos_rankeada', 0);
+        let pontosEsperados = (modo == 'rankeada' && venci) ? pontos + 25 : ((modo == 'rankeada' && perdi) ? (pontos > 15 ? pontos - 15 : 0) : pontos);
+        return participaDe(b) && b.estado.status == 'finalizada'
+          && b.get('contabilizado', {}).get(userId, false) != true
+          && getAfter(batalha(bid)).data.get('contabilizado', {}).get(userId, false) == true
+          && mais1('vitorias', venci) && mais1('derrotas', perdi) && mais1('empates', r.empate == true)
+          && mais1('pontos_amistoso', modo == 'amistoso' && venci)
+          && valor(depois(), 'pontos_rankeada', 0) == pontosEsperados;
+      }
+
       allow read: if logado();
       allow create, delete: if isAdmin();
       allow update: if isAdmin()
         || (dono() && (perfil() || gastoEmCombate() || subirNivel() || consumirItem()
                        || comprarJutsu() || comprarItem() || solicitar()
                        || coletarMissao() || coletarConquista() || trocarEnPorRyos()
-                       || roletaGratis() || roletaPaga() || pagarTransferencia()))
+                       || roletaGratis() || roletaPaga() || pagarTransferencia()
+                       || pagarCofre() || receberCofre() || devolverCofre() || contabilizarBatalha()))
         || (logado() && !dono() && receberTransferencia());
     }
 
@@ -371,7 +439,12 @@ service cloud.firestore {
       }
       allow read: if isAdmin() || resource == null || participa();
       allow create: if logado() && request.resource.data.desafianteId == request.auth.uid
-        && request.resource.data.status == 'pendente';
+        && request.resource.data.desafiadoId != request.auth.uid
+        && request.resource.data.status == 'pendente'
+        && request.resource.data.get('modo', 'amistoso') in ['amistoso', 'rankeada', 'competitivo']
+        && (request.resource.data.get('modo', 'amistoso') != 'competitivo' || (
+              request.resource.data.aposta.moeda in ['ryos', 'essencia_ninja', 'xp']
+              && request.resource.data.aposta.valor is int && request.resource.data.aposta.valor > 0));
       allow update, delete: if isAdmin() || participa();
     }
 

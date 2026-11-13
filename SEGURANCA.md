@@ -20,6 +20,10 @@ O arquivo [`firestore.rules`](firestore.rules) define quem pode alterar o quê n
 | Subir de nível | XP da tabela de níveis descontado |
 | Combate | Vida/chakra/stamina só diminuem |
 | Roleta | Prêmio fica **pendente**; o Kage entrega no Painel Kage |
+| Arena: apostar no Competitivo | Só a própria aposta, no valor do desafio; XP precisa sobrar 10 na barra |
+| Arena: receber o cofre | Só o **vencedor** registrado na luta, só uma vez, no valor exato do cofre |
+| Arena: devolver aposta | Só em convite recusado/cancelado, luta anulada ou empate; só uma vez |
+| Arena: vitórias, derrotas e pontos | Conferidos com o resultado da luta (+25/−15 na Rankeada); só uma vez por luta |
 
 Feed, frases, chats e arena também foram protegidos: ninguém posta em nome de outro, lê conversa alheia ou usa `/narrador` sem ser Kage.
 
@@ -40,7 +44,7 @@ Feed, frases, chats e arena também foram protegidos: ninguém posta em nome de 
 
 ## Testes automáticos das regras
 
-A pasta [`testes/`](testes/) tem 79 testes que rodam num banco **local de mentira** (emulador). Eles conferem o que deve funcionar e o que deve ser bloqueado. Rode depois de qualquer mudança nas regras. É preciso ter Node.js e Java instalados:
+A pasta [`testes/`](testes/) tem 100 testes que rodam num banco **local de mentira** (emulador). Eles conferem o que deve funcionar e o que deve ser bloqueado. Rode depois de qualquer mudança nas regras. É preciso ter Node.js e Java instalados:
 
 ```bash
 cd testes
@@ -48,8 +52,15 @@ npm install
 npm run testar-regras
 ```
 
+O motor da arena (regras da luta) tem 47 testes próprios, que rodam só com Node.js:
+
+```bash
+node testes/arena.test.mjs
+```
+
 ## Limites conhecidos
 
 - **Roleta:** o sorteio acontece no navegador, então o banco não sabe qual prêmio saiu de verdade. Por isso todo prêmio fica pendente até o Kage entregar. Um jogador mal-intencionado poderia registrar um prêmio diferente do sorteado (um por giro). Na dúvida, use o botão **✕** no Painel Kage para descartar.
-- **Dados (`/d20`) e combate:** as rolagens também acontecem no navegador. Isso será revisto junto com a nova mecânica da arena.
+- **Arena:** as contas da luta rodam no navegador dos jogadores, com fórmulas fixas (sem dados) e histórico completo de cada ação. Como não há servidor, um jogador com conhecimento de programação poderia mexer no próprio navegador. O histórico deixa isso visível e o Kage pode anular a luta (Fase 2).
+- **Dados no chat (`/d20`):** a rolagem acontece no navegador de quem rolou.
 - **Restrição por nome (`restrito_a`):** a loja esconde jutsus/itens restritos, mas o banco não confere o nome do jogador na compra.

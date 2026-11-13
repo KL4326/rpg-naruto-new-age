@@ -255,113 +255,28 @@
 </div>
 
                 <div id="batalha" class="tab-content">
-                    <h2 style="text-align: center; color: var(--primary-color); margin-bottom: 25px;"><i class="fa-solid fa-khanda"></i> Arena de Combate</h2>
-                    
-                    <!-- Tela de Espera (Aparece quando não há luta) -->
-                    <div id="arena-waiting" style="text-align: center; padding: 50px 20px; color: #777;">
-                        <i class="fa-solid fa-dungeon" style="font-size: 4rem; color: #ddd; margin-bottom: 20px;"></i>
-                        <h3>O Ringue está Vazio</h3>
-                        <p>Desafie um ninja no Diretório para iniciar um combate.</p>
+                    <h2><i class="fa-solid fa-khanda" aria-hidden="true"></i> Arena de Combate</h2>
+
+                    <!-- Lobby: batalhas em andamento e convites enviados -->
+                    <div id="arena-waiting" class="arena-lobby">
+                        <p class="arena-lobby-intro">Desafie um ninja na aba <strong>Personagens</strong>. Quem tem mais <strong>Agilidade</strong> começa; cada turno tem até <strong>3 ações</strong> (no máximo 1 ataque), <strong>30 s</strong> para agir e <strong>20 s</strong> para reagir.</p>
+                        <div id="arena-lobby-lista"></div>
                     </div>
-                
-                    <!-- O Ringue (Aparece apenas durante a luta) -->
-                    <div id="arena-container" style="display: none; flex-direction: column; gap: 20px; position: relative;">
-                        
-                        <!-- Placar e Barras de Status -->
-                        <div style="display: flex; justify-content: space-between; align-items: center; background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                            
-                            <!-- Lado Esquerdo: Você -->
-                            <div style="flex: 1; text-align: center;">
-                                <img id="arena-player-img" src="" style="width: 90px; height: 90px; border-radius: 50%; border: 3px solid #3498db; object-fit: cover; box-shadow: 0 0 15px rgba(52, 152, 219, 0.4);">
-                                <h4 id="arena-player-nome" style="margin: 10px 0 5px;">Você</h4>
-                                
-                                <div style="text-align: left; font-size: 0.75rem; font-weight: bold; padding-right: 15px;">
-                                    <div style="color: #e74c3c; margin-bottom: 2px;">HP <span id="arena-player-hp-txt" style="float: right;">0/0</span></div>
-                                    <div style="background: #eee; height: 10px; border-radius: 5px; overflow: hidden; margin-bottom: 8px;">
-                                        <div id="arena-player-hp-bar" style="background: #e74c3c; width: 100%; height: 100%; transition: width 0.3s ease;"></div>
-                                    </div>
-                                    
-                                    <div style="color: #3498db; margin-bottom: 2px;">CHAKRA <span id="arena-player-cp-txt" style="float: right;">0/0</span></div>
-                                    <div style="background: #eee; height: 10px; border-radius: 5px; overflow: hidden; margin-bottom: 8px;">
-                                        <div id="arena-player-cp-bar" style="background: #3498db; width: 100%; height: 100%; transition: width 0.3s ease;"></div>
-                                    </div>
-                                    
-                                    <div style="color: #2ecc71; margin-bottom: 2px;">STAMINA <span id="arena-player-sp-txt" style="float: right;">0/0</span></div>
-                                    <div style="background: #eee; height: 10px; border-radius: 5px; overflow: hidden;">
-                                        <div id="arena-player-sp-bar" style="background: #2ecc71; width: 100%; height: 100%; transition: width 0.3s ease;"></div>
-                                    </div>
-                                </div>
-                            </div>
-                
-                            <!-- Ícone VS -->
-                            <div style="padding: 0 10px; text-align: center;">
-                                <h1 style="color: #e67e22; font-style: italic; font-size: 2.5rem; text-shadow: 2px 2px 0px rgba(0,0,0,0.1); margin: 0;">VS</h1>
-                            </div>
-                
-                            <!-- Lado Direito: Inimigo -->
-                            <div style="flex: 1; text-align: center;">
-                                <img id="arena-enemy-img" src="" style="width: 90px; height: 90px; border-radius: 50%; border: 3px solid #e74c3c; object-fit: cover; box-shadow: 0 0 15px rgba(231, 76, 60, 0.4);">
-                                <h4 id="arena-enemy-nome" style="margin: 10px 0 5px;">Inimigo</h4>
-                                
-                                <div style="text-align: right; font-size: 0.75rem; font-weight: bold; padding-left: 15px;">
-                                    <div style="color: #e74c3c; margin-bottom: 2px;"><span id="arena-enemy-hp-txt" style="float: left;">0/0</span> HP</div>
-                                    <div style="background: #eee; height: 10px; border-radius: 5px; overflow: hidden; margin-bottom: 8px; transform: scaleX(-1);">
-                                        <div id="arena-enemy-hp-bar" style="background: #e74c3c; width: 100%; height: 100%; transition: width 0.3s ease;"></div>
-                                    </div>
-                                    
-                                    <div style="color: #3498db; margin-bottom: 2px;"><span id="arena-enemy-cp-txt" style="float: left;">0/0</span> CHAKRA</div>
-                                    <div style="background: #eee; height: 10px; border-radius: 5px; overflow: hidden; margin-bottom: 8px; transform: scaleX(-1);">
-                                        <div id="arena-enemy-cp-bar" style="background: #3498db; width: 100%; height: 100%; transition: width 0.3s ease;"></div>
-                                    </div>
-                                    
-                                    <div style="color: #2ecc71; margin-bottom: 2px;"><span id="arena-enemy-sp-txt" style="float: left;">0/0</span> STAMINA</div>
-                                    <div style="background: #eee; height: 10px; border-radius: 5px; overflow: hidden; transform: scaleX(-1);">
-                                        <div id="arena-enemy-sp-bar" style="background: #2ecc71; width: 100%; height: 100%; transition: width 0.3s ease;"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                
-                        <!-- Log de Batalha (Onde a narrativa acontece) -->
-                        <div id="arena-log" style="background: #1e293b; color: #f8fafc; padding: 15px; border-radius: 8px; height: 180px; overflow-y: auto; font-family: monospace; font-size: 0.95rem; border-left: 5px solid #e67e22; box-shadow: inset 0 4px 6px rgba(0,0,0,0.3);">
-                            <div style="color: #94a3b8; text-align: center;">--- O Ringue está sendo preparado ---</div>
-                        </div>
 
-                        <!-- CAIXA DE REAÇÃO DEFENSIVA (Escondida por padrão) -->
-                        <div id="arena-reaction-box" style="display: none; background: rgba(231, 76, 60, 0.15); border: 2px solid #e74c3c; border-radius: 8px; padding: 15px; text-align: center; box-shadow: 0 0 20px rgba(231, 76, 60, 0.3);">
-                            <h4 style="color: #e74c3c; margin: 0 0 10px 0; font-size: 1.2rem;"><i class="fa-solid fa-triangle-exclamation"></i> AMEAÇA IMINENTE!</h4>
-                            <p id="arena-reaction-text" style="color: #f8fafc; font-size: 0.95rem; margin-bottom: 15px;">O inimigo disparou um ataque em sua direção! O que você faz?</p>
-                            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                                <button id="btn-reacao-esquivar" onclick="window.reagirAtaque('esquivar')" class="buy-btn" style="background: #3498db; flex: 1; min-width: 120px;">
-                                    <i class="fa-solid fa-wind"></i> Esquivar
-                                </button>
-                                <button id="btn-reacao-defender" onclick="window.reagirAtaque('defender')" class="buy-btn" style="background: #f39c12; flex: 1; min-width: 120px;">
-                                    <i class="fa-solid fa-shield-halved"></i> Defender
-                                </button>
-                                <!-- Botão dinâmico para usar um Jutsu de Defesa do inventário -->
-                                <button onclick="window.reagirAtaque('jutsu')" class="buy-btn" style="background: #9b59b6; flex: 1; min-width: 120px;">
-                                    <i class="fa-solid fa-scroll"></i> Usar Jutsu
-                                </button>
-                                <button onclick="window.reagirAtaque('receber')" class="buy-btn" style="background: #c0392b; flex: 1; min-width: 120px;">
-                                    <i class="fa-solid fa-skull"></i> Aceitar Dano
-                                </button>
+                    <!-- A batalha -->
+                    <div id="arena-container" class="arena-container" style="display: none;">
+                        <div class="arena-topo-fixo">
+                            <div class="arena-topo">
+                                <span id="arena-modo" class="arena-modo"></span>
+                                <span id="arena-situacao" class="arena-situacao" aria-live="polite"></span>
                             </div>
+                            <div class="arena-timer" aria-hidden="true"><div id="arena-timer-fill" class="arena-timer-fill"></div><span id="arena-timer-txt" class="arena-timer-txt"></span></div>
                         </div>
-
-                        <!-- MODAL DE ESCOLHA DE JUTSU DEFENSIVO -->
-                        <div id="modal-jutsus-defensivos" style="display: none; background: rgba(0,0,0,0.9); position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; flex-direction: column; align-items: center; justify-content: center; padding: 20px;">
-                            <h4 style="color: #9b59b6; margin-bottom: 15px;"><i class="fa-solid fa-scroll"></i> Escolha sua Técnica de Defesa</h4>
-                            <div id="lista-jutsus-defesa" style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; max-height: 200px; overflow-y: auto;">
-                                <!-- Botões gerados via JS -->
-                            </div>
-                            <button onclick="document.getElementById('modal-jutsus-defensivos').style.display='none'" class="buy-btn" style="background: #7f8c8d; margin-top: 20px;">Voltar</button>
-                        </div>
-                
-                        <!-- Painel de Controles (Será preenchido com Jutsus na Fase 3) -->
-                        <h4 style="margin: 0; color: var(--primary-color);">Seus Jutsus</h4>
-                        <div id="arena-controls" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px;">
-                            <button class="buy-btn" style="background: #7f8c8d; cursor: not-allowed;"><i class="fa-solid fa-spinner fa-spin"></i> Conectando Chakra...</button>
-                        </div>
+                        <div id="arena-lutadores" class="arena-lutadores"></div>
+                        <div id="arena-painel" class="arena-painel"></div>
+                        <div id="arena-rodape" class="arena-rodape"></div>
+                        <h4 class="arena-secao">📜 Histórico da batalha</h4>
+                        <div id="arena-log" class="arena-log" aria-live="polite"></div>
                     </div>
                 </div>
 
@@ -505,6 +420,18 @@
                     <h3 class="section-title">Aprovações Pendentes</h3>
                     <div class="bucket-grid" id="admin-missoes-grid"><p>Carregando...</p></div>
                     
+                    <h3 class="section-title" style="margin-top: 30px;">Jutsus, Ferramentas e Itens (backup e importação)</h3>
+                    <div class="catalogo-caixa">
+                        <p class="form-ajuda"><strong>Exportar</strong> baixa um arquivo com tudo o que está cadastrado (serve de backup). <strong>Importar</strong> lê um arquivo e mostra o que vai mudar antes de gravar.</p>
+                        <div class="catalogo-botoes">
+                            <button id="btn-exportar-catalogo" class="btn-post" onclick="window.exportarCatalogo()"><i class="fa-solid fa-download" aria-hidden="true"></i> Exportar</button>
+                            <label class="btn-arena-sec" for="input-importar-catalogo" role="button" tabindex="0"><i class="fa-solid fa-file-import" aria-hidden="true"></i> Importar arquivo</label>
+                            <input type="file" id="input-importar-catalogo" accept=".json,application/json" hidden onchange="window.lerArquivoImportacao(event)">
+                        </div>
+                        <p id="catalogo-status" class="form-ajuda" aria-live="polite"></p>
+                        <div id="catalogo-previa"></div>
+                    </div>
+
                     <h3 class="section-title" style="margin-top: 30px;">Prêmios da Roleta a Entregar</h3>
                     <div id="admin-premios-list" class="admin-premios-list">
                         <p style="color:#777; text-align: center; margin: 10px 0;">Procurando prêmios...</p>
@@ -588,6 +515,7 @@
                                 <div class="stat-card"><div class="stat-value" id="dash-nivel">1</div><div class="stat-label">Nível</div></div>
                                 <div class="stat-card"><div class="stat-value" id="dash-patente">Genin</div><div class="stat-label">Patente</div></div>
                                 <div class="stat-card"><div class="stat-value" id="dash-speed-rank">1</div><div class="stat-label">Velocidade (1–12)</div></div>
+                                <div class="stat-card"><div class="stat-value" id="dash-reacao">1</div><div class="stat-label">Reação (1–12)</div></div>
                                 <div class="stat-card"><div class="stat-value" id="dash-tipo">Normal</div><div class="stat-label">Tipo</div></div>
                             </div>
                         </section>
@@ -903,24 +831,58 @@
         </div>
     </div>
 
-        <!-- Modal de Desafio Recebido -->
-    <div id="modal-desafio" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(4px);">
-        <div style="background: var(--card-bg); padding: 30px; border-radius: 12px; text-align: center; max-width: 400px; border: 2px solid #e67e22; box-shadow: 0 0 30px rgba(230, 126, 34, 0.3);">
-            <i class="fa-solid fa-khanda" style="font-size: 3rem; color: #e67e22; margin-bottom: 15px;"></i>
-            <h3 style="color: var(--primary-color); margin-top: 0; font-size: 1.5rem;">Ameaça Detectada!</h3>
-            <p id="texto-desafio" style="font-size: 1.1rem; margin-bottom: 25px; color: var(--text-color);">Ninja X está te desafiando.</p>
-            
-            <div style="display: flex; gap: 15px; justify-content: center;">
-                <button id="btn-aceitar-desafio" class="buy-btn" style="background: #2ecc71; flex: 1; font-size: 1.1rem;">
-                    <i class="fa-solid fa-check"></i> Aceitar
-                </button>
-                <button id="btn-recusar-desafio" class="buy-btn" style="background: #e74c3c; flex: 1; font-size: 1.1rem;">
-                    <i class="fa-solid fa-xmark"></i> Recusar
-                </button>
+    <!-- Convite de desafio recebido -->
+    <div id="modal-desafio" class="modal-arena" role="dialog" aria-modal="true" aria-labelledby="titulo-convite" style="display: none;">
+        <div class="modal-arena-caixa">
+            <i class="fa-solid fa-khanda modal-arena-icone" aria-hidden="true"></i>
+            <h3 id="titulo-convite">Ameaça Detectada!</h3>
+            <p id="texto-desafio">Ninja X está te desafiando.</p>
+            <div class="modal-arena-botoes">
+                <button id="btn-aceitar-desafio" class="buy-btn" style="background:#15803d;"><i class="fa-solid fa-check" aria-hidden="true"></i> Aceitar</button>
+                <button id="btn-recusar-desafio" class="buy-btn" style="background:#b91c1c;"><i class="fa-solid fa-xmark" aria-hidden="true"></i> Recusar</button>
             </div>
         </div>
     </div>
-    
+
+    <!-- Novo desafio: escolha do modo -->
+    <div id="modal-novo-desafio" class="modal-arena" role="dialog" aria-modal="true" aria-labelledby="titulo-novo-desafio" style="display: none;">
+        <div class="modal-arena-caixa">
+            <span class="close-modal" role="button" tabindex="0" aria-label="Fechar" onclick="document.getElementById('modal-novo-desafio').style.display='none'">&times;</span>
+            <h3 id="titulo-novo-desafio">Desafiar <span id="novo-desafio-alvo"></span></h3>
+            <div class="modos-desafio" onchange="window.atualizarFormDesafio()">
+                <label class="modo-opcao"><input type="radio" name="modo-desafio" value="amistoso" checked><span><strong>🤝 Amistoso</strong><small>Só pela honra. Conta nas vitórias e derrotas.</small></span></label>
+                <label class="modo-opcao"><input type="radio" name="modo-desafio" value="rankeada"><span><strong>🏆 Rankeada</strong><small>Vale pontos: +25 para quem vence, −15 para quem perde.</small></span></label>
+                <label class="modo-opcao"><input type="radio" name="modo-desafio" value="competitivo"><span><strong>💰 Competitivo</strong><small>Os dois apostam o mesmo valor. Quem vencer leva tudo.</small></span></label>
+            </div>
+            <div id="desafio-competitivo" class="desafio-competitivo" style="display:none;">
+                <div class="input-grid-2">
+                    <div class="input-group"><label for="desafio-moeda">Moeda</label>
+                        <select id="desafio-moeda" class="filter-select" onchange="window.atualizarFormDesafio()">
+                            <option value="ryos">Ryos</option><option value="essencia_ninja">Essência Ninja (EN)</option><option value="xp">XP</option>
+                        </select></div>
+                    <div class="input-group"><label for="desafio-valor">Valor (de cada um)</label><input type="number" id="desafio-valor" class="edit-input" min="1" placeholder="Ex: 500"></div>
+                </div>
+                <p id="desafio-saldo" class="desafio-saldo"></p>
+            </div>
+            <button id="btn-confirmar-desafio" class="buy-btn" onclick="window.confirmarNovoDesafio()"><i class="fa-solid fa-scroll" aria-hidden="true"></i> Enviar desafio</button>
+        </div>
+    </div>
+
+    <!-- Configurar ataque: cargas (multiplicador) e clones -->
+    <div id="modal-config-ataque" class="modal-arena" role="dialog" aria-modal="true" aria-labelledby="config-ataque-nome" style="display: none;">
+        <div class="modal-arena-caixa">
+            <span class="close-modal" role="button" tabindex="0" aria-label="Fechar" onclick="document.getElementById('modal-config-ataque').style.display='none'">&times;</span>
+            <h3 id="config-ataque-nome">Ataque</h3>
+            <div class="input-grid-2">
+                <div class="input-group" id="config-ataque-cargas-grupo"><label for="config-ataque-cargas">Cargas (repetições)</label><input type="number" id="config-ataque-cargas" class="edit-input" min="1" value="1" oninput="window.atualizarConfigAtaque()"></div>
+                <div class="input-group" id="config-ataque-clones-grupo"><label for="config-ataque-clones">Clones atacando junto</label><input type="number" id="config-ataque-clones" class="edit-input" min="0" value="0" oninput="window.atualizarConfigAtaque()"></div>
+            </div>
+            <p id="config-ataque-clones-aviso" class="desafio-saldo"></p>
+            <p id="config-ataque-previa" class="config-ataque-previa"></p>
+            <button class="buy-btn" onclick="window.confirmarConfigAtaque()"><i class="fa-solid fa-fire" aria-hidden="true"></i> Atacar</button>
+        </div>
+    </div>
+
     <div class="modal-overlay-comment" id="commentModal"><span class="close-modal" role="button" tabindex="0" aria-label="Fechar" onclick="closeModal()">&times;</span><div class="modal-content-comment"><div class="modal-left" id="modalPostContent"></div><div class="modal-right"><div style="padding: 15px; border-bottom: 1px solid #eee;">Comentários</div><div class="comments-list" id="commentsList"></div><div class="comment-input-area"><input type="text" id="newCommentText" aria-label="Escreva um comentário" placeholder="Comentar..." onkeydown="if(event.key === 'Enter') submitComment()"><button onclick="submitComment()" style="border:none; background:none; color:var(--primary-color); font-weight:bold;">Enviar</button></div></div></div></div>
     <div class="modal-overlay-comment" id="changePasswordModal" style="z-index: 2004;"><div class="modal-content-card"><span class="close-modal" role="button" tabindex="0" aria-label="Fechar" onclick="closeChangePasswordModal()" style="color: #333; top: 10px; right: 15px;">&times;</span><h3>Alterar Senha</h3><input type="password" id="new-password" class="edit-input" placeholder="Nova Senha" style="margin-top:20px;"><button class="btn-post" onclick="salvarNovaSenha()" style="width: 100%;">Atualizar Senha</button></div></div>
 
