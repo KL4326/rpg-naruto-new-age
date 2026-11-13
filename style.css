@@ -1349,10 +1349,11 @@ body.menos-movimento .arena-lutador[class*="aura-"], body.menos-movimento .aura-
 .ao-vivo-item { border-left: 4px solid #ef4444; }
 .ao-vivo-botoes { display: flex; gap: 6px; flex-wrap: wrap; }
 .arena-assistindo { font-weight: 800; }
-.emoji-torcida { position: absolute; bottom: 30%; font-size: 1.9rem; pointer-events: none; z-index: 5; animation: emoji-sobe 1.9s ease-out forwards; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .35)); }
+#arena-lutadores { position: relative; }
+.emoji-torcida { position: absolute; font-size: 1.9rem; margin-left: -.5em; pointer-events: none; z-index: 5; animation: emoji-sobe 1.9s ease-out forwards; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .35)); }
 @keyframes emoji-sobe { 0% { transform: translateY(20px) scale(.5); opacity: 0; } 15% { opacity: 1; transform: translateY(0) scale(1.15); } 100% { transform: translateY(-90px) scale(1); opacity: 0; } }
-body.menos-movimento .emoji-torcida { animation: none; bottom: auto; top: 8px; }
-@media (prefers-reduced-motion: reduce) { .emoji-torcida { animation: none; bottom: auto; top: 8px; } #side-btn-batalha.ao-vivo, #bottom-btn-batalha.ao-vivo { animation: none; color: #ef4444; } }
+body.menos-movimento .emoji-torcida { animation: none; }
+@media (prefers-reduced-motion: reduce) { .emoji-torcida { animation: none; } #side-btn-batalha.ao-vivo, #bottom-btn-batalha.ao-vivo { animation: none; color: #ef4444; } }
 body.menos-movimento #side-btn-batalha.ao-vivo, body.menos-movimento #bottom-btn-batalha.ao-vivo { animation: none; color: #ef4444; }
 .plateia { display: grid; grid-template-columns: 1fr 1.2fr; gap: 14px; }
 .plateia > div { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; }

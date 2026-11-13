@@ -1665,15 +1665,20 @@ function escutarTorcida(id) {
     });
     arena.ouvintesPlateia.push(parar);
 }
+// Os emojis ficam numa camada própria por cima das cartas (as cartas são redesenhadas
+// a cada jogada; se o emoji ficasse dentro delas, sumiria na hora)
 function mostrarEmojiTorcida(lado, emoji, nome) {
-    const quadro = document.querySelector(`.arena-lutador[data-uid="${CSS.escape(lado || '')}"]`);
+    const cont = document.getElementById('arena-lutadores');
+    const quadro = cont?.querySelector(`.arena-lutador[data-uid="${CSS.escape(lado || '')}"]`);
     if (!quadro) return;
     const s = document.createElement('span');
     s.className = 'emoji-torcida';
     s.textContent = emoji;
-    s.title = nome || '';
-    s.style.left = (15 + Math.random() * 70) + '%';
-    quadro.appendChild(s);
+    s.title = nome ? `${nome} está torcendo` : '';
+    s.setAttribute('aria-hidden', 'true');
+    s.style.left = (quadro.offsetLeft + quadro.offsetWidth * (0.15 + Math.random() * 0.7)) + 'px';
+    s.style.top = (quadro.offsetTop + quadro.offsetHeight * 0.55) + 'px';
+    cont.appendChild(s);
     setTimeout(() => s.remove(), animacoesReduzidas() ? 1200 : 1900);
 }
 window.torcerPor = (lado) => { arena.torcendo = lado; renderArena(); };
