@@ -1338,3 +1338,40 @@ body.menos-movimento .arena-lutador[class*="aura-"], body.menos-movimento .aura-
 .cofre-doar-linha { align-items: stretch; }
 .cofre-doar-linha > input, .cofre-doar-linha > .buy-btn { margin: 0 !important; height: auto; }
 .cofre-doar-linha > .buy-btn { display: inline-flex; align-items: center; justify-content: center; }
+
+/* ===================== ARENA AO VIVO: PLATEIA, TORCIDA E APOSTAS ===================== */
+.ao-vivo { position: relative; }
+#side-btn-batalha.ao-vivo, #bottom-btn-batalha.ao-vivo { animation: botao-ao-vivo 1.6s ease-in-out infinite; }
+@keyframes botao-ao-vivo { 0%, 100% { box-shadow: inset 0 0 0 0 rgba(239, 68, 68, 0); color: inherit; } 50% { box-shadow: inset 0 0 0 2px rgba(239, 68, 68, .9), 0 0 14px rgba(239, 68, 68, .55); color: #ef4444; } }
+.arena-ao-vivo { margin-bottom: 18px; }
+.arena-ao-vivo-titulo { display: flex; align-items: center; gap: 8px; font-size: 1rem; margin: 0 0 8px; color: #dc2626; text-transform: uppercase; letter-spacing: .05em; }
+.ponto-ao-vivo { width: 10px; height: 10px; border-radius: 50%; background: #ef4444; animation: aoVivo 1.4s infinite; }
+.ao-vivo-item { border-left: 4px solid #ef4444; }
+.ao-vivo-botoes { display: flex; gap: 6px; flex-wrap: wrap; }
+.arena-assistindo { font-weight: 800; }
+#arena-lutadores { position: relative; }
+.emoji-torcida { position: absolute; font-size: 1.9rem; margin-left: -.5em; pointer-events: none; z-index: 5; animation: emoji-sobe 1.9s ease-out forwards; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .35)); }
+@keyframes emoji-sobe { 0% { transform: translateY(20px) scale(.5); opacity: 0; } 15% { opacity: 1; transform: translateY(0) scale(1.15); } 100% { transform: translateY(-90px) scale(1); opacity: 0; } }
+body.menos-movimento .emoji-torcida { animation: none; }
+@media (prefers-reduced-motion: reduce) { .emoji-torcida { animation: none; } #side-btn-batalha.ao-vivo, #bottom-btn-batalha.ao-vivo { animation: none; color: #ef4444; } }
+body.menos-movimento #side-btn-batalha.ao-vivo, body.menos-movimento #bottom-btn-batalha.ao-vivo { animation: none; color: #ef4444; }
+.plateia { display: grid; grid-template-columns: 1fr 1.2fr; gap: 14px; }
+.plateia > div { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; }
+.plateia-titulo { font-weight: 900; margin-bottom: 8px; }
+.plateia-lados { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.plateia-lados .btn-arena-sec.ativo { background: var(--primary); color: #fff; border-color: var(--primary); }
+.plateia-emojis { display: flex; flex-wrap: wrap; gap: 6px; }
+.emoji-btn { font-size: 1.5rem; width: 46px; height: 46px; border-radius: 12px; border: 2px solid var(--border); background: var(--surface); cursor: pointer; transition: transform .15s; }
+.emoji-btn:hover, .emoji-btn:focus-visible { transform: scale(1.12); border-color: var(--primary-bright); }
+.emoji-btn:active { transform: scale(.92); }
+.bolo { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.bolo-lado { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px; }
+.bolo-lado span { font-weight: 800; font-size: .85rem; }
+.bolo-lado strong { color: var(--gold); }
+.bolo-lado small { color: var(--text-muted); font-weight: 700; }
+.aposta-form { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.aposta-form .edit-input { margin: 0; }
+.aposta-form .buy-btn { margin: 0; grid-column: span 1; }
+.aposta-minha { background: var(--gold-soft); color: var(--text); border-radius: 8px; padding: 10px; font-size: .9rem; }
+@media (max-width: 760px) { .plateia { grid-template-columns: 1fr; } .aposta-form { grid-template-columns: 1fr 1fr; } }
+.cofre-en { font-weight: 900; color: var(--en); margin-bottom: 4px; }

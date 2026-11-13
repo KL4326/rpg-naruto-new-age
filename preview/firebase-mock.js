@@ -116,7 +116,22 @@ const DB = {
         c2: { remetenteId: "u2", remetenteNome: "Aiko Hyuga", texto: "*Ativa o Byakugan e observa os telhados.*", tipo: "rp", timestamp: ts(7000e3) },
         c3: { remetenteId: "u1", remetenteNome: "Kenji Uzumaki", texto: "alguém sabe que horas é o evento?", tipo: "ooc", timestamp: ts(6800e3) }
     },
-    desafios_batalha: {}
+    desafios_batalha: {
+        aovivo1: (() => {
+            const lut = (uid, nome, vida, chakra, agil, vel, rea) => ({ uid, nome, avatar: '', vida, maxVida: vida, chakra, maxChakra: chakra, stamina: 120, maxStamina: 120,
+                atributos: { forca: 13, defesa: 11, constituicao: 12, destreza: 12, intelecto: 14, agilidade: agil, velocidade: vel, reacao: rea }, efeitos: [], clones: { qtd: 0, reserva: 0, solidos: true }, criacoes: [] });
+            return { desafianteId: 'u3', desafiadoId: 'u4', desafianteNome: 'Ryo Uchiha', desafiadoNome: 'Mei Sabaku', status: 'aceito', modo: 'rankeada', histN: 1,
+                historico: [{ tipo: 'sistema', texto: '⚔️ A batalha começou! Ryo Uchiha age primeiro por ter mais Agilidade.', n: 1, t: agora }],
+                estado: { versao: 2, status: 'em_andamento', lutadores: { u3: lut('u3', 'Ryo Uchiha', 170, 220, 15, 8, 7), u4: lut('u4', 'Mei Sabaku', 160, 240, 12, 6, 6) },
+                    ordem: ['u3', 'u4'], iniciativa: { primeiro: 'u3', motivo: 'agilidade' }, turno: 1, vez: 'u3', fase: 'acao', acoesRestantes: 3, ataquesRestantes: 1,
+                    ataquePendente: null, prazo: agora + 3600e3, pausada: false, restanteMs: null, presenca: { u3: agora + 3600e3, u4: agora + 3600e3 }, propostaEmpate: null, resultado: null } };
+        })()
+    },
+    "desafios_batalha/aovivo1/torcida": {
+        t4: { nome: 'Takeshi Nara', lado: 'u3', emoji: '🔥', em: agora - 5000, visto: agora + 3600e3 }
+    },
+    apostas_totais: { aovivo1: { ryos: { u3: 950, u4: 380 } } },
+    vila: { banco: { saldo: 1000000 } }
 };
 
 // Posts antigos extras (para testar o botão "Carregar mais")
@@ -227,10 +242,16 @@ function runQuery(q) {
 window.__leituras = { getDoc: 0, getDocs: 0, docsLidos: 0 };
 export const getDoc = async (ref) => { window.__leituras.getDoc++; window.__leituras.docsLidos++; return docSnap(ref.col, ref.id); };
 export const getDocs = async (q) => { const r = runQuery(q); window.__leituras.getDocs++; window.__leituras.docsLidos += r.size; return r; };
+const ehMapaSimples = (v) => v && typeof v === 'object' && !Array.isArray(v) && !v[SENT] && typeof v.toMillis !== 'function';
+function achatar(obj, prefixo = '', saida = {}) {
+    for (const k in obj) { const caminho = prefixo + k; if (ehMapaSimples(obj[k]) && Object.keys(obj[k]).length) achatar(obj[k], caminho + '.', saida); else saida[caminho] = obj[k]; }
+    return saida;
+}
 export const setDoc = async (ref, data, opts = {}) => {
     const col = getCol(ref.col);
     if (!opts.merge || !col[ref.id]) col[ref.id] = {};
-    for (const k in data) setPath(col[ref.id], k, data[k]);
+    const campos = opts.merge ? achatar(data) : data;
+    for (const k in campos) { if (opts.merge) setPath(col[ref.id], k, campos[k]); else col[ref.id][k] = applyValue(undefined, campos[k]); }
     notify();
 };
 export const updateDoc = async (ref, data) => {

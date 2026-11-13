@@ -319,6 +319,64 @@ const receberComTaxa = (dbX, uid, premio, taxa) => { const b = writeBatch(dbX); 
 await caso('Cofre: vencedor da Competitiva leva 95% e a vila 5%', true, async () => { await abrirCofre(); await semearBatalha('f1', batalhaFinal()); return receberComTaxa(dbA(), A, 190, 10); });
 await caso('Cofre: vencedor tenta levar 100% com o cofre da vila aberto', false, async () => { await abrirCofre(); await semearBatalha('f1', batalhaFinal()); return receber(dbA(), A, 200); });
 
+
+// ---------- Fase 2: espectadores, torcida e apostas ----------
+const C = 'jogadorC';
+const dbC = () => env.authenticatedContext(C, { email: 'c@teste.com' }).firestore();
+async function semearAoVivo(estado = { status: 'em_andamento', turno: 1 }, extra = {}) {
+  await abrirCofre();
+  await env.withSecurityRulesDisabled(async (c) => {
+    const db = c.firestore();
+    await setDoc(doc(db, 'users', C), { nome: 'Ryo', ryos: 1000, essencia_ninja: 50 });
+    await setDoc(doc(db, 'desafios_batalha', 'v1'), { desafianteId: A, desafiadoId: B, status: 'aceito', modo: 'amistoso', estado, ...extra });
+  });
+}
+function apostarEm(dbX, uid, lado, valor, moeda = 'ryos', o = {}) {
+  const liquido = o.liquido ?? (valor - Math.floor(valor / 20));
+  const taxa = o.taxa ?? (valor - liquido);
+  const b = writeBatch(dbX);
+  b.update(doc(dbX, 'users', uid), { [moeda]: increment(-(o.paga ?? valor)), apostas_abertas: arrayUnion('v1'), ultimaAposta: 'v1' });
+  b.set(doc(dbX, 'desafios_batalha', 'v1', 'apostas', uid), { uid, nome: 'X', lado, moeda, valor, liquido, pago: false, em: Date.now() });
+  b.set(doc(dbX, 'apostas_totais', 'v1'), { [moeda]: { [lado]: increment(o.soma ?? liquido) } }, { merge: true });
+  const mid = 'aposta_v1_' + uid;
+  b.set(doc(dbX, 'vila_movimentos', mid), { uid, nome: 'X', tipo: 'aposta', valor: taxa, data: serverTimestamp(), ref: 'v1', moeda });
+  b.update(doc(dbX, 'vila', 'banco'), { [moeda === 'ryos' ? 'saldo' : 'saldo_en']: increment(taxa), ultimoMov: mid });
+  return b.commit();
+}
+await caso('Ao vivo: qualquer ninja pode assistir a luta', true, async () => { await semearAoVivo(); return getDoc(doc(dbC(), 'desafios_batalha', 'v1')); });
+await caso('Torcida: mandar emoji', true, async () => { await semearAoVivo(); return setDoc(doc(dbC(), 'desafios_batalha', 'v1', 'torcida', C), { nome: 'Ryo', lado: A, emoji: '🔥', em: Date.now(), visto: Date.now() }); });
+await caso('Torcida: emoji fora da lista', false, async () => { await semearAoVivo(); return setDoc(doc(dbC(), 'desafios_batalha', 'v1', 'torcida', C), { nome: 'Ryo', lado: A, emoji: '<script>', em: 1, visto: 1 }); });
+await caso('Torcida: escrever no lugar de outro', false, async () => { await semearAoVivo(); return setDoc(doc(dbC(), 'desafios_batalha', 'v1', 'torcida', B), { nome: 'Ryo', lado: A, emoji: '🔥', em: 1, visto: 1 }); });
+await caso('Aposta: 200 Ryos (5% vai para o cofre)', true, async () => { await semearAoVivo(); return apostarEm(dbC(), C, A, 200); });
+await caso('Aposta: 40 EN (5% vai para o cofre em EN)', true, async () => { await semearAoVivo(); return apostarEm(dbC(), C, B, 40, 'essencia_ninja'); });
+await caso('Aposta: lutador apostando na própria luta', false, async () => { await semearAoVivo(); return apostarEm(dbA(), A, A, 200); });
+await caso('Aposta: depois do turno 2', false, async () => { await semearAoVivo({ status: 'em_andamento', turno: 2 }); return apostarEm(dbC(), C, A, 200); });
+await caso('Aposta: pagando menos do que apostou', false, async () => { await semearAoVivo(); return apostarEm(dbC(), C, A, 200, 'ryos', { paga: 10 }); });
+await caso('Aposta: sem a taxa da vila', false, async () => { await semearAoVivo(); return apostarEm(dbC(), C, A, 200, 'ryos', { liquido: 200, taxa: 0 }); });
+await caso('Aposta: inflar o total do bolo', false, async () => { await semearAoVivo(); return apostarEm(dbC(), C, A, 200, 'ryos', { soma: 5000 }); });
+await caso('Aposta: em XP', false, async () => { await semearAoVivo(); return apostarEm(dbC(), C, A, 200, 'xp'); });
+await caso('Aposta: duas vezes na mesma luta', false, async () => { await semearAoVivo(); await apostarEm(dbC(), C, A, 200); return apostarEm(dbC(), C, A, 100); });
+async function lutaDecidida(vencedor, tot, aposta = { lado: A, valor: 200, liquido: 190 }) {
+  await semearAoVivo({ status: 'finalizada', turno: 9, resultado: { vencedor, perdedor: vencedor ? (vencedor === A ? B : A) : null, empate: !vencedor } }, { status: 'finalizada' });
+  await env.withSecurityRulesDisabled(async (c) => {
+    const db = c.firestore();
+    await setDoc(doc(db, 'desafios_batalha', 'v1', 'apostas', C), { uid: C, nome: 'Ryo', moeda: 'ryos', pago: false, em: 1, ...aposta });
+    await setDoc(doc(db, 'apostas_totais', 'v1'), { ryos: tot });
+    await updateDoc(doc(db, 'users', C), { apostas_abertas: ['v1'] });
+  });
+}
+const receberAp = (dbX, premio) => { const b = writeBatch(dbX);
+  b.update(doc(dbX, 'users', C), { ryos: increment(premio), apostas_abertas: [], ultimaApostaPaga: 'v1' });
+  b.update(doc(dbX, 'desafios_batalha', 'v1', 'apostas', C), { pago: true }); return b.commit(); };
+await caso('Aposta: vencedor recebe a parte dele do bolo', true, async () => { await lutaDecidida(A, { [A]: 190, [B]: 570 }); return receberAp(dbC(), 760); });
+await caso('Aposta: vencedor pede mais que a parte', false, async () => { await lutaDecidida(A, { [A]: 190, [B]: 570 }); return receberAp(dbC(), 9999); });
+await caso('Aposta: quem perdeu não recebe nada', false, async () => { await lutaDecidida(B, { [A]: 190, [B]: 570 }); return receberAp(dbC(), 190); });
+await caso('Aposta: quem perdeu fecha a aposta com 0', true, async () => { await lutaDecidida(B, { [A]: 190, [B]: 570 }); return receberAp(dbC(), 0); });
+await caso('Aposta: empate devolve o valor líquido', true, async () => { await lutaDecidida(null, { [A]: 190, [B]: 570 }); return receberAp(dbC(), 190); });
+await caso('Aposta: receber duas vezes', false, async () => { await lutaDecidida(A, { [A]: 190, [B]: 570 }); await receberAp(dbC(), 760); return receberAp(dbC(), 760); });
+await caso('Aposta: receber com a luta em andamento', false, async () => { await semearAoVivo(); await apostarEm(dbC(), C, A, 200); return receberAp(dbC(), 190); });
+await caso('Kage anula a luta', true, async () => { await semearAoVivo(); return updateDoc(doc(dbAdm(), 'desafios_batalha', 'v1'), { status: 'anulada', 'estado.status': 'finalizada' }); });
+await caso('Jogador de fora NÃO anula a luta', false, async () => { await semearAoVivo(); return updateDoc(doc(dbC(), 'desafios_batalha', 'v1'), { status: 'anulada' }); });
 await env.cleanup();
 const falhas = resultados.filter(r => r[0] === '❌');
 resultados.forEach(r => console.log(r[0], r[1]));

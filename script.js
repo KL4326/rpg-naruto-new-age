@@ -308,6 +308,8 @@ onAuthStateChanged(auth, async (user) => {
         // ---> LIGA O RADAR DE DESAFIOS AQUI! <---
         window.escutarDesafiosRecebidos(); 
         window.verificarBatalhaAtiva() // <--- LINHA NOVA: Tenta reconectar à batalha
+        window.escutarLutasAoVivo();   // lutas dos outros ao vivo (botão da Arena pulsa em vermelho)
+        conferirApostasAbertas();      // apostas de lutas que terminaram enquanto estava fora
 
         
     } else {
@@ -1325,6 +1327,10 @@ const arena = {
 };
 const agoraArena = () => Date.now() + arena.offset;
 const minhaUid = () => auth.currentUser && auth.currentUser.uid;
+// Quem está "no centro" da tela: o próprio jogador, ou (para quem assiste) o lado escolhido
+const uidVisao = () => arena.espectador ? (arena.ladoVisao || arena.dados?.desafianteId) : minhaUid();
+const ehKage = () => !!auth.currentUser && ['admin@rpgnaruto.com', 'conselheiro@rpgnaruto.com'].includes(auth.currentUser.email);
+
 const descricaoAposta = (d) => d && d.modo === 'competitivo' && d.aposta ? `${formatarNum(d.aposta.valor)} ${NOMES_MOEDA[d.aposta.moeda] || ''}` : '';
 const batalhaAtiva = (d) => d && d.status === 'aceito' && d.estado && d.estado.status === 'em_andamento';
 const ehLegado = (d) => d && d.status === 'aceito' && !d.estado;
@@ -1530,6 +1536,7 @@ window.carregarLobbyArena = async () => {
             'Encerrar', async () => { await updateDoc(doc(db, "desafios_batalha", b.id), { status: 'cancelado' }); window.carregarLobbyArena(); }, true)));
         atualizarIndicadorArena(ativas.length > 0);
         if (enviados.length) escutarMeuConvite(enviados[0].id);
+        renderListaAoVivo();
     } catch (e) {
         console.error(e);
         lista.innerHTML = '<p class="arena-lobby-vazio">Não foi possível carregar suas batalhas.</p>';
@@ -1598,7 +1605,260 @@ window.abrirBatalha = async (id) => {
     });
     arena.batida = setInterval(baterPresenca, 10000);
     arena.tick = setInterval(tickArena, 500);
+    escutarTorcida(id);
 };
+
+// =====================================================================
+//  ARENA FASE 2 — AO VIVO: plateia, torcida, apostas e anulação pelo Kage
+// =====================================================================
+const EMOJIS_TORCIDA = ['🔥', '👏', '😱', '💪', '😂', '❤️', '⚡', '🍥'];
+const APOSTA_MINIMA = 20;
+
+// Assistir uma luta dos outros (só leitura)
+window.assistirBatalha = async (id) => {
+    fecharBatalha(false);
+    arena.id = id;
+    arena.espectador = true;
+    arena.jutsus = [];
+    window.showTab('batalha');
+    document.getElementById('arena-waiting').style.display = 'none';
+    document.getElementById('arena-container').style.display = 'flex';
+    document.getElementById('arena-log').innerHTML = '';
+    arena.unsub = onSnapshot(doc(db, "desafios_batalha", id), (s) => {
+        if (!s.exists()) { fecharBatalha(true); return; }
+        const d = s.data();
+        if (!d.estado) { alert("Essa luta ainda não começou."); fecharBatalha(true); return; }
+        const primeiraVez = !arena.dados;
+        if (!arena.ladoVisao) arena.ladoVisao = d.desafianteId;
+        arena.servidor = d;
+        aplicarDoServidor(d, primeiraVez);
+    });
+    escutarTorcida(id);
+    escutarApostas(id);
+    marcarPresencaNaPlateia();
+    arena.batida = setInterval(marcarPresencaNaPlateia, 20000);
+    arena.tick = setInterval(tickArena, 500);
+};
+
+function marcarPresencaNaPlateia() {
+    if (!arena.espectador || !arena.id || !minhaUid()) return;
+    setDoc(doc(db, "desafios_batalha", arena.id, "torcida", minhaUid()), { nome: currentUserData?.nome || 'Ninja', visto: Date.now() }, { merge: true }).catch(() => {});
+}
+
+// Torcida: conta quem está assistindo e mostra os emojis em cima do lutador
+function escutarTorcida(id) {
+    arena.ouvintesPlateia = arena.ouvintesPlateia || [];
+    let primeira = true;
+    const parar = onSnapshot(collection(db, "desafios_batalha", id, "torcida"), (snap) => {
+        const agora = Date.now();
+        arena.espectadores = snap.docs.filter(d => agora - numero(d.data().visto) < 45000).length;
+        if (!primeira) snap.docChanges().forEach(c => {
+            const t = c.doc.data();
+            if (c.type !== 'removed' && t.emoji && t.em && t.em !== arena['emojiVisto_' + c.doc.id]) mostrarEmojiTorcida(t.lado, t.emoji, t.nome);
+            arena['emojiVisto_' + c.doc.id] = t.em;
+        });
+        else snap.docs.forEach(d => { arena['emojiVisto_' + d.id] = d.data().em; });
+        primeira = false;
+        const el = document.querySelector('.arena-assistindo');
+        if (el) el.textContent = `👀 ${arena.espectadores} assistindo`;
+        else if (arena.dados) renderArena();
+    });
+    arena.ouvintesPlateia.push(parar);
+}
+// Os emojis ficam numa camada própria por cima das cartas (as cartas são redesenhadas
+// a cada jogada; se o emoji ficasse dentro delas, sumiria na hora)
+function mostrarEmojiTorcida(lado, emoji, nome) {
+    const cont = document.getElementById('arena-lutadores');
+    const quadro = cont?.querySelector(`.arena-lutador[data-uid="${CSS.escape(lado || '')}"]`);
+    if (!quadro) return;
+    const s = document.createElement('span');
+    s.className = 'emoji-torcida';
+    s.textContent = emoji;
+    s.title = nome ? `${nome} está torcendo` : '';
+    s.setAttribute('aria-hidden', 'true');
+    s.style.left = (quadro.offsetLeft + quadro.offsetWidth * (0.15 + Math.random() * 0.7)) + 'px';
+    s.style.top = (quadro.offsetTop + quadro.offsetHeight * 0.55) + 'px';
+    cont.appendChild(s);
+    setTimeout(() => s.remove(), animacoesReduzidas() ? 1200 : 1900);
+}
+window.torcerPor = (lado) => { arena.torcendo = lado; renderArena(); };
+window.enviarEmoji = (emoji) => {
+    if (!arena.espectador || !arena.id) return;
+    if (Date.now() - (arena.ultimoEmoji || 0) < 1500) return;   // sem flood
+    arena.ultimoEmoji = Date.now();
+    const lado = arena.torcendo || arena.ladoVisao;
+    setDoc(doc(db, "desafios_batalha", arena.id, "torcida", minhaUid()), { nome: currentUserData?.nome || 'Ninja', lado, emoji, em: Date.now(), visto: Date.now() }, { merge: true }).catch(e => console.error(e));
+};
+window.trocarLadoVisao = () => {
+    const d = arena.dados; if (!d) return;
+    arena.ladoVisao = arena.ladoVisao === d.desafianteId ? d.desafiadoId : d.desafianteId;
+    document.getElementById('arena-lutadores').dataset.uids = '';
+    document.getElementById('arena-mesa').dataset.chave = '';
+    renderArena();
+};
+
+// Apostas: bolo de cada lado (líquido) e a minha aposta
+function escutarApostas(id) {
+    arena.ouvintesPlateia = arena.ouvintesPlateia || [];
+    arena.ouvintesPlateia.push(onSnapshot(doc(db, "apostas_totais", id), (s) => { arena.apostasTotais = s.exists() ? s.data() : {}; if (arena.dados) renderArena(); }));
+    arena.ouvintesPlateia.push(onSnapshot(doc(db, "desafios_batalha", id, "apostas", minhaUid()), (s) => { arena.minhaAposta = s.exists() ? s.data() : null; if (arena.dados) renderArena(); }));
+}
+const NOME_MOEDA_APOSTA = { ryos: 'Ryos', essencia_ninja: 'EN' };
+function premioDaAposta(ap, d, tot) {
+    const r = d.estado?.resultado || {};
+    const venc = (d.status === 'anulada' || r.anulada) ? null : (r.vencedor || null);
+    const bolo = numero(tot[d.desafianteId]) + numero(tot[d.desafiadoId]);
+    if (!venc || !numero(tot[venc])) return ap.liquido;
+    return venc === ap.lado ? Math.floor(ap.liquido * bolo / numero(tot[venc])) : 0;
+}
+function htmlEspectador(d) {
+    const e = d.estado, L = e.lutadores, A = d.desafianteId, B = d.desafiadoId;
+    const tot = arena.apostasTotais || {};
+    const minha = arena.minhaAposta;
+    const aberta = d.status === 'aceito' && e.status === 'em_andamento' && e.turno < 2;
+    const torcendo = arena.torcendo || arena.ladoVisao;
+    const valorDigitado = document.getElementById('aposta-valor')?.value || '';
+    const moedaEscolhida = document.getElementById('aposta-moeda')?.value || 'ryos';
+    const bolo = (moeda) => [A, B].map(uid => {
+        const t = tot[moeda] || {}, soma = numero(t[A]) + numero(t[B]), lado = numero(t[uid]);
+        return `<div class="bolo-lado"><span>${esc(L[uid]?.nome || 'Ninja')}</span><strong>${formatarNum(lado)} ${NOME_MOEDA_APOSTA[moeda]}</strong><small>${lado ? `paga ${(soma / lado).toFixed(2)}x` : 'sem apostas'}</small></div>`;
+    }).join('');
+    let aposta;
+    if (minha) {
+        const fim = e.status === 'finalizada';
+        const premio = fim ? premioDaAposta(minha, d, tot[minha.moeda] || {}) : null;
+        aposta = `<div class="aposta-minha">🎟️ Sua aposta: <strong>${formatarNum(minha.valor)} ${NOME_MOEDA_APOSTA[minha.moeda]}</strong> em <strong>${esc(L[minha.lado]?.nome || 'Ninja')}</strong> (${formatarNum(minha.liquido)} no bolo; 5% foram para o Cofre da Vila)
+            ${fim ? `<br>${premio > 0 ? `💰 Resultado: <strong>+${formatarNum(premio)} ${NOME_MOEDA_APOSTA[minha.moeda]}</strong>${minha.pago ? ' (já está na sua ficha)' : ''}` : '😔 Não foi dessa vez.'}` : ''}</div>`;
+    } else if (aberta) {
+        aposta = `<div class="aposta-form">
+            <input type="number" id="aposta-valor" class="edit-input" min="${APOSTA_MINIMA}" placeholder="Valor (mín. ${APOSTA_MINIMA})" value="${esc(valorDigitado)}">
+            <select id="aposta-moeda" class="edit-input"><option value="ryos" ${moedaEscolhida === 'ryos' ? 'selected' : ''}>Ryos</option><option value="essencia_ninja" ${moedaEscolhida === 'essencia_ninja' ? 'selected' : ''}>EN</option></select>
+            ${[A, B].map(uid => `<button class="buy-btn" onclick="window.apostarNaLuta(${jsArg(uid)})">Apostar em ${esc(L[uid]?.nome || 'Ninja')}</button>`).join('')}
+        </div><p class="form-ajuda">As apostas fecham quando começar o <strong>turno 2</strong>. Quem acertar divide o bolo inteiro, proporcional ao que apostou. 5% de cada aposta vão para o Cofre da Vila. Empate ou luta anulada: o valor volta.</p>`;
+    } else {
+        aposta = `<p class="arena-vazio">${e.status === 'finalizada' ? 'Luta encerrada.' : 'As apostas desta luta já fecharam (começou o turno 2).'}</p>`;
+    }
+    return `<div class="plateia">
+        <div class="plateia-torcida">
+            <div class="plateia-titulo">📣 Torcida</div>
+            <div class="plateia-lados">${[A, B].map(uid => `<button class="btn-arena-sec ${torcendo === uid ? 'ativo' : ''}" onclick="window.torcerPor(${jsArg(uid)})">Torcer por ${esc(L[uid]?.nome || 'Ninja')}</button>`).join('')}
+                <button class="btn-arena-sec" onclick="window.trocarLadoVisao()" title="Inverter os lados da tela">⇄ Inverter tela</button></div>
+            <div class="plateia-emojis">${EMOJIS_TORCIDA.map(em => `<button class="emoji-btn" onclick="window.enviarEmoji('${em}')" aria-label="Enviar ${em}">${em}</button>`).join('')}</div>
+        </div>
+        <div class="plateia-apostas">
+            <div class="plateia-titulo">💰 Apostas</div>
+            <div class="bolo">${bolo('ryos')}</div>${(tot.essencia_ninja && Object.keys(tot.essencia_ninja).length) ? `<div class="bolo">${bolo('essencia_ninja')}</div>` : ''}
+            ${aposta}
+        </div>
+    </div>`;
+}
+
+window.apostarNaLuta = async (lado) => {
+    const d = arena.dados, id = arena.id, eu = minhaUid();
+    if (!d || !id || !eu) return;
+    const valor = Math.floor(Number(document.getElementById('aposta-valor')?.value));
+    const moeda = document.getElementById('aposta-moeda')?.value === 'essencia_ninja' ? 'essencia_ninja' : 'ryos';
+    if (!valor || valor < APOSTA_MINIMA) return alert(`A aposta mínima é ${APOSTA_MINIMA}.`);
+    if (valor > numero(currentUserData?.[moeda])) return alert(`Você não tem ${NOME_MOEDA_APOSTA[moeda]} suficientes.`);
+    if ([d.desafianteId, d.desafiadoId].includes(eu)) return alert("Você não pode apostar na sua própria luta.");
+    const liquido = valor - Math.floor(valor / 20), taxa = valor - liquido;
+    if (!confirm(`Apostar ${formatarNum(valor)} ${NOME_MOEDA_APOSTA[moeda]} em ${d.estado.lutadores[lado]?.nome}?\n\n${formatarNum(taxa)} vão para o Cofre da Vila e ${formatarNum(liquido)} entram no bolo.`)) return;
+    try {
+        const mid = `aposta_${id}_${eu}`;
+        const lote = writeBatch(db);
+        lote.update(doc(db, "users", eu), { [moeda]: increment(-valor), apostas_abertas: arrayUnion(id), ultimaAposta: id });
+        lote.set(doc(db, "desafios_batalha", id, "apostas", eu), { uid: eu, nome: currentUserData?.nome || 'Ninja', lado, moeda, valor, liquido, pago: false, em: Date.now() });
+        lote.set(doc(db, "apostas_totais", id), { [moeda]: { [lado]: increment(liquido) } }, { merge: true });
+        lote.set(doc(db, "vila_movimentos", mid), { uid: eu, nome: currentUserData?.nome || 'Ninja', tipo: 'aposta', valor: taxa, data: serverTimestamp(), ref: id, moeda });
+        lote.update(refCofre(), { [moeda === 'ryos' ? 'saldo' : 'saldo_en']: increment(taxa), ultimoMov: mid });
+        await lote.commit();
+        arena.torcendo = lado;
+    } catch (e) {
+        console.error(e);
+        alert("Não foi possível apostar: " + (e.code === 'permission-denied' ? 'as apostas podem ter fechado (começou o turno 2).' : e.message));
+    }
+};
+
+// Recebe (ou fecha) a aposta de uma luta que terminou
+async function receberMinhaAposta(bid, avisar = false) {
+    const eu = minhaUid();
+    arena.recebendo = arena.recebendo || {};
+    if (!eu || arena.recebendo[bid]) return;
+    arena.recebendo[bid] = true;
+    try {
+        const ap = (await getDoc(doc(db, "desafios_batalha", bid, "apostas", eu))).data();
+        if (!ap || ap.pago) return;
+        const d = (await getDoc(doc(db, "desafios_batalha", bid))).data();
+        if (!d?.estado || d.estado.status !== 'finalizada') { arena.recebendo[bid] = false; return; }
+        const tot = ((await getDoc(doc(db, "apostas_totais", bid))).data() || {})[ap.moeda] || {};
+        const premio = premioDaAposta(ap, d, tot);
+        const lote = writeBatch(db);
+        lote.update(doc(db, "users", eu), { [ap.moeda]: increment(premio), apostas_abertas: arrayRemove(bid), ultimaApostaPaga: bid });
+        lote.update(doc(db, "desafios_batalha", bid, "apostas", eu), { pago: true });
+        await lote.commit();
+        if (avisar || premio > 0) {
+            const nome = d.estado.lutadores[ap.lado]?.nome || 'seu ninja';
+            alert(premio > ap.liquido ? `🎉 Você acertou a aposta em ${nome}: +${formatarNum(premio)} ${NOME_MOEDA_APOSTA[ap.moeda]}!`
+                : premio > 0 ? `↩️ Sua aposta voltou: +${formatarNum(premio)} ${NOME_MOEDA_APOSTA[ap.moeda]}.` : `😔 Você perdeu a aposta em ${nome}.`);
+        }
+    } catch (e) { console.error("Erro ao receber a aposta:", e); arena.recebendo[bid] = false; }
+}
+// Ao entrar: recebe apostas de lutas que terminaram enquanto você estava fora
+async function conferirApostasAbertas() {
+    try {
+        const ficha = (await getDoc(doc(db, "users", minhaUid()))).data() || {};
+        for (const bid of ficha.apostas_abertas || []) {
+            const d = (await getDoc(doc(db, "desafios_batalha", bid))).data();
+            if (d?.estado?.status === 'finalizada') await receberMinhaAposta(bid);
+        }
+    } catch (e) { console.error(e); }
+}
+
+// Kage: anula a luta (ninguém ganha; cofres e apostas voltam)
+window.anularLuta = async (id) => {
+    if (!ehKage()) return;
+    if (!confirm("Anular esta luta?\n\nNinguém ganha nem perde, as estatísticas não contam e as apostas e cofres voltam para os jogadores.")) return;
+    try {
+        const atual = (await getDoc(doc(db, "desafios_batalha", id))).data() || {};
+        const n = (atual.histN || (atual.historico || []).length) + 1;
+        await updateDoc(doc(db, "desafios_batalha", id), {
+            histN: n, rev: (atual.rev || 0) + 1,
+            status: 'anulada',
+            'estado.status': 'finalizada', 'estado.fase': 'fim', 'estado.ataquePendente': null,
+            'estado.resultado': { vencedor: null, perdedor: null, empate: false, anulada: true, motivo: 'anulada' },
+            anuladaEm: Date.now(),
+            historico: arrayUnion({ tipo: 'sistema', texto: '⚖️ O Kage anulou esta luta. Apostas e cofres serão devolvidos.', t: Date.now(), n })
+        });
+    } catch (e) { console.error(e); alert("Erro ao anular: " + e.message); }
+};
+
+// Lutas ao vivo: faz o botão da Arena pulsar e lista na entrada da Arena
+window.escutarLutasAoVivo = () => {
+    if (arena.pararAoVivo) arena.pararAoVivo();
+    arena.pararAoVivo = onSnapshot(query(collection(db, "desafios_batalha"), where("status", "==", "aceito")), (snap) => {
+        const eu = minhaUid();
+        arena.aoVivo = snap.docs.map(d => ({ id: d.id, dados: d.data() }))
+            .filter(b => batalhaAtiva(b.dados) && b.dados.desafianteId !== eu && b.dados.desafiadoId !== eu);
+        document.querySelectorAll('#side-btn-batalha, #bottom-btn-batalha, #nav-btn-batalha').forEach(b => b.classList.toggle('ao-vivo', arena.aoVivo.length > 0));
+        renderListaAoVivo();
+    }, (e) => console.error(e));
+};
+function renderListaAoVivo() {
+    const c = document.getElementById('arena-ao-vivo');
+    if (!c) return;
+    const lutas = arena.aoVivo || [];
+    if (!lutas.length) { c.innerHTML = ''; return; }
+    c.innerHTML = `<h3 class="arena-ao-vivo-titulo"><span class="ponto-ao-vivo"></span> Ao vivo agora</h3>` + lutas.map(b => {
+        const e = b.dados.estado, L = e.lutadores, A = b.dados.desafianteId, B = b.dados.desafiadoId;
+        const vida = (uid) => `${Math.max(0, Math.round(L[uid].vida / L[uid].maxVida * 100))}%`;
+        return `<div class="arena-lobby-item ao-vivo-item">
+            <div><div class="arena-lobby-titulo">⚔️ <strong>${esc(L[A]?.nome)}</strong> <small>(${vida(A)})</small> × <strong>${esc(L[B]?.nome)}</strong> <small>(${vida(B)})</small></div>
+            <div class="arena-lobby-sub">${NOMES_MODO[b.dados.modo || 'amistoso']} · Turno ${e.turno}${e.turno < 2 ? ' · <strong>apostas abertas</strong>' : ''}</div></div>
+            <div class="ao-vivo-botoes"><button class="btn-post" onclick="window.assistirBatalha(${jsArg(b.id)})">👀 Assistir</button>
+            ${ehKage() ? `<button class="btn-arena-sec perigo" onclick="window.anularLuta(${jsArg(b.id)})">⚖️ Anular</button>` : ''}</div>
+        </div>`;
+    }).join('');
+}
 
 // Mostra a versão do servidor: desenha, anima as jogadas novas e cuida do fim da luta
 function aplicarDoServidor(d, primeiraVez = false) {
@@ -1612,11 +1872,17 @@ function aplicarDoServidor(d, primeiraVez = false) {
         enfileirarAnimacoes(hist.filter(h => h.tipo === 'anim' && (h.n || 0) > (arena.animadoAte || 0)));
         arena.animadoAte = ultimoN;
     }
-    if (d.estado?.status === 'finalizada' && arena.id) posLuta(arena.id, d);
+    if (d.estado?.status === 'finalizada' && arena.id) {
+        if (arena.espectador) receberMinhaAposta(arena.id, true);
+        else posLuta(arena.id, d);
+    }
 }
 
 function fecharBatalha(voltarAoLobby = true) {
     if (arena.unsub) arena.unsub();
+    (arena.ouvintesPlateia || []).forEach(f => f());
+    if (arena.espectador && arena.id && minhaUid()) deleteDoc(doc(db, "desafios_batalha", arena.id, "torcida", minhaUid())).catch(() => {});
+    Object.assign(arena, { espectador: false, ladoVisao: null, ouvintesPlateia: [], espectadores: 0, apostasTotais: null, minhaAposta: null, torcendo: null });
     clearInterval(arena.tick); clearInterval(arena.batida);
     Object.assign(arena, { id: null, dados: null, servidor: null, pendentes: 0, unsub: null, tick: null, batida: null });
     if (voltarAoLobby) {
@@ -1717,7 +1983,7 @@ function tickArena() {
     if (!d || !d.estado) return;
     const e = d.estado;
     atualizarCronometro(e);
-    if (e.status !== 'em_andamento') return;
+    if (e.status !== 'em_andamento' || arena.espectador) return;
     const agora = agoraArena();
     // Tempo esgotado: qualquer um dos dois registra (o motor confere se acabou mesmo)
     if (!e.pausada && agora > e.prazo + 1500 && Date.now() - arena.ultimoTempoEsgotado > 4000) {
@@ -1804,15 +2070,16 @@ function cartaoLutador(l, souEu, ehVez) {
 function renderArena() {
     const d = arena.dados;
     if (!d || !d.estado) return;
-    const e = d.estado, eu = minhaUid(), adv = outro(e, eu);
+    const e = d.estado, eu = uidVisao(), adv = outro(e, eu);
     const L = e.lutadores, me = L[eu], ele = L[adv];
     if (!me || !ele) return;
 
     // Topo
     const modo = d.modo || 'amistoso';
-    document.getElementById('arena-modo').innerHTML = `${NOMES_MODO[modo]}${descricaoAposta(d) ? ` · 💰 ${descricaoAposta(d)} cada` : ''}`;
+    document.getElementById('arena-modo').innerHTML = `${NOMES_MODO[modo]}${descricaoAposta(d) ? ` · 💰 ${descricaoAposta(d)} cada` : ''}${arena.espectadores ? ` · <span class="arena-assistindo">👀 ${arena.espectadores} assistindo</span>` : ''}${arena.espectador ? ' · <strong>Você está assistindo</strong>' : ''}`;
     let situacao;
     if (e.status === 'finalizada') situacao = 'Batalha encerrada';
+    else if (arena.espectador) situacao = e.pausada ? '⏸️ Pausada' : (e.fase === 'reacao' ? `${esc(L[outro(e, e.vez)].nome)} está reagindo...` : `Vez de ${esc(L[e.vez].nome)}`);
     else if (e.pausada) situacao = '⏸️ Pausada — aguardando os dois ninjas na arena';
     else if (e.fase === 'reacao') situacao = adv === e.vez ? '⚠️ Reaja ao ataque!' : `Aguardando ${esc(ele.nome)} reagir...`;
     else situacao = e.vez === eu ? '🔥 Sua vez!' : `Vez de ${esc(ele.nome)}...`;
@@ -1836,7 +2103,7 @@ function renderArena() {
         el.classList.toggle('em-chamas', (l.efeitos || []).some(x => x.tipo === 'chamas'));
         // Criação que diminuiu: anima a ficha
         const antes = Object.fromEntries([...el.querySelectorAll('[data-criacao]')].map(f => [f.dataset.criacao, Number(f.querySelector('strong')?.textContent) || 0]));
-        el.innerHTML = cartaoLutador(l, souEu, naVez(uid));
+        el.innerHTML = cartaoLutador(l, souEu && !arena.espectador, naVez(uid));
         el.querySelectorAll('[data-criacao]').forEach(f => { if ((antes[f.dataset.criacao] || 0) > Number(f.querySelector('strong').textContent)) f.classList.add('quebrou'); else if (!(f.dataset.criacao in antes)) f.classList.add('surgiu'); });
     });
 
@@ -1845,7 +2112,8 @@ function renderArena() {
 
     // Painel central
     const painel = document.getElementById('arena-painel');
-    if (e.status === 'finalizada') painel.innerHTML = htmlResultado(d, eu);
+    if (arena.espectador) painel.innerHTML = (e.status === 'finalizada' ? htmlResultado(d, eu) : '') + htmlEspectador(d);
+    else if (e.status === 'finalizada') painel.innerHTML = htmlResultado(d, eu);
     else if (e.pausada) painel.innerHTML = `<div class="arena-aviso">⏸️ A batalha está pausada porque um dos ninjas saiu da arena. Ela continua de onde parou quando os dois voltarem.</div>`;
     else if (e.fase === 'reacao' && e.vez === adv) { painel.innerHTML = htmlReacao(e, me); preencherCartaDaAmeaca(e.ataquePendente); }
     else if (e.fase === 'acao' && e.vez === eu) painel.innerHTML = htmlAcoes(e, me);
@@ -1853,7 +2121,10 @@ function renderArena() {
 
     // Rodapé
     const rodape = document.getElementById('arena-rodape');
-    if (e.status === 'finalizada') {
+    if (arena.espectador) {
+        rodape.innerHTML = `<button class="btn-post" onclick="window.sairDaArena()"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Sair da plateia</button>
+            ${ehKage() && e.status !== 'finalizada' ? `<button class="btn-arena-sec perigo" onclick="window.anularLuta(${jsArg(arena.id)})">⚖️ Anular luta (Kage)</button>` : ''}`;
+    } else if (e.status === 'finalizada') {
         rodape.innerHTML = `<button class="btn-post" onclick="window.sairDaArena()"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Voltar ao lobby</button>`;
     } else {
         let empate = `<button class="btn-arena-sec" onclick="window.arenaAcao('propor_empate')">🤝 Propor empate</button>`;
@@ -2081,12 +2352,16 @@ function htmlReacao(e, me) {
 function htmlResultado(d, eu) {
     const r = d.estado.resultado || {};
     let titulo, cls;
-    if (r.empate) { titulo = '🤝 Empate'; cls = 'empate'; }
+    if (d.status === 'anulada' || r.anulada) { titulo = '⚖️ Luta anulada pelo Kage'; cls = 'empate'; }
+    else if (arena.espectador) { titulo = r.vencedor ? `🏆 ${d.estado.lutadores[r.vencedor]?.nome || 'Ninja'} venceu!` : '🤝 Empate'; cls = r.vencedor ? 'vitoria' : 'empate'; }
+    else if (r.empate) { titulo = '🤝 Empate'; cls = 'empate'; }
     else if (r.vencedor === eu) { titulo = '🏆 Vitória!'; cls = 'vitoria'; }
     else { titulo = '💀 Derrota'; cls = 'derrota'; }
-    const motivo = { vida: 'por nocaute', chakra: 'por esgotamento de chakra', desistencia: 'por desistência', acordo: 'por acordo', 'nocaute duplo': 'os dois caíram juntos' }[r.motivo] || '';
+    const motivo = { vida: 'por nocaute', chakra: 'por esgotamento de chakra', desistencia: 'por desistência', acordo: 'por acordo', 'nocaute duplo': 'os dois caíram juntos', anulada: 'ninguém ganha nem perde; apostas e cofres são devolvidos' }[r.motivo] || '';
     let premio = '';
-    if (d.modo === 'rankeada') premio = r.empate ? 'Rankeada: sem alteração de pontos.' : (r.vencedor === eu ? `+${ARENA.pontosVitoria} pontos de Rankeada` : `−${ARENA.pontosDerrota} pontos de Rankeada`);
+    const semPremio = arena.espectador || d.status === 'anulada' || r.anulada;
+    if (semPremio) { /* plateia ou luta anulada: nada a mostrar aqui */ }
+    else if (d.modo === 'rankeada') premio = r.empate ? 'Rankeada: sem alteração de pontos.' : (r.vencedor === eu ? `+${ARENA.pontosVitoria} pontos de Rankeada` : `−${ARENA.pontosDerrota} pontos de Rankeada`);
     if (d.modo === 'competitivo' && d.aposta) {
         const total = Object.values(d.cofre || {}).reduce((a, b) => a + numero(b), 0);
         premio = r.empate ? `Cada um recebe sua aposta de volta (${formatarNum(d.aposta.valor)} ${NOMES_MOEDA[d.aposta.moeda]}).`
@@ -2319,7 +2594,7 @@ function renderMesa(d, eu, adv) {
     const L = d.estado.lutadores;
     const coluna = (uid) => `
         <div class="mesa-lado" data-uid="${esc(uid)}">
-            <div class="mesa-titulo">${uid === eu ? 'Suas cartas' : 'Cartas de ' + esc(L[uid]?.nome || 'Ninja')}</div>
+            <div class="mesa-titulo">${uid === eu && !arena.espectador ? 'Suas cartas' : 'Cartas de ' + esc(L[uid]?.nome || 'Ninja')}</div>
             <div class="mesa-cartas">${lados[uid].map(x => htmlCartaMesa(x.c, x.n, x)).join('') || '<span class="mesa-vazia">Nenhuma carta neste turno</span>'}</div>
         </div>`;
     mesa.innerHTML = coluna(eu) + '<div class="mesa-meio" aria-hidden="true"></div>' + coluna(adv);
@@ -2501,6 +2776,11 @@ async function posLuta(id, d) {
     const r = d.estado.resultado || {};
     const ref = doc(db, "desafios_batalha", id);
     try {
+        // Luta anulada pelo Kage: não conta estatística e cada um recebe a aposta de volta
+        if (d.status === 'anulada' || r.anulada) {
+            if (d.modo === 'competitivo' && d.aposta) await devolverMeuCofre(id, { ...d, status: 'anulada' });
+            return;
+        }
         // 1) Estatísticas (uma única vez por jogador)
         if (!(d.contabilizado && d.contabilizado[eu])) {
             const ficha = (await getDoc(doc(db, "users", eu))).data() || {};
@@ -4745,7 +5025,7 @@ window.ajustarCofre = async (sinal) => {
 // =====================================================================
 //  ABA BANCO: Cofre da Vila (saldo, doação, extrato e patronos)
 // =====================================================================
-const NOME_MOVIMENTO = { imposto_loja: '🛒 Imposto da loja', missao: '📜 Contrato de missão', arena: '⚔️ Taxa da arena', doacao: '🎁 Doação', salarios: '💰 Salários', ajuste: '⚖️ Ajuste do Kage', abertura: '🏯 Abertura do cofre' };
+const NOME_MOVIMENTO = { aposta: '🎲 Taxa de aposta', imposto_loja: '🛒 Imposto da loja', missao: '📜 Contrato de missão', arena: '⚔️ Taxa da arena', doacao: '🎁 Doação', salarios: '💰 Salários', ajuste: '⚖️ Ajuste do Kage', abertura: '🏯 Abertura do cofre' };
 window.carregarCofreVila = async () => {
     const el = document.getElementById('cofre-vila');
     if (!el) return;
@@ -4761,14 +5041,14 @@ window.carregarCofreVila = async () => {
         const extrato = movs.docs.map(d => {
             const m = d.data(), v = numero(m.valor);
             const quando = m.data?.toDate ? m.data.toDate().toLocaleDateString('pt-BR') : '';
-            return `<li class="${v < 0 ? 'saida' : 'entrada'}"><span>${esc(NOME_MOVIMENTO[m.tipo] || m.tipo)}${m.tipo === 'doacao' || m.tipo === 'missao' || m.tipo === 'arena' || m.tipo === 'imposto_loja' ? ` · ${esc(m.nome || '')}` : ''}${m.ref && (m.tipo === 'ajuste' || m.tipo === 'salarios') ? ` · ${esc(m.ref)}` : ''}<small>${esc(quando)}</small></span><strong>${v < 0 ? '−' : '+'}${formatarNum(Math.abs(v))}</strong></li>`;
+            return `<li class="${v < 0 ? 'saida' : 'entrada'}"><span>${esc(NOME_MOVIMENTO[m.tipo] || m.tipo)}${['doacao', 'missao', 'arena', 'imposto_loja', 'aposta'].includes(m.tipo) ? ` · ${esc(m.nome || '')}` : ''}${m.ref && (m.tipo === 'ajuste' || m.tipo === 'salarios') ? ` · ${esc(m.ref)}` : ''}<small>${esc(quando)}</small></span><strong>${v < 0 ? '−' : '+'}${formatarNum(Math.abs(v))}${m.moeda === 'essencia_ninja' ? ' EN' : ''}</strong></li>`;
         }).join('');
         const ranking = patronos.docs.filter(d => numero(d.data().doado_vila) > 0).map((d, i) =>
             `<li><span>${['🥇', '🥈', '🥉', '4º', '5º'][i]} ${esc(d.data().nome || 'Ninja')}</span><strong>${formatarNum(numero(d.data().doado_vila))}</strong></li>`).join('');
         el.innerHTML = `
             <div class="cofre-topo">
-                <div class="cofre-saldo"><span>🏯 Cofre da Vila</span><strong>${formatarNum(saldo)} <small>Ryos</small></strong>
-                    <p>Paga os salários dos ninjas. Cresce com missões (+20% do contrato), compras na loja (+10%), apostas da arena (5%) e doações.</p></div>
+                <div class="cofre-saldo"><span>🏯 Cofre da Vila</span><strong>${formatarNum(saldo)} <small>Ryos</small></strong>${numero(snap.data().saldo_en) ? `<div class="cofre-en">+ ${formatarNum(numero(snap.data().saldo_en))} EN</div>` : ''}
+                    <p>Paga os salários dos ninjas. Cresce com missões (+20% do contrato), compras na loja (+10%), lutas e apostas da arena (5%) e doações.</p></div>
                 <div class="cofre-doar">
                     <label for="valor-doacao"><strong>Doar para a Vila</strong></label>
                     <div class="cofre-doar-linha"><input type="number" id="valor-doacao" min="1" placeholder="Ryos" class="edit-input" value="${esc(digitado)}"><button class="buy-btn" onclick="window.doarParaVila()">Doar</button></div>
