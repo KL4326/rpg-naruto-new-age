@@ -240,6 +240,56 @@ service cloud.firestore {
           && novoPremioPendente();
       }
 
+      // 10b) Resgatar sozinho um prêmio da roleta (sem esperar o Kage):
+      //   "Jutsu Rank B"          → um jutsu Rank B (que ele ainda não tem e pode usar)
+      //   "Ferramenta Especial" / "Arma Ninja" → 1 unidade de um item marcado com premio_roleta
+      //   "Modificador de Atributo" → +1 no atributo escolhido
+      // O prêmio sai da lista (só aquele, pela posição) no MESMO envio.
+      function tipoPremio(p) { return p.get('valor', p.get('item', '')); }
+      function resgatarPremio() {
+        return depois().get('ultimoResgate', null) != null && 'premios_pendentes' in mudou() && resgatarPremioValido(depois().ultimoResgate);
+      }
+      function resgatarPremioValido(r) {
+        let lista = antes().get('premios_pendentes', []);
+        return r.indice is int && r.indice >= 0 && r.indice < lista.size()
+          && depois().premios_pendentes == semPosicao(lista, r.indice)
+          && (resgateJutsu(r, tipoPremio(lista[r.indice])) || resgateItem(r, tipoPremio(lista[r.indice])) || resgateAtributo(r, tipoPremio(lista[r.indice])));
+      }
+      // A lista sem o item da posição i (cortes vazios dão erro nas regras, por isso os testes)
+      function semPosicao(lista, i) {
+        return (i == 0 ? [] : lista[0:i]).concat(i + 1 >= lista.size() ? [] : lista[i + 1:lista.size()]);
+      }
+      function resgateJutsu(r, tipo) {
+        return r.tipo == 'jutsu' && tipo == 'Jutsu Rank B'
+          && mudou().hasOnly(['meusJutsus', 'premios_pendentes', 'ultimoResgate']) && resgateJutsuValido(r);
+      }
+      function resgateJutsuValido(r) {
+        let j = get(caminho('jutsus', r.id)).data;
+        let lista = antes().get('meusJutsus', []);
+        return string(j.get('rank', '')).upper() == 'B'
+          && !(r.id in lista) && depois().meusJutsus == lista.concat([r.id])
+          && (j.get('restrito_a', null) == null || j.restrito_a.size() == 0 || antes().get('nome', '') in j.restrito_a);
+      }
+      function resgateItem(r, tipo) {
+        return r.tipo in ['ferramentas', 'itens'] && tipo in ['Ferramenta Especial', 'Arma Ninja']
+          && mudou().hasOnly(['inventario', 'premios_pendentes', 'ultimoResgate']) && resgateItemValido(r, tipo);
+      }
+      function resgateItemValido(r, tipo) {
+        let item = get(caminho(r.tipo, r.id)).data;
+        let invA = antes().get('inventario', {});
+        let invD = depois().get('inventario', {});
+        return item.get('premio_roleta', '') == tipo
+          && invD.diff(invA).affectedKeys().hasOnly([r.id])
+          && invD.get(r.id, 0) == invA.get(r.id, 0) + 1;
+      }
+      function resgateAtributo(r, tipo) {
+        return r.tipo == 'atributo' && tipo == 'Modificador de Atributo'
+          && r.id in ['forca', 'defesa', 'constituicao', 'destreza', 'intelecto', 'agilidade']
+          && mudou().hasOnly([r.id, 'premios_pendentes', 'ultimoResgate'])
+          && depois().get(r.id, 0) is number
+          && depois().get(r.id, 0) == valor(antes(), r.id, 0) + 1;
+      }
+
       // 11) Presente/mentoria — lado de quem PAGA (a transferência é conferida em /transferencias)
       function pagarTransferencia() {
         return 'ultimaTransferencia' in mudou()
@@ -345,7 +395,7 @@ service cloud.firestore {
         || (dono() && (perfil() || gastoEmCombate() || subirNivel() || consumirItem()
                        || comprarJutsu() || comprarItem() || solicitar()
                        || coletarMissao() || coletarConquista() || trocarEnPorRyos()
-                       || roletaGratis() || roletaPaga() || pagarTransferencia()
+                       || roletaGratis() || roletaPaga() || resgatarPremio() || pagarTransferencia()
                        || pagarCofre() || receberCofre() || devolverCofre() || contabilizarBatalha()))
         || (logado() && !dono() && receberTransferencia());
     }

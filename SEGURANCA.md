@@ -19,7 +19,7 @@ O arquivo [`firestore.rules`](firestore.rules) define quem pode alterar o quê n
 | Mentoria | Preço cadastrado no mentor; o valor vai para o jogador-mentor |
 | Subir de nível | XP da tabela de níveis descontado |
 | Combate | Vida/chakra/stamina só diminuem |
-| Roleta | Prêmio fica **pendente**; o Kage entrega no Painel Kage |
+| Roleta | Ryos/EN ficam **pendentes** (o Kage credita). Jutsu Rank B, Ferramenta Especial, Arma Ninja e Modificador o **próprio jogador resgata**: o banco confere o Rank B, o item marcado como prêmio e o +1 no atributo, e tira só aquele prêmio da lista |
 | Arena: apostar no Competitivo | Só a própria aposta, no valor do desafio; XP precisa sobrar 10 na barra |
 | Arena: receber o cofre | Só o **vencedor** registrado na luta, só uma vez, no valor exato do cofre |
 | Arena: devolver aposta | Só em convite recusado/cancelado, luta anulada ou empate; só uma vez |

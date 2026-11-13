@@ -1285,3 +1285,22 @@ body:has(#app-container[style*="none"]) #btn-adicionar-geral { display: none !im
 
 body.menos-movimento .arena-lutador[class*="aura-"], body.menos-movimento .aura-selo, body.menos-movimento .arena-lutador.em-chamas::after { animation: none !important; }
 @media (prefers-reduced-motion: reduce) { .arena-lutador[class*="aura-"], .aura-selo, .arena-lutador.em-chamas::after, .arena-ficha { animation: none !important; } }
+
+/* ===================== PRÊMIOS DA ROLETA: RESGATE ===================== */
+.meus-premios { max-width: 720px; margin: 0 auto 28px; }
+.meus-premios-lista { display: flex; flex-direction: column; gap: 10px; }
+.premio-meu { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--gold); border-radius: var(--radius-sm); padding: 10px 14px; box-shadow: var(--shadow-sm); }
+.premio-meu > div { flex: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.premio-meu > div small { width: 100%; color: var(--text-muted); font-weight: 700; }
+.premio-meu-icone { font-size: 1.6rem; }
+.premio-meu .buy-btn { width: auto; padding: 8px 16px; }
+.btn-resgatar { background: linear-gradient(135deg, #f59e0b, #b45309) !important; margin-top: 6px; }
+.modal-resgate-conteudo { max-width: 640px; width: calc(100% - 32px); max-height: 85vh; overflow-y: auto; }
+.resgate-opcoes { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 10px; }
+.resgate-opcao { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px; background: var(--surface-2); border: 2px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; color: var(--text); font: inherit; text-align: center; transition: border-color .2s, transform .2s; }
+.resgate-opcao:hover, .resgate-opcao:focus-visible { border-color: var(--primary-bright); transform: translateY(-2px); }
+.resgate-opcao img { width: 100%; height: 80px; object-fit: cover; border-radius: 8px; }
+.resgate-opcao small { color: var(--text-muted); font-weight: 700; }
+.resgate-icone { font-size: 2rem; line-height: 80px; }
+.admin-titulo-acoes { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.admin-titulo-acoes .section-title { margin: 0; }

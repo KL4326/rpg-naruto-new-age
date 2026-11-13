@@ -451,6 +451,7 @@ window.showTab = (t, opcoes = {}) => {
             
             // --- NOVO: Lógica visual da aba de Prêmios (Roleta) ---
             if(t === 'premios') {
+                renderMeusPremios();
                 const agora = Date.now();
                 const seteDiasEmMs = 7 * 24 * 60 * 60 * 1000;
                 const ultimoGiro = currentUserData.ultimoGiroRoleta || 0;
@@ -928,7 +929,9 @@ function criarCardLoja(containerId, dados, id, tipo, buyFn, clickFn) {
             <button id="btn-buy-${id}" class="${btnClass}" onclick="event.stopPropagation(); comprarMultiplos(${jsArg(id)}, ${Number(finalPrice) || 0}, ${jsArg(dados.nome)}, ${jsArg(tipo)}, ${jsArg('qtd-' + id)}, ${jsArg(currency)})">Comprar x1</button>`; 
     } else { 
         // Para Jutsus (Verificação de Posse e Nível)
-        if (isOwned) {
+        if (!isOwned && window.temPremio('Jutsu Rank B') && jutsuResgatavel(id, dados)) {
+            buyControlHTML = `<button class="buy-btn btn-resgatar" onclick="event.stopPropagation(); window.resgatarPremio('Jutsu Rank B', { tipo: 'jutsu', id: ${jsArg(id)} }, ${jsArg(dados.nome)})">🎁 Resgatar (prêmio)</button>`;
+        } else if (isOwned) {
             buyControlHTML = `<button class="buy-btn" disabled>Adquirido</button>`;
         } else if (dados.bloqueadoPorNivel) {
             // Botão cinza e bloqueado se o nível for baixo
@@ -939,6 +942,11 @@ function criarCardLoja(containerId, dados, id, tipo, buyFn, clickFn) {
         }
     }
 
+    // Ferramenta/item marcado como prêmio da roleta: botão extra de resgate
+    if (tipo !== 'jutsu' && dados.premio_roleta && window.temPremio(dados.premio_roleta)) {
+        const colecao = tipo === 'ferramenta' ? 'ferramentas' : 'itens';
+        buyControlHTML += `<button class="buy-btn btn-resgatar" onclick="event.stopPropagation(); window.resgatarPremio(${jsArg(dados.premio_roleta)}, { tipo: ${jsArg(colecao)}, id: ${jsArg(id)} }, ${jsArg(dados.nome)})">🎁 Resgatar (${esc(dados.premio_roleta)})</button>`;
+    }
     div.innerHTML = `
         <img src="${esc(dados.imagem || IMG_PADRAO)}" class="card-img-top">
         <h4>${esc(dados.nome)}</h4>
@@ -3553,7 +3561,7 @@ window.carregarPremiosPendentesAdmin = async () => {
         let total = 0;
         s.forEach(u => {
             const d = u.data();
-            (d.premios_pendentes || []).forEach(p => {
+            (d.premios_pendentes || []).forEach((p, indice) => {
                 total++;
                 const nome = p.nome || p.item || "Prêmio";
                 const ehMoeda = p.tipo === 'moeda_ryos' || p.tipo === 'moeda_en';
@@ -3565,8 +3573,8 @@ window.carregarPremiosPendentesAdmin = async () => {
                         <span>🎁 ${esc(nome)} <small>· ${esc(p.data || "")}${p.pago ? " · giro pago" : ""}</small></span>
                     </div>
                     <div class="premio-acoes">
-                        <button class="btn-adm btn-adm-approve" onclick="window.entregarPremio(${jsArg(u.id)}, ${jsArg(p.id)}, true)"><i class="fa-solid fa-check" aria-hidden="true"></i> ${ehMoeda ? 'Creditar' : 'Entregue'}</button>
-                        <button class="btn-adm btn-adm-reject" onclick="window.entregarPremio(${jsArg(u.id)}, ${jsArg(p.id)}, false)" title="Descartar (ex.: prêmio inválido)"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+                        <button class="btn-adm btn-adm-approve" onclick="window.entregarPremio(${jsArg(u.id)}, ${jsArg(chavePremio(p, indice))}, true)"><i class="fa-solid fa-check" aria-hidden="true"></i> ${ehMoeda ? 'Creditar' : 'Entregue'}</button>
+                        <button class="btn-adm btn-adm-reject" onclick="window.entregarPremio(${jsArg(u.id)}, ${jsArg(chavePremio(p, indice))}, false)" title="Descartar (ex.: prêmio inválido)"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
                     </div>`;
                 c.appendChild(linha);
             });
@@ -3578,6 +3586,12 @@ window.carregarPremiosPendentesAdmin = async () => {
     }
 };
 
+// Identifica um prêmio: pelo id ou, nos antigos (sem id), pela posição + conteúdo
+function chavePremio(p, indice) {
+    return p.id !== undefined && p.id !== null ? 'id:' + p.id : `pos:${indice}:${p.item || p.nome || ''}:${p.data || ''}`;
+}
+const tipoDoPremio = (p) => (typeof p.valor === 'string' && p.valor) || p.item || p.nome || '';
+
 // entregar=true: credita (Ryos/EN) ou marca item como entregue. entregar=false: descarta.
 window.entregarPremio = async (uid, premioId, entregar) => {
     if (!entregar && !confirm("Descartar este prêmio sem entregar?")) return;
@@ -3586,9 +3600,10 @@ window.entregarPremio = async (uid, premioId, entregar) => {
         const snap = await getDoc(ref);
         if (!snap.exists()) return;
         const lista = snap.data().premios_pendentes || [];
-        const premio = lista.find(p => String(p.id) === String(premioId));
+        const indice = lista.findIndex((p, i) => chavePremio(p, i) === premioId);
+        const premio = lista[indice];
         if (!premio) { alert("Este prêmio já foi resolvido."); return window.carregarPremiosPendentesAdmin(); }
-        const atualizacao = { premios_pendentes: lista.filter(p => String(p.id) !== String(premioId)) };
+        const atualizacao = { premios_pendentes: lista.filter((_, i) => i !== indice) };
         if (entregar) {
             if (premio.tipo === 'moeda_ryos') atualizacao.ryos = increment(numero(premio.valor));
             if (premio.tipo === 'moeda_en') atualizacao.essencia_ninja = increment(numero(premio.valor));
@@ -3598,6 +3613,151 @@ window.entregarPremio = async (uid, premioId, entregar) => {
         window.carregarPremiosPendentesAdmin();
     } catch (e) { console.error(e); alert("Erro ao atualizar o prêmio."); }
 };
+
+// Descarta TODOS os prêmios pendentes de todos os jogadores (não credita nada)
+window.limparTodosPremios = async () => {
+    if (!confirm("Descartar TODOS os prêmios da roleta pendentes, de todos os jogadores?\n\nNada é creditado. Isso não pode ser desfeito.")) return;
+    if (prompt('Para confirmar, digite DESCARTAR') !== 'DESCARTAR') return;
+    try {
+        const s = await getDocs(collection(db, "users"));
+        const alvos = s.docs.filter(u => (u.data().premios_pendentes || []).length);
+        for (let i = 0; i < alvos.length; i += 400) {
+            const lote = writeBatch(db);
+            alvos.slice(i, i + 400).forEach(u => lote.update(doc(db, "users", u.id), { premios_pendentes: [] }));
+            await lote.commit();
+        }
+        limparCache();
+        alert(`Prêmios descartados de ${alvos.length} jogador(es).`);
+        window.carregarPremiosPendentesAdmin();
+    } catch (e) { console.error(e); alert("Erro ao descartar os prêmios: " + e.message); }
+};
+
+// Recusa TODAS as solicitações pendentes (missões em andamento e conquistas pedidas)
+window.limparTodasAprovacoes = async () => {
+    if (!confirm("Recusar TODAS as aprovações pendentes (missões e conquistas) de todos os jogadores?\n\nOs ninjas poderão pedir de novo depois.")) return;
+    if (prompt('Para confirmar, digite RECUSAR') !== 'RECUSAR') return;
+    try {
+        const s = await getDocs(collection(db, "users"));
+        const mudancas = [];
+        s.forEach(u => {
+            const d = u.data(), upd = {};
+            for (const [id, st] of Object.entries(d.statusMissoes || {})) if (st === 'em_andamento') upd[`statusMissoes.${id}`] = deleteField();
+            for (const [id, st] of Object.entries(d.statusConquistas || {})) if (st === 'solicitado') upd[`statusConquistas.${id}`] = deleteField();
+            if (Object.keys(upd).length) mudancas.push([u.id, upd]);
+        });
+        for (let i = 0; i < mudancas.length; i += 400) {
+            const lote = writeBatch(db);
+            mudancas.slice(i, i + 400).forEach(([uid, upd]) => lote.update(doc(db, "users", uid), upd));
+            await lote.commit();
+        }
+        const total = mudancas.reduce((n, [, u]) => n + Object.keys(u).length, 0);
+        alert(`${total} solicitação(ões) recusada(s).`);
+        carregarPainelAdmin();
+    } catch (e) { console.error(e); alert("Erro ao recusar: " + e.message); }
+};
+
+// =====================================================================
+//  RESGATE DE PRÊMIOS DA ROLETA (o próprio jogador escolhe)
+//  Jutsu Rank B, Ferramenta Especial, Arma Ninja e Modificador de Atributo.
+//  As regras de segurança conferem tudo (rank, item marcado, +1 no atributo).
+// =====================================================================
+const PREMIOS_RESGATAVEIS = {
+    'Jutsu Rank B': { icone: '📜', texto: 'Escolha um jutsu Rank B' },
+    'Ferramenta Especial': { icone: '🧰', texto: 'Escolha uma Ferramenta Especial' },
+    'Arma Ninja': { icone: '🗡️', texto: 'Escolha uma Arma Ninja' },
+    'Modificador de Atributo': { icone: '💪', texto: 'Escolha o atributo que vai receber +1' }
+};
+const ATRIBUTOS_MODIFICADOR = [['forca', 'Força'], ['defesa', 'Defesa'], ['constituicao', 'Constituição'], ['destreza', 'Destreza'], ['intelecto', 'Intelecto'], ['agilidade', 'Agilidade']];
+const VALOR_MODIFICADOR = 1;   // (se mudar aqui, mude também em firestore.rules → resgateAtributo)
+
+function premiosResgataveis(tipo) {
+    return (currentUserData?.premios_pendentes || []).filter(p => tipo ? tipoDoPremio(p) === tipo : PREMIOS_RESGATAVEIS[tipoDoPremio(p)]);
+}
+window.temPremio = (tipo) => premiosResgataveis(tipo).length > 0;
+
+// Pode resgatar este jutsu? (Rank B, não tem ainda, não é exclusivo de outro personagem)
+function jutsuResgatavel(id, j) {
+    const rank = String(j.rank || '').toUpperCase().replace(/RANK[\s-]*/g, '').trim();
+    const restrito = Array.isArray(j.restrito_a) && j.restrito_a.length && !j.restrito_a.includes(currentUserData?.nome);
+    return rank === 'B' && !(currentUserData?.meusJutsus || []).includes(id) && !restrito;
+}
+
+window.resgatarPremio = async (tipoPremio, destino, nomeDestino) => {
+    if (!confirm(`Usar o prêmio "${tipoPremio}" para receber ${nomeDestino}?`)) return;
+    const uid = minhaUid();
+    const ref = doc(db, "users", uid);
+    try {
+        const d = (await getDoc(ref)).data() || {};
+        const lista = d.premios_pendentes || [];
+        const indice = lista.findIndex(p => tipoDoPremio(p) === tipoPremio);
+        if (indice < 0) return alert("Você não tem mais esse prêmio para resgatar.");
+        const upd = { premios_pendentes: lista.filter((_, i) => i !== indice), ultimoResgate: { indice, tipo: destino.tipo, id: destino.id } };
+        if (destino.tipo === 'jutsu') {
+            if ((d.meusJutsus || []).includes(destino.id)) return alert("Você já tem esse jutsu.");
+            upd.meusJutsus = [...(d.meusJutsus || []), destino.id];
+        } else if (destino.tipo === 'atributo') {
+            upd[destino.id] = numero(d[destino.id]) + VALOR_MODIFICADOR;
+        } else {
+            upd[`inventario.${destino.id}`] = numero((d.inventario || {})[destino.id]) + 1;
+        }
+        await updateDoc(ref, upd);
+        document.getElementById('modal-resgate').style.display = 'none';
+        limparCache();
+        alert(`🎁 Prêmio resgatado: ${nomeDestino}!`);
+    } catch (e) {
+        console.error(e);
+        alert("Não foi possível resgatar: " + (e.code === 'permission-denied' ? 'o banco recusou (confira se o item ainda é válido para esse prêmio).' : e.message));
+    }
+};
+
+// Janela de escolha (lista as opções do prêmio)
+window.abrirResgate = async (tipoPremio) => {
+    const info = PREMIOS_RESGATAVEIS[tipoPremio];
+    if (!info) return;
+    document.getElementById('resgate-titulo').innerText = `${info.icone} ${tipoPremio}`;
+    document.getElementById('resgate-ajuda').innerText = info.texto + '.';
+    const area = document.getElementById('resgate-opcoes');
+    area.innerHTML = '<p class="arena-vazio">Carregando...</p>';
+    document.getElementById('modal-resgate').style.display = 'flex';
+    let opcoes = [];
+    try {
+        if (tipoPremio === 'Modificador de Atributo') {
+            opcoes = ATRIBUTOS_MODIFICADOR.map(([id, nome]) => ({ destino: { tipo: 'atributo', id }, nome, sub: `${formatarNum(numero(currentUserData[id]))} → ${formatarNum(numero(currentUserData[id]) + VALOR_MODIFICADOR)}`, icone: '💪' }));
+        } else if (tipoPremio === 'Jutsu Rank B') {
+            const s = await lerColecao("jutsus");
+            s.forEach(d => { const j = d.data(); if (jutsuResgatavel(d.id, j)) opcoes.push({ destino: { tipo: 'jutsu', id: d.id }, nome: j.nome || d.id, sub: 'Rank B', img: j.imagem }); });
+        } else {
+            for (const col of ['ferramentas', 'itens']) {
+                const s = await lerColecao(col);
+                s.forEach(d => { const it = d.data(); if (it.premio_roleta === tipoPremio) opcoes.push({ destino: { tipo: col, id: d.id }, nome: it.nome || d.id, sub: it.dano || (col === 'itens' ? 'Item' : 'Ferramenta'), img: it.imagem }); });
+            }
+        }
+    } catch (e) { console.error(e); }
+    opcoes.sort((a, b) => String(a.nome).localeCompare(String(b.nome)));
+    area.innerHTML = opcoes.length ? opcoes.map(o => `
+        <button class="resgate-opcao" onclick="window.resgatarPremio(${jsArg(tipoPremio)}, ${esc(JSON.stringify(o.destino))}, ${jsArg(o.nome)})">
+            ${o.img ? `<img src="${esc(o.img)}" alt="" loading="lazy">` : `<span class="resgate-icone">${o.icone || info.icone}</span>`}
+            <strong>${esc(o.nome)}</strong><small>${esc(o.sub || '')}</small>
+        </button>`).join('')
+        : `<p class="arena-vazio">Ainda não há opções cadastradas para este prêmio. O Kage precisa marcar itens na loja como "${esc(tipoPremio)}".</p>`;
+};
+
+// Quadro "Seus prêmios" na aba da Roleta
+function renderMeusPremios() {
+    const c = document.getElementById('meus-premios');
+    if (!c) return;
+    const lista = currentUserData?.premios_pendentes || [];
+    if (!lista.length) { c.innerHTML = ''; return; }
+    const grupos = {};
+    lista.forEach(p => { const t = tipoDoPremio(p); (grupos[t] = grupos[t] || []).push(p); });
+    c.innerHTML = `<h3 class="section-title">🎁 Seus prêmios</h3><div class="meus-premios-lista">${Object.entries(grupos).map(([tipo, ps]) => {
+        const r = PREMIOS_RESGATAVEIS[tipo];
+        const nome = ps[0].nome || ps[0].item || tipo;
+        return `<div class="premio-meu"><span class="premio-meu-icone">${r ? r.icone : '💰'}</span>
+            <div><strong>${esc(r ? tipo : nome)}</strong>${ps.length > 1 ? ` <span class="qtd-badge">x${ps.length}</span>` : ''}<small>${r ? 'Resgate você mesmo' : 'O Kage credita em breve'}</small></div>
+            ${r ? `<button class="buy-btn" onclick="window.abrirResgate(${jsArg(tipo)})">Resgatar</button>` : ''}</div>`;
+    }).join('')}</div>`;
+}
 
 // Carrega a lista de Diários no Painel Kage
 window.carregarDiariosAdmin = () => {
@@ -3922,6 +4082,7 @@ window.abrirModalCriacao = () => {
             </div>
             ${tipo.includes('ferramenta') ? '' : `<div class="input-grid-3">${campo('RECUPERA STAMINA', 'cre-b-stamina', 'number', '0')}</div>`}
             <div class="form-checks">
+                ${selecao('PRÊMIO DA ROLETA (pode ser resgatado com)', 'cre-premio-roleta', [['', '— Não'], ['Ferramenta Especial', '🧰 Ferramenta Especial'], ['Arma Ninja', '🗡️ Arma Ninja']])}
                 <label><input type="checkbox" id="cre-recuperavel"> Recuperável na arena (volta para o inventário, ex.: katana). Desmarcado = gasta ao usar (ex.: shuriken, pílula).</label>
             </div>
         `;
@@ -4020,6 +4181,7 @@ document.getElementById('form-criacao-geral').onsubmit = async (e) => {
             if (numOuVazio('cre-b-chakra')) dados.bonus_chakra = numOuVazio('cre-b-chakra');
             if (numOuVazio('cre-b-stamina')) dados.bonus_stamina = numOuVazio('cre-b-stamina');
             dados.recuperavel = !!document.getElementById('cre-recuperavel')?.checked;
+            if (getVal('cre-premio-roleta')) dados.premio_roleta = getVal('cre-premio-roleta');
         }
         
         if (tipo === 'loja') {
@@ -4592,7 +4754,8 @@ const executarAnimacaoRoleta = async (pago = false) => {
             if (pago) dadosParaAtualizar.essencia_ninja = increment(-15); // giro pago: cobra junto com o registro
             else dadosParaAtualizar.ultimoGiroRoleta = Date.now();         // giro grátis: marca a semana
 
-            const msgAlerta = `Parabéns! Você ganhou: ${premioSorteado.nome}!\n\nSeu prêmio foi registrado e será entregue pelo Kage em breve.`;
+            const resgatavel = PREMIOS_RESGATAVEIS[premioSorteado.valor];
+            const msgAlerta = `Parabéns! Você ganhou: ${premioSorteado.nome}!\n\n` + (resgatavel ? 'Resgate quando quiser em "Seus prêmios", logo acima da roleta.' : 'Seu prêmio foi registrado e será creditado pelo Kage em breve.');
 
             await updateDoc(docRef, dadosParaAtualizar);
             

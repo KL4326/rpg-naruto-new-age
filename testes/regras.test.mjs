@@ -160,6 +160,38 @@ await caso('Giro pago (15 EN)', true, () => updateDoc(uA(dbA()), { essencia_ninj
 await caso('Giro pago sem pagar', false, () => updateDoc(uA(dbA()), { premios_pendentes: premio(true) }));
 await caso('Roleta creditando Ryos direto', false, () => updateDoc(uA(dbA()), { ultimoGiroRoleta: Date.now(), ryos: increment(5000) }));
 
+// ---------- Resgate de prêmios da roleta ----------
+const PREMIOS = [
+  { item: 'Jutsu Rank B', data: '21/05/2026' },                                  // formato antigo (sem id)
+  { id: 1, nome: '1 Ferramenta', tipo: 'item_manual', valor: 'Ferramenta Especial', data: 'x' },
+  { id: 2, nome: '+1 Modificador', tipo: 'item_manual', valor: 'Modificador de Atributo', data: 'x' },
+  { item: 'Jutsu Rank B', data: '21/05/2026' }                                   // duplicado idêntico
+];
+async function semearPremios() {
+  await env.withSecurityRulesDisabled(async (c) => {
+    const db = c.firestore();
+    await updateDoc(doc(db, 'users', A), { premios_pendentes: PREMIOS, forca: 10 });
+    await setDoc(doc(db, 'jutsus', 'jb'), { nome: 'Rank B', rank: 'B', preco: 5000 });
+    await setDoc(doc(db, 'jutsus', 'ja'), { nome: 'Rank A', rank: 'A', preco: 9000 });
+    await setDoc(doc(db, 'jutsus', 'jbx'), { nome: 'B exclusivo', rank: 'B', restrito_a: ['Outro'] });
+    await setDoc(doc(db, 'ferramentas', 'fuuma'), { nome: 'Fuuma', premio_roleta: 'Ferramenta Especial' });
+  });
+}
+const sem = (i) => PREMIOS.filter((_, k) => k !== i);
+await caso('Resgate: Jutsu Rank B (prêmio antigo sem id)', true, async () => { await semearPremios(); return updateDoc(uA(dbA()), { meusJutsus: ['jb'], premios_pendentes: sem(0), ultimoResgate: { indice: 0, tipo: 'jutsu', id: 'jb' } }); });
+await caso('Resgate: tira só UM de dois prêmios iguais', true, async () => { await semearPremios(); return updateDoc(uA(dbA()), { meusJutsus: ['jb'], premios_pendentes: sem(3), ultimoResgate: { indice: 3, tipo: 'jutsu', id: 'jb' } }); });
+await caso('Resgate: jutsu Rank A com prêmio de Rank B', false, async () => { await semearPremios(); return updateDoc(uA(dbA()), { meusJutsus: ['ja'], premios_pendentes: sem(0), ultimoResgate: { indice: 0, tipo: 'jutsu', id: 'ja' } }); });
+await caso('Resgate: jutsu exclusivo de outro personagem', false, async () => { await semearPremios(); return updateDoc(uA(dbA()), { meusJutsus: ['jbx'], premios_pendentes: sem(0), ultimoResgate: { indice: 0, tipo: 'jutsu', id: 'jbx' } }); });
+await caso('Resgate: jutsu sem tirar o prêmio da lista', false, async () => { await semearPremios(); return updateDoc(uA(dbA()), { meusJutsus: ['jb'], ultimoResgate: { indice: 0, tipo: 'jutsu', id: 'jb' } }); });
+await caso('Resgate: usar o prêmio de Ferramenta para pegar jutsu', false, async () => { await semearPremios(); return updateDoc(uA(dbA()), { meusJutsus: ['jb'], premios_pendentes: sem(1), ultimoResgate: { indice: 1, tipo: 'jutsu', id: 'jb' } }); });
+await caso('Resgate: Ferramenta Especial marcada no catálogo', true, async () => { await semearPremios(); return updateDoc(uA(dbA()), { 'inventario.fuuma': 1, premios_pendentes: sem(1), ultimoResgate: { indice: 1, tipo: 'ferramentas', id: 'fuuma' } }); });
+await caso('Resgate: ferramenta NÃO marcada como prêmio', false, async () => { await semearPremios(); return updateDoc(uA(dbA()), { 'inventario.kunai': 3, premios_pendentes: sem(1), ultimoResgate: { indice: 1, tipo: 'ferramentas', id: 'kunai' } }); });
+await caso('Resgate: pegar 5 ferramentas com 1 prêmio', false, async () => { await semearPremios(); return updateDoc(uA(dbA()), { 'inventario.fuuma': 5, premios_pendentes: sem(1), ultimoResgate: { indice: 1, tipo: 'ferramentas', id: 'fuuma' } }); });
+await caso('Resgate: Modificador +1 na Força', true, async () => { await semearPremios(); return updateDoc(uA(dbA()), { forca: 11, premios_pendentes: sem(2), ultimoResgate: { indice: 2, tipo: 'atributo', id: 'forca' } }); });
+await caso('Resgate: Modificador +50 na Força', false, async () => { await semearPremios(); return updateDoc(uA(dbA()), { forca: 60, premios_pendentes: sem(2), ultimoResgate: { indice: 2, tipo: 'atributo', id: 'forca' } }); });
+await caso('Resgate: Modificador em Ryos', false, async () => { await semearPremios(); return updateDoc(uA(dbA()), { ryos: 1001, premios_pendentes: sem(2), ultimoResgate: { indice: 2, tipo: 'atributo', id: 'ryos' } }); });
+await caso('Kage limpa todos os prêmios pendentes', true, async () => { await semearPremios(); return updateDoc(doc(dbAdm(), 'users', A), { premios_pendentes: [] }); });
+
 // ---------- Admins ----------
 await caso('Kage (admin@) altera Ryos de qualquer um', true, () => updateDoc(doc(dbAdm(), 'users', B), { ryos: 777777 }));
 await caso('Conselheiro também é admin', true, () => updateDoc(doc(dbConselheiro(), 'users', B), { 'statusMissoes.m1': 'aprovado', salario: 50 }));
