@@ -377,6 +377,57 @@ await caso('Aposta: receber duas vezes', false, async () => { await lutaDecidida
 await caso('Aposta: receber com a luta em andamento', false, async () => { await semearAoVivo(); await apostarEm(dbC(), C, A, 200); return receberAp(dbC(), 190); });
 await caso('Kage anula a luta', true, async () => { await semearAoVivo(); return updateDoc(doc(dbAdm(), 'desafios_batalha', 'v1'), { status: 'anulada', 'estado.status': 'finalizada' }); });
 await caso('Jogador de fora NÃO anula a luta', false, async () => { await semearAoVivo(); return updateDoc(doc(dbC(), 'desafios_batalha', 'v1'), { status: 'anulada' }); });
+
+// ---------- Fase 3: torneios ----------
+const D = 'jogadorD';
+const dbD = () => env.authenticatedContext(D, { email: 'd@teste.com' }).firestore();
+const T = (dbX) => doc(dbX, 'torneios', 't1');
+async function semearTorneio(extra = {}) {
+  await env.withSecurityRulesDisabled(async (c) => {
+    const db = c.firestore();
+    await setDoc(doc(db, 'users', C), { nome: 'Ryo', ryos: 1000, essencia_ninja: 50 });
+    await setDoc(doc(db, 'users', D), { nome: 'Mei', ryos: 1000 });
+    await setDoc(doc(db, 'torneios', 't1'), { nome: 'Chunin', status: 'inscricoes', inscricaoAte: Date.now() + 3600e3, taxa: { moeda: 'ryos', valor: 100 }, bolo: 0, inscritos: {}, ...extra });
+  });
+}
+const inscrever = (dbX, uid, paga = 100, noBolo = 100) => { const b = writeBatch(dbX);
+  b.update(doc(dbX, 'users', uid), { ryos: increment(-paga), ultimaInscricao: 't1' });
+  b.update(T(dbX), { [`inscritos.${uid}`]: { nome: 'X', em: Date.now() }, bolo: increment(noBolo) }); return b.commit(); };
+await caso('Torneio: inscrição pagando a taxa', true, async () => { await semearTorneio(); return inscrever(dbC(), C); });
+await caso('Torneio: inscrição sem pagar', false, async () => { await semearTorneio(); return inscrever(dbC(), C, 0, 100); });
+await caso('Torneio: bolo inflado na inscrição', false, async () => { await semearTorneio(); return inscrever(dbC(), C, 100, 9999); });
+await caso('Torneio: inscrever outra pessoa', false, async () => { await semearTorneio(); return updateDoc(T(dbC()), { [`inscritos.${D}`]: { nome: 'X', em: 1 } }); });
+await caso('Torneio: inscrição depois do prazo', false, async () => { await semearTorneio({ inscricaoAte: Date.now() - 1000 }); return inscrever(dbC(), C); });
+await caso('Torneio: inscrição grátis', true, async () => { await semearTorneio({ taxa: null }); return updateDoc(T(dbC()), { [`inscritos.${C}`]: { nome: 'Ryo', em: Date.now() } }); });
+await caso('Torneio: lotado', false, async () => { await semearTorneio({ taxa: null, maxInscritos: 1, inscritos: { [D]: { nome: 'Mei', em: 1 } } }); return updateDoc(T(dbC()), { [`inscritos.${C}`]: { nome: 'Ryo', em: 1 } }); });
+await caso('Torneio: jogador mexe na chave', false, async () => { await semearTorneio(); return updateDoc(T(dbC()), { status: 'em_andamento' }); });
+// chave: semifinal r1p0 (C×D) e r1p1 (A×B) → final r2p0
+const chave = () => ({ status: 'em_andamento', partidas: {
+  r1p0: { a: C, b: D, rodada: 1, proxima: 'r2p0', lado: 'a' },
+  r1p1: { a: A, b: B, rodada: 1, proxima: 'r2p0', lado: 'b' },
+  r2p0: { a: null, b: null, rodada: 2, final: true } } });
+async function lutaDoTorneio(bid, partida, vencedor, a = C, b = D) {
+  await env.withSecurityRulesDisabled(c => setDoc(doc(c.firestore(), 'desafios_batalha', bid), { desafianteId: a, desafiadoId: b, status: 'finalizada', modo: 'rankeada', torneio: { tid: 't1', partida },
+    estado: { status: 'finalizada', resultado: { vencedor, perdedor: vencedor === a ? b : a, empate: false } } }));
+}
+await caso('Torneio: vencedor avança para a final', true, async () => { await semearTorneio(chave()); await lutaDoTorneio('bt1', 'r1p0', C);
+  return updateDoc(T(dbC()), { 'partidas.r1p0.vencedor': C, 'partidas.r1p0.batalha': 'bt1', 'partidas.r2p0.a': C, ultimoAvanco: { partida: 'r1p0', batalha: 'bt1' } }); });
+await caso('Torneio: perdedor tenta avançar', false, async () => { await semearTorneio(chave()); await lutaDoTorneio('bt1', 'r1p0', C);
+  return updateDoc(T(dbD()), { 'partidas.r1p0.vencedor': D, 'partidas.r1p0.batalha': 'bt1', 'partidas.r2p0.a': D, ultimoAvanco: { partida: 'r1p0', batalha: 'bt1' } }); });
+await caso('Torneio: avançar com luta de outra partida', false, async () => { await semearTorneio(chave()); await lutaDoTorneio('bt9', 'r1p1', C);
+  return updateDoc(T(dbC()), { 'partidas.r1p0.vencedor': C, 'partidas.r1p0.batalha': 'bt9', 'partidas.r2p0.a': C, ultimoAvanco: { partida: 'r1p0', batalha: 'bt9' } }); });
+await caso('Torneio: avançar para o lugar errado da final', false, async () => { await semearTorneio(chave()); await lutaDoTorneio('bt1', 'r1p0', C);
+  return updateDoc(T(dbC()), { 'partidas.r1p0.vencedor': C, 'partidas.r1p0.batalha': 'bt1', 'partidas.r2p0.b': C, ultimoAvanco: { partida: 'r1p0', batalha: 'bt1' } }); });
+await caso('Torneio: campeão vence a final e encerra', true, async () => {
+  await semearTorneio({ status: 'em_andamento', partidas: { r2p0: { a: C, b: A, rodada: 2, final: true } } }); await lutaDoTorneio('bt3', 'r2p0', C, C, A);
+  return updateDoc(T(dbC()), { 'partidas.r2p0.vencedor': C, 'partidas.r2p0.batalha': 'bt3', status: 'finalizado', campeao: C, vice: A, ultimoAvanco: { partida: 'r2p0', batalha: 'bt3' } }); });
+await caso('Torneio: desafio da partida (Rankeada, só os dois)', true, async () => { await semearTorneio(chave());
+  return setDoc(doc(dbC(), 'desafios_batalha', 'novo'), { desafianteId: C, desafiadoId: D, status: 'pendente', modo: 'rankeada', aposta: null, torneio: { tid: 't1', partida: 'r1p0' } }); });
+await caso('Torneio: desafio de partida com outra pessoa', false, async () => { await semearTorneio(chave());
+  return setDoc(doc(dbC(), 'desafios_batalha', 'novo'), { desafianteId: C, desafiadoId: A, status: 'pendente', modo: 'rankeada', aposta: null, torneio: { tid: 't1', partida: 'r1p0' } }); });
+await caso('Torneio: desafio de partida valendo aposta', false, async () => { await semearTorneio(chave());
+  return setDoc(doc(dbC(), 'desafios_batalha', 'novo'), { desafianteId: C, desafiadoId: D, status: 'pendente', modo: 'competitivo', aposta: { moeda: 'ryos', valor: 10 }, torneio: { tid: 't1', partida: 'r1p0' } }); });
+await caso('Torneio: Kage marca W.O.', true, async () => { await semearTorneio(chave()); return updateDoc(T(dbAdm()), { 'partidas.r1p0.vencedor': C, 'partidas.r1p0.wo': true, 'partidas.r2p0.a': C }); });
 await env.cleanup();
 const falhas = resultados.filter(r => r[0] === '❌');
 resultados.forEach(r => console.log(r[0], r[1]));

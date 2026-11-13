@@ -442,7 +442,7 @@ window.showTab = (t, opcoes = {}) => {
             if(t === 'missoes') carregarMissoes();
             if(t === 'rankings') carregarRankings();
             if(t === 'mentorias') carregarMentorias();
-            if(t === 'admin-panel') { window.carregarTesouraria(); carregarPainelAdmin(); window.carregarDiariosAdmin(); window.carregarPremiosPendentesAdmin(); }
+            if(t === 'admin-panel') { window.carregarFormTorneio(); window.carregarTesouraria(); carregarPainelAdmin(); window.carregarDiariosAdmin(); window.carregarPremiosPendentesAdmin(); }
 
             if(t === 'loja-premium') {
                 window.carregarCofreVila();
@@ -1434,6 +1434,7 @@ function mostrarConvite(id, convite) {
     const modo = convite.modo || 'amistoso';
     let texto = `<strong>${esc(convite.desafianteNome)}</strong> quer te enfrentar em um duelo <strong>${NOMES_MODO[modo]}</strong>.`;
     let podeAceitar = true;
+    if (convite.torneio) texto += `<br>🏆 Partida do torneio <strong>${esc(convite.torneio.nome || '')}</strong>.`;
     if (modo === 'rankeada') texto += `<br><small>Vale pontos de Rankeada (+${ARENA.pontosVitoria} para quem vencer, −${ARENA.pontosDerrota} para quem perder).</small>`;
     if (modo === 'competitivo' && convite.aposta) {
         const { moeda, valor } = convite.aposta;
@@ -1537,6 +1538,7 @@ window.carregarLobbyArena = async () => {
         atualizarIndicadorArena(ativas.length > 0);
         if (enviados.length) escutarMeuConvite(enviados[0].id);
         renderListaAoVivo();
+        window.carregarTorneios();
     } catch (e) {
         console.error(e);
         lista.innerHTML = '<p class="arena-lobby-vazio">Não foi possível carregar suas batalhas.</p>';
@@ -1860,6 +1862,295 @@ function renderListaAoVivo() {
     }).join('');
 }
 
+// =====================================================================
+//  ARENA FASE 3 — TORNEIOS
+//  O Kage cria; ninjas se inscrevem (taxa vai para o bolo); no prazo, o Kage sorteia a
+//  chave (com "bye" se faltar gente); cada partida é um desafio Rankeado; o vencedor
+//  avança sozinho; o Kage marca W.O. e entrega os prêmios.
+// =====================================================================
+const NOME_STATUS_TORNEIO = { inscricoes: '📝 Inscrições abertas', em_andamento: '⚔️ Em andamento', finalizado: '🏆 Finalizado', cancelado: '❌ Cancelado' };
+const dataHora = (ms) => ms ? new Date(ms).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
+const nomeNoTorneio = (t, uid) => uid ? (t.inscritos?.[uid]?.nome || 'Ninja') : '—';
+const prazoDaRodada = (t, r) => numero(t.sorteadoEm) + r * numero(t.prazoRodadaHoras || 48) * 3600e3;
+
+function textoPremio(t) {
+    const partes = [];
+    if (numero(t.premioCofre)) partes.push(`${formatarNum(t.premioCofre)} Ryos do Cofre da Vila`);
+    if (t.boloParaPremio !== false && t.taxa) partes.push(`o bolo das inscrições (${formatarNum(numero(t.bolo))} ${NOME_MOEDA_APOSTA[t.taxa.moeda]})`);
+    if (t.premioItem?.nome) partes.push(`${t.premioItem.qtd > 1 ? t.premioItem.qtd + 'x ' : ''}${t.premioItem.nome} para o campeão`);
+    return partes.length ? partes.join(' + ') + ` · campeão ${numero(t.pctCampeao || 70)}% / vice ${100 - numero(t.pctCampeao || 70)}%` : 'Glória eterna';
+}
+
+// Monta a chave inteira (todas as rodadas) com byes sorteados
+function montarChave(uids) {
+    const jog = [...uids].sort(() => Math.random() - 0.5);
+    let tam = 2; while (tam < jog.length) tam *= 2;
+    const rodadas = Math.log2(tam), byes = tam - jog.length;
+    const primeira = [];
+    for (let i = 0; i < tam / 2; i++) primeira.push(i < byes ? [jog.pop(), null] : [jog.pop(), jog.pop()]);
+    primeira.sort(() => Math.random() - 0.5);
+    const partidas = {};
+    for (let r = 1; r <= rodadas; r++) {
+        const qtd = tam / Math.pow(2, r);
+        for (let i = 0; i < qtd; i++) {
+            const p = { rodada: r, a: r === 1 ? primeira[i][0] : null, b: r === 1 ? primeira[i][1] : null };
+            if (r === rodadas) p.final = true; else { p.proxima = `r${r + 1}p${Math.floor(i / 2)}`; p.lado = i % 2 === 0 ? 'a' : 'b'; }
+            partidas[`r${r}p${i}`] = p;
+        }
+    }
+    // Quem caiu sem adversário passa direto
+    for (const [k, p] of Object.entries(partidas)) {
+        if (p.rodada === 1 && p.a && !p.b) { p.vencedor = p.a; p.bye = true; partidas[p.proxima][p.lado] = p.a; }
+    }
+    return { partidas, rodadas };
+}
+
+// Atualização da chave quando alguém vence a partida k
+function atualizacaoDeVitoria(t, k, vencedor, extra = {}) {
+    const p = t.partidas[k];
+    const upd = { [`partidas.${k}.vencedor`]: vencedor, ...Object.fromEntries(Object.entries(extra).map(([c, v]) => [`partidas.${k}.${c}`, v])) };
+    if (p.final) Object.assign(upd, { status: 'finalizado', campeao: vencedor, vice: p.a === vencedor ? p.b : p.a, finalizadoEm: Date.now() });
+    else upd[`partidas.${p.proxima}.${p.lado}`] = vencedor;
+    return upd;
+}
+async function avancarNoTorneio(bid, d) {
+    const tref = doc(db, "torneios", d.torneio.tid);
+    const t = (await getDoc(tref)).data();
+    const p = t?.partidas?.[d.torneio.partida];
+    if (!t || t.status !== 'em_andamento' || !p || p.vencedor) return;
+    const upd = atualizacaoDeVitoria(t, d.torneio.partida, minhaUid(), { batalha: bid });
+    upd.ultimoAvanco = { partida: d.torneio.partida, batalha: bid };
+    await updateDoc(tref, upd);
+    alert(p.final ? `🏆 Você é o CAMPEÃO do torneio ${t.nome}!` : `✅ Você avançou no torneio ${t.nome}! Veja a próxima partida na Arena.`);
+}
+
+// Lista de torneios na entrada da Arena
+window.carregarTorneios = async () => {
+    const c = document.getElementById('arena-torneios');
+    if (!c) return;
+    try {
+        const snap = await getDocs(collection(db, "torneios"));
+        const eu = minhaUid(), semana = 7 * 24 * 3600e3;
+        const lista = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+            .filter(t => ['inscricoes', 'em_andamento'].includes(t.status) || (t.status === 'finalizado' && Date.now() - numero(t.finalizadoEm) < semana) || (ehKage() && t.status === 'finalizado' && !t.premiosEntregues))
+            .sort((a, b) => numero(b.criadoEm) - numero(a.criadoEm));
+        arena.torneios = Object.fromEntries(lista.map(t => [t.id, t]));
+        if (!lista.length) { c.innerHTML = ''; return; }
+        c.innerHTML = `<h3 class="arena-secao-titulo">🏆 Torneios</h3>` + lista.map(t => {
+            const inscritos = Object.keys(t.inscritos || {});
+            const souInscrito = inscritos.includes(eu);
+            const aberto = t.status === 'inscricoes' && Date.now() <= numero(t.inscricaoAte);
+            const lotado = numero(t.maxInscritos) > 0 && inscritos.length >= numero(t.maxInscritos);
+            const minha = t.status === 'em_andamento' && Object.entries(t.partidas || {}).find(([, p]) => !p.vencedor && p.a && p.b && (p.a === eu || p.b === eu));
+            const botoes = [];
+            if (aberto && !souInscrito && !lotado) botoes.push(`<button class="btn-post" onclick="window.inscreverNoTorneio(${jsArg(t.id)})">📝 Inscrever-se${t.taxa ? ` (${formatarNum(t.taxa.valor)} ${NOME_MOEDA_APOSTA[t.taxa.moeda]})` : ' (grátis)'}</button>`);
+            if (souInscrito && t.status === 'inscricoes') botoes.push(`<span class="torneio-tag ok">✔ Inscrito</span>`);
+            if (minha) botoes.push(`<button class="btn-post" onclick="window.desafiarPartidaTorneio(${jsArg(t.id)}, ${jsArg(minha[0])})">⚔️ Desafiar ${esc(nomeNoTorneio(t, minha[1].a === eu ? minha[1].b : minha[1].a))}</button>`);
+            if (t.partidas) botoes.push(`<button class="btn-arena-sec" onclick="window.verChaveTorneio(${jsArg(t.id)})">🗂️ Ver chave</button>`);
+            if (ehKage()) {
+                if (t.status === 'inscricoes') botoes.push(`<button class="btn-arena-sec" onclick="window.sortearChaveTorneio(${jsArg(t.id)})">🎲 Sortear chave</button>`);
+                if (t.status === 'finalizado' && !t.premiosEntregues) botoes.push(`<button class="btn-arena-sec" onclick="window.entregarPremiosTorneio(${jsArg(t.id)})">🎁 Entregar prêmios</button>`);
+                if (['inscricoes', 'em_andamento'].includes(t.status)) botoes.push(`<button class="btn-arena-sec perigo" onclick="window.cancelarTorneio(${jsArg(t.id)})">Cancelar</button>`);
+            }
+            let info = '';
+            if (t.status === 'inscricoes') info = `Inscrições até <strong>${dataHora(t.inscricaoAte)}</strong> · ${inscritos.length}${numero(t.maxInscritos) ? '/' + t.maxInscritos : ''} inscritos`;
+            if (t.status === 'em_andamento') { const r = numero(t.rodadaAtual) || rodadaAtualDe(t); info = `Rodada ${r} de ${t.rodadas} · prazo ${dataHora(prazoDaRodada(t, r))}`; }
+            if (t.status === 'finalizado') info = `🥇 <strong>${esc(nomeNoTorneio(t, t.campeao))}</strong> · 🥈 ${esc(nomeNoTorneio(t, t.vice))}${t.premiosEntregues ? ' · prêmios entregues' : ' · aguardando o Kage entregar os prêmios'}`;
+            return `<div class="torneio-card status-${esc(t.status)}">
+                <div class="torneio-topo"><strong>${esc(t.nome)}</strong><span class="torneio-tag">${NOME_STATUS_TORNEIO[t.status] || t.status}</span></div>
+                ${t.descricao ? `<p class="torneio-desc">${esc(t.descricao)}</p>` : ''}
+                <div class="torneio-info">🎁 ${esc(textoPremio(t))}</div>
+                <div class="torneio-info">${info}</div>
+                <div class="torneio-botoes">${botoes.join('')}</div></div>`;
+        }).join('');
+    } catch (e) { console.error(e); c.innerHTML = ''; }
+};
+function rodadaAtualDe(t) {
+    const pend = Object.values(t.partidas || {}).filter(p => !p.vencedor).map(p => p.rodada);
+    return pend.length ? Math.min(...pend) : numero(t.rodadas);
+}
+
+window.inscreverNoTorneio = async (tid) => {
+    const t = arena.torneios?.[tid]; if (!t) return;
+    if (t.taxa && numero(currentUserData?.[t.taxa.moeda]) < t.taxa.valor) return alert(`Você não tem ${NOME_MOEDA_APOSTA[t.taxa.moeda]} suficientes para a inscrição.`);
+    if (!confirm(`Inscrever-se no torneio "${t.nome}"?${t.taxa ? `\n\nTaxa: ${formatarNum(t.taxa.valor)} ${NOME_MOEDA_APOSTA[t.taxa.moeda]}.` : ''}`)) return;
+    try {
+        const lote = writeBatch(db);
+        lote.update(doc(db, "torneios", tid), { [`inscritos.${minhaUid()}`]: { nome: currentUserData?.nome || 'Ninja', em: Date.now() }, bolo: increment(t.taxa ? t.taxa.valor : 0) });
+        if (t.taxa) lote.update(doc(db, "users", minhaUid()), { [t.taxa.moeda]: increment(-t.taxa.valor), ultimaInscricao: tid });
+        await lote.commit();
+        alert("📝 Inscrição feita! Boa sorte no torneio.");
+        window.carregarTorneios();
+    } catch (e) { console.error(e); alert("Não foi possível se inscrever: " + (e.code === 'permission-denied' ? 'as inscrições podem ter fechado ou lotado.' : e.message)); }
+};
+
+window.desafiarPartidaTorneio = async (tid, k) => {
+    const eu = minhaUid();
+    try {
+        const t = (await getDoc(doc(db, "torneios", tid))).data();
+        const p = t?.partidas?.[k];
+        if (!p || p.vencedor) return alert("Essa partida já foi decidida.");
+        const adv = p.a === eu ? p.b : p.a;
+        if (!adv) return alert("Seu adversário ainda não foi definido.");
+        const minhas = await listarMinhasBatalhas();
+        if (minhas.some(b => batalhaAtiva(b.dados))) return alert("Você já tem uma batalha em andamento. Termine-a antes.");
+        if (!confirm(`Desafiar ${nomeNoTorneio(t, adv)} para a partida do torneio "${t.nome}"? (vale como Rankeada)`)) return;
+        const ref = doc(collection(db, "desafios_batalha"));
+        await setDoc(ref, {
+            desafianteId: eu, desafianteNome: currentUserData?.nome || 'Ninja', desafiadoId: adv, desafiadoNome: nomeNoTorneio(t, adv),
+            status: 'pendente', modo: 'rankeada', aposta: null, cofre: {}, criadoEm: Date.now(), timestamp: serverTimestamp(),
+            torneio: { tid, partida: k, nome: t.nome }
+        });
+        alert(`Pergaminho enviado para ${nomeNoTorneio(t, adv)}! Aguardando resposta...`);
+        escutarMeuConvite(ref.id);
+    } catch (e) { console.error(e); alert("Não foi possível enviar o desafio: " + e.message); }
+};
+
+// Chave do torneio (janela)
+window.verChaveTorneio = async (tid) => {
+    const t = (await getDoc(doc(db, "torneios", tid))).data();
+    if (!t?.partidas) return;
+    arena.torneios = { ...(arena.torneios || {}), [tid]: { id: tid, ...t } };
+    const eu = minhaUid();
+    const colunas = [];
+    for (let r = 1; r <= numero(t.rodadas); r++) {
+        const ps = Object.entries(t.partidas).filter(([, p]) => p.rodada === r).sort((a, b) => Number(a[0].split('p')[1]) - Number(b[0].split('p')[1]));
+        const titulo = r === numero(t.rodadas) ? 'Final' : (r === numero(t.rodadas) - 1 ? 'Semifinal' : `Rodada ${r}`);
+        colunas.push(`<div class="chave-coluna"><div class="chave-titulo">${titulo}<small>até ${dataHora(prazoDaRodada(t, r))}</small></div>${ps.map(([k, p]) => {
+            const linha = (uid) => `<div class="chave-jogador ${p.vencedor && p.vencedor === uid ? 'venceu' : (p.vencedor && uid ? 'perdeu' : '')} ${uid === eu ? 'sou-eu' : ''}">${uid ? esc(nomeNoTorneio(t, uid)) : (p.rodada === 1 ? '<em>— passa direto —</em>' : '<em>a definir</em>')}</div>`;
+            let acoes = '';
+            if (!p.vencedor && p.a && p.b) {
+                if (p.a === eu || p.b === eu) acoes += `<button class="btn-arena-sec" onclick="window.desafiarPartidaTorneio(${jsArg(tid)}, ${jsArg(k)})">⚔️ Desafiar</button>`;
+                if (ehKage()) acoes += `<button class="btn-arena-sec" onclick="window.marcarWO(${jsArg(tid)}, ${jsArg(k)}, ${jsArg(p.a)})">W.O. → ${esc(nomeNoTorneio(t, p.a))}</button><button class="btn-arena-sec" onclick="window.marcarWO(${jsArg(tid)}, ${jsArg(k)}, ${jsArg(p.b)})">W.O. → ${esc(nomeNoTorneio(t, p.b))}</button>`;
+            }
+            const marca = p.bye ? '<span class="chave-marca">passou direto</span>' : (p.wo ? '<span class="chave-marca">W.O.</span>' : '');
+            return `<div class="chave-partida">${linha(p.a)}${linha(p.b)}${marca}${acoes ? `<div class="chave-acoes">${acoes}</div>` : ''}</div>`;
+        }).join('')}</div>`);
+    }
+    document.getElementById('torneio-titulo').innerText = `🏆 ${t.nome}`;
+    document.getElementById('torneio-chave').innerHTML = `<div class="chave">${colunas.join('')}</div>
+        ${t.status === 'finalizado' ? `<p class="chave-campeao">🥇 Campeão: <strong>${esc(nomeNoTorneio(t, t.campeao))}</strong> · 🥈 Vice: ${esc(nomeNoTorneio(t, t.vice))}</p>` : ''}`;
+    document.getElementById('modal-torneio').style.display = 'flex';
+};
+
+// ---------- Kage ----------
+window.criarTorneio = async () => {
+    if (!ehKage()) return;
+    const v = (id) => document.getElementById(id)?.value?.trim() || '';
+    const nome = v('tor-nome');
+    const ate = new Date(v('tor-ate')).getTime();
+    if (!nome) return alert("Dê um nome ao torneio.");
+    if (!ate || ate < Date.now()) return alert("Escolha uma data de fim das inscrições no futuro.");
+    const taxaValor = Math.floor(Number(v('tor-taxa')) || 0);
+    const pct = Math.min(100, Math.max(50, Math.floor(Number(v('tor-pct')) || 70)));
+    const itemSel = v('tor-item');
+    let premioItem = null;
+    if (itemSel) { const [col, id] = itemSel.split('|'); const it = (await getDoc(doc(db, col, id))).data(); premioItem = { col, id, nome: it?.nome || id, qtd: Math.max(1, Math.floor(Number(v('tor-item-qtd')) || 1)) }; }
+    const dados = {
+        nome, descricao: v('tor-desc'), status: 'inscricoes', criadoEm: Date.now(), inscricaoAte: ate,
+        prazoRodadaHoras: Math.max(1, Math.floor(Number(v('tor-prazo')) || 48)), maxInscritos: Math.max(0, Math.floor(Number(v('tor-max')) || 0)),
+        taxa: taxaValor > 0 ? { moeda: v('tor-moeda') === 'essencia_ninja' ? 'essencia_ninja' : 'ryos', valor: taxaValor } : null,
+        premioCofre: Math.max(0, Math.floor(Number(v('tor-premio')) || 0)), boloParaPremio: !!document.getElementById('tor-bolo')?.checked,
+        pctCampeao: pct, premioItem, bolo: 0, inscritos: {}
+    };
+    try {
+        await setDoc(doc(collection(db, "torneios")), dados);
+        alert(`🏆 Torneio "${nome}" criado! Ele já aparece na Arena para os ninjas se inscreverem.`);
+        ['tor-nome', 'tor-desc', 'tor-taxa', 'tor-premio'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        window.carregarTorneios();
+    } catch (e) { console.error(e); alert("Erro ao criar o torneio: " + e.message); }
+};
+window.sortearChaveTorneio = async (tid) => {
+    const ref = doc(db, "torneios", tid);
+    const t = (await getDoc(ref)).data();
+    const uids = Object.keys(t.inscritos || {});
+    if (uids.length < 2) return alert("O torneio precisa de pelo menos 2 inscritos.");
+    if (Date.now() < numero(t.inscricaoAte) && !confirm("As inscrições ainda não terminaram. Fechar agora e sortear a chave?")) return;
+    const { partidas, rodadas } = montarChave(uids);
+    const byes = Object.values(partidas).filter(p => p.bye).length;
+    if (!confirm(`Sortear a chave com ${uids.length} ninjas (${rodadas} rodada${rodadas > 1 ? 's' : ''}${byes ? `, ${byes} passa${byes > 1 ? 'm' : ''} direto` : ''})?`)) return;
+    await updateDoc(ref, { status: 'em_andamento', partidas, rodadas, sorteadoEm: Date.now() });
+    window.carregarTorneios();
+    window.verChaveTorneio(tid);
+};
+window.marcarWO = async (tid, k, vencedor) => {
+    const ref = doc(db, "torneios", tid);
+    const t = (await getDoc(ref)).data();
+    const p = t.partidas[k];
+    if (p.vencedor) return alert("Essa partida já foi decidida.");
+    if (!confirm(`Dar a vitória por W.O. para ${nomeNoTorneio(t, vencedor)}?`)) return;
+    await updateDoc(ref, atualizacaoDeVitoria(t, k, vencedor, { wo: true }));
+    window.carregarTorneios();
+    window.verChaveTorneio(tid);
+};
+window.cancelarTorneio = async (tid) => {
+    const ref = doc(db, "torneios", tid);
+    const t = (await getDoc(ref)).data();
+    const uids = Object.keys(t.inscritos || {});
+    if (!confirm(`Cancelar o torneio "${t.nome}"?${t.taxa && uids.length ? `\n\nA taxa de inscrição volta para os ${uids.length} inscritos.` : ''}`)) return;
+    const lote = writeBatch(db);
+    if (t.taxa) uids.forEach(uid => lote.update(doc(db, "users", uid), { [t.taxa.moeda]: increment(t.taxa.valor) }));
+    lote.update(ref, { status: 'cancelado', bolo: 0, canceladoEm: Date.now() });
+    await lote.commit();
+    window.carregarTorneios();
+};
+window.entregarPremiosTorneio = async (tid) => {
+    const ref = doc(db, "torneios", tid);
+    const t = (await getDoc(ref)).data();
+    if (t.status !== 'finalizado' || t.premiosEntregues) return;
+    const pct = numero(t.pctCampeao || 70) / 100;
+    const doCofre = numero(t.premioCofre), bolo = numero(t.bolo), moedaBolo = t.taxa?.moeda || 'ryos';
+    const cofre = (await getDoc(refCofre())).data() || {};
+    if (doCofre > numero(cofre.saldo)) return alert(`O Cofre da Vila tem ${formatarNum(numero(cofre.saldo))} Ryos e o prêmio pede ${formatarNum(doCofre)}. Deposite no cofre ou ajuste o prêmio.`);
+    const parte = (total, campeao) => campeao ? Math.floor(total * pct) : total - Math.floor(total * pct);
+    const ganhos = { [t.campeao]: {}, [t.vice]: {} };
+    const somar = (uid, moeda, v) => { if (uid && v > 0) ganhos[uid][moeda] = (ganhos[uid][moeda] || 0) + v; };
+    [[t.campeao, true], [t.vice, false]].forEach(([uid, c]) => {
+        somar(uid, 'ryos', parte(doCofre, c));
+        if (t.boloParaPremio !== false) somar(uid, moedaBolo, parte(bolo, c));
+    });
+    const resumo = [t.campeao, t.vice].filter(Boolean).map(uid => `${nomeNoTorneio(t, uid)}: ${Object.entries(ganhos[uid]).map(([m, v]) => `${formatarNum(v)} ${NOME_MOEDA_APOSTA[m]}`).join(' + ') || '—'}`).join('\n');
+    if (!confirm(`Entregar os prêmios do torneio "${t.nome}"?\n\n${resumo}${t.premioItem ? `\n+ ${t.premioItem.qtd}x ${t.premioItem.nome} para o campeão` : ''}`)) return;
+    const lote = writeBatch(db);
+    for (const uid of [t.campeao, t.vice].filter(Boolean)) {
+        const upd = Object.fromEntries(Object.entries(ganhos[uid]).map(([m, v]) => [m, increment(v)]));
+        if (uid === t.campeao) upd.torneios_vencidos = increment(1);
+        if (uid === t.campeao && t.premioItem) {
+            if (t.premioItem.col === 'jutsus') upd.meusJutsus = arrayUnion(t.premioItem.id);
+            else upd[`inventario.${t.premioItem.id}`] = increment(t.premioItem.qtd);
+        }
+        if (Object.keys(upd).length) lote.update(doc(db, "users", uid), upd);
+    }
+    if (doCofre > 0) {
+        lote.update(refCofre(), { saldo: increment(-doCofre) });
+        lote.set(doc(db, "vila_movimentos", idMovimento('torneio')), { uid: minhaUid(), nome: 'Kage', tipo: 'torneio', valor: -doCofre, data: serverTimestamp(), ref: t.nome });
+    }
+    // Bolo que não é prêmio vai para o cofre da vila
+    if (t.boloParaPremio === false && bolo > 0) {
+        lote.update(refCofre(), { [moedaBolo === 'ryos' ? 'saldo' : 'saldo_en']: increment(bolo) });
+        lote.set(doc(db, "vila_movimentos", idMovimento('torneio_bolo')), { uid: minhaUid(), nome: 'Kage', tipo: 'torneio', valor: bolo, moeda: moedaBolo, data: serverTimestamp(), ref: `Inscrições: ${t.nome}` });
+    }
+    lote.update(ref, { premiosEntregues: true, premiosEm: Date.now() });
+    await lote.commit();
+    alert("🎁 Prêmios entregues!");
+    window.carregarTorneios();
+};
+// Painel Kage: lista de itens para o prêmio extra
+window.carregarFormTorneio = async () => {
+    const sel = document.getElementById('tor-item');
+    if (!sel || sel.dataset.carregado) return;
+    const opcoes = ['<option value="">— Nenhum —</option>'];
+    for (const [col, rot] of [['jutsus', 'Jutsu'], ['ferramentas', 'Ferramenta'], ['itens', 'Item']]) {
+        const s = await lerColecao(col);
+        s.docs.map(d => ({ id: d.id, nome: d.data().nome || d.id })).sort((a, b) => a.nome.localeCompare(b.nome))
+            .forEach(it => opcoes.push(`<option value="${esc(col + '|' + it.id)}">${rot}: ${esc(it.nome)}</option>`));
+    }
+    sel.innerHTML = opcoes.join('');
+    sel.dataset.carregado = '1';
+    const ate = document.getElementById('tor-ate');
+    if (ate && !ate.value) { const d = new Date(Date.now() + 3 * 24 * 3600e3); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); ate.value = d.toISOString().slice(0, 16); }
+};
+
 // Mostra a versão do servidor: desenha, anima as jogadas novas e cuida do fim da luta
 function aplicarDoServidor(d, primeiraVez = false) {
     arena.dados = d;
@@ -2076,7 +2367,7 @@ function renderArena() {
 
     // Topo
     const modo = d.modo || 'amistoso';
-    document.getElementById('arena-modo').innerHTML = `${NOMES_MODO[modo]}${descricaoAposta(d) ? ` · 💰 ${descricaoAposta(d)} cada` : ''}${arena.espectadores ? ` · <span class="arena-assistindo">👀 ${arena.espectadores} assistindo</span>` : ''}${arena.espectador ? ' · <strong>Você está assistindo</strong>' : ''}`;
+    document.getElementById('arena-modo').innerHTML = `${d.torneio ? `🏆 ${esc(d.torneio.nome || 'Torneio')} · ` : ''}${NOMES_MODO[modo]}${descricaoAposta(d) ? ` · 💰 ${descricaoAposta(d)} cada` : ''}${arena.espectadores ? ` · <span class="arena-assistindo">👀 ${arena.espectadores} assistindo</span>` : ''}${arena.espectador ? ' · <strong>Você está assistindo</strong>' : ''}`;
     let situacao;
     if (e.status === 'finalizada') situacao = 'Batalha encerrada';
     else if (arena.espectador) situacao = e.pausada ? '⏸️ Pausada' : (e.fase === 'reacao' ? `${esc(L[outro(e, e.vez)].nome)} está reagindo...` : `Vez de ${esc(L[e.vez].nome)}`);
@@ -2776,6 +3067,8 @@ async function posLuta(id, d) {
     const r = d.estado.resultado || {};
     const ref = doc(db, "desafios_batalha", id);
     try {
+        // Partida de torneio: quem venceu avança na chave
+        if (d.torneio && r.vencedor === eu) avancarNoTorneio(id, d).catch(e => console.error('torneio', e));
         // Luta anulada pelo Kage: não conta estatística e cada um recebe a aposta de volta
         if (d.status === 'anulada' || r.anulada) {
             if (d.modo === 'competitivo' && d.aposta) await devolverMeuCofre(id, { ...d, status: 'anulada' });
@@ -5025,7 +5318,7 @@ window.ajustarCofre = async (sinal) => {
 // =====================================================================
 //  ABA BANCO: Cofre da Vila (saldo, doação, extrato e patronos)
 // =====================================================================
-const NOME_MOVIMENTO = { aposta: '🎲 Taxa de aposta', imposto_loja: '🛒 Imposto da loja', missao: '📜 Contrato de missão', arena: '⚔️ Taxa da arena', doacao: '🎁 Doação', salarios: '💰 Salários', ajuste: '⚖️ Ajuste do Kage', abertura: '🏯 Abertura do cofre' };
+const NOME_MOVIMENTO = { torneio: '🏆 Torneio', aposta: '🎲 Taxa de aposta', imposto_loja: '🛒 Imposto da loja', missao: '📜 Contrato de missão', arena: '⚔️ Taxa da arena', doacao: '🎁 Doação', salarios: '💰 Salários', ajuste: '⚖️ Ajuste do Kage', abertura: '🏯 Abertura do cofre' };
 window.carregarCofreVila = async () => {
     const el = document.getElementById('cofre-vila');
     if (!el) return;

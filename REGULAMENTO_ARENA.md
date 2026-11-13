@@ -172,6 +172,17 @@ Toda luta guarda o **histórico completo** de ações.
   - O prêmio cai sozinho na ficha quando a luta termina (ou na próxima vez que o ninja entrar no site).
 - **Kage anula a luta:** botão **Anular** (na lista ao vivo e na plateia). Ninguém ganha nem perde, as estatísticas não contam, o cofre do Competitivo e as apostas voltam.
 
+## 5c. Torneios (Fase 3)
+
+- **O Kage cria** no Painel Kage: nome, descrição, fim das inscrições, prazo de cada rodada (horas), limite de inscritos, taxa (Ryos ou EN, ou grátis), prêmio pago pelo **Cofre da Vila**, se o **bolo das inscrições** também vira prêmio (senão vai para o cofre), a divisão campeão/vice (ex.: 70/30) e um item ou jutsu extra para o campeão.
+- **Inscrição** na entrada da Arena (a taxa sai da ficha e vai para o bolo do torneio).
+- **Sorteio da chave:** o Kage clica em "Sortear chave". Se o número de inscritos não fechar a chave (4, 8, 16...), ninjas **sorteados passam direto** na 1ª rodada.
+- **Partidas:** cada ninja vê a sua partida na Arena e clica em **Desafiar**. A luta é **Rankeada** (vale vitória/derrota e pontos) e sem aposta de cofre. Empate: lutam de novo.
+- **Quem vence avança sozinho** na chave. Quem vence a final vira **campeão** e o adversário, **vice**.
+- **Prazo:** cada rodada tem até "sorteio + N × prazo" para acontecer. Passou do prazo, o Kage marca **W.O.** na chave.
+- **Prêmios:** quando o torneio acaba, o Kage clica em "Entregar prêmios" (o valor do cofre só sai se o cofre tiver saldo).
+- **Cancelar:** o Kage pode cancelar; a taxa de inscrição volta para todos.
+
 ## 6. Próximas fases
 - **Fase 2 — Arena ao vivo:** botão 🔴 para todos assistirem, torcida com emojis, apostas (os acertadores dividem o dinheiro de quem errou, 5% vai para o caixa do Banco Ninja, fecham no 2º turno, só Ryos/EN) e o Kage podendo anular lutas.
 - **Fase 3 — Torneios:** eventos criados pelo Kage com inscrição, chaveamento sorteado e prêmios.
