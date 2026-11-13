@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, collection, getDocs, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, deleteField, addDoc, serverTimestamp, query, orderBy, onSnapshot, where, writeBatch, limit, startAfter, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { ARENA, aplicarAcao, criarEstadoInicial, outro, previaAtaque, avaliarReacao, resultadoEsquiva, alguemAusente, bonusAtivos, funcaoDoJutsu, poderDoJutsu, necessidadesDoJutsu, custosDoJutsu, bonusDoJutsu, nomeBonus, xpApostavel, usoNaArena } from "./arena-regras.js";
+import { ARENA, aplicarAcao, criarEstadoInicial, outro, previaAtaque, avaliarReacao, resultadoEsquiva, alguemAusente, bonusAtivos, funcaoDoJutsu, poderDoJutsu, necessidadesDoJutsu, custosDoJutsu, bonusDoJutsu, nomeBonus, xpApostavel, usoNaArena, requisitosDoJutsu, requisitoAtendido, genjutsuAtivo, nivelDoRank } from "./arena-regras.js";
 
 // --- CONFIGURAÇÃO FIREBASE ---
 const firebaseConfig = { apiKey: "AIzaSyC3HOor32_p5Z-iADm0VgZ279rt1kj8ICg", authDomain: "rpg-naruto-5150a.firebaseapp.com", projectId: "rpg-naruto-5150a", storageBucket: "rpg-naruto-5150a.firebasestorage.app", messagingSenderId: "1007094335306", appId: "1:1007094335306:web:ac96fa96f9494f90fd63b3" };
@@ -1565,7 +1565,10 @@ window.abrirBatalha = async (id) => {
     // Sinal de presença: enquanto o jogador estiver com a arena aberta e visível
     const baterPresenca = () => {
         const naArena = document.getElementById('batalha')?.classList.contains('active') && document.visibilityState === 'visible';
-        if (naArena && arena.dados && batalhaAtiva(arena.dados)) enviarAcao({ tipo: 'presenca' }, true);
+        if (!naArena || !arena.dados || !batalhaAtiva(arena.dados)) return;
+        // Pausada: precisa da transação (retomar). Normal: só grava o horário, sem disputar com as jogadas.
+        if (arena.dados.estado?.pausada) enviarAcao({ tipo: 'presenca' }, true);
+        else updateDoc(doc(db, "desafios_batalha", arena.id), { [`estado.presenca.${minhaUid()}`]: agoraArena() }).catch(() => {});
     };
     arena.unsub = onSnapshot(doc(db, "desafios_batalha", id), (s) => {
         if (!s.exists()) { fecharBatalha(true); return; }
@@ -1578,28 +1581,35 @@ window.abrirBatalha = async (id) => {
             arena.gravouEm = null;
         }
         const primeiraVez = !arena.dados;
-        arena.dados = d;
-        renderArena();
-        // Animações: só das jogadas que chegaram depois de abrir a luta (não repete as antigas)
-        const hist = d.historico || [];
-        const ultimoN = hist.length ? (hist[hist.length - 1].n || 0) : 0;
-        if (primeiraVez) arena.animadoAte = ultimoN;
-        else if (ultimoN > (arena.animadoAte || 0)) {
-            enfileirarAnimacoes(hist.filter(h => h.tipo === 'anim' && (h.n || 0) > (arena.animadoAte || 0)));
-            arena.animadoAte = ultimoN;
-        }
-        if (primeiraVez) baterPresenca(); // avisa logo que voltou (retoma a luta se estava pausada)
-        if (d.estado?.status === 'finalizada') posLuta(id, d);
+        arena.servidor = d;
+        // Enquanto uma jogada própria está a caminho, a tela mostra a versão calculada aqui
+        // (não volta para trás); depois segue sempre a versão mais nova do servidor.
+        if (primeiraVez || (!arena.pendentes && (d.rev || 0) >= (arena.dados?.rev || 0))) aplicarDoServidor(d, primeiraVez);
+        if (primeiraVez) enviarAcao({ tipo: 'presenca' }, true); // avisa logo que voltou (retoma a luta se estava pausada)
     });
-    baterPresenca();
     arena.batida = setInterval(baterPresenca, 10000);
     arena.tick = setInterval(tickArena, 500);
 };
 
+// Mostra a versão do servidor: desenha, anima as jogadas novas e cuida do fim da luta
+function aplicarDoServidor(d, primeiraVez = false) {
+    arena.dados = d;
+    renderArena();
+    // Animações: só das jogadas que chegaram depois de abrir a luta (não repete as antigas)
+    const hist = d.historico || [];
+    const ultimoN = hist.length ? (hist[hist.length - 1].n || 0) : 0;
+    if (primeiraVez) arena.animadoAte = ultimoN;
+    else if (ultimoN > (arena.animadoAte || 0)) {
+        enfileirarAnimacoes(hist.filter(h => h.tipo === 'anim' && (h.n || 0) > (arena.animadoAte || 0)));
+        arena.animadoAte = ultimoN;
+    }
+    if (d.estado?.status === 'finalizada' && arena.id) posLuta(arena.id, d);
+}
+
 function fecharBatalha(voltarAoLobby = true) {
     if (arena.unsub) arena.unsub();
     clearInterval(arena.tick); clearInterval(arena.batida);
-    Object.assign(arena, { id: null, dados: null, unsub: null, tick: null, batida: null });
+    Object.assign(arena, { id: null, dados: null, servidor: null, pendentes: 0, unsub: null, tick: null, batida: null });
     if (voltarAoLobby) {
         document.getElementById('arena-waiting').style.display = 'block';
         document.getElementById('arena-container').style.display = 'none';
@@ -1635,10 +1645,35 @@ function todosItensDoInventario() {
 function itensDaArena() { return todosItensDoInventario().filter(it => it.usavel); }
 
 // ---------------- 5. Enviar jogadas (transação no banco) ----------------
+// A jogada aparece NA HORA na tela (calculada aqui mesmo pelo motor) e o servidor confirma por trás.
+// Se o servidor recusar, a tela volta para o último estado confirmado.
 async function enviarAcao(acao, silencioso = false) {
     if (!arena.id) return false;
     const ref = doc(db, "desafios_batalha", arena.id);
+    const d0 = arena.dados;
+    const otimista = d0?.estado && !['presenca', 'tempo_esgotado'].includes(acao.tipo);
+    if (otimista) {
+        try {
+            const { estado, eventos } = aplicarAcao(d0.estado, minhaUid(), acao, agoraArena());
+            const base = d0.histN || (d0.historico || []).length;
+            const novos = eventos.map((e, i) => ({ ...e, t: Date.now(), n: base + i + 1 }));
+            arena.dados = { ...d0, estado, rev: (d0.rev || 0) + 1, histN: base + novos.length, historico: [...(d0.historico || []), ...novos].slice(-ARENA.historicoMax) };
+            if (estado.status === 'finalizada') arena.dados.status = 'finalizada';
+            renderArena();
+            const anims = novos.filter(h => h.tipo === 'anim');
+            if (anims.length) { enfileirarAnimacoes(anims); arena.animadoAte = Math.max(arena.animadoAte || 0, base + novos.length); }
+        } catch (e) {
+            if (e.regra) { if (!silencioso) alert(e.message); return false; }
+            console.error(e);
+        }
+    }
+    arena.pendentes = (arena.pendentes || 0) + 1;
+    // As jogadas vão ao servidor uma de cada vez, na ordem dos cliques
+    const anterior = arena.filaEnvio || Promise.resolve();
+    let liberar;
+    arena.filaEnvio = new Promise(r => { liberar = r; });
     try {
+        await anterior;
         await runTransaction(db, async (tx) => {
             const s = await tx.get(ref);
             if (!s.exists()) throw new Error("A batalha não existe mais.");
@@ -1647,7 +1682,7 @@ async function enviarAcao(acao, silencioso = false) {
             const { estado, eventos } = aplicarAcao(d.estado, minhaUid(), acao, agoraArena());
             const base = d.histN || (d.historico || []).length;
             const novos = eventos.map((e, i) => ({ ...e, t: Date.now(), n: base + i + 1 }));
-            const upd = { estado, atualizadoEm: serverTimestamp() };
+            const upd = { estado, atualizadoEm: serverTimestamp(), rev: (d.rev || 0) + 1 };
             if (novos.length) { upd.historico = [...(d.historico || []), ...novos].slice(-ARENA.historicoMax); upd.histN = base + novos.length; }
             if (estado.status === 'finalizada' && d.status !== 'finalizada') { upd.status = 'finalizada'; upd.finalizadaEm = Date.now(); }
             tx.update(ref, upd);
@@ -1655,8 +1690,16 @@ async function enviarAcao(acao, silencioso = false) {
         arena.gravouEm = Date.now();
         return true;
     } catch (e) {
+        arena.falhou = otimista;   // desfaz o que apareceu na tela (no finally)
         if (!silencioso) { console.error(e); alert(e.regra ? e.message : ("Não foi possível realizar a ação. " + (e.message || ""))); }
         return false;
+    } finally {
+        liberar();
+        arena.pendentes = Math.max(0, (arena.pendentes || 1) - 1);
+        // Sem jogadas a caminho: mostra o que o servidor tem, se ele já estiver em dia
+        if (arena.id && !arena.pendentes && arena.servidor && arena.dados !== arena.servidor
+            && (arena.falhou || (arena.servidor.rev || 0) >= (arena.dados?.rev || 0))) aplicarDoServidor(arena.servidor);
+        if (!arena.pendentes) arena.falhou = false;
     }
 }
 
@@ -1700,15 +1743,43 @@ function barraRecurso(rotulo, atual, max, classe) {
     const pct = max > 0 ? Math.max(0, Math.min(100, atual / max * 100)) : 0;
     return `<div class="arena-recurso ${classe}"><div class="arena-recurso-topo"><span>${rotulo}</span><span>${Math.max(0, Math.round(atual))}/${max}</span></div><div class="arena-recurso-barra"><div style="width:${pct}%"></div></div></div>`;
 }
+// Aura do modo ativo (borda e símbolo na carta do personagem)
+const PRIORIDADE_AURA = ['mangekyou', 'sabio', 'sharingan', 'byakugan', 'portao', 'modo'];
+function auraDoEfeito(e) {
+    if (e.aura) return e.aura;
+    const t = `${e.id} ${e.nome}`.toLowerCase();
+    if (/mangeky|\bms[_ ]/.test(t)) return 'mangekyou';
+    if (/sharingan/.test(t)) return 'sharingan';
+    if (/s[aá]bio|sennin|senjutsu/.test(t)) return 'sabio';
+    if (/byakugan/.test(t)) return 'byakugan';
+    if (/port[aã]o|hachimon/.test(t)) return 'portao';
+    return 'modo';
+}
+function auraDoLutador(l) {
+    const auras = (l.efeitos || []).filter(e => e.tipo === 'modo').map(auraDoEfeito);
+    return PRIORIDADE_AURA.find(a => auras.includes(a)) || null;
+}
+const NOME_AURA = { mangekyou: 'Mangekyou Sharingan ativo', sharingan: 'Sharingan ativo', sabio: 'Modo Sábio ativo', byakugan: 'Byakugan ativo', portao: 'Portões abertos', modo: 'Modo ativo' };
+
 function cartaoLutador(l, souEu, ehVez) {
-    const efeitos = (l.efeitos || []).map(e => {
-        const b = Object.entries(e.bonus || {}).filter(([, v]) => v).map(([k, v]) => `+${v} ${nomeBonus(k)}`).join(', ');
-        const turnos = e.turnos === null || e.turnos === undefined ? '∞' : e.turnos + 't';
+    const efeitos = (l.efeitos || []).filter(e => e.tipo !== 'manter_chamas').map(e => {
+        const b = Object.entries(e.bonus || {}).filter(([, v]) => v).map(([k, v]) => `${v > 0 ? '+' : ''}${v} ${nomeBonus(k)}`).join(', ');
+        const turnos = e.turnos === null || e.turnos === undefined ? '∞' : (e.tipo === 'genjutsu' ? Math.max(1, e.turnos - 1) : e.turnos) + 't';
+        if (e.tipo === 'genjutsu') {
+            const como = { paralisia: 'paralisado', sem_reacao: 'sem reação', confusao: 'confuso' }[e.efeitoGenjutsu] || 'preso';
+            return `<span class="arena-efeito efeito-genjutsu" title="Preso no genjutsu ${esc(e.nome)}${b ? ': ' + esc(b) : ''}">👁️ ${esc(e.nome)} · ${como} · ${turnos}</span>`;
+        }
+        if (e.tipo === 'chamas') return `<span class="arena-efeito efeito-chamas" title="Chamas que só apagam por quem as lançou ou com defesa Rank S">🔥 ${esc(e.nome)} · −${e.danoPorTurno}/turno</span>`;
         const cls = e.tipo === 'sangramento' ? 'efeito-ruim' : (e.tipo === 'modo' ? 'efeito-modo' : '');
         return `<span class="arena-efeito ${cls}" title="${esc(b || e.nome)}">${esc(e.nome)} · ${turnos}${e.custoPorTurno ? ` · −${e.custoPorTurno}CP` : ''}</span>`;
     }).join('');
+    const manter = (l.efeitos || []).find(e => e.tipo === 'manter_chamas');
+    const chamasMantidas = manter ? `<span class="arena-efeito efeito-chamas" title="Mantendo as chamas no adversário">🔥 Mantendo ${esc(manter.nome)} · −${manter.custoPorTurno}CP</span>` : '';
     const clones = l.clones?.qtd ? `<span class="arena-efeito efeito-clone">👥 ${l.clones.qtd} clone${l.clones.qtd > 1 ? 's' : ''} · ${l.clones.reserva} CP</span>` : '';
+    const criacoes = (l.criacoes || []).map(c => `<span class="arena-ficha" data-criacao="${esc(c.id)}" title="${esc(c.jutsuNome)}: ${c.poder ? `${c.poder} de dano cada` : 'sem dano'}${c.absorve ? ` · cada uma absorve ${c.absorve}` : ''}${c.custoPorTurno ? ` · −${c.custoPorTurno} CP/turno` : ''}"><span class="arena-ficha-icone">${esc(c.icone)}</span><strong>${c.qtd}</strong> ${esc(c.nome)}</span>`).join('');
+    const aura = auraDoLutador(l);
     return `
+            ${aura ? `<span class="aura-selo aura-selo-${aura}" title="${esc(NOME_AURA[aura] || 'Modo ativo')}" aria-label="${esc(NOME_AURA[aura] || 'Modo ativo')}"></span>` : ''}
             <div class="arena-lutador-topo">
                 <img src="${esc(l.avatar || IMG_PADRAO)}" alt="" onerror="this.src='${IMG_PADRAO}'">
                 <div><div class="arena-lutador-nome">${esc(l.nome)}${souEu ? ' <small>(você)</small>' : ''}</div>
@@ -1717,7 +1788,8 @@ function cartaoLutador(l, souEu, ehVez) {
             ${barraRecurso('Vida', l.vida, l.maxVida, 'r-vida')}
             ${barraRecurso('Chakra', l.chakra, l.maxChakra, 'r-chakra')}
             ${barraRecurso('Stamina', l.stamina, l.maxStamina, 'r-stamina')}
-            <div class="arena-efeitos">${efeitos}${clones}</div>`;
+            ${criacoes ? `<div class="arena-fichas">${criacoes}</div>` : ''}
+            <div class="arena-efeitos">${efeitos}${chamasMantidas}${clones}</div>`;
 }
 
 function renderArena() {
@@ -1748,7 +1820,15 @@ function renderArena() {
     [[eu, me, true], [adv, ele, false]].forEach(([uid, l, souEu]) => {
         const el = cont.querySelector(`[data-uid="${CSS.escape(uid)}"]`);
         el.classList.toggle('na-vez', naVez(uid));
+        const aura = auraDoLutador(l);
+        [...el.classList].filter(c => c.startsWith('aura-')).forEach(c => { if (c !== 'aura-' + aura) el.classList.remove(c); });
+        if (aura) el.classList.add('aura-' + aura);
+        el.classList.toggle('em-genjutsu', !!genjutsuAtivo(l));
+        el.classList.toggle('em-chamas', (l.efeitos || []).some(x => x.tipo === 'chamas'));
+        // Criação que diminuiu: anima a ficha
+        const antes = Object.fromEntries([...el.querySelectorAll('[data-criacao]')].map(f => [f.dataset.criacao, Number(f.querySelector('strong')?.textContent) || 0]));
         el.innerHTML = cartaoLutador(l, souEu, naVez(uid));
+        el.querySelectorAll('[data-criacao]').forEach(f => { if ((antes[f.dataset.criacao] || 0) > Number(f.querySelector('strong').textContent)) f.classList.add('quebrou'); else if (!(f.dataset.criacao in antes)) f.classList.add('surgiu'); });
     });
 
     // Mesa de cartas (só redesenha quando há jogada nova)
@@ -1786,7 +1866,7 @@ function renderArena() {
     atualizarCronometro(e);
 }
 
-const ICONE_FUNCAO = { ataque: '⚔️', defesa: '🛡️', esquiva: '💨', suporte: '✨', modo: '🌀', item: '🎒', receber: '🎯' };
+const ICONE_FUNCAO = { ataque: '⚔️', defesa: '🛡️', esquiva: '💨', suporte: '✨', modo: '🌀', item: '🎒', receber: '🎯', criacao: '🌳', kai: '✋', espelho: '🪞' };
 // Imagem da carta (a mesma da loja/inventário). Se não tiver ou falhar, mostra o ícone da função.
 function imgCarta(src, funcao, iconeProprio) {
     const icone = iconeProprio || ICONE_FUNCAO[funcao] || '⚔️';
@@ -1805,15 +1885,21 @@ function usosPossiveis(me, c) {
     return u.length ? Math.max(0, Math.min(...u)) : null;
 }
 const seloUsos = (n) => `<span class="carta-usos" title="Quantas vezes dá para usar com o chakra/stamina atuais">${n === null ? '∞' : '×' + n}</span>`;
-const NOME_FUNCAO = { ataque: 'Ataque', defesa: 'Defesa', esquiva: 'Esquiva', suporte: 'Suporte', modo: 'Modo' };
+const NOME_FUNCAO = { ataque: 'Ataque', defesa: 'Defesa', esquiva: 'Esquiva', suporte: 'Suporte', modo: 'Modo', criacao: 'Criação', kai: 'Contra-Genjutsu', espelho: 'Reflexo' };
+// Nome dos jutsus exigidos (procura nos jutsus do jogador; se não achar, mostra o id)
+function nomesDosRequisitos(j) {
+    return requisitosDoJutsu(j).map(id => arena.jutsus.find(x => x.id === id)?.nome || id).join(' ou ');
+}
 
 function htmlAcoes(e, me) {
     const semAcoes = e.acoesRestantes <= 0;
     const semAtaque = e.ataquesRestantes <= 0;
+    const gen = genjutsuAtivo(me);
+    const paralisado = gen?.efeitoGenjutsu === 'paralisia';
     const jutsus = [];
     // Ataque Básico (sempre disponível)
     const basico = { id: '_basico', nome: 'Ataque Básico', funcao: 'ataque', categoria: 'taijutsu', poder: 0, stamina: 5, rank: 'E' };
-    const motivoBasico = semAcoes ? 'Sem ações' : (semAtaque ? 'Já atacou neste turno' : (me.stamina < 5 ? 'Sem stamina' : ''));
+    const motivoBasico = paralisado ? 'Preso no genjutsu' : (semAcoes ? 'Sem ações' : (semAtaque ? 'Já atacou neste turno' : (me.stamina < 5 ? 'Sem stamina' : '')));
     jutsus.push(`<button class="arena-carta ataque" ${motivoBasico ? 'disabled' : ''} onclick="window.arenaUsarJutsu(-1)">
         ${imgCarta(null, 'ataque')}${seloUsos(usosPossiveis(me, { chakra: 0, stamina: 5 }))}<strong>Ataque Básico</strong><span class="carta-dano">💥 ${previaAtaque(me, basico, 1, 0).dano}</span>
         <span class="carta-info">5 SP · Força</span>${motivoBasico ? `<span class="carta-motivo">${motivoBasico}</span>` : ''}</button>`);
@@ -1824,9 +1910,25 @@ function htmlAcoes(e, me) {
         const c = custosDoJutsu(j);
         const usos = usosPossiveis(me, c);
         let motivo = '', detalhe = '', destaque = '';
+        const faltaRequisito = !requisitoAtendido(me, j) ? `Requer ${nomesDosRequisitos(j)} ativo` : '';
         if (!usoNaArena(j)) {
             destaque = 'Utilitário';
             motivo = 'Sem uso na arena';
+        } else if (f === 'kai') {
+            const custoKai = { chakra: c.chakra + (gen ? numero(gen.custoKai) : 0), stamina: c.stamina };
+            destaque = '✋ Quebra genjutsu';
+            detalhe = `${custoTexto(custoKai)}${gen ? '' : ' + custo do genjutsu'} · Reação ${numero(j.reacao_minima) || 5}+`;
+            motivo = !gen ? 'Só quando preso num genjutsu' : (semAcoes ? 'Sem ações' : (me.chakra < custoKai.chakra ? 'Sem chakra' : ''));
+        } else if (f === 'espelho') {
+            destaque = '🪞 Devolve genjutsu';
+            detalhe = custoTexto(c) + ' + custo do genjutsu';
+            motivo = 'Usado ao reagir a genjutsu';
+        } else if (f === 'criacao') {
+            const g = (me.criacoes || []).find(x => x.id === (j.id || j.nome));
+            const max = Math.max(1, numero(j.criacao_max) || numero(j.multiplicador_maximo) || 1);
+            destaque = `${j.criacao_icone || '🌀'} ${poderDoJutsu(j) ? `💥 ${poderDoJutsu(j)} cada` : 'Criação'}${numero(j.criacao_absorve) ? ` · 🛡️ ${numero(j.criacao_absorve)}` : ''}`;
+            detalhe = `${custoTexto(c)} cada · até ${max}${g ? ` (${g.qtd} no campo)` : ''}`;
+            motivo = paralisado ? 'Preso no genjutsu' : faltaRequisito || (semAcoes ? 'Sem ações' : (g && g.qtd >= max ? 'No máximo' : (usos === 0 ? 'Sem chakra/stamina' : '')));
         } else if (f === 'defesa' || f === 'esquiva') {
             motivo = 'Usado ao reagir';
             destaque = f === 'defesa' ? `🛡️ absorve ${me.atributos.defesa + bonusAtivos(me).defesa + poderDoJutsu(j)}` : `💨 +${poderDoJutsu(j)} Velocidade`;
@@ -1835,7 +1937,10 @@ function htmlAcoes(e, me) {
             const nec = necessidadesDoJutsu(j);
             destaque = `💥 ${previaAtaque(me, j, 1, 0).dano}${numero(j.multiplicador_maximo) > 1 ? ` ×até ${numero(j.multiplicador_maximo)}` : ''}`;
             detalhe = `${custoTexto(c)} · Reação ${nec.reacao} · Vel. ${nec.velocidade}`;
-            motivo = semAcoes ? 'Sem ações' : (semAtaque ? 'Já atacou neste turno' : (usos === 0 ? 'Sem chakra/stamina' : ''));
+            if (String(j.categoria).toLowerCase() === 'genjutsu') destaque += ' · 👁️ Genjutsu';
+            if (numero(j.chamas_por_turno)) destaque += ` · 🔥 ${numero(j.chamas_por_turno)}/turno`;
+            motivo = paralisado ? 'Preso no genjutsu' : faltaRequisito || (semAcoes ? 'Sem ações' : (semAtaque ? 'Já atacou neste turno' : (usos === 0 ? 'Sem chakra/stamina' : '')));
+            if (!motivo && numero(j.chamas_por_turno) && (me.efeitos || []).some(x => x.tipo === 'manter_chamas')) motivo = 'Chamas já ativas';
         } else {
             const ativo = f === 'modo' && (me.efeitos || []).some(x => x.id === (j.id || j.nome));
             const b = Object.entries(bonusDoJutsu(j)).map(([k, v]) => `+${v} ${nomeBonus(k)}`);
@@ -1843,7 +1948,7 @@ function htmlAcoes(e, me) {
             if (numero(j.cura) || String(j.efeito).toLowerCase() === 'cura') b.push(`+${numero(j.cura) || poderDoJutsu(j)} Vida`);
             destaque = `${f === 'modo' ? '🌀' : '✨'} ${b.join(', ') || NOME_FUNCAO[f]}`;
             detalhe = `${custoTexto(c)}${numero(j.custo_por_turno) ? ` · ${numero(j.custo_por_turno)} CP/turno` : ''}`;
-            motivo = ativo ? 'Ativo' : (semAcoes ? 'Sem ações' : (usos === 0 ? 'Sem chakra/stamina' : ''));
+            motivo = ativo ? 'Ativo' : (paralisado ? 'Preso no genjutsu' : faltaRequisito || (semAcoes ? 'Sem ações' : (usos === 0 ? 'Sem chakra/stamina' : '')));
         }
         jutsus.push(`<button class="arena-carta ${usoNaArena(j) ? f : 'inativa'}" ${motivo ? 'disabled' : ''} onclick="window.arenaUsarJutsu(${i})">
             ${imgCarta(j.imagem, f)}${seloUsos(usos)}<strong>${esc(j.nome)}</strong><span class="carta-tag">${esc(destaque)}</span>
@@ -1856,6 +1961,7 @@ function htmlAcoes(e, me) {
         const c = custosDoJutsu(it);
         let destaque, motivo = '';
         if (!it.usavel) { destaque = (typeof it.efeito === 'string' && it.efeito) || (it.type === 'tool' ? 'Ferramenta' : 'Item'); motivo = 'Sem uso em batalha'; }
+        else if (paralisado) { destaque = 'Preso no genjutsu'; motivo = 'Preso no genjutsu'; }
         else if (ehAtaque) { destaque = `💥 ${previaAtaque(me, it, 1, 0).dano}${numero(it.multiplicador_maximo) > 1 ? ` ×até ${numero(it.multiplicador_maximo)}` : ''}`; motivo = semAcoes ? 'Sem ações' : (semAtaque ? 'Já atacou neste turno' : (me.stamina < c.stamina ? 'Sem stamina' : '')); }
         else { const vida = numero(it.cura) || numero(it.bonus_hp), ck = numero(it.recupera_chakra) || numero(it.bonus_chakra), sp = numero(it.recupera_stamina) || numero(it.bonus_stamina); destaque = [vida && `+${vida} Vida`, ck && `+${ck} Chakra`, sp && `+${sp} Stamina`].filter(Boolean).join(', '); motivo = semAcoes ? 'Sem ações' : ''; }
         return `<button class="arena-carta ${it.usavel ? (ehAtaque ? 'ataque' : 'item') : 'inativa'}" ${motivo ? 'disabled' : ''} onclick="window.arenaUsarItem('${esc(it.id)}')">
@@ -1864,9 +1970,32 @@ function htmlAcoes(e, me) {
     });
 
     const modosAtivos = (me.efeitos || []).filter(x => x.tipo === 'modo').map(x =>
-        `<button class="btn-arena-sec" onclick="window.arenaDesativar('${esc(x.id)}')">⏹️ Desativar ${esc(x.nome)}</button>`).join('');
+        `<button class="btn-arena-sec" onclick="window.arenaDesativar('${esc(x.id)}')">⏹️ Desativar ${esc(x.nome)}</button>`).join('')
+        + ((me.efeitos || []).some(x => x.tipo === 'manter_chamas') ? `<button class="btn-arena-sec" onclick="window.arenaApagarChamas()">🔥 Apagar chamas</button>` : '');
+
+    // Criações no campo: atacar com elas ou desfazer
+    const criacoes = (me.criacoes || []).map(g => {
+        const motivo = paralisado ? 'Preso no genjutsu' : (!g.poder ? 'Não causam dano' : (semAcoes ? 'Sem ações' : (semAtaque ? 'Já atacou neste turno' : '')));
+        return `<div class="arena-criacao">
+            <button class="arena-carta ataque" ${motivo ? 'disabled' : ''} onclick="window.arenaAtacarComCriacao('${esc(g.id)}')">
+                ${imgCarta(g.img, 'ataque', g.icone)}<span class="carta-usos" title="Quantas estão no campo">x${g.qtd}</span><strong>Atacar com ${esc(g.nome)}</strong>
+                <span class="carta-tag">💥 ${g.poder * g.qtd}${g.qtd > 1 ? ` (${g.poder} cada)` : ''}</span><span class="carta-info">Sem custo · ${esc(g.jutsuNome)}</span>${motivo ? `<span class="carta-motivo">${esc(motivo)}</span>` : ''}</button>
+            <button class="btn-arena-sec" onclick="window.arenaDesfazerCriacao('${esc(g.id)}')">💨 Desfazer</button></div>`;
+    }).join('');
+
+    // Em chamas: só uma defesa Rank S apaga
+    const chamas = (me.efeitos || []).find(x => x.tipo === 'chamas');
+    let avisoChamas = '';
+    if (chamas) {
+        const defesasS = arena.jutsus.map((j, i) => ({ j, i })).filter(({ j }) => funcaoDoJutsu(j) === 'defesa' && usoNaArena(j) && nivelDoRank(j.rank) >= nivelDoRank('S'));
+        avisoChamas = `<div class="arena-aviso aviso-chamas">🔥 Você está em chamas (${esc(chamas.nome)}): −${chamas.danoPorTurno} de Vida por turno até quem lançou apagar. Só uma defesa de Rank S apaga.
+            ${defesasS.map(({ j, i }) => `<button class="btn-arena-sec" ${!requisitoAtendido(me, j) || semAcoes ? 'disabled' : ''} onclick="window.arenaApagarChamas(${i})">🛡️ Apagar com ${esc(j.nome)} (${esc(custoTexto(custosDoJutsu(j)))})</button>`).join('')}</div>`;
+    }
+    const avisoGen = gen ? `<div class="arena-aviso aviso-genjutsu">👁️ Você está preso no genjutsu <strong>${esc(gen.nome)}</strong>${paralisado ? ': não pode agir nem reagir' : (gen.efeitoGenjutsu === 'sem_reacao' ? ': não consegue reagir a ataques' : ': Reação e Velocidade reduzidas')}. Use o Contra-Genjutsu (Kai), espere passar ou leve um golpe forte (a dor quebra a ilusão).</div>` : '';
     return `
+        ${avisoGen}${avisoChamas}
         <div class="arena-contador">Ações: <strong>${e.acoesRestantes}/${ARENA.acoesPorTurno}</strong> · Ataque: <strong>${semAtaque ? 'já usado' : 'disponível'}</strong></div>
+        ${criacoes ? `<h4 class="arena-secao">🌳 No campo</h4><div class="arena-cartas">${criacoes}</div>` : ''}
         <h4 class="arena-secao">📜 Seus jutsus (${arena.jutsus.length})</h4><div class="arena-cartas">${jutsus.join('')}</div>
         <h4 class="arena-secao">🎒 Seu inventário (${itens.length})</h4><div class="arena-cartas">${itens.join('') || '<p class="arena-vazio">Inventário vazio.</p>'}</div>
         ${modosAtivos ? `<div class="arena-modos-ativos">${modosAtivos}</div>` : ''}`;
@@ -1882,17 +2011,32 @@ function htmlReacao(e, me) {
     if (av.percebe) {
         if (av.podeEsquivar) {
             const r = resultadoEsquiva(av.velocidade, atk.velocidadeNecessaria);
-            opcoes.push(`<button class="arena-carta esquiva" onclick="window.arenaReagir('esquivar')">${imgCarta(null, 'esquiva')}<strong>Esquivar</strong><span class="carta-tag">Velocidade ${av.velocidade} × ${atk.velocidadeNecessaria}</span><span class="carta-info">${esc(r.texto)} (−${Math.round(atk.dano * r.fator)})</span></button>`);
+            opcoes.push(`<button class="arena-carta esquiva" onclick="window.arenaReagir('esquivar')">${imgCarta(null, 'esquiva')}<strong>${atk.genjutsu ? 'Desviar o olhar' : 'Esquivar'}</strong><span class="carta-tag">Velocidade ${av.velocidade} × ${atk.velocidadeNecessaria}</span><span class="carta-info">${esc(r.texto)} (−${Math.round(atk.dano * r.fator)})</span></button>`);
         }
         if (av.podeDefenderFisico) {
             const dano = Math.max(0, atk.dano - av.defesaBase);
             opcoes.push(`<button class="arena-carta defesa" onclick="window.arenaReagir('defender')">${imgCarta(null, 'defesa')}<strong>Defender (físico)</strong><span class="carta-tag">absorve ${av.defesaBase}</span><span class="carta-info">−${dano} Vida</span></button>`);
         }
+        // Criações que seguram golpes (cada uma absorve um valor e se quebra)
+        (me.criacoes || []).filter(g => g.absorve > 0 && !atk.genjutsu).forEach(g => {
+            const usadas = Math.min(g.qtd, Math.max(1, Math.ceil(atk.dano / g.absorve)));
+            const dano = Math.max(0, atk.dano - usadas * g.absorve);
+            opcoes.push(`<button class="arena-carta defesa" onclick="window.arenaReagir('criacao', undefined, '${esc(g.id)}')">${imgCarta(g.img, 'defesa', g.icone)}<span class="carta-usos">x${g.qtd}</span><strong>Bloquear com ${esc(g.nome)}</strong><span class="carta-tag">quebra ${usadas} · absorve ${usadas * g.absorve}</span><span class="carta-info">−${dano} Vida · sem custo</span></button>`);
+        });
         arena.jutsus.forEach((j, i) => {
             const f = funcaoDoJutsu(j);
-            if ((f !== 'esquiva' && f !== 'defesa') || !usoNaArena(j)) return;
+            if (!usoNaArena(j)) return;
             const c = custosDoJutsu(j);
-            const semRecurso = me.chakra < c.chakra || me.stamina < c.stamina;
+            if (f === 'espelho') {
+                if (!atk.genjutsu) return;
+                const total = { chakra: c.chakra + numero(atk.genjutsu.custo), stamina: c.stamina };
+                const rankOk = numero(atk.genjutsu.nivel) <= nivelDoRank(j.espelho_rank_max || 'A');
+                const podeUsar = rankOk && ((me.efeitos || []).some(x => x.tipo === 'modo') || av.reacao >= (numero(j.reacao_minima) || 5)) && me.chakra >= total.chakra && requisitoAtendido(me, j);
+                opcoes.push(`<button class="arena-carta espelho" ${podeUsar ? '' : 'disabled'} onclick="window.arenaReagir('espelho', ${i})">${imgCarta(j.imagem, 'espelho')}<strong>${esc(j.nome)}</strong><span class="carta-tag">🪞 devolve a ilusão</span><span class="carta-info">${esc(custoTexto(total))}${rankOk ? '' : ' · Rank alto demais'}</span></button>`);
+                return;
+            }
+            if (f !== 'esquiva' && f !== 'defesa') return;
+            const semRecurso = me.chakra < c.chakra || me.stamina < c.stamina || !requisitoAtendido(me, j);
             if (f === 'esquiva') {
                 if (!av.podeEsquivar) return;
                 const vel = av.velocidade + poderDoJutsu(j);
@@ -1907,7 +2051,14 @@ function htmlReacao(e, me) {
     const avisos = [];
     if (!av.percebe) avisos.push(`Sua Reação (${av.reacao}) é menor que a necessária (${atk.reacaoNecessaria}): você não percebe o golpe a tempo.`);
     if (atk.impossivelEsquivar) avisos.push('Este ataque é impossível de esquivar.');
-    if (me.clones?.qtd && me.clones.solidos) avisos.push(`Se você for atingido, um dos seus ${me.clones.qtd} clones recebe o golpe no seu lugar.`);
+    if (atk.precisao) avisos.push(`A mira de ${atacante.nome} está travada: Precisão +${atk.precisao} (fica mais difícil perceber e escapar).`);
+    if (atk.genjutsu) {
+        const como = { paralisia: 'fica paralisado (não age nem reage)', sem_reacao: 'não consegue reagir a ataques', confusao: `perde ${atk.genjutsu.penalidade} de Reação e Velocidade` }[atk.genjutsu.efeito];
+        avisos.push(`👁️ Genjutsu: se pegar, você ${como} por ${atk.genjutsu.turnos} turno${atk.genjutsu.turnos > 1 ? 's' : ''}. Não dá para bloquear com o corpo nem com clones.`);
+    }
+    if (atk.chamas) avisos.push(`🔥 Se acertar, você fica em chamas (−${atk.chamas.dano} por turno) até ${atacante.nome} apagar. Uma defesa Rank S apaga.`);
+    if (av.presoNoGenjutsu) avisos.push('Você está preso num genjutsu e não consegue reagir.');
+    if (me.clones?.qtd && me.clones.solidos && !atk.genjutsu) avisos.push(`Se você for atingido, um dos seus ${me.clones.qtd} clones recebe o golpe no seu lugar.`);
     return `
         <div class="arena-ameaca">
             <div class="arena-ameaca-carta" id="arena-ameaca-carta">${imgCarta(atk.carta?.img, 'ataque')}</div>
@@ -1945,7 +2096,16 @@ window.arenaUsarJutsu = (i) => {
     const e = arena.dados.estado, me = e.lutadores[minhaUid()];
     const j = i === -1 ? { id: '_basico', nome: 'Ataque Básico', funcao: 'ataque', categoria: 'taijutsu', poder: 0, stamina: 5, rank: 'E' } : arena.jutsus[i];
     if (!j) return;
-    const ehAtaque = funcaoDoJutsu(j) === 'ataque';
+    const f = funcaoDoJutsu(j);
+    const ehAtaque = f === 'ataque';
+    if (f === 'kai') { if (!confirmaEsgotar(me, custosDoJutsu(j).chakra + numero(genjutsuAtivo(me)?.custoKai))) return; return enviarAcao({ tipo: 'kai', jutsu: j }); }
+    if (f === 'criacao') {
+        const g = (me.criacoes || []).find(x => x.id === (j.id || j.nome));
+        const livre = Math.max(1, numero(j.criacao_max) || numero(j.multiplicador_maximo) || 1) - (g?.qtd || 0);
+        if (livre > 1) return abrirConfigAtaque({ tipo: 'criar', jutsu: j, livre });
+        if (!confirmaEsgotar(me, custosDoJutsu(j).chakra)) return;
+        return enviarAcao({ tipo: 'jutsu', jutsu: j, cargas: 1 });
+    }
     if (ehAtaque && (numero(j.multiplicador_maximo) > 1 || me.clones?.qtd)) return abrirConfigAtaque({ tipo: 'jutsu', jutsu: j });
     if (!confirmaEsgotar(me, custosDoJutsu(j).chakra)) return;
     enviarAcao({ tipo: 'jutsu', jutsu: j });
@@ -1970,8 +2130,25 @@ async function usarItem(it, extra) {
 // Janela para escolher cargas (multiplicador) e clones de um ataque
 function abrirConfigAtaque(acao) {
     arena.ataqueEmConfig = acao;
-    const j = acao.jutsu || acao.item;
     const me = arena.dados.estado.lutadores[minhaUid()];
+    // Criar unidades (raízes, pedras...) ou atacar com as que já estão no campo: só escolhe a quantidade
+    if (acao.tipo === 'criar' || acao.tipo === 'criacao_atacar') {
+        const max = acao.tipo === 'criar' ? acao.livre : acao.grupo.qtd;
+        const nome = acao.tipo === 'criar' ? (acao.jutsu.criacao_nome || 'unidades') : acao.grupo.nome;
+        document.getElementById('config-ataque-nome').innerText = acao.tipo === 'criar' ? acao.jutsu.nome : `Atacar com ${nome}`;
+        document.getElementById('config-ataque-cargas-rotulo').innerText = acao.tipo === 'criar' ? `Quantas ${nome} criar (até ${max})` : `Quantas ${nome} atacam (até ${max})`;
+        const cargas = document.getElementById('config-ataque-cargas');
+        cargas.max = max; cargas.value = max;
+        document.getElementById('config-ataque-cargas-grupo').style.display = '';
+        document.getElementById('config-ataque-clones-grupo').style.display = 'none';
+        document.getElementById('config-ataque-clones').max = 0; document.getElementById('config-ataque-clones').value = 0;
+        document.getElementById('config-ataque-clones-aviso').textContent = '';
+        window.atualizarConfigAtaque();
+        document.getElementById('modal-config-ataque').style.display = 'flex';
+        return;
+    }
+    document.getElementById('config-ataque-cargas-rotulo').innerText = 'Cargas (repetições)';
+    const j = acao.jutsu || acao.item;
     const maxCargas = Math.max(1, numero(j.multiplicador_maximo) || 1);
     const maxCargasItem = acao.item && !acao.item.recuperavel ? Math.min(maxCargas, acao.item.qtd) : maxCargas;
     document.getElementById('config-ataque-nome').innerText = j.nome;
@@ -1996,6 +2173,17 @@ window.atualizarConfigAtaque = () => {
     const me = arena.dados.estado.lutadores[minhaUid()];
     const cargas = Math.max(1, Math.min(numero(document.getElementById('config-ataque-cargas').max) || 1, Math.floor(numero(document.getElementById('config-ataque-cargas').value)) || 1));
     const clones = Math.max(0, Math.min(numero(document.getElementById('config-ataque-clones').max) || 0, Math.floor(numero(document.getElementById('config-ataque-clones').value)) || 0));
+    if (acao.tipo === 'criar') {
+        const c = custosDoJutsu(acao.jutsu);
+        const p = { chakra: c.chakra * cargas, stamina: c.stamina * cargas };
+        document.getElementById('config-ataque-previa').innerHTML = `${esc(acao.jutsu.criacao_icone || '🌀')} <strong>${cargas}</strong> ${esc(acao.jutsu.criacao_nome || 'unidades')} no campo${poderDoJutsu(acao.jutsu) ? ` (💥 ${poderDoJutsu(acao.jutsu)} cada)` : ''}${numero(acao.jutsu.criacao_absorve) ? ` · cada uma absorve ${numero(acao.jutsu.criacao_absorve)}` : ''}<br>Custo: ${p.chakra} CP · ${p.stamina} SP`;
+        return { cargas, clones: 0, p };
+    }
+    if (acao.tipo === 'criacao_atacar') {
+        const p = { chakra: 0, stamina: 0, dano: acao.grupo.poder * cargas + bonusAtivos(me).ataque };
+        document.getElementById('config-ataque-previa').innerHTML = `💥 <strong>${p.dano}</strong> de dano (${cargas} × ${acao.grupo.poder})<br>Sem custo: elas continuam no campo.`;
+        return { cargas, clones: 0, p };
+    }
     const p = previaAtaque(me, j, cargas, clones);
     document.getElementById('config-ataque-previa').innerHTML =
         `💥 <strong>${p.dano}</strong> de dano (${p.golpes} golpe${p.golpes > 1 ? 's' : ''} de ${p.porGolpe})<br>Custo: ${p.chakra} CP · ${p.stamina} SP${clones ? ` · clones gastam ${p.custoClones} CP da reserva (${me.clones.reserva})` : ''}`;
@@ -2009,14 +2197,24 @@ window.confirmarConfigAtaque = async () => {
     document.getElementById('modal-config-ataque').style.display = 'none';
     arena.ataqueEmConfig = null;
     if (acao.tipo === 'item') await usarItem(acao.item, { cargas, clones });
+    else if (acao.tipo === 'criacao_atacar') await enviarAcao({ tipo: 'criacao_atacar', criacaoId: acao.grupo.id, qtd: cargas });
+    else if (acao.tipo === 'criar') await enviarAcao({ tipo: 'jutsu', jutsu: acao.jutsu, cargas });
     else await enviarAcao({ tipo: 'jutsu', jutsu: acao.jutsu, cargas, clones });
 };
 
-window.arenaReagir = (opcao, i) => {
-    const j = i === undefined ? null : arena.jutsus[i];
+window.arenaReagir = (opcao, i, criacaoId) => {
+    const j = i === undefined || i === null ? null : arena.jutsus[i];
     const me = arena.dados.estado.lutadores[minhaUid()];
     if (j && !confirmaEsgotar(me, custosDoJutsu(j).chakra)) return;
-    enviarAcao({ tipo: 'reagir', opcao, jutsu: j });
+    enviarAcao({ tipo: 'reagir', opcao, jutsu: j, ...(criacaoId ? { criacaoId } : {}) });
+};
+window.arenaApagarChamas = (i) => enviarAcao({ tipo: 'apagar_chamas', ...(i === undefined ? {} : { jutsu: arena.jutsus[i] }) });
+window.arenaDesfazerCriacao = (id) => { if (confirm('Desfazer essas criações? Elas somem do campo.')) enviarAcao({ tipo: 'desfazer_criacao', criacaoId: id }); };
+window.arenaAtacarComCriacao = (id) => {
+    const g = (arena.dados.estado.lutadores[minhaUid()].criacoes || []).find(x => x.id === id);
+    if (!g) return;
+    if (g.qtd > 1) return abrirConfigAtaque({ tipo: 'criacao_atacar', grupo: g });
+    enviarAcao({ tipo: 'criacao_atacar', criacaoId: id, qtd: 1 });
 };
 
 // ---------------- 9. Mesa de cartas e animações ----------------
@@ -3648,7 +3846,7 @@ window.abrirModalCriacao = () => {
             <div class="form-caixa">
                 <h4><i class="fa-solid fa-khanda" aria-hidden="true"></i> Arena</h4>
                 <div class="input-grid-2">
-                    ${selecao('FUNÇÃO', 'cre-funcao', [['ataque', '⚔️ Ataque'], ['defesa', '🛡️ Defesa'], ['esquiva', '💨 Esquiva/Escape'], ['suporte', '✨ Suporte'], ['modo', '🌀 Modo / Doujutsu']])}
+                    ${selecao('FUNÇÃO', 'cre-funcao', [['ataque', '⚔️ Ataque'], ['defesa', '🛡️ Defesa'], ['esquiva', '💨 Esquiva/Escape'], ['suporte', '✨ Suporte'], ['modo', '🌀 Modo / Doujutsu'], ['criacao', '🌳 Criação (raízes, pedras...)'], ['kai', '✋ Contra-Genjutsu (Kai)'], ['espelho', '🪞 Reflexo de Genjutsu']])}
                     ${selecao('CATEGORIA', 'cre-categoria-jutsu', [['ninjutsu', 'Ninjutsu (soma Intelecto)'], ['taijutsu', 'Taijutsu (soma Força)'], ['genjutsu', 'Genjutsu (soma Intelecto)'], ['bukijutsu', 'Bukijutsu (soma Destreza)'], ['kenjutsu', 'Kenjutsu (soma Destreza)'], ['fuuinjutsu', 'Fuuinjutsu (soma Intelecto)'], ['senjutsu', 'Senjutsu (soma Intelecto)']])}
                 </div>
                 <div class="input-grid-3">
@@ -3667,7 +3865,7 @@ window.abrirModalCriacao = () => {
                     ${campo('SANGRAMENTO (TURNOS)', 'cre-sangramento-turnos', 'number', '2')}
                 </div>
                 <div class="input-grid-3">
-                    ${selecao('EFEITO (SUPORTE/MODO)', 'cre-efeito-jutsu', [['', '—'], ['ataque', '+ Ataque'], ['defesa', '+ Defesa'], ['velocidade', '+ Velocidade'], ['reacao', '+ Reação'], ['cura', 'Cura (Vida)'], ['chakra', 'Recupera Chakra'], ['clones', 'Clones']])}
+                    ${selecao('EFEITO (SUPORTE/MODO)', 'cre-efeito-jutsu', [['', '—'], ['ataque', '+ Ataque'], ['defesa', '+ Defesa'], ['velocidade', '+ Velocidade'], ['reacao', '+ Reação'], ['precisao', '+ Precisão (acerto)'], ['cura', 'Cura (Vida)'], ['chakra', 'Recupera Chakra'], ['clones', 'Clones']])}
                     ${campo('DURAÇÃO (TURNOS)', 'cre-duracao', 'number', 'modo: vazio = até desativar')}
                     ${campo('MANUTENÇÃO (CP/TURNO)', 'cre-manutencao', 'number', '0')}
                 </div>
@@ -3677,6 +3875,34 @@ window.abrirModalCriacao = () => {
                     <label><input type="checkbox" id="cre-imp-defender"> Impossível defender fisicamente</label>
                     <label><input type="checkbox" id="cre-sem-arena"> Sem uso na arena (utilitário, ex.: Transformação)</label>
                 </div>
+                <details class="form-avancado">
+                    <summary>⚙️ Mecânicas especiais (requisitos, criações, genjutsu, chamas, aura)</summary>
+                    ${campo('REQUER ATIVO (ids separados por vírgula)', 'cre-requer', 'text', 'Ex: sharingan_3_tomoe, ms_hatsume')}
+                    ${ajuda('Basta UM deles estar ativo. Se o requisito for desligado, este efeito também some.')}
+                    <div class="input-grid-3">
+                        ${selecao('AURA DO MODO', 'cre-aura', [['', 'Automática'], ['sharingan', 'Sharingan'], ['mangekyou', 'Mangekyou'], ['sabio', 'Modo Sábio'], ['byakugan', 'Byakugan'], ['portao', 'Portões'], ['modo', 'Roxa (genérica)']])}
+                        ${selecao('RESISTE A GENJUTSU ATÉ', 'cre-resiste', [['', '—'], ['C', 'Rank C'], ['B', 'Rank B'], ['A', 'Rank A'], ['S', 'Rank S']])}
+                        ${campo('REAÇÃO MÍNIMA (KAI/REFLEXO)', 'cre-reacao-minima', 'number', '5')}
+                    </div>
+                    <div class="input-grid-3">
+                        ${campo('CRIAÇÃO: NOME', 'cre-criacao-nome', 'text', 'Ex: Raízes')}
+                        ${campo('CRIAÇÃO: ÍCONE', 'cre-criacao-icone', 'text', 'Ex: 🌳')}
+                        ${campo('CRIAÇÃO: MÁXIMO', 'cre-criacao-max', 'number', 'Ex: 5')}
+                    </div>
+                    ${campo('CRIAÇÃO: QUANTO CADA UMA ABSORVE', 'cre-criacao-absorve', 'number', '0 = não defende')}
+                    ${ajuda('<strong>Criação</strong>: o custo é por unidade e o Poder é o dano de cada uma. Elas ficam no campo até serem desfeitas ou destruídas.')}
+                    <div class="input-grid-3">
+                        ${selecao('GENJUTSU: EFEITO', 'cre-gen-efeito', [['', '—'], ['paralisia', 'Paralisia (não age nem reage)'], ['sem_reacao', 'Não consegue reagir'], ['confusao', 'Confusão (−Reação/Velocidade)']])}
+                        ${campo('GENJUTSU: TURNOS', 'cre-gen-turnos', 'number', '1')}
+                        ${campo('GENJUTSU: PENALIDADE / DANO POR TURNO', 'cre-gen-extra', 'text', 'Ex: 2 / 300')}
+                    </div>
+                    <div class="input-grid-3">
+                        ${campo('CHAMAS: DANO POR TURNO', 'cre-chamas', 'number', 'Ex: 800 (Amaterasu)')}
+                        ${campo('CHAMAS: MANUTENÇÃO (CP/TURNO)', 'cre-chamas-manutencao', 'number', 'Ex: 200')}
+                        ${campo('CUSTO EM VIDA (% DA VIDA MÁX.)', 'cre-custo-vida', 'number', 'Ex: 5')}
+                    </div>
+                    ${selecao('REFLEXO: DEVOLVE GENJUTSU ATÉ', 'cre-espelho-rank', [['', '—'], ['B', 'Rank B'], ['A', 'Rank A'], ['S', 'Rank S']])}
+                </details>
             </div>
         `;
     }
@@ -3823,6 +4049,17 @@ document.getElementById('form-criacao-geral').onsubmit = async (e) => {
             dados.impossivel_esquivar = !!document.getElementById('cre-imp-esquiva')?.checked;
             dados.impossivel_defender_fisico = !!document.getElementById('cre-imp-defender')?.checked;
             if (document.getElementById('cre-sem-arena')?.checked) dados.uso_arena = false;
+            // Mecânicas especiais (só grava o que foi preenchido)
+            const requer = (getVal('cre-requer') || '').split(',').map(x => x.trim()).filter(Boolean);
+            if (requer.length) dados.requer_ativo = requer;
+            const texto = (id, chave) => { const v = getVal(id); if (v) dados[chave] = v; };
+            texto('cre-aura', 'aura'); texto('cre-resiste', 'resiste_genjutsu'); texto('cre-espelho-rank', 'espelho_rank_max');
+            texto('cre-criacao-nome', 'criacao_nome'); texto('cre-criacao-icone', 'criacao_icone'); texto('cre-gen-efeito', 'genjutsu_efeito');
+            campoNum('cre-reacao-minima', 'reacao_minima'); campoNum('cre-criacao-max', 'criacao_max'); campoNum('cre-criacao-absorve', 'criacao_absorve');
+            campoNum('cre-gen-turnos', 'genjutsu_turnos'); campoNum('cre-chamas', 'chamas_por_turno'); campoNum('cre-chamas-manutencao', 'chamas_manutencao'); campoNum('cre-custo-vida', 'custo_vida_pct');
+            const [pen, danoGen] = (getVal('cre-gen-extra') || '').split('/').map(x => Number(String(x).trim()));
+            if (pen) dados.genjutsu_penalidade = pen;
+            if (danoGen) dados.genjutsu_dano = danoGen;
         }
     }
 

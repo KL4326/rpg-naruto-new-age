@@ -15,7 +15,8 @@ export const ARENA = {
     pontosDerrota: 15,         // rankeada
     xpMinimoNaBarra: 10,       // competitivo valendo XP: precisa sobrar pelo menos isso
     custoMinimoClone: 5,       // chakra mínimo que cada clone gasta ao atacar
-    historicoMax: 400
+    dorQuebraGenjutsu: 0.10,   // levar um golpe de 10% da Vida máxima ou mais quebra o genjutsu
+    historicoMax: 120
 };
 
 // Valores-reserva por Rank, usados quando o jutsu não tem os campos preenchidos
@@ -79,6 +80,9 @@ export function funcaoDoJutsu(j) {
     if (f.includes('esquiva') || f.includes('escape')) return 'esquiva';
     if (f.includes('defesa') || f.includes('defens')) return 'defesa';
     if (f.includes('modo') || f.includes('doujutsu') || f.includes('dojutsu')) return 'modo';
+    if (f.includes('criac')) return 'criacao';
+    if (f.includes('kai') || f.includes('contra')) return 'kai';
+    if (f.includes('espelho') || f.includes('reflet')) return 'espelho';
     if (f.includes('suporte') || f.includes('cura') || f.includes('buff')) return 'suporte';
     if (f.includes('ataque')) return 'ataque';
     // sem função cadastrada: se causa dano, é ataque; senão, suporte
@@ -108,11 +112,11 @@ export function bonusDoJutsu(j) {
     const fonte = [j?.bonus_arena, j?.bonus].find(x => x && typeof x === 'object' && !Array.isArray(x));
     if (fonte) {
         const b = {};
-        for (const k of ['ataque', 'defesa', 'velocidade', 'reacao']) if (num(fonte[k])) b[k] = num(fonte[k]);
+        for (const k of BONUS_CHAVES) if (num(fonte[k])) b[k] = num(fonte[k]);
         return b;
     }
     const efeito = String(j?.efeito ?? '').toLowerCase();
-    if (['ataque', 'defesa', 'velocidade', 'reacao'].includes(efeito)) return { [efeito]: poderDoJutsu(j) };
+    if (BONUS_CHAVES.includes(efeito)) return { [efeito]: poderDoJutsu(j) };
     return {};
 }
 
@@ -121,6 +125,25 @@ export function bonusDoJutsu(j) {
 export function custosDoJutsu(j) {
     const valor = (arena, rp) => Math.abs(arena !== undefined && arena !== null && arena !== '' ? num(arena) : num(rp));
     return { chakra: valor(j?.custo_chakra, j?.chakra), stamina: valor(j?.custo_stamina, j?.stamina) };
+}
+
+// Requisitos: ids de jutsus (modos) que precisam estar ATIVOS. Basta um deles.
+export function requisitosDoJutsu(j) {
+    const r = j?.requer_ativo;
+    if (!r) return [];
+    return (Array.isArray(r) ? r : String(r).split(',')).map(x => String(x).trim()).filter(Boolean);
+}
+export function requisitoAtendido(lutador, j) {
+    const r = requisitosDoJutsu(j);
+    return !r.length || (lutador.efeitos || []).some(e => r.includes(e.id));
+}
+
+// Nível do Rank para comparar (E=0 ... S=5, SS=6, SSS=7)
+const NIVEIS = ['E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS'];
+export function nivelDoRank(r) {
+    const t = String(r ?? '').toUpperCase().replace(/RANK[\s-]*/g, '').trim();
+    const i = NIVEIS.indexOf(t);
+    return i >= 0 ? i : NIVEIS.indexOf(t.charAt(0)) >= 0 ? NIVEIS.indexOf(t.charAt(0)) : 1;
 }
 
 // uso_arena: false = jutsu/item utilitário, que não faz nada numa luta (ex.: Transformação)
@@ -133,8 +156,9 @@ export function outro(estado, uid) {
     return estado.ordem[0] === uid ? estado.ordem[1] : estado.ordem[0];
 }
 
+export const BONUS_CHAVES = ['ataque', 'defesa', 'velocidade', 'reacao', 'precisao'];
 export function bonusAtivos(lutador) {
-    const total = { ataque: 0, defesa: 0, velocidade: 0, reacao: 0 };
+    const total = { ataque: 0, defesa: 0, velocidade: 0, reacao: 0, precisao: 0 };
     for (const e of lutador.efeitos || []) {
         for (const k of Object.keys(total)) total[k] += num(e.bonus?.[k]);
     }
@@ -160,7 +184,8 @@ export function lutadorDaFicha(uid, ficha) {
             reacao: limitar(num(ficha.reacao, 1) || 1, 1, 12)            // Reação de 1 a 12
         },
         efeitos: [],
-        clones: { qtd: 0, reserva: 0, solidos: true }
+        clones: { qtd: 0, reserva: 0, solidos: true },
+        criacoes: []
     };
 }
 
@@ -219,6 +244,11 @@ function exigirVez(estado, uid, fase = 'acao') {
     if (fase === 'reacao' && (estado.fase !== 'reacao' || outro(estado, estado.vez) !== uid)) throw erro('Não é hora de você reagir.');
 }
 
+function exigirLivreDoGenjutsu(l) {
+    const g = genjutsuAtivo(l);
+    if (g && g.efeitoGenjutsu === 'paralisia') throw erro(`Você está preso no genjutsu [${g.nome}]: use o Contra-Genjutsu (Kai) ou passe o turno.`);
+}
+
 function pagar(lutador, custos, eventos, motivo) {
     if (lutador.stamina < custos.stamina) throw erro(`Stamina insuficiente para ${motivo}.`);
     if (lutador.chakra < custos.chakra) throw erro(`Chakra insuficiente para ${motivo}.`);
@@ -270,21 +300,50 @@ function iniciarTurno(estado, uid, agora, eventos) {
     // Efeitos ativos: manutenção de modos, sangramentos, duração
     const ficam = [];
     for (const e of l.efeitos || []) {
+        // Chamas mantidas pelo usuário: sem chakra para manter, elas apagam (não matam o usuário)
+        if (e.tipo === 'manter_chamas') {
+            if (l.chakra <= e.custoPorTurno) {
+                eventos.push({ tipo: 'efeito', texto: `🔥 ${l.nome} não tem chakra para manter [${e.nome}]: as chamas apagaram.` });
+                apagarChamasDe(estado, uid);
+                continue;
+            }
+            l.chakra -= e.custoPorTurno;
+            eventos.push({ tipo: 'efeito', texto: `🔥 ${l.nome} mantém as chamas de [${e.nome}] (−${e.custoPorTurno} chakra).` });
+            ficam.push(e);
+            continue;
+        }
         if (e.custoPorTurno) {
             l.chakra -= e.custoPorTurno;
             eventos.push({ tipo: 'efeito', texto: `🌀 ${l.nome} mantém [${e.nome}] (−${e.custoPorTurno} chakra).` });
         }
         if (e.danoPorTurno) {
             l.vida -= e.danoPorTurno;
-            eventos.push({ tipo: 'efeito', texto: `🩸 ${l.nome} sofre ${e.danoPorTurno} de dano por [${e.nome}].` });
+            const icone = e.tipo === 'chamas' ? '🔥' : (e.tipo === 'genjutsu' ? '👁️' : '🩸');
+            eventos.push({ tipo: 'efeito', texto: `${icone} ${l.nome} sofre ${e.danoPorTurno} de dano por [${e.nome}].` });
         }
         if (e.turnos !== null && e.turnos !== undefined) {
             e.turnos -= 1;
-            if (e.turnos <= 0) { eventos.push({ tipo: 'efeito', texto: `⌛ O efeito [${e.nome}] de ${l.nome} terminou.` }); continue; }
+            if (e.turnos <= 0) {
+                eventos.push({ tipo: 'efeito', texto: e.tipo === 'genjutsu' ? `👁️ ${l.nome} se livrou do genjutsu [${e.nome}].` : `⌛ O efeito [${e.nome}] de ${l.nome} terminou.` });
+                continue;
+            }
         }
         ficam.push(e);
     }
     l.efeitos = ficam;
+    limparDependentes(estado, uid, eventos);
+
+    // Criações com manutenção (ex.: raízes que gastam chakra para continuar no campo)
+    const criacoes = [];
+    for (const c of l.criacoes || []) {
+        if (c.custoPorTurno) {
+            if (l.chakra <= c.custoPorTurno) { eventos.push({ tipo: 'efeito', texto: `💨 ${l.nome} não tem chakra para manter ${c.nome}: elas se desfizeram.` }); continue; }
+            l.chakra -= c.custoPorTurno;
+            eventos.push({ tipo: 'efeito', texto: `${c.icone} ${l.nome} mantém ${c.qtd} ${c.nome} (−${c.custoPorTurno} chakra).` });
+        }
+        criacoes.push(c);
+    }
+    l.criacoes = criacoes;
     eventos.push({ tipo: 'turno', texto: `— Turno ${estado.turno}: vez de ${l.nome} —` });
     return verificarFim(estado, eventos);
 }
@@ -316,7 +375,16 @@ function acaoAtaque(estado, uid, jutsu, opcoes, eventos) {
     const clones = limitar(Math.floor(num(opcoes.clones, 0)), 0, l.clones?.qtd || 0);
     const p = previaAtaque(l, jutsu, cargas, clones);
     if (clones > 0 && (l.clones.reserva || 0) < p.custoClones) throw erro('Os clones não têm chakra suficiente para esse ataque.');
+    // Chamas que não se apagam (ex.: Amaterasu): só uma ativa por vez e custam Vida ao usuário
+    const chamas = num(jutsu.chamas_por_turno) > 0 ? { dano: num(jutsu.chamas_por_turno), manutencao: Math.abs(num(jutsu.chamas_manutencao)), nome: jutsu.nome } : null;
+    if (chamas && (l.efeitos || []).some(e => e.tipo === 'manter_chamas')) throw erro('Você já mantém chamas ativas. Apague-as antes de usar de novo.');
+    const custoVida = Math.round(l.maxVida * Math.abs(num(jutsu.custo_vida_pct)) / 100);
+    if (custoVida && l.vida <= custoVida) throw erro(`Vida insuficiente para ${jutsu.nome}.`);
     pagar(l, { chakra: p.chakra, stamina: p.stamina }, eventos, jutsu.nome);
+    if (custoVida) {
+        l.vida -= custoVida;
+        eventos.push({ tipo: 'efeito', texto: `🩸 Usar [${jutsu.nome}] custou ${custoVida} de Vida a ${l.nome}.` });
+    }
     if (clones > 0) {
         l.clones.reserva -= p.custoClones;
         if (l.clones.reserva < ARENA.custoMinimoClone) {
@@ -325,22 +393,106 @@ function acaoAtaque(estado, uid, jutsu, opcoes, eventos) {
         }
     }
     const nec = necessidadesDoJutsu(jutsu);
-    estado.ataquePendente = {
-        de: uid,
+    const ehGenjutsu = categoriaDoJutsu(jutsu) === 'genjutsu';
+    prepararAtaque(estado, uid, {
         carta: cartaDoJutsu(jutsu, { funcao: 'ataque' }),
         nome: jutsu.nome + (cargas > 1 ? ` (x${cargas})` : '') + (clones > 0 ? ` + ${clones} clone${clones > 1 ? 's' : ''}` : ''),
         categoria: p.categoria,
         dano: p.dano,
-        reacaoNecessaria: nec.reacao,
-        velocidadeNecessaria: nec.velocidade,
+        reacao: nec.reacao,
+        velocidade: nec.velocidade,
         impossivelEsquivar: !!jutsu.impossivel_esquivar,
         impossivelDefenderFisico: !!jutsu.impossivel_defender_fisico,
-        sangramento: num(jutsu.sangramento) > 0 ? { valor: num(jutsu.sangramento), turnos: Math.max(1, num(jutsu.sangramento_turnos, 2)) } : null
+        sangramento: num(jutsu.sangramento) > 0 ? { valor: num(jutsu.sangramento), turnos: Math.max(1, num(jutsu.sangramento_turnos, 2)) } : null,
+        chamas,
+        genjutsu: ehGenjutsu ? {
+            nome: jutsu.nome,
+            efeito: ['paralisia', 'sem_reacao', 'confusao'].includes(jutsu.genjutsu_efeito) ? jutsu.genjutsu_efeito : 'paralisia',
+            turnos: Math.max(1, num(jutsu.genjutsu_turnos, 1)),
+            penalidade: Math.max(1, num(jutsu.genjutsu_penalidade, 2)),
+            danoPorTurno: num(jutsu.genjutsu_dano),
+            nivel: nivelDoRank(jutsu.rank),
+            custo: custosDoJutsu(jutsu).chakra
+        } : null
+    });
+    const custoTxt = [p.chakra ? `−${p.chakra} CP` : '', p.stamina ? `−${p.stamina} SP` : ''].filter(Boolean).join(' | ');
+    anunciarAtaque(estado, uid, custoTxt, eventos);
+}
+
+// Monta o ataque que fica esperando a reação do adversário (a Precisão do atacante dificulta perceber/escapar)
+function prepararAtaque(estado, uid, a) {
+    const precisao = bonusAtivos(estado.lutadores[uid]).precisao;
+    estado.ataquePendente = {
+        de: uid,
+        carta: a.carta,
+        nome: a.nome,
+        categoria: a.categoria,
+        dano: a.dano,
+        reacaoNecessaria: limitar(a.reacao + precisao, 1, 12),
+        velocidadeNecessaria: limitar(a.velocidade + precisao, 1, 12),
+        precisao,
+        impossivelEsquivar: !!a.impossivelEsquivar,
+        impossivelDefenderFisico: !!a.impossivelDefenderFisico,
+        sangramento: a.sangramento || null,
+        chamas: a.chamas || null,
+        genjutsu: a.genjutsu || null
     };
     estado.ataquesRestantes -= 1;
-    const custoTxt = [p.chakra ? `−${p.chakra} CP` : '', p.stamina ? `−${p.stamina} SP` : ''].filter(Boolean).join(' | ');
-    eventos.push({ tipo: 'anim', anim: 'usar', de: uid, carta: { ...estado.ataquePendente.carta, nome: estado.ataquePendente.nome, resumo: `💥 ${p.dano}` } });
-    eventos.push({ tipo: 'ataque', de: uid, texto: `⚔️ ${l.nome} prepara ${estado.ataquePendente.nome}: ${p.dano} de dano potencial${custoTxt ? ` (${custoTxt})` : ''}.` });
+}
+function anunciarAtaque(estado, uid, custoTxt, eventos) {
+    const atk = estado.ataquePendente, l = estado.lutadores[uid];
+    eventos.push({ tipo: 'anim', anim: 'usar', de: uid, carta: { ...atk.carta, nome: atk.nome, resumo: atk.dano ? `💥 ${atk.dano}` : '👁️ Genjutsu' } });
+    const extra = atk.precisao ? ` · Precisão +${atk.precisao}` : '';
+    eventos.push({ tipo: 'ataque', de: uid, texto: `⚔️ ${l.nome} prepara ${atk.nome}: ${atk.dano} de dano potencial${extra}${custoTxt ? ` (${custoTxt})` : ''}.` });
+}
+
+// ---------------- criações (raízes, pedras, braços...) ----------------
+// Ficam no campo até o dono desfazer ou serem destruídas. Podem atacar (sem pagar de novo) ou segurar golpes.
+function maxCriacao(j) { return Math.max(1, num(j.criacao_max) || num(j.multiplicador_maximo) || 1); }
+function acaoCriar(estado, uid, jutsu, opcoes, eventos) {
+    const l = estado.lutadores[uid];
+    const id = jutsu.id || jutsu.nome;
+    l.criacoes = l.criacoes || [];
+    const existente = l.criacoes.find(c => c.id === id);
+    const max = maxCriacao(jutsu);
+    const livre = max - (existente?.qtd || 0);
+    if (livre <= 0) throw erro(`Você já tem o máximo de ${max} ${jutsu.criacao_nome || 'criações'} no campo.`);
+    const qtd = limitar(Math.floor(num(opcoes.cargas, 1)) || 1, 1, livre);
+    const c1 = custosDoJutsu(jutsu);
+    const custo = { chakra: c1.chakra * qtd, stamina: c1.stamina * qtd };
+    pagar(l, custo, eventos, jutsu.nome);
+    const nec = necessidadesDoJutsu(jutsu);
+    const grupo = existente || {
+        id, jutsuNome: jutsu.nome, nome: jutsu.criacao_nome || 'Criações', icone: jutsu.criacao_icone || '🌀',
+        qtd: 0, poder: poderDoJutsu(jutsu), absorve: Math.max(0, num(jutsu.criacao_absorve)),
+        categoria: categoriaDoJutsu(jutsu), reacao: nec.reacao, velocidade: nec.velocidade,
+        impossivelEsquivar: !!jutsu.impossivel_esquivar, impossivelDefenderFisico: !!jutsu.impossivel_defender_fisico,
+        sangramento: num(jutsu.sangramento) > 0 ? { valor: num(jutsu.sangramento), turnos: Math.max(1, num(jutsu.sangramento_turnos, 2)) } : null,
+        custoPorTurno: Math.abs(num(jutsu.custo_por_turno)),
+        img: imagemCurta(jutsu.imagem), jutsuId: jutsu.id || null,
+        requer: requisitosDoJutsu(jutsu)
+    };
+    grupo.qtd += qtd;
+    if (!existente) l.criacoes.push(grupo);
+    const custoTxt = [custo.chakra ? `−${custo.chakra} CP` : '', custo.stamina ? `−${custo.stamina} SP` : ''].filter(Boolean).join(' | ');
+    eventos.push({ tipo: 'anim', anim: 'usar', de: uid, carta: cartaDoJutsu(jutsu, { funcao: 'suporte', resumo: `${grupo.icone} +${qtd} ${grupo.nome}` }) });
+    eventos.push({ tipo: 'suporte', de: uid, texto: `${grupo.icone} ${l.nome} usou [${jutsu.nome}] e criou ${qtd} ${grupo.nome} (agora ${grupo.qtd} no campo)${custoTxt ? ` (${custoTxt})` : ''}.` });
+}
+function acaoAtacarComCriacao(estado, uid, acao, eventos) {
+    if (estado.ataquesRestantes <= 0) throw erro('Você já atacou neste turno (máximo 1 ataque por turno).');
+    const l = estado.lutadores[uid];
+    const g = (l.criacoes || []).find(c => c.id === acao.criacaoId);
+    if (!g) throw erro('Essa criação não está no campo.');
+    if (!(g.poder > 0)) throw erro(`${g.nome} não causam dano.`);
+    const qtd = limitar(Math.floor(num(acao.qtd, g.qtd)) || g.qtd, 1, g.qtd);
+    const dano = Math.max(0, g.poder * qtd + bonusAtivos(l).ataque);
+    prepararAtaque(estado, uid, {
+        carta: { jutsuId: g.jutsuId, nome: g.jutsuNome, img: g.img, funcao: 'ataque', icone: g.icone },
+        nome: `${qtd} ${g.nome} (${g.jutsuNome})`,
+        categoria: g.categoria, dano, reacao: g.reacao, velocidade: g.velocidade,
+        impossivelEsquivar: g.impossivelEsquivar, impossivelDefenderFisico: g.impossivelDefenderFisico, sangramento: g.sangramento
+    });
+    anunciarAtaque(estado, uid, '', eventos);
 }
 
 function acaoSuporte(estado, uid, jutsu, eventos) {
@@ -376,11 +528,17 @@ function acaoSuporte(estado, uid, jutsu, eventos) {
     if (Object.keys(bonus).length || manutencao || funcao === 'modo') {
         const duracao = num(jutsu.duracao, 0);
         l.efeitos = l.efeitos || [];
-        l.efeitos.push({
+        const efeitoNovo = {
             id, nome: jutsu.nome, tipo: funcao === 'modo' ? 'modo' : 'buff', bonus,
             turnos: duracao > 0 ? duracao : (funcao === 'modo' ? null : 2),
             custoPorTurno: manutencao || 0
-        });
+        };
+        const requer = requisitosDoJutsu(jutsu);
+        if (requer.length) efeitoNovo.requer = requer;           // some junto se o requisito for desligado
+        if (jutsu.aura) efeitoNovo.aura = String(jutsu.aura);     // visual do modo na carta do personagem
+        if (jutsu.resiste_genjutsu) efeitoNovo.resisteGenjutsu = nivelDoRank(jutsu.resiste_genjutsu);
+        l.efeitos.push(efeitoNovo);
+        if (efeitoNovo.resisteGenjutsu !== undefined) partes.push(`resiste a genjutsu até Rank ${NIVEIS[efeitoNovo.resisteGenjutsu]}`);
         const b = Object.entries(bonus).map(([k, v]) => `+${v} ${nomeBonus(k)}`);
         partes.push(...b);
         if (manutencao) partes.push(`manutenção ${manutencao} CP/turno`);
@@ -391,17 +549,51 @@ function acaoSuporte(estado, uid, jutsu, eventos) {
 }
 
 export function nomeBonus(k) {
-    return { ataque: 'Ataque', defesa: 'Defesa', velocidade: 'Velocidade', reacao: 'Reação' }[k] || k;
+    return { ataque: 'Ataque', defesa: 'Defesa', velocidade: 'Velocidade', reacao: 'Reação', precisao: 'Precisão' }[k] || k;
+}
+
+// Tira efeitos cujo requisito não está mais ativo (ex.: desligou o Mangekyou → some o Campo de Execução)
+function limparDependentes(estado, uid, eventos) {
+    const l = estado.lutadores[uid];
+    let mudou = true;
+    while (mudou) {
+        mudou = false;
+        for (const e of l.efeitos || []) {
+            if (e.requer?.length && !(l.efeitos || []).some(x => e.requer.includes(x.id))) {
+                l.efeitos = l.efeitos.filter(x => x !== e);
+                eventos.push({ tipo: 'efeito', texto: `⏹️ [${e.nome}] de ${l.nome} terminou junto com o seu requisito.` });
+                mudou = true;
+                break;
+            }
+        }
+    }
+    const antes = (l.criacoes || []).length;
+    l.criacoes = (l.criacoes || []).filter(c => !c.requer?.length || (l.efeitos || []).some(x => c.requer.includes(x.id)));
+    if (l.criacoes.length < antes) eventos.push({ tipo: 'efeito', texto: `💨 Criações de ${l.nome} se desfizeram junto com o seu requisito.` });
+}
+
+// Apaga as chamas mantidas por "dono" (no alvo e o custo de manutenção dele)
+function apagarChamasDe(estado, dono) {
+    for (const uid of estado.ordem) {
+        const l = estado.lutadores[uid];
+        l.efeitos = (l.efeitos || []).filter(e => !(e.tipo === 'chamas' && e.de === dono) && !(uid === dono && e.tipo === 'manter_chamas'));
+    }
+}
+
+export function genjutsuAtivo(lutador) {
+    return (lutador.efeitos || []).find(e => e.tipo === 'genjutsu') || null;
 }
 
 // ---------------- reação ao ataque ----------------
 export function avaliarReacao(defensor, ataque) {
     const b = bonusAtivos(defensor);
     const reacao = defensor.atributos.reacao + b.reacao;
-    const percebe = reacao >= ataque.reacaoNecessaria;
+    const gen = genjutsuAtivo(defensor);
+    const presoNoGenjutsu = !!gen && (gen.efeitoGenjutsu === 'paralisia' || gen.efeitoGenjutsu === 'sem_reacao');
+    const percebe = !presoNoGenjutsu && reacao >= ataque.reacaoNecessaria;
     const fisico = ['taijutsu', 'bukijutsu', 'kenjutsu', 'ferramenta'].includes(ataque.categoria);
     return {
-        reacao, percebe,
+        reacao, percebe, presoNoGenjutsu,
         velocidade: defensor.atributos.velocidade + b.velocidade,
         podeEsquivar: percebe && !ataque.impossivelEsquivar,
         podeDefenderFisico: percebe && fisico && !ataque.impossivelDefenderFisico,
@@ -418,7 +610,7 @@ export function resultadoEsquiva(velocidade, necessaria) {
     return { fator: 1, texto: 'não consegue escapar' };
 }
 
-function aplicarReacao(estado, uid, opcao, jutsu, eventos) {
+function aplicarReacao(estado, uid, opcao, jutsu, eventos, criacaoId) {
     const atk = estado.ataquePendente;
     const d = estado.lutadores[uid];
     const a = estado.lutadores[atk.de];
@@ -426,11 +618,16 @@ function aplicarReacao(estado, uid, opcao, jutsu, eventos) {
     let dano = atk.dano;
     let texto = '';
     let resultado = 'acerto';
+    let refletido = false;
+    let cartaReacao = null;
+    let apagouChamas = false;
+    if (jutsu && !requisitoAtendido(d, jutsu)) throw erro(`[${jutsu.nome}] exige outro jutsu ativo.`);
+    if (jutsu && !usoNaArena(jutsu)) throw erro(`[${jutsu.nome}] não tem uso na arena.`);
 
     if (opcao !== 'receber' && !av.percebe) opcao = 'receber';
     if (opcao === 'receber' && !av.percebe) resultado = 'naopercebeu';
     if (opcao === 'receber') {
-        texto = av.percebe ? `${d.nome} recebeu o golpe em cheio.` : `${d.nome} não percebeu o ataque a tempo (Reação ${av.reacao} < ${atk.reacaoNecessaria})!`;
+        texto = av.percebe ? `${d.nome} recebeu o golpe em cheio.` : (av.presoNoGenjutsu ? `${d.nome} está preso num genjutsu e não consegue reagir!` : `${d.nome} não percebeu o ataque a tempo (Reação ${av.reacao} < ${atk.reacaoNecessaria})!`);
     } else if (opcao === 'esquivar') {
         if (!av.podeEsquivar) throw erro('Não é possível esquivar deste ataque.');
         let vel = av.velocidade;
@@ -450,6 +647,7 @@ function aplicarReacao(estado, uid, opcao, jutsu, eventos) {
             pagar(d, custosDoJutsu(jutsu), eventos, jutsu.nome);
             absorcao = av.defesaBase + poderDoJutsu(jutsu);
             texto = `🛡️ ${d.nome} se defendeu com [${jutsu.nome}] (absorve ${absorcao}).`;
+            if (atk.chamas && nivelDoRank(jutsu.rank) >= nivelDoRank('S')) apagouChamas = true;
         } else {
             if (!av.podeDefenderFisico) throw erro('Defesa física não funciona contra este ataque.');
             absorcao = av.defesaBase;
@@ -457,12 +655,43 @@ function aplicarReacao(estado, uid, opcao, jutsu, eventos) {
         }
         dano = Math.max(0, dano - absorcao);
         resultado = dano === 0 ? 'defesa' : 'defesa_parcial';
+    } else if (opcao === 'criacao') {
+        const g = (d.criacoes || []).find(c => c.id === criacaoId);
+        if (!g || !(g.absorve > 0)) throw erro('Essa criação não pode segurar golpes.');
+        const usadas = Math.min(g.qtd, Math.max(1, Math.ceil(dano / g.absorve)));
+        const absorcao = usadas * g.absorve;
+        g.qtd -= usadas;
+        cartaReacao = { nome: `${g.nome} (${usadas})`, funcao: 'defesa', icone: g.icone, img: g.img || null, jutsuId: g.jutsuId || null };
+        if (g.qtd <= 0) d.criacoes = d.criacoes.filter(c => c !== g);
+        dano = Math.max(0, dano - absorcao);
+        resultado = dano === 0 ? 'defesa' : 'defesa_parcial';
+        texto = `${g.icone} ${d.nome} bloqueou com ${usadas} ${g.nome} (absorvem ${absorcao}); ${usadas > 1 ? 'elas se quebraram' : 'uma se quebrou'}${g.qtd > 0 ? `, restam ${g.qtd}` : ''}.`;
+    } else if (opcao === 'espelho') {
+        if (!atk.genjutsu) throw erro('O Retorno do Espelho só funciona contra genjutsu.');
+        if (!jutsu || funcaoDoJutsu(jutsu) !== 'espelho') throw erro('Escolha a técnica de reflexo.');
+        const rankMax = nivelDoRank(jutsu.espelho_rank_max || 'A');
+        if (atk.genjutsu.nivel > rankMax) throw erro(`[${jutsu.nome}] só devolve genjutsu até Rank ${NIVEIS[rankMax]}.`);
+        const temDoujutsu = (d.efeitos || []).some(e => e.tipo === 'modo');
+        const minimo = num(jutsu.reacao_minima, 5);
+        if (!temDoujutsu && av.reacao < minimo) throw erro(`Precisa de um doujutsu ativo ou Reação ${minimo}.`);
+        pagar(d, { chakra: atk.genjutsu.custo + custosDoJutsu(jutsu).chakra, stamina: custosDoJutsu(jutsu).stamina }, eventos, jutsu.nome);
+        refletido = true;
+        resultado = 'esquiva';
+        texto = `🪞 ${d.nome} usou [${jutsu.nome}] e devolveu a ilusão para ${a.nome}!`;
     } else {
         throw erro('Reação desconhecida.');
     }
 
     // Clone sólido absorve o golpe no lugar do dono
-    if (dano > 0 && d.clones?.qtd > 0 && d.clones.solidos) {
+    if (refletido) {
+        eventos.push({ tipo: 'anim', anim: 'impacto', de: atk.de, alvo: uid, resultado, dano: 0, carta: { ...(atk.carta || { nome: atk.nome, funcao: 'ataque' }), nome: atk.nome }, defesa: cartaDoJutsu(jutsu) });
+        eventos.push({ tipo: 'reacao', de: uid, texto });
+        if (atk.dano > 0) { a.vida -= atk.dano; eventos.push({ tipo: 'dano', de: uid, texto: `💥 ${a.nome} sofreu ${atk.dano} da própria ilusão.` }); }
+        prenderNoGenjutsu(a, atk.genjutsu, uid, eventos);
+        estado.ataquePendente = null;
+        return;
+    }
+    if (dano > 0 && d.clones?.qtd > 0 && d.clones.solidos && !atk.genjutsu) {
         d.clones.qtd -= 1;
         if (d.clones.qtd <= 0) d.clones = { qtd: 0, reserva: 0, solidos: true };
         eventos.push({ tipo: 'reacao', de: uid, texto });
@@ -474,10 +703,28 @@ function aplicarReacao(estado, uid, opcao, jutsu, eventos) {
     eventos.push({
         tipo: 'anim', anim: 'impacto', de: atk.de, alvo: uid, resultado, dano,
         carta: { ...(atk.carta || { nome: atk.nome, funcao: 'ataque' }), nome: atk.nome },
-        defesa: jutsu ? cartaDoJutsu(jutsu) : null
+        defesa: cartaReacao || (jutsu ? cartaDoJutsu(jutsu) : null)
     });
 
     if (texto) eventos.push({ tipo: 'reacao', de: uid, texto });
+    const pegou = ['acerto', 'naopercebeu', 'esquiva_falhou', 'defesa_parcial'].includes(resultado);
+    // Dor forte quebra um genjutsu em que a pessoa já estava presa
+    const genAntigo = genjutsuAtivo(d);
+    if (genAntigo && dano >= d.maxVida * ARENA.dorQuebraGenjutsu) {
+        d.efeitos = d.efeitos.filter(e => e !== genAntigo);
+        eventos.push({ tipo: 'efeito', texto: `💢 A dor do golpe quebrou o genjutsu [${genAntigo.nome}] de ${d.nome}!` });
+    }
+    if (atk.genjutsu && pegou) prenderNoGenjutsu(d, atk.genjutsu, atk.de, eventos);
+    if (atk.chamas) {
+        if (apagouChamas) eventos.push({ tipo: 'efeito', texto: `🛡️ A defesa de ${d.nome} apagou as chamas de [${atk.chamas.nome}].` });
+        else if (pegou && dano > 0) {
+            d.efeitos = d.efeitos || [];
+            d.efeitos.push({ id: 'chamas-' + atk.de, nome: atk.chamas.nome, tipo: 'chamas', bonus: {}, turnos: null, danoPorTurno: atk.chamas.dano, de: atk.de });
+            a.efeitos = a.efeitos || [];
+            a.efeitos.push({ id: 'manter-chamas', nome: atk.chamas.nome, tipo: 'manter_chamas', bonus: {}, turnos: null, custoPorTurno: atk.chamas.manutencao, alvo: uid });
+            eventos.push({ tipo: 'efeito', texto: `🔥 ${d.nome} está em chamas: ${atk.chamas.dano} por turno até ${a.nome} apagar ou ficar sem chakra para manter.` });
+        }
+    }
     if (dano > 0) {
         d.vida -= dano;
         eventos.push({ tipo: 'dano', de: atk.de, texto: `💥 ${d.nome} sofreu ${dano} de dano de ${a.nome}.` });
@@ -490,6 +737,20 @@ function aplicarReacao(estado, uid, opcao, jutsu, eventos) {
         eventos.push({ tipo: 'dano', de: atk.de, texto: `✅ ${d.nome} não sofreu dano.` });
     }
     estado.ataquePendente = null;
+}
+
+// Prende o lutador num genjutsu (um por vez), a menos que um doujutsu ativo resista
+function prenderNoGenjutsu(l, g, de, eventos) {
+    const resistencia = Math.max(-1, ...(l.efeitos || []).map(e => e.resisteGenjutsu ?? -1));
+    if (g.nivel <= resistencia) {
+        eventos.push({ tipo: 'efeito', texto: `👁️ O doujutsu de ${l.nome} resistiu ao genjutsu [${g.nome}].` });
+        return;
+    }
+    const bonus = g.efeito === 'confusao' ? { reacao: -g.penalidade, velocidade: -g.penalidade } : {};
+    l.efeitos = (l.efeitos || []).filter(e => e.tipo !== 'genjutsu');
+    l.efeitos.push({ id: 'genjutsu', nome: g.nome, tipo: 'genjutsu', efeitoGenjutsu: g.efeito, bonus, turnos: g.turnos + 1, danoPorTurno: g.danoPorTurno || 0, custoKai: g.custo, nivel: g.nivel, de });
+    const como = { paralisia: 'não pode agir nem reagir', sem_reacao: 'não consegue reagir a ataques', confusao: `perde ${g.penalidade} de Reação e Velocidade` }[g.efeito];
+    eventos.push({ tipo: 'efeito', texto: `👁️ ${l.nome} caiu no genjutsu [${g.nome}]: ${como} por ${g.turnos} turno${g.turnos > 1 ? 's' : ''}. Só o Contra-Genjutsu (Kai) ou uma dor forte liberta.` });
 }
 
 // ---------------- ação principal: aplica qualquer jogada ----------------
@@ -535,9 +796,14 @@ export function aplicarAcao(estadoAtual, uid, acao, agora = Date.now()) {
         if (estado.acoesRestantes <= 0) throw erro('Você já usou suas 3 ações neste turno. Passe o turno.');
         const j = t === 'item' ? { ...acao.item, tipoItem: acao.item.tipoItem } : acao.jutsu;
         if (!usoNaArena(j)) throw erro(`[${j?.nome || 'Isso'}] não tem uso na arena.`);
-        const ehAtaque = t === 'item' ? acao.item.tipoItem === 'ferramenta' && poderDoJutsu(j) > 0 : funcaoDoJutsu(j) === 'ataque';
-        if (!ehAtaque && t === 'jutsu' && ['defesa', 'esquiva'].includes(funcaoDoJutsu(j))) throw erro('Jutsus de defesa e esquiva são usados na hora de reagir a um ataque.');
+        exigirLivreDoGenjutsu(estado.lutadores[uid]);
+        if (!requisitoAtendido(estado.lutadores[uid], j)) throw erro(`[${j.nome}] exige outro jutsu ativo.`);
+        const funcao = funcaoDoJutsu(j);
+        const ehAtaque = t === 'item' ? acao.item.tipoItem === 'ferramenta' && poderDoJutsu(j) > 0 : funcao === 'ataque';
+        if (!ehAtaque && t === 'jutsu' && ['defesa', 'esquiva', 'espelho'].includes(funcao)) throw erro('Jutsus de defesa, esquiva e reflexo são usados na hora de reagir a um ataque.');
+        if (!ehAtaque && t === 'jutsu' && funcao === 'kai') throw erro('O Contra-Genjutsu só é usado quando você está preso num genjutsu.');
         if (ehAtaque) acaoAtaque(estado, uid, j, acao, eventos);
+        else if (t === 'jutsu' && funcao === 'criacao') acaoCriar(estado, uid, j, acao, eventos);
         else acaoSuporte(estado, uid, j, eventos);
         estado.acoesRestantes -= 1;
         return { estado: verificarFim(estado, eventos), eventos };
@@ -550,7 +816,71 @@ export function aplicarAcao(estadoAtual, uid, acao, agora = Date.now()) {
         if (!e) throw erro('Esse modo não está ativo.');
         l.efeitos = l.efeitos.filter(x => x !== e);
         eventos.push({ tipo: 'efeito', texto: `⏹️ ${l.nome} desativou [${e.nome}].` });
+        limparDependentes(estado, uid, eventos);
         return { estado, eventos };
+    }
+
+    if (t === 'criacao_atacar') {
+        exigirVez(estado, uid, 'acao');
+        if (estado.acoesRestantes <= 0) throw erro('Você já usou suas 3 ações neste turno. Passe o turno.');
+        exigirLivreDoGenjutsu(estado.lutadores[uid]);
+        acaoAtacarComCriacao(estado, uid, acao, eventos);
+        estado.acoesRestantes -= 1;
+        return { estado, eventos };
+    }
+
+    if (t === 'desfazer_criacao') {
+        exigirVez(estado, uid, 'acao');
+        const l = estado.lutadores[uid];
+        const g = (l.criacoes || []).find(c => c.id === acao.criacaoId);
+        if (!g) throw erro('Essa criação não está no campo.');
+        l.criacoes = l.criacoes.filter(c => c !== g);
+        eventos.push({ tipo: 'efeito', texto: `💨 ${l.nome} desfez ${g.qtd} ${g.nome}.` });
+        return { estado, eventos };
+    }
+
+    // Contra-Genjutsu (Kai): única ação de quem está preso. Custa o chakra do genjutsu + o do Kai.
+    if (t === 'kai') {
+        exigirVez(estado, uid, 'acao');
+        if (estado.acoesRestantes <= 0) throw erro('Você já usou suas 3 ações neste turno. Passe o turno.');
+        const l = estado.lutadores[uid];
+        const g = genjutsuAtivo(l);
+        if (!g) throw erro('Você não está preso em nenhum genjutsu.');
+        const j = acao.jutsu;
+        if (!j || funcaoDoJutsu(j) !== 'kai') throw erro('Escolha o Contra-Genjutsu.');
+        const minimo = num(j.reacao_minima, 5);
+        const reacao = l.atributos.reacao + bonusAtivos(l).reacao;
+        if (reacao < minimo) throw erro(`O Kai exige Reação ${minimo} (você tem ${reacao}).`);
+        const c = custosDoJutsu(j);
+        pagar(l, { chakra: num(g.custoKai) + c.chakra, stamina: c.stamina }, eventos, j.nome);
+        l.efeitos = l.efeitos.filter(e => e !== g);
+        estado.acoesRestantes -= 1;
+        eventos.push({ tipo: 'anim', anim: 'usar', de: uid, carta: cartaDoJutsu(j, { funcao: 'suporte', resumo: '✋ Kai!' }) });
+        eventos.push({ tipo: 'suporte', de: uid, texto: `✋ ${l.nome} usou [${j.nome}] e quebrou o genjutsu [${g.nome}] (−${num(g.custoKai) + c.chakra} CP).` });
+        return { estado: verificarFim(estado, eventos), eventos };
+    }
+
+    // Apagar chamas: o dono apaga quando quiser (grátis); o alvo só com uma defesa Rank S (gasta 1 ação)
+    if (t === 'apagar_chamas') {
+        exigirVez(estado, uid, 'acao');
+        const l = estado.lutadores[uid];
+        if ((l.efeitos || []).some(e => e.tipo === 'manter_chamas')) {
+            const nome = l.efeitos.find(e => e.tipo === 'manter_chamas').nome;
+            apagarChamasDe(estado, uid);
+            eventos.push({ tipo: 'efeito', texto: `🔥 ${l.nome} apagou as chamas de [${nome}].` });
+            return { estado, eventos };
+        }
+        const ch = (l.efeitos || []).find(e => e.tipo === 'chamas');
+        if (!ch) throw erro('Não há chamas para apagar.');
+        const j = acao.jutsu;
+        if (!j || funcaoDoJutsu(j) !== 'defesa' || nivelDoRank(j.rank) < nivelDoRank('S')) throw erro('Só uma defesa de Rank S apaga essas chamas.');
+        if (estado.acoesRestantes <= 0) throw erro('Você já usou suas 3 ações neste turno. Passe o turno.');
+        if (!requisitoAtendido(l, j)) throw erro(`[${j.nome}] exige outro jutsu ativo.`);
+        pagar(l, custosDoJutsu(j), eventos, j.nome);
+        apagarChamasDe(estado, ch.de);
+        estado.acoesRestantes -= 1;
+        eventos.push({ tipo: 'suporte', de: uid, texto: `🛡️ ${l.nome} usou [${j.nome}] e apagou as chamas de [${ch.nome}].` });
+        return { estado: verificarFim(estado, eventos), eventos };
     }
 
     if (t === 'passar' || (t === 'tempo_esgotado' && estado.fase === 'acao')) {
@@ -575,7 +905,7 @@ export function aplicarAcao(estadoAtual, uid, acao, agora = Date.now()) {
             if (estado.status !== 'em_andamento' || estado.pausada || agora < estado.prazo) throw erro('O tempo ainda não acabou.');
             eventos.push({ tipo: 'sistema', texto: `⏰ ${estado.lutadores[defensor].nome} não reagiu a tempo.` });
         }
-        aplicarReacao(estado, defensor, t === 'reagir' ? acao.opcao : 'receber', t === 'reagir' ? acao.jutsu : null, eventos);
+        aplicarReacao(estado, defensor, t === 'reagir' ? acao.opcao : 'receber', t === 'reagir' ? acao.jutsu : null, eventos, acao.criacaoId);
         verificarFim(estado, eventos);
         if (estado.status !== 'em_andamento') return { estado, eventos };
         return { estado: iniciarTurno(estado, defensor, agora, eventos), eventos };

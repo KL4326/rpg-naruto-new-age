@@ -8,7 +8,9 @@
     const JUTSUS_BOT = [
         { id: 'juuken', nome: 'Juuken: Palma Suave', funcao: 'ataque', categoria: 'taijutsu', poder: 22, chakra: 10, reacao_necessaria: 5, velocidade_necessaria: 6, rank: 'C' },
         { id: 'kaiten', nome: 'Kaiten', funcao: 'defesa', poder: 30, chakra: 20, rank: 'B' },
-        { id: 'byakugan', nome: 'Byakugan', funcao: 'modo', bonus: { reacao: 3 }, chakra: 10, custo_por_turno: 5, rank: 'C' }
+        { id: 'byakugan', nome: 'Byakugan', funcao: 'modo', bonus: { reacao: 3 }, chakra: 10, custo_por_turno: 5, rank: 'C', resiste_genjutsu: 'C' },
+        { id: 'ilusao_hyuga', nome: 'Ilusão do Templo', funcao: 'ataque', categoria: 'genjutsu', poder: 5, chakra: 15, rank: 'B', reacao_necessaria: 8, velocidade_necessaria: 9, genjutsu_efeito: 'paralisia', genjutsu_turnos: 1 },
+        { id: 'kai_bot', nome: 'Kai', funcao: 'kai', chakra: 5, reacao_minima: 5, rank: 'D' }
     ];
     const pensando = {};
     const ref = (id) => doc(db, 'desafios_batalha', id);
@@ -21,7 +23,7 @@
                 const d = s.data();
                 const { estado, eventos } = aplicarAcao(d.estado, BOT, acao, Date.now());
                 const base = d.histN || (d.historico || []).length;
-                const upd = { estado, atualizadoEm: serverTimestamp(), histN: base + eventos.length, historico: [...(d.historico || []), ...eventos.map((e, i) => ({ ...e, t: Date.now(), n: base + i + 1 }))] };
+                const upd = { estado, atualizadoEm: serverTimestamp(), rev: (d.rev || 0) + 1, histN: base + eventos.length, historico: [...(d.historico || []), ...eventos.map((e, i) => ({ ...e, t: Date.now(), n: base + i + 1 }))] };
                 if (estado.status === 'finalizada') upd.status = 'finalizada';
                 tx.update(ref(id), upd);
             });
@@ -59,6 +61,11 @@
                 pensando[chave] = true;
                 setTimeout(async () => {
                     const eu = e.lutadores[BOT];
+                    // Preso num genjutsu: tenta o Kai
+                    if ((eu.efeitos || []).some(x => x.tipo === 'genjutsu')) { await jogar(s.id, { tipo: 'kai', jutsu: JUTSUS_BOT[4] }); await espera(900); }
+                    const alvo = e.lutadores[outro(e, BOT)];
+                    const alvoPreso = (alvo.efeitos || []).some(x => x.tipo === 'genjutsu');
+                    if (!alvoPreso && e.turno % 3 === 0 && eu.chakra > 40) { await jogar(s.id, { tipo: 'jutsu', jutsu: JUTSUS_BOT[3] }); await espera(900); return jogar(s.id, { tipo: 'passar' }); }
                     const temByakugan = (eu.efeitos || []).some(x => x.id === 'byakugan');
                     if (!temByakugan && eu.chakra > 60) await jogar(s.id, { tipo: 'jutsu', jutsu: JUTSUS_BOT[2] });
                     await espera(900);

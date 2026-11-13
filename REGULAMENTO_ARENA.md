@@ -114,6 +114,40 @@ Campos extras (todos opcionais):
 
 ---
 
+## 4b. Mecânicas especiais
+
+### Precisão (acerto)
+- Bônus de modo que **não dá dano**: cada ponto aumenta em 1 a **Reação** e a **Velocidade** que o adversário precisa para perceber e escapar dos seus ataques (máximo 12).
+
+### Requisitos
+- Campo **Requer ativo** (`requer_ativo`): lista de jutsus; basta **um** deles estar ativo para usar.
+- Se o requisito for desligado, os modos e criações que dependem dele **somem junto**.
+
+### Criações (raízes, pedras, braços...)
+- Função **Criação**: o custo é **por unidade**; escolhe-se quantas criar (até o máximo).
+- Ficam **no campo** até o dono desfazer (grátis) ou serem destruídas.
+- **Atacar com elas** usa o ataque do turno, mas **não custa chakra**: dano = Poder × quantidade.
+- **Segurar golpes**: ao reagir, cada unidade absorve o seu valor e **se quebra**.
+- Aparecem como **fichas** na carta do personagem (ex.: 🌳 3 Raízes).
+
+### Genjutsu
+- Ataque da categoria Genjutsu. Para escapar é preciso **perceber** (Reação) e **desviar o olhar** (Velocidade). Não dá para bloquear com o corpo nem com clones.
+- Se pegar, a vítima fica presa por X turnos: **paralisia** (não age nem reage), **sem reação** (não reage a ataques) ou **confusão** (−Reação/−Velocidade). Pode ter dano por turno.
+- Um genjutsu por vez. Sai do genjutsu:
+  1. **Contra-Genjutsu (Kai)**: única ação de quem está paralisado. Exige Reação mínima (padrão 5) e custa o chakra do genjutsu + o do Kai.
+  2. **O tempo** acaba.
+  3. **Dor**: levar um golpe de **10% da Vida máxima** ou mais quebra a ilusão.
+- **Resistência**: doujutsu ativo pode resistir até um Rank (Sharingan até B, Mangekyou até A).
+- **Reflexo** (Retorno do Espelho): ao reagir, devolve o genjutsu (até o Rank definido). Exige doujutsu ativo ou Reação mínima. Custa o chakra do genjutsu + o da técnica.
+
+### Chamas que não se apagam (Amaterasu)
+- Acertando, o alvo queima **X por turno, sem limite de turnos**.
+- Equilíbrio: o usuário paga **manutenção** de chakra por turno (sem chakra, as chamas apagam, sem desmaiar); pode **apagar quando quiser** (grátis); cada uso custa **% da Vida**; só **uma** ativa por vez.
+- O alvo só se livra com uma **defesa de Rank S** (ao reagir ou depois, gastando 1 ação).
+
+### Aura dos modos
+- Modo ativo deixa a carta do personagem com **borda e símbolo** (Sharingan, Mangekyou, Modo Sábio, Byakugan, Portões ou roxa genérica). Campo `aura`, ou automático pelo nome. Respeita "Reduzir animações".
+
 ## 5. Fim da luta
 - **Vida em 0:** derrota.
 - **Chakra em 0:** derrota por esgotamento (inclusive pela manutenção de um modo). O site avisa antes de um jutsu que zeraria o chakra.

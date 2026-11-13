@@ -13,6 +13,7 @@ const fichaA = { nome: 'Kenji', forca: 14, defesa: 12, intelecto: 11, destreza: 
 const fichaB = { nome: 'Aiko', forca: 10, defesa: 10, intelecto: 15, destreza: 10, agilidade: 12, speed_rank: 5, reacao: 8, max_vida: 150, max_chakra: 150, max_stamina: 100 };
 const T0 = 1_000_000;
 const novo = (a = fichaA, b = fichaB, dado) => R.criarEstadoInicial(a, 'A', b, 'B', T0, dado).estado;
+const clonarEst = (o) => JSON.parse(JSON.stringify(o));
 const jutsu = (j) => ({ id: j.nome.toLowerCase(), rank: 'C', ...j });
 
 const SOCO = jutsu({ nome: 'Soco de Fogo', funcao: 'ataque', categoria: 'taijutsu', poder: 25, chakra: 10, reacao_necessaria: 5, velocidade_necessaria: 7 });
@@ -307,6 +308,152 @@ caso('bonus_hp/bonus_chakra de JUTSU não curam (só itens curam por eles)', () 
     igual(estado.lutadores.A.vida, 100);
     const e2 = novo(); e2.lutadores.A.vida = 100;
     igual(R.aplicarAcao(e2, 'A', { tipo: 'jutsu', jutsu: jutsu({ nome: 'Palma', funcao: 'suporte', cura: 50, custo_chakra: 10 }) }, T0).estado.lutadores.A.vida, 150);
+});
+
+// ---------- Precisão e requisitos ----------
+const MS = jutsu({ nome: 'Mangekyou', id: 'ms', funcao: 'modo', bonus_arena: { reacao: 3 }, custo_chakra: 10, resiste_genjutsu: 'A' });
+const ALVO = jutsu({ nome: 'Alvo', id: 'alvo', funcao: 'modo', bonus_arena: { precisao: 2 }, custo_chakra: 10, requer_ativo: ['ms'] });
+caso('Requisito: sem o Mangekyou ativo, a técnica é bloqueada', () => {
+    lanca(() => R.aplicarAcao(novo(), 'A', { tipo: 'jutsu', jutsu: ALVO }, T0), 'exige outro jutsu ativo');
+});
+caso('Precisão aumenta Reação e Velocidade necessárias do adversário', () => {
+    let e = R.aplicarAcao(novo(), 'A', { tipo: 'jutsu', jutsu: MS }, T0).estado;
+    e = R.aplicarAcao(e, 'A', { tipo: 'jutsu', jutsu: ALVO }, T0).estado;
+    e = R.aplicarAcao(e, 'A', { tipo: 'jutsu', jutsu: SOCO }, T0).estado;
+    igual([e.ataquePendente.reacaoNecessaria, e.ataquePendente.velocidadeNecessaria, e.ataquePendente.dano], [7, 9, 39]);
+});
+caso('Desligar o Mangekyou desliga quem depende dele', () => {
+    let e = R.aplicarAcao(novo(), 'A', { tipo: 'jutsu', jutsu: MS }, T0).estado;
+    e = R.aplicarAcao(e, 'A', { tipo: 'jutsu', jutsu: ALVO }, T0).estado;
+    e = R.aplicarAcao(e, 'A', { tipo: 'desativar', efeitoId: 'ms' }, T0).estado;
+    igual(e.lutadores.A.efeitos.length, 0);
+});
+
+// ---------- Criações ----------
+const RAIZES = jutsu({ nome: 'Raízes', id: 'raizes', funcao: 'criacao', poder: 10, custo_chakra: 5, criacao_max: 5, criacao_absorve: 15, criacao_nome: 'Raízes', criacao_icone: '🌳', velocidade_necessaria: 6 });
+caso('Criação: paga por unidade e fica no campo', () => {
+    const e = R.aplicarAcao(novo(), 'A', { tipo: 'jutsu', jutsu: RAIZES, cargas: 3 }, T0).estado;
+    igual([e.lutadores.A.criacoes[0].qtd, e.lutadores.A.chakra, e.ataquesRestantes], [3, 200 - 15, 1]);
+    igual(R.aplicarAcao(e, 'A', { tipo: 'jutsu', jutsu: RAIZES, cargas: 3 }, T0).estado.lutadores.A.criacoes[0].qtd, 5);  // só cabem mais 2
+});
+caso('Criação: não passa do máximo', () => {
+    let e = R.aplicarAcao(novo(), 'A', { tipo: 'jutsu', jutsu: RAIZES, cargas: 5 }, T0).estado;
+    lanca(() => R.aplicarAcao(e, 'A', { tipo: 'jutsu', jutsu: RAIZES, cargas: 1 }, T0), 'máximo');
+});
+caso('Criação: ataca sem pagar de novo e continua no campo', () => {
+    let e = R.aplicarAcao(novo(), 'A', { tipo: 'jutsu', jutsu: RAIZES, cargas: 3 }, T0).estado;
+    const ck = e.lutadores.A.chakra;
+    e = R.aplicarAcao(e, 'A', { tipo: 'criacao_atacar', criacaoId: 'raizes', qtd: 2 }, T0).estado;
+    igual([e.ataquePendente.dano, e.lutadores.A.chakra, e.lutadores.A.criacoes[0].qtd, e.ataquePendente.velocidadeNecessaria], [20, ck, 3, 6]);
+});
+caso('Criação: segura o golpe e se quebra', () => {
+    let e = aposPassar(R.aplicarAcao(novo(), 'A', { tipo: 'jutsu', jutsu: SOCO }, T0).estado);
+    e.lutadores.B.criacoes = [{ id: 'raizes', nome: 'Raízes', icone: '🌳', qtd: 3, absorve: 15, poder: 10 }];
+    const r = R.aplicarAcao(e, 'B', { tipo: 'reagir', opcao: 'criacao', criacaoId: 'raizes' }, T0 + 2000).estado;
+    igual([r.lutadores.B.vida, r.lutadores.B.criacoes.length], [150, 0]);   // 39 de dano = 3 raízes de 15
+});
+caso('Criação: desfazer é grátis', () => {
+    let e = R.aplicarAcao(novo(), 'A', { tipo: 'jutsu', jutsu: RAIZES, cargas: 2 }, T0).estado;
+    e = R.aplicarAcao(e, 'A', { tipo: 'desfazer_criacao', criacaoId: 'raizes' }, T0).estado;
+    igual([e.lutadores.A.criacoes.length, e.acoesRestantes], [0, 2]);
+});
+
+// ---------- Genjutsu ----------
+const GEN = jutsu({ nome: 'Ilusão', id: 'ilusao', funcao: 'ataque', categoria: 'genjutsu', poder: 5, custo_chakra: 20, rank: 'A', reacao_necessaria: 3, velocidade_necessaria: 12, genjutsu_turnos: 1 });
+const KAI = jutsu({ nome: 'Kai', id: 'kai', funcao: 'kai', custo_chakra: 10, reacao_minima: 5 });
+const ESPELHO = jutsu({ nome: 'Espelho', id: 'espelho', funcao: 'espelho', custo_chakra: 5, espelho_rank_max: 'A', reacao_minima: 5 });
+function presoB() {
+    let e = aposPassar(R.aplicarAcao(novo(), 'A', { tipo: 'jutsu', jutsu: GEN }, T0).estado);
+    return R.aplicarAcao(e, 'B', { tipo: 'reagir', opcao: 'receber' }, T0 + 2000).estado;
+}
+caso('Genjutsu: quem recebe fica preso e não pode agir', () => {
+    const e = presoB();
+    igual([R.genjutsuAtivo(e.lutadores.B).efeitoGenjutsu, e.vez], ['paralisia', 'B']);
+    lanca(() => R.aplicarAcao(e, 'B', { tipo: 'jutsu', jutsu: SOCO }, T0 + 3000), 'preso no genjutsu');
+});
+caso('Genjutsu: preso não consegue reagir a ataques', () => {
+    let e = R.aplicarAcao(presoB(), 'B', { tipo: 'passar' }, T0 + 3000).estado;
+    e = aposPassar(R.aplicarAcao(e, 'A', { tipo: 'jutsu', jutsu: SOCO }, T0 + 4000).estado);
+    igual(R.avaliarReacao(e.lutadores.B, e.ataquePendente).percebe, false);
+});
+caso('Genjutsu: Kai liberta pagando genjutsu + Kai, e exige Reação 5', () => {
+    const e = presoB();
+    const r = R.aplicarAcao(e, 'B', { tipo: 'kai', jutsu: KAI }, T0 + 3000).estado;
+    igual([R.genjutsuAtivo(r.lutadores.B), r.lutadores.B.chakra], [null, 150 - 30]);
+    const fraco = clonarEst(e); fraco.lutadores.B.atributos.reacao = 2;
+    lanca(() => R.aplicarAcao(fraco, 'B', { tipo: 'kai', jutsu: KAI }, T0 + 3000), 'Reação 5');
+});
+caso('Genjutsu: acaba sozinho depois do turno preso', () => {
+    let e = R.aplicarAcao(presoB(), 'B', { tipo: 'passar' }, T0 + 3000).estado;   // turno preso de B
+    e = R.aplicarAcao(e, 'A', { tipo: 'passar' }, T0 + 4000).estado;               // volta para B: livre
+    igual(R.genjutsuAtivo(e.lutadores.B), null);
+});
+caso('Genjutsu: dor forte quebra', () => {
+    let e = R.aplicarAcao(presoB(), 'B', { tipo: 'passar' }, T0 + 3000).estado;
+    e = aposPassar(R.aplicarAcao(e, 'A', { tipo: 'jutsu', jutsu: SOCO }, T0 + 4000).estado);
+    e = R.aplicarAcao(e, 'B', { tipo: 'reagir', opcao: 'receber' }, T0 + 5000).estado;
+    igual(R.genjutsuAtivo(e.lutadores.B), null);
+});
+caso('Genjutsu: doujutsu que resiste ao Rank anula', () => {
+    let e = R.aplicarAcao(novo(), 'A', { tipo: 'passar' }, T0).estado;
+    e = R.aplicarAcao(e, 'B', { tipo: 'jutsu', jutsu: MS }, T0).estado;
+    e = R.aplicarAcao(e, 'B', { tipo: 'passar' }, T0).estado;
+    e = aposPassar(R.aplicarAcao(e, 'A', { tipo: 'jutsu', jutsu: GEN }, T0).estado);
+    e = R.aplicarAcao(e, 'B', { tipo: 'reagir', opcao: 'receber' }, T0 + 2000).estado;
+    igual(R.genjutsuAtivo(e.lutadores.B), null);
+});
+caso('Genjutsu: Retorno do Espelho devolve para quem lançou', () => {
+    let e = aposPassar(R.aplicarAcao(novo(), 'A', { tipo: 'jutsu', jutsu: GEN }, T0).estado);
+    const r = R.aplicarAcao(e, 'B', { tipo: 'reagir', opcao: 'espelho', jutsu: ESPELHO }, T0 + 2000).estado;
+    igual([R.genjutsuAtivo(r.lutadores.A)?.nome, R.genjutsuAtivo(r.lutadores.B), r.lutadores.B.chakra], ['Ilusão', null, 150 - 25]);
+});
+caso('Genjutsu: não dá para defender com o corpo nem usar clone', () => {
+    let e = aposPassar(R.aplicarAcao(novo(), 'A', { tipo: 'jutsu', jutsu: GEN }, T0).estado);
+    e.lutadores.B.clones = { qtd: 2, reserva: 20, solidos: true };
+    igual(R.avaliarReacao(e.lutadores.B, e.ataquePendente).podeDefenderFisico, false);
+    const r = R.aplicarAcao(e, 'B', { tipo: 'reagir', opcao: 'receber' }, T0 + 2000).estado;
+    igual([r.lutadores.B.clones.qtd, !!R.genjutsuAtivo(r.lutadores.B)], [2, true]);
+});
+
+// ---------- Chamas (Amaterasu) ----------
+const AMA = jutsu({ nome: 'Amaterasu', id: 'ama', funcao: 'ataque', poder: 20, custo_chakra: 30, rank: 'S', impossivel_esquivar: true, chamas_por_turno: 8, chamas_manutencao: 10, custo_vida_pct: 5 });
+function emChamas() {
+    let e = aposPassar(R.aplicarAcao(novo(), 'A', { tipo: 'jutsu', jutsu: AMA }, T0).estado);
+    return R.aplicarAcao(e, 'B', { tipo: 'reagir', opcao: 'receber' }, T0 + 2000).estado;
+}
+caso('Amaterasu: custa 5% da Vida e deixa o alvo em chamas', () => {
+    const e = emChamas();
+    igual([e.lutadores.A.vida, e.lutadores.B.efeitos.some(x => x.tipo === 'chamas'), e.lutadores.A.efeitos.some(x => x.tipo === 'manter_chamas')], [180 - 9, true, true]);
+});
+caso('Amaterasu: queima por turno e cobra manutenção do usuário', () => {
+    let e = emChamas();
+    const vidaB = e.lutadores.B.vida;
+    e = R.aplicarAcao(e, 'B', { tipo: 'passar' }, T0 + 3000).estado;        // começa turno de A: paga 10
+    const ckA = e.lutadores.A.chakra;
+    e = R.aplicarAcao(e, 'A', { tipo: 'passar' }, T0 + 4000).estado;        // começa turno de B: queima 8
+    igual([e.lutadores.B.vida, ckA], [vidaB - 8, 200 - 30 - 10]);
+});
+caso('Amaterasu: só uma ativa por vez', () => {
+    let e = R.aplicarAcao(emChamas(), 'B', { tipo: 'passar' }, T0 + 3000).estado;
+    lanca(() => R.aplicarAcao(e, 'A', { tipo: 'jutsu', jutsu: AMA }, T0 + 4000), 'já mantém chamas');
+});
+caso('Amaterasu: o usuário apaga quando quiser', () => {
+    let e = R.aplicarAcao(emChamas(), 'B', { tipo: 'passar' }, T0 + 3000).estado;
+    e = R.aplicarAcao(e, 'A', { tipo: 'apagar_chamas' }, T0 + 4000).estado;
+    igual([e.lutadores.B.efeitos.some(x => x.tipo === 'chamas'), e.lutadores.A.efeitos.length], [false, 0]);
+});
+caso('Amaterasu: sem chakra para manter, apaga (não mata o usuário)', () => {
+    let e = emChamas();
+    e.lutadores.A.chakra = 5;
+    e = R.aplicarAcao(e, 'B', { tipo: 'passar' }, T0 + 3000).estado;
+    igual([e.status, e.lutadores.A.chakra, e.lutadores.B.efeitos.some(x => x.tipo === 'chamas')], ['em_andamento', 5, false]);
+});
+caso('Amaterasu: o alvo só apaga com defesa Rank S', () => {
+    const SUSANOO = jutsu({ nome: 'Susanoo', funcao: 'defesa', poder: 50, custo_chakra: 20, rank: 'S' });
+    const e = emChamas();
+    lanca(() => R.aplicarAcao(e, 'B', { tipo: 'apagar_chamas', jutsu: PAREDE }, T0 + 3000), 'Rank S');
+    const r = R.aplicarAcao(e, 'B', { tipo: 'apagar_chamas', jutsu: SUSANOO }, T0 + 3000).estado;
+    igual([r.lutadores.B.efeitos.some(x => x.tipo === 'chamas'), r.lutadores.A.efeitos.length], [false, 0]);
 });
 
 caso('XP apostável deixa 10 na barra (30 → 20)', () => igual(R.xpApostavel(30), 20));

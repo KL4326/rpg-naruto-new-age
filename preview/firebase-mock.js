@@ -31,7 +31,7 @@ const DB = {
             vida: 140, max_vida: 180, sanidade: 90, max_sanidade: 100, chakra: 210, max_chakra: 260, stamina: 95, max_stamina: 150, controle_chakra: "Médio",
             forca: 14, defesa: 12, constituicao: 15, destreza: 13, intelecto: 11, agilidade: 16, velocidade: 15,
             vitorias: 12, derrotas: 3, empates: 1, elementos: ["vento", "agua"], kekkei_genkai: [], bijuus: [],
-            meusJutsus: ["rasengan", "kage_bunshin", "kawarimi", "goukakyuu", "parede_agua", "modo_sabio"], maestrias: { rasengan: 3, kage_bunshin: 5 },
+            meusJutsus: ["rasengan", "kage_bunshin", "kawarimi", "goukakyuu", "parede_agua", "modo_sabio", "sharingan", "genjutsu_sharingan", "raizes", "amaterasu", "contra_genjutsu", "susanoo"], maestrias: { rasengan: 3, kage_bunshin: 5 },
             inventario: { kunai: 8, shuriken: 6, ramen_ichiraku: 2, pilula_soldado: 3 },
             statusMissoes: { escolta_tazuna: "aprovado", resgatar_gato: "em_andamento" }, statusConquistas: { primeiro_sangue: "concluido" },
             isOnline: true, cenarioAtual: "vila_folha", salario: 500, postsSalvos: ["p3"],
@@ -53,6 +53,12 @@ const DB = {
         byakugan: { nome: "Byakugan", rank: "C", preco: 0, restrito_a: ["Aiko Hyuga"], funcao: "modo", bonus: { reacao: 3 }, chakra: 10, custo_por_turno: 5, imagem: img("Byakugan", "#f5f5f4", "#57534e", "👁️"), descricao: "Visão de quase 360 graus." },
         chidori: { nome: "Chidori", rank: "A", preco: 14000, requisito: 5, dano: "3d10", chakra: "45", funcao: "ataque", categoria: "ninjutsu", imagem: img("Chidori", "#60a5fa", "#1e1b4b", "⚡"), descricao: "Chakra de raio concentrado na mão." },
         goukakyuu: { nome: "Katon: Goukakyuu", rank: "C", preco: 3500, preco_promocional: 2800, requisito: 2, poder: 26, chakra: "20", funcao: "ataque", categoria: "ninjutsu", reacao_necessaria: 4, velocidade_necessaria: 6, imagem: img("Goukakyuu", "#ef4444", "#7f1d1d", "🔥"), descricao: "Uma grande bola de fogo." },
+        sharingan: { nome: "Sharingan", rank: "S", preco: 0, funcao: "modo", bonus_arena: { reacao: 2, velocidade: 1 }, custo_chakra: 10, custo_por_turno: 4, resiste_genjutsu: "B", imagem: img("Sharingan", "#dc2626", "#450a0a", "👁️"), descricao: "Lê os movimentos do adversário." },
+        genjutsu_sharingan: { nome: "Genjutsu: Sharingan", rank: "S", preco: 0, funcao: "ataque", categoria: "genjutsu", poder: 10, custo_chakra: 20, reacao_necessaria: 6, velocidade_necessaria: 8, requer_ativo: ["sharingan"], genjutsu_efeito: "paralisia", genjutsu_turnos: 1, imagem: img("Genjutsu", "#7c3aed", "#2e1065", "🌀"), descricao: "Prende a vítima numa ilusão." },
+        raizes: { nome: "Erosão do Mar de Árvores", rank: "S", preco: 0, funcao: "criacao", categoria: "ninjutsu", poder: 9, custo_chakra: 8, criacao_max: 5, criacao_absorve: 12, criacao_nome: "Raízes", criacao_icone: "🌳", reacao_necessaria: 4, velocidade_necessaria: 5, imagem: img("Raízes", "#65a30d", "#1a2e05", "🌳"), descricao: "Raízes que prendem e protegem." },
+        amaterasu: { nome: "Amaterasu", rank: "S", preco: 0, funcao: "ataque", categoria: "ninjutsu", poder: 25, custo_chakra: 30, impossivel_esquivar: true, impossivel_defender_fisico: true, chamas_por_turno: 8, chamas_manutencao: 6, custo_vida_pct: 5, requer_ativo: ["sharingan"], reacao_necessaria: 9, velocidade_necessaria: 11, imagem: img("Amaterasu", "#111827", "#000000", "🔥"), descricao: "Chamas negras que não se apagam." },
+        contra_genjutsu: { nome: "Contra-Genjutsu", rank: "B", preco: 0, funcao: "kai", custo_chakra: 5, reacao_minima: 5, imagem: img("Kai", "#a78bfa", "#3b0764", "✋"), descricao: "Interrompe o fluxo de chakra e quebra a ilusão." },
+        susanoo: { nome: "Susanoo: Costelas", rank: "S", preco: 0, funcao: "defesa", poder: 60, custo_chakra: 25, requer_ativo: ["sharingan"], imagem: img("Susanoo", "#7c3aed", "#1e1b4b", "🦴"), descricao: "Costelas de chakra protegem o usuário." },
         kawarimi: { nome: "Kawarimi", rank: "E", preco: 500, requisito: 1, poder: 2, chakra: "8", funcao: "esquiva", categoria: "ninjutsu", imagem: img("Kawarimi", "#a3a3a3", "#404040", "🪵"), descricao: "Troca de lugar com um objeto." }
     },
     ferramentas: {
