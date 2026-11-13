@@ -159,6 +159,19 @@ Toda luta guarda o **histórico completo** de ações.
 
 ---
 
+## 5b. Arena ao vivo (Fase 2)
+
+- Enquanto houver luta acontecendo, o botão **Arena** pisca em vermelho e a entrada da Arena mostra **"Ao vivo agora"** com o botão **Assistir**.
+- **Plateia:** qualquer ninja assiste (só olha, não joga). O topo mostra quantos estão assistindo.
+- **Torcida:** quem assiste escolhe por quem torce e manda emojis (🔥 👏 😱 💪 😂 ❤️ ⚡ 🍥), que sobem em cima da carta do lutador. Um emoji a cada 1,5 s.
+- **Apostas (pari-mutuel):** em **Ryos ou EN**, mínimo 20, **uma aposta por luta**, só para quem não está lutando.
+  - Fecham quando começa o **turno 2**.
+  - **5% de cada aposta vão na hora para o Cofre da Vila**; o resto entra no bolo.
+  - Quem acertar divide **o bolo inteiro**, proporcional ao que apostou (o painel mostra quanto cada lado "paga").
+  - Empate, luta anulada ou ninguém apostou no vencedor: cada um recebe de volta o que entrou no bolo.
+  - O prêmio cai sozinho na ficha quando a luta termina (ou na próxima vez que o ninja entrar no site).
+- **Kage anula a luta:** botão **Anular** (na lista ao vivo e na plateia). Ninguém ganha nem perde, as estatísticas não contam, o cofre do Competitivo e as apostas voltam.
+
 ## 6. Próximas fases
 - **Fase 2 — Arena ao vivo:** botão 🔴 para todos assistirem, torcida com emojis, apostas (os acertadores dividem o dinheiro de quem errou, 5% vai para o caixa do Banco Ninja, fecham no 2º turno, só Ryos/EN) e o Kage podendo anular lutas.
 - **Fase 3 — Torneios:** eventos criados pelo Kage com inscrição, chaveamento sorteado e prêmios.

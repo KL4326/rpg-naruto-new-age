@@ -49,17 +49,27 @@ service cloud.firestore {
       allow create, delete: if isAdmin();
       allow update: if isAdmin() || (logado() && vid == 'banco' && entradaValida(request.resource.data.get('ultimoMov', '')));
       function entradaValida(mid) {
-        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['saldo', 'ultimoMov'])
-          && mid != '' && !exists(caminho('vila_movimentos', mid)) && existsAfter(caminho('vila_movimentos', mid))
-          && request.resource.data.saldo == resource.data.saldo + getAfter(caminho('vila_movimentos', mid)).data.valor;
+        return mid != '' && !exists(caminho('vila_movimentos', mid)) && existsAfter(caminho('vila_movimentos', mid))
+          && entradaNoCampo(getAfter(caminho('vila_movimentos', mid)).data, getAfter(caminho('vila_movimentos', mid)).data.get('moeda', 'ryos') == 'essencia_ninja' ? 'saldo_en' : 'saldo');
+      }
+      function entradaNoCampo(mv, campo) {
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly([campo, 'ultimoMov'])
+          && request.resource.data.get(campo, 0) == resource.data.get(campo, 0) + mv.valor;
       }
     }
     match /vila_movimentos/{mid} {
       function m() { return request.resource.data; }
       function eu() { return caminho('users', request.auth.uid); }
       function bancoSobe() {
+        let campo = m().get('moeda', 'ryos') == 'essencia_ninja' ? 'saldo_en' : 'saldo';
         return getAfter(caminho('vila', 'banco')).data.get('ultimoMov', '') == mid
-          && getAfter(caminho('vila', 'banco')).data.saldo == get(caminho('vila', 'banco')).data.saldo + m().valor;
+          && getAfter(caminho('vila', 'banco')).data.get(campo, 0) == get(caminho('vila', 'banco')).data.get(campo, 0) + m().valor;
+      }
+      // Aposta: 5% de cada aposta vai para o cofre na hora (na moeda da aposta)
+      function apostaOk() {
+        let ap = getAfter(/databases/$(database)/documents/desafios_batalha/$(m().ref)/apostas/$(request.auth.uid)).data;
+        return mid == 'aposta_' + m().ref + '_' + request.auth.uid
+          && m().get('moeda', 'ryos') == ap.moeda && m().valor == ap.valor - ap.liquido;
       }
       // Doação: o mesmo valor sai da ficha de quem doa
       function doacaoOk() {
@@ -93,12 +103,33 @@ service cloud.firestore {
       }
       allow read: if logado();
       allow create: if isAdmin() || (logado()
-        && m().keys().hasOnly(['uid', 'nome', 'tipo', 'valor', 'data', 'ref'])
+        && m().keys().hasOnly(['uid', 'nome', 'tipo', 'valor', 'data', 'ref', 'moeda'])
+        && (m().get('moeda', 'ryos') == 'ryos' || m().tipo == 'aposta')
         && m().uid == request.auth.uid && m().valor is int && m().valor > 0 && m().data == request.time
         && bancoSobe()
         && ((m().tipo == 'doacao' && doacaoOk()) || (m().tipo == 'imposto_loja' && impostoOk())
-            || (m().tipo == 'missao' && missaoOk()) || (m().tipo == 'arena' && arenaOk())));
+            || (m().tipo == 'missao' && missaoOk()) || (m().tipo == 'arena' && arenaOk())
+            || (m().tipo == 'aposta' && apostaOk())));
       allow update, delete: if isAdmin();
+    }
+
+    // ---------------- APOSTAS DA ARENA (pari-mutuel) ----------------
+    // apostas_totais/{bid} = { ryos: {uidLutador: soma}, essencia_ninja: {...} } (somas das apostas LÍQUIDAS)
+    // Só sobe junto com uma aposta nova deste jogador, no mesmo envio, pelo valor líquido dela.
+    match /apostas_totais/{bid} {
+      allow read: if logado();
+      allow create, update: if isAdmin() || (logado() && somaDaAposta(bid));
+      allow delete: if isAdmin();
+      function somaDaAposta(bid) {
+        let caminhoAposta = /databases/$(database)/documents/desafios_batalha/$(bid)/apostas/$(request.auth.uid);
+        let ap = getAfter(caminhoAposta).data;
+        let antes = resource == null ? {} : resource.data;
+        let novo = request.resource.data;
+        return !exists(caminhoAposta) && existsAfter(caminhoAposta)
+          && novo.diff(antes).affectedKeys().hasOnly([ap.moeda])
+          && novo[ap.moeda].diff(antes.get(ap.moeda, {})).affectedKeys().hasOnly([ap.lado])
+          && novo[ap.moeda][ap.lado] == antes.get(ap.moeda, {}).get(ap.lado, 0) + ap.liquido;
+      }
     }
 
     // ---------------- Catálogos: todos leem, só o Kage escreve ----------------
@@ -376,6 +407,41 @@ service cloud.firestore {
           && valor(depois(), 'doado_vila', 0) == valor(antes(), 'doado_vila', 0) + v;
       }
 
+      // 10d) Apostar numa luta (o dinheiro sai da ficha e a aposta entra na luta, no mesmo envio)
+      function caminhoAposta(bid) { return /databases/$(database)/documents/desafios_batalha/$(bid)/apostas/$(userId); }
+      function apostar() {
+        return depois().get('ultimaAposta', null) != null && 'ultimaAposta' in mudou()
+          && mudou().hasOnly(['ryos', 'essencia_ninja', 'apostas_abertas', 'ultimaAposta']) && apostarValido(depois().ultimaAposta);
+      }
+      function apostarValido(bid) {
+        let ap = getAfter(caminhoAposta(bid)).data;
+        return !exists(caminhoAposta(bid)) && ap.uid == userId
+          && !(outraMoeda(ap.moeda) in mudou())
+          && valor(depois(), ap.moeda, 0) == valor(antes(), ap.moeda, 0) - ap.valor
+          && valor(depois(), ap.moeda, 0) >= 0
+          && depois().apostas_abertas == antes().get('apostas_abertas', []).concat([bid]);
+      }
+      // 10e) Receber a aposta depois da luta: vencedor divide o bolo (proporcional), empate/anulada devolve
+      function receberAposta() {
+        return depois().get('ultimaApostaPaga', null) != null && 'ultimaApostaPaga' in mudou()
+          && mudou().hasOnly(['ryos', 'essencia_ninja', 'apostas_abertas', 'ultimaApostaPaga']) && receberApostaValido(depois().ultimaApostaPaga);
+      }
+      function receberApostaValido(bid) {
+        let ap = get(caminhoAposta(bid)).data;
+        let b = get(batalha(bid)).data;
+        return ap.uid == userId && ap.pago == false && getAfter(caminhoAposta(bid)).data.pago == true
+          && b.get('estado', null) != null && b.estado.status == 'finalizada'
+          && depois().apostas_abertas == antes().get('apostas_abertas', []).removeAll([bid])
+          && !(outraMoeda(ap.moeda) in mudou())
+          && valor(depois(), ap.moeda, 0) == valor(antes(), ap.moeda, 0) + premioDaAposta(ap, b, get(caminho('apostas_totais', bid)).data.get(ap.moeda, {}));
+      }
+      function premioDaAposta(ap, b, tot) {
+        let venc = b.estado.resultado.get('vencedor', null);
+        let bolo = tot.get(b.desafianteId, 0) + tot.get(b.desafiadoId, 0);
+        return (venc == null || tot.get(venc, 0) == 0) ? ap.liquido
+          : (venc == ap.lado ? math.floor(ap.liquido * bolo / tot.get(venc, 0)) : 0);
+      }
+
       // 11) Presente/mentoria — lado de quem PAGA (a transferência é conferida em /transferencias)
       function pagarTransferencia() {
         return 'ultimaTransferencia' in mudou()
@@ -485,7 +551,7 @@ service cloud.firestore {
         || (dono() && (perfil() || gastoEmCombate() || subirNivel() || consumirItem()
                        || comprarJutsu() || comprarItem() || solicitar()
                        || coletarMissao() || coletarConquista() || trocarEnPorRyos()
-                       || roletaGratis() || roletaPaga() || resgatarPremio() || doarVila() || pagarTransferencia()
+                       || roletaGratis() || roletaPaga() || resgatarPremio() || doarVila() || apostar() || receberAposta() || pagarTransferencia()
                        || pagarCofre() || receberCofre() || devolverCofre() || contabilizarBatalha()))
         || (logado() && !dono() && receberTransferencia());
     }
@@ -577,7 +643,7 @@ service cloud.firestore {
       function participa() {
         return logado() && (request.auth.uid == resource.data.desafianteId || request.auth.uid == resource.data.desafiadoId);
       }
-      allow read: if isAdmin() || resource == null || participa();
+      allow read: if logado();   // lutas são públicas: espectadores podem assistir
       allow create: if logado() && request.resource.data.desafianteId == request.auth.uid
         && request.resource.data.desafiadoId != request.auth.uid
         && request.resource.data.status == 'pendente'
@@ -586,6 +652,40 @@ service cloud.firestore {
               request.resource.data.aposta.moeda in ['ryos', 'essencia_ninja', 'xp']
               && request.resource.data.aposta.valor is int && request.resource.data.aposta.valor > 0));
       allow update, delete: if isAdmin() || participa();
+
+      // Apostas dos espectadores (o id do documento é o uid de quem aposta: uma aposta por luta)
+      match /apostas/{uid} {
+        function a() { return request.resource.data; }
+        function luta() { return get(/databases/$(database)/documents/desafios_batalha/$(id)).data; }
+        function lutaAberta(b) {
+          return b.status == 'aceito' && b.get('estado', null) != null && b.estado.status == 'em_andamento' && b.estado.turno < 2
+            && !(uid in [b.desafianteId, b.desafiadoId]) && a().lado in [b.desafianteId, b.desafiadoId];
+        }
+        allow read: if logado();
+        allow create: if logado() && uid == request.auth.uid
+          && a().keys().hasOnly(['uid', 'nome', 'lado', 'moeda', 'valor', 'liquido', 'pago', 'em'])
+          && a().uid == uid && a().moeda in ['ryos', 'essencia_ninja']
+          && a().valor is int && a().valor >= 20
+          && a().liquido == a().valor - math.floor(a().valor / 20.0) && a().pago == false
+          && lutaAberta(luta())
+          && getAfter(/databases/$(database)/documents/users/$(uid)).data.get('ultimaAposta', '') == id
+          && existsAfter(/databases/$(database)/documents/vila_movimentos/$('aposta_' + id + '_' + uid));
+        // Só marca como paga (o valor recebido é conferido na ficha)
+        allow update: if isAdmin() || (logado() && uid == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pago'])
+          && resource.data.pago == false && request.resource.data.pago == true);
+        allow delete: if isAdmin();
+      }
+
+      // Torcida: cada espectador tem 1 documento (presença + último emoji)
+      match /torcida/{uid} {
+        allow read: if logado();
+        allow create, update: if logado() && uid == request.auth.uid
+          && request.resource.data.keys().hasOnly(['nome', 'lado', 'emoji', 'em', 'visto'])
+          && request.resource.data.get('emoji', '') in ['', '🔥', '👏', '😱', '💪', '😂', '❤️', '⚡', '🍥']
+          && (request.resource.data.get('nome', '') is string) && request.resource.data.get('nome', '').size() <= 60;
+        allow delete: if isAdmin() || (logado() && uid == request.auth.uid);
+      }
     }
 
     // Qualquer outra coleção: só o Kage
