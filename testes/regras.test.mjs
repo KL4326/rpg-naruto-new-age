@@ -187,11 +187,54 @@ await caso('Resgate: usar o prêmio de Ferramenta para pegar jutsu', false, asyn
 await caso('Resgate: Ferramenta Especial marcada no catálogo', true, async () => { await semearPremios(); return updateDoc(uA(dbA()), { 'inventario.fuuma': 1, premios_pendentes: sem(1), ultimoResgate: { indice: 1, tipo: 'ferramentas', id: 'fuuma' } }); });
 await caso('Resgate: ferramenta NÃO marcada como prêmio', false, async () => { await semearPremios(); return updateDoc(uA(dbA()), { 'inventario.kunai': 3, premios_pendentes: sem(1), ultimoResgate: { indice: 1, tipo: 'ferramentas', id: 'kunai' } }); });
 await caso('Resgate: pegar 5 ferramentas com 1 prêmio', false, async () => { await semearPremios(); return updateDoc(uA(dbA()), { 'inventario.fuuma': 5, premios_pendentes: sem(1), ultimoResgate: { indice: 1, tipo: 'ferramentas', id: 'fuuma' } }); });
-await caso('Resgate: Modificador +1 na Força', true, async () => { await semearPremios(); return updateDoc(uA(dbA()), { forca: 11, premios_pendentes: sem(2), ultimoResgate: { indice: 2, tipo: 'atributo', id: 'forca' } }); });
-await caso('Resgate: Modificador +50 na Força', false, async () => { await semearPremios(); return updateDoc(uA(dbA()), { forca: 60, premios_pendentes: sem(2), ultimoResgate: { indice: 2, tipo: 'atributo', id: 'forca' } }); });
+await caso('Resgate: Modificador +50 na Força', true, async () => { await semearPremios(); return updateDoc(uA(dbA()), { forca: 60, premios_pendentes: sem(2), ultimoResgate: { indice: 2, tipo: 'atributo', id: 'forca' } }); });
+await caso('Resgate: Modificador +100 na Força', false, async () => { await semearPremios(); return updateDoc(uA(dbA()), { forca: 110, premios_pendentes: sem(2), ultimoResgate: { indice: 2, tipo: 'atributo', id: 'forca' } }); });
 await caso('Resgate: Modificador em Ryos', false, async () => { await semearPremios(); return updateDoc(uA(dbA()), { ryos: 1001, premios_pendentes: sem(2), ultimoResgate: { indice: 2, tipo: 'atributo', id: 'ryos' } }); });
+await caso('Resgate: Modificador +50 na Vida máxima', true, async () => { await semearPremios(); await env.withSecurityRulesDisabled(c => updateDoc(doc(c.firestore(), 'users', A), { max_vida: 1800 })); return updateDoc(uA(dbA()), { max_vida: 1850, premios_pendentes: sem(2), ultimoResgate: { indice: 2, tipo: 'atributo', id: 'max_vida' } }); });
 await caso('Kage limpa todos os prêmios pendentes', true, async () => { await semearPremios(); return updateDoc(doc(dbAdm(), 'users', A), { premios_pendentes: [] }); });
 
+// ---------- Cofre da Vila ----------
+const abrirCofre = () => env.withSecurityRulesDisabled(c => setDoc(doc(c.firestore(), 'vila', 'banco'), { saldo: 1000000 }));
+const BANCO = (dbX) => doc(dbX, 'vila', 'banco');
+const MOV = (dbX, id) => doc(dbX, 'vila_movimentos', id);
+const mov = (tipo, valor, ref = '') => ({ uid: A, nome: 'Kenji', tipo, valor, data: serverTimestamp(), ref });
+function entrada(b, dbX, id, tipo, valor, ref) { b.set(MOV(dbX, id), mov(tipo, valor, ref)); b.update(BANCO(dbX), { saldo: increment(valor), ultimoMov: id }); }
+function compraJutsuComImposto(dbX, imposto, movId = 'c1') {
+  const b = writeBatch(dbX);
+  b.update(uA(dbX), { ryos: increment(-300), meusJutsus: ['j1'], 'maestrias.j1': 0, ultimaCompra: { tipo: 'jutsu', id: 'j1', mov: movId } });
+  entrada(b, dbX, movId, 'imposto_loja', imposto); return b.commit();
+}
+await caso('Cofre: compra em Ryos paga 10% para a vila', true, async () => { await abrirCofre(); return compraJutsuComImposto(dbA(), 30); });
+await caso('Cofre: imposto inflado (vila ganha mais que 10%)', false, async () => { await abrirCofre(); return compraJutsuComImposto(dbA(), 3000); });
+await caso('Cofre: "imposto" sem compra nenhuma', false, async () => { await abrirCofre(); const db = dbA(); const b = writeBatch(db); entrada(b, db, 'x1', 'imposto_loja', 30); return b.commit(); });
+await caso('Cofre: compra de 3 itens paga 10% do total', true, async () => {
+  await abrirCofre(); const db = dbA(); const b = writeBatch(db);
+  b.update(uA(db), { ryos: increment(-150), 'inventario.i1': 3, ultimaCompra: { tipo: 'itens', id: 'i1', mov: 'c2' } });
+  entrada(b, db, 'c2', 'imposto_loja', 15); return b.commit();
+});
+await caso('Cofre: compra em EN não gera imposto', false, async () => {
+  await abrirCofre(); const db = dbA(); const b = writeBatch(db);
+  b.update(uA(db), { essencia_ninja: increment(-20), meusJutsus: ['j2'], 'maestrias.j2': 0, ultimaCompra: { tipo: 'jutsu', id: 'j2', mov: 'c3' } });
+  entrada(b, db, 'c3', 'imposto_loja', 99); return b.commit();
+});
+const coletarComTaxa = (dbX, taxa, id = 'missao_' + A + '_m1') => { const b = writeBatch(dbX);
+  b.update(uA(dbX), { ryos: increment(500), xp: increment(100), essencia_ninja: increment(5), missoes_concluidas_c: increment(1), 'statusMissoes.m1': 'concluido', ultimaColeta: { tipo: 'missao', id: 'm1' } });
+  entrada(b, dbX, id, 'missao', taxa); return b.commit(); };
+await caso('Cofre: missão rende 20% para a vila', true, async () => { await abrirCofre(); return coletarComTaxa(dbA(), 100); });
+await caso('Cofre: missão rendendo mais que 20%', false, async () => { await abrirCofre(); return coletarComTaxa(dbA(), 500); });
+await caso('Cofre: taxa de missão com comprovante de outro id', false, async () => { await abrirCofre(); return coletarComTaxa(dbA(), 100, 'qualquer'); });
+const doar = (dbX, v, noBanco = v, id = 'd' + v) => { const b = writeBatch(dbX);
+  b.update(uA(dbX), { ryos: increment(-v), doado_vila: increment(v), ultimaDoacao: id });
+  entrada(b, dbX, id, 'doacao', noBanco); return b.commit(); };
+await caso('Cofre: doar 200 Ryos', true, async () => { await abrirCofre(); return doar(dbA(), 200); });
+await caso('Cofre: doar 10 e o cofre receber 1000', false, async () => { await abrirCofre(); return doar(dbA(), 10, 1000); });
+await caso('Cofre: doar mais do que tem', false, async () => { await abrirCofre(); return doar(dbA(), 5000); });
+await caso('Cofre: jogador tira dinheiro do cofre', false, async () => { await abrirCofre(); return updateDoc(BANCO(dbA()), { saldo: 0 }); });
+await caso('Cofre: jogador aumenta o cofre sem comprovante', false, async () => { await abrirCofre(); return updateDoc(BANCO(dbA()), { saldo: increment(500) }); });
+await caso('Cofre: Kage paga salários (cofre diminui)', true, async () => { await abrirCofre(); const db = dbAdm(); const b = writeBatch(db);
+  b.update(doc(db, 'users', B), { ryos: increment(500) }); b.update(BANCO(db), { saldo: increment(-500) });
+  b.set(MOV(db, 's1'), { uid: ADM, nome: 'Kage', tipo: 'salarios', valor: -500, data: serverTimestamp(), ref: '' }); return b.commit(); });
+await caso('Cofre: todos podem ver o saldo', true, async () => { await abrirCofre(); return getDoc(BANCO(dbB())); });
 // ---------- Admins ----------
 await caso('Kage (admin@) altera Ryos de qualquer um', true, () => updateDoc(doc(dbAdm(), 'users', B), { ryos: 777777 }));
 await caso('Conselheiro também é admin', true, () => updateDoc(doc(dbConselheiro(), 'users', B), { 'statusMissoes.m1': 'aprovado', salario: 50 }));
@@ -270,6 +313,11 @@ await caso('Arena: perdedor tenta contar VITÓRIA', false, async () => { await s
 await caso('Arena: vencedor tenta +100 pontos', false, async () => { await semearBatalha('k1', rank()); return contar(dbA(), A, 'k1', { vitorias: increment(1), pontos_rankeada: 100 }); });
 await caso('Arena: contar a mesma luta duas vezes', false, async () => { await semearBatalha('k1', rank({ contabilizado: { [A]: true } })); return contar(dbA(), A, 'k1', { vitorias: increment(1), pontos_rankeada: 25 }); });
 await caso('Arena: empate amistoso +1 empate', true, async () => { await semearBatalha('a1', rank({ modo: 'amistoso', estado: { status: 'finalizada', resultado: { vencedor: null, perdedor: null, empate: true } } })); return contar(dbA(), A, 'a1', { empates: increment(1) }); });
+
+const receberComTaxa = (dbX, uid, premio, taxa) => { const b = writeBatch(dbX); b.update(doc(dbX, 'desafios_batalha', 'f1'), { cofrePago: true }); b.update(doc(dbX, 'users', uid), { ryos: increment(premio), ultimoCofre: 'f1' });
+  b.set(MOV(dbX, 'arena_f1'), { uid, nome: 'Kenji', tipo: 'arena', valor: taxa, data: serverTimestamp(), ref: 'f1' }); b.update(BANCO(dbX), { saldo: increment(taxa), ultimoMov: 'arena_f1' }); return b.commit(); };
+await caso('Cofre: vencedor da Competitiva leva 95% e a vila 5%', true, async () => { await abrirCofre(); await semearBatalha('f1', batalhaFinal()); return receberComTaxa(dbA(), A, 190, 10); });
+await caso('Cofre: vencedor tenta levar 100% com o cofre da vila aberto', false, async () => { await abrirCofre(); await semearBatalha('f1', batalhaFinal()); return receber(dbA(), A, 200); });
 
 await env.cleanup();
 const falhas = resultados.filter(r => r[0] === '❌');

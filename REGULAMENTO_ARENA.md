@@ -12,7 +12,7 @@ As regras abaixo são as que o site aplica automaticamente. O código está em
 |---|---|
 | 🤝 **Amistoso** | Só a honra. Conta em Vitórias/Derrotas/Empates e no ranking "Amistosos". |
 | 🏆 **Rankeada** | Quem vence ganha **+25 pontos**; quem perde perde **−15** (nunca fica negativo). |
-| 💰 **Competitivo** | Quem desafia escolhe o valor (Ryos, EN ou XP). Ao aceitar, **o valor dos dois vai para um cofre** e **quem vencer leva o cofre inteiro**. |
+| 💰 **Competitivo** | Quem desafia escolhe o valor (Ryos, EN ou XP). Ao aceitar, **o valor dos dois vai para um cofre** e **quem vencer leva o cofre** (em Ryos, 5% vão para o Cofre da Vila). |
 
 - No Competitivo valendo **XP**, precisa sobrar **10 XP** na barra do nível (com 30 XP, aposta no máximo 20).
 - Convite recusado ou cancelado: a aposta volta para quem desafiou. Empate: cada um recebe a sua de volta.

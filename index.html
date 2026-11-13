@@ -413,11 +413,16 @@
                             <i class="fa-solid fa-sack-dollar"></i> Tesouraria da Vila
                         </h3>
                         <p style="font-size: 0.85rem; color: #555; margin-bottom: 15px;">
-                            Pague o salário de todos os ninjas da vila com um único comando. O valor depositado será baseado no campo "Salário" da ficha de cada jogador.
+                            Os salários saem do <strong>Cofre da Vila</strong>, conforme o campo "Salário" de cada ficha. Se o cofre não cobrir a folha, cada ninja recebe a mesma porcentagem do seu salário.
                         </p>
+                        <div id="tesouraria-info" class="tesouraria-info"><p style="color:#777;">Abrindo o cofre...</p></div>
                         <button id="btn-pagar-salarios" class="buy-btn" style="background: #2ecc71; max-width: 250px; margin: 0 auto; font-size: 1.1rem;" onclick="window.pagarSalariosGeral()">
                             <i class="fa-solid fa-coins"></i> Pagar Salários
                         </button>
+                        <div class="tesouraria-ajustes">
+                            <button class="btn-arena-sec" onclick="window.ajustarCofre(1)"><i class="fa-solid fa-plus" aria-hidden="true"></i> Depositar no cofre</button>
+                            <button class="btn-arena-sec" onclick="window.ajustarCofre(-1)"><i class="fa-solid fa-minus" aria-hidden="true"></i> Retirar do cofre</button>
+                        </div>
                     </div>
                     <!-- FIM DO MÓDULO -->
                 
@@ -571,8 +576,9 @@
                 <div id="loja-premium" class="tab-content">
                     <div class="premium-header">
                         <h2>Banco Central do RPG</h2>
-                        <p>Troque sua Essência Ninja por Ryos ou adquira mais Essência.</p>
+                        <p>O cofre da vila, doações, e a troca de Essência Ninja por Ryos.</p>
                     </div>
+                    <div id="cofre-vila" class="cofre-vila"><p class="arena-vazio">Abrindo o cofre...</p></div>
 
                     <div class="premium-grid">
                         <div class="premium-card">

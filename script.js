@@ -440,9 +440,10 @@ window.showTab = (t, opcoes = {}) => {
             if(t === 'missoes') carregarMissoes();
             if(t === 'rankings') carregarRankings();
             if(t === 'mentorias') carregarMentorias();
-            if(t === 'admin-panel') { carregarPainelAdmin(); window.carregarDiariosAdmin(); window.carregarPremiosPendentesAdmin(); }
+            if(t === 'admin-panel') { window.carregarTesouraria(); carregarPainelAdmin(); window.carregarDiariosAdmin(); window.carregarPremiosPendentesAdmin(); }
 
             if(t === 'loja-premium') {
+                window.carregarCofreVila();
                 const input = document.getElementById('input-qtd-ryos');
                 if(input) input.value = "";
                 const label = document.getElementById('label-custo-en');
@@ -2089,7 +2090,9 @@ function htmlResultado(d, eu) {
     if (d.modo === 'competitivo' && d.aposta) {
         const total = Object.values(d.cofre || {}).reduce((a, b) => a + numero(b), 0);
         premio = r.empate ? `Cada um recebe sua aposta de volta (${formatarNum(d.aposta.valor)} ${NOMES_MOEDA[d.aposta.moeda]}).`
-            : (r.vencedor === eu ? `Você levou o cofre: +${formatarNum(total)} ${NOMES_MOEDA[d.aposta.moeda]}` : `Você perdeu ${formatarNum(d.aposta.valor)} ${NOMES_MOEDA[d.aposta.moeda]}.`);
+            : (r.vencedor === eu ? (d.aposta.moeda === 'ryos'
+                ? `Você levou o cofre: +${formatarNum(total - Math.floor(total / 20))} Ryos (5% foram para o Cofre da Vila)`
+                : `Você levou o cofre: +${formatarNum(total)} ${NOMES_MOEDA[d.aposta.moeda]}`) : `Você perdeu ${formatarNum(d.aposta.valor)} ${NOMES_MOEDA[d.aposta.moeda]}.`);
     }
     return `<div class="arena-resultado ${cls}"><div class="arena-resultado-titulo">${titulo}</div><div>${esc(motivo)}</div>${premio ? `<div class="arena-resultado-premio">${esc(premio)}</div>` : ''}</div>`;
 }
@@ -2519,9 +2522,12 @@ async function posLuta(id, d) {
             if (r.empate) await devolverMeuCofre(id, d);
             else if (r.vencedor === eu && !d.cofrePago) {
                 const total = Object.values(d.cofre || {}).reduce((a, b) => a + numero(b), 0);
+                // Em Ryos, 5% do cofre vai para o Cofre da Vila
+                const taxa = d.aposta.moeda === 'ryos' && await cofreAberto() ? Math.floor(total / COFRE.taxaArena) : 0;
                 const lote = writeBatch(db);
                 lote.update(ref, { cofrePago: true });
-                lote.update(doc(db, "users", eu), { [d.aposta.moeda]: increment(total), ultimoCofre: id });
+                lote.update(doc(db, "users", eu), { [d.aposta.moeda]: increment(total - taxa), ultimoCofre: id });
+                if (taxa > 0) entradaNoCofre(lote, 'arena_' + id, 'arena', taxa, id);
                 await lote.commit();
             }
         }
@@ -2864,6 +2870,23 @@ window.consumirItem = async (id, nome) => {
     }
 };
 // Lê o item direto do banco na hora da compra (o preço pode ter mudado desde que a loja abriu)
+// =====================================================================
+//  COFRE DA VILA (vila/banco). Entradas: 10% das compras em Ryos, 20% das
+//  missões, 5% do cofre Competitivo em Ryos e doações. Saídas: salários.
+//  Cada entrada leva um comprovante (vila_movimentos) que as regras conferem.
+// =====================================================================
+const COFRE = { impostoLoja: 10, taxaMissao: 5, taxaArena: 20, saldoInicial: 1000000 }; // divisores: 1/10, 1/5, 1/20
+const refCofre = () => doc(db, "vila", "banco");
+async function cofreAberto() {
+    try { return (await getDoc(refCofre())).exists(); } catch (e) { return false; }
+}
+// Coloca no lote a entrada no cofre + o comprovante
+function entradaNoCofre(lote, movId, tipo, valor, ref = '') {
+    lote.set(doc(db, "vila_movimentos", movId), { uid: minhaUid(), nome: currentUserData?.nome || 'Ninja', tipo, valor, data: serverTimestamp(), ref });
+    lote.update(refCofre(), { saldo: increment(valor), ultimoMov: movId });
+}
+const idMovimento = (prefixo) => `${prefixo}_${minhaUid()}_${Date.now()}`;
+
 async function precoAtual(colecao, id) {
     const snap = await getDoc(doc(db, colecao, id));
     if (!snap.exists()) throw new Error("Este item não existe mais na loja.");
@@ -2879,12 +2902,18 @@ window.comprarJutsu = async (id, p, n) => {
         if (preco !== Number(p) && !confirm(`O preço de ${n} mudou para ${formatarNum(preco)} ${nomeMoeda(moeda)}. Comprar mesmo assim?`)) { limparCache("jutsus"); carregarLoja(); return; }
         if ((currentUserData.nivel || 1) < numero(dados.requisito)) return alert(`Requer nível ${dados.requisito}.`);
         if ((currentUserData[moeda] || 0) < preco) return alert("Sem fundos!");
-        await updateDoc(doc(db, "users", auth.currentUser.uid), {
+        const imposto = moeda === 'ryos' ? Math.floor(preco / COFRE.impostoLoja) : 0;
+        const comImposto = imposto > 0 && await cofreAberto();
+        const movId = comImposto ? idMovimento('compra') : null;
+        const lote = writeBatch(db);
+        lote.update(doc(db, "users", auth.currentUser.uid), {
             [moeda]: increment(-preco),
             meusJutsus: arrayUnion(id),
             [`maestrias.${id}`]: 0,
-            ultimaCompra: { tipo: 'jutsu', id }   // comprovante conferido pelas regras de segurança
+            ultimaCompra: { tipo: 'jutsu', id, ...(movId ? { mov: movId } : {}) }   // comprovante conferido pelas regras de segurança
         });
+        if (comImposto) entradaNoCofre(lote, movId, 'imposto_loja', imposto, id);   // 10% para a vila (o preço não muda)
+        await lote.commit();
         alert("Comprado!");
     } catch (e) { console.error(e); alert("Não foi possível concluir a compra. " + (e.message || "")); }
 };
@@ -2897,11 +2926,17 @@ window.comprarMultiplos = async (id, p, n, t, i) => {
         if (preco !== Number(p) && !confirm(`O preço de ${n} mudou para ${formatarNum(preco)} ${nomeMoeda(moeda)}. Comprar mesmo assim?`)) { limparCache(colecao); window.showTab(document.querySelector('.tab-content.active').id); return; }
         const total = preco * q;
         if ((currentUserData[moeda] || 0) < total) return alert("Sem fundos!");
-        await updateDoc(doc(db, "users", auth.currentUser.uid), {
+        const imposto = moeda === 'ryos' ? Math.floor(total / COFRE.impostoLoja) : 0;
+        const comImposto = imposto > 0 && await cofreAberto();
+        const movId = comImposto ? idMovimento('compra') : null;
+        const lote = writeBatch(db);
+        lote.update(doc(db, "users", auth.currentUser.uid), {
             [moeda]: increment(-total),
             [`inventario.${id}`]: increment(q),
-            ultimaCompra: { tipo: colecao, id }   // comprovante conferido pelas regras de segurança
+            ultimaCompra: { tipo: colecao, id, ...(movId ? { mov: movId } : {}) }   // comprovante conferido pelas regras de segurança
         });
+        if (comImposto) entradaNoCofre(lote, movId, 'imposto_loja', imposto, id);
+        await lote.commit();
         alert("Comprado!");
     } catch (e) { console.error(e); alert("Não foi possível concluir a compra. " + (e.message || "")); }
 };
@@ -3007,7 +3042,8 @@ window.coletarRecompensa = async (id, ryos, xp, en, rank, btn) => {
         // Define qual contador de missão concluída aumentar baseado no Rank
         const campoRank = `missoes_concluidas_${String(m.rank || 'D').toLowerCase()}`;
 
-        await updateDoc(userRef, {
+        const lote = writeBatch(db);
+        lote.update(userRef, {
             ryos: increment(numero(m.recompensa)),
             xp: increment(numero(m.xp)),
             essencia_ninja: increment(numero(m.en)),
@@ -3015,8 +3051,12 @@ window.coletarRecompensa = async (id, ryos, xp, en, rank, btn) => {
             [`statusMissoes.${id}`]: 'concluido',
             ultimaColeta: { tipo: 'missao', id }
         });
+        // O cliente da missão paga a vila: +20% da recompensa vão para o cofre (o ninja não perde nada)
+        const taxa = Math.floor(numero(m.recompensa) / COFRE.taxaMissao);
+        if (taxa > 0 && await cofreAberto()) entradaNoCofre(lote, `missao_${uid}_${id}`, 'missao', taxa, id);
+        await lote.commit();
 
-        alert("Recompensa de Missão recebida com sucesso!");
+        alert("Recompensa de Missão recebida com sucesso!" + (taxa > 0 ? `\n🏯 A vila também recebeu ${formatarNum(taxa)} Ryos pelo contrato.` : ''));
         fecharMissaoModal();
         carregarMissoes(); // Atualiza a lista
     } catch (e) {
@@ -3665,10 +3705,11 @@ const PREMIOS_RESGATAVEIS = {
     'Jutsu Rank B': { icone: '📜', texto: 'Escolha um jutsu Rank B' },
     'Ferramenta Especial': { icone: '🧰', texto: 'Escolha uma Ferramenta Especial' },
     'Arma Ninja': { icone: '🗡️', texto: 'Escolha uma Arma Ninja' },
-    'Modificador de Atributo': { icone: '💪', texto: 'Escolha o atributo que vai receber +1' }
+    'Modificador de Atributo': { icone: '💪', texto: 'Escolha o atributo que vai receber +50 (ou o máximo de Vida, Chakra ou Stamina)' }
 };
-const ATRIBUTOS_MODIFICADOR = [['forca', 'Força'], ['defesa', 'Defesa'], ['constituicao', 'Constituição'], ['destreza', 'Destreza'], ['intelecto', 'Intelecto'], ['agilidade', 'Agilidade']];
-const VALOR_MODIFICADOR = 1;   // (se mudar aqui, mude também em firestore.rules → resgateAtributo)
+const ATRIBUTOS_MODIFICADOR = [['forca', 'Força', '💪'], ['defesa', 'Defesa', '🛡️'], ['constituicao', 'Constituição', '🫀'], ['destreza', 'Destreza', '🎯'], ['intelecto', 'Intelecto', '🧠'], ['agilidade', 'Agilidade', '💨'],
+    ['max_vida', 'Vida máxima', '❤️'], ['max_chakra', 'Chakra máximo', '🔵'], ['max_stamina', 'Stamina máxima', '🟢']];
+const VALOR_MODIFICADOR = 50;   // (se mudar aqui, mude também em firestore.rules → resgateAtributo)
 
 function premiosResgataveis(tipo) {
     return (currentUserData?.premios_pendentes || []).filter(p => tipo ? tipoDoPremio(p) === tipo : PREMIOS_RESGATAVEIS[tipoDoPremio(p)]);
@@ -3722,7 +3763,7 @@ window.abrirResgate = async (tipoPremio) => {
     let opcoes = [];
     try {
         if (tipoPremio === 'Modificador de Atributo') {
-            opcoes = ATRIBUTOS_MODIFICADOR.map(([id, nome]) => ({ destino: { tipo: 'atributo', id }, nome, sub: `${formatarNum(numero(currentUserData[id]))} → ${formatarNum(numero(currentUserData[id]) + VALOR_MODIFICADOR)}`, icone: '💪' }));
+            opcoes = ATRIBUTOS_MODIFICADOR.map(([id, nome, icone]) => ({ destino: { tipo: 'atributo', id }, nome, sub: `${formatarNum(numero(currentUserData[id]))} → ${formatarNum(numero(currentUserData[id]) + VALOR_MODIFICADOR)}`, icone }));
         } else if (tipoPremio === 'Jutsu Rank B') {
             const s = await lerColecao("jutsus");
             s.forEach(d => { const j = d.data(); if (jutsuResgatavel(d.id, j)) opcoes.push({ destino: { tipo: 'jutsu', id: d.id }, nome: j.nome || d.id, sub: 'Rank B', img: j.imagem }); });
@@ -3733,7 +3774,7 @@ window.abrirResgate = async (tipoPremio) => {
             }
         }
     } catch (e) { console.error(e); }
-    opcoes.sort((a, b) => String(a.nome).localeCompare(String(b.nome)));
+    if (tipoPremio !== 'Modificador de Atributo') opcoes.sort((a, b) => String(a.nome).localeCompare(String(b.nome)));
     area.innerHTML = opcoes.length ? opcoes.map(o => `
         <button class="resgate-opcao" onclick="window.resgatarPremio(${jsArg(tipoPremio)}, ${esc(JSON.stringify(o.destino))}, ${jsArg(o.nome)})">
             ${o.img ? `<img src="${esc(o.img)}" alt="" loading="lazy">` : `<span class="resgate-icone">${o.icone || info.icone}</span>`}
@@ -4623,64 +4664,139 @@ window.enviarMensagemChat = async () => {
     }
 };
 
-// --- SISTEMA DE PAGAMENTO DE SALÁRIOS ---
+// --- SISTEMA DE PAGAMENTO DE SALÁRIOS (sai do Cofre da Vila) ---
+// Se o cofre não tiver o suficiente para a folha inteira, paga PROPORCIONAL:
+// todos recebem a mesma porcentagem do salário (arredondando para baixo).
 window.pagarSalariosGeral = async () => {
-    if (!confirm("Atenção Kage! Deseja pagar o salário de TODOS os ninjas agora?")) return;
-    
     const btn = document.getElementById('btn-pagar-salarios');
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Transferindo Ryos...';
-    }
-
     try {
-        // Busca todos os ninjas cadastrados
+        const snapCofre = await getDoc(refCofre());
+        if (!snapCofre.exists()) return alert("O Cofre da Vila ainda não foi aberto. Recarregue o Painel Kage.");
+        const saldo = numero(snapCofre.data().saldo);
         const usersSnap = await getDocs(collection(db, "users"));
-        
-        let ninjasPagos = 0;
-        let totalRyosInjetados = 0;
-        const promessasPagamento = [];
-
-        usersSnap.forEach((docSnap) => {
-            const dadosNinja = docSnap.data();
-            const salario = Number(dadosNinja.salario) || 0;
-            
-            // Só prepara a transferência se o ninja tiver um salário maior que zero
-            if (salario > 0) {
-                const refNinja = doc(db, "users", docSnap.id);
-                
-                promessasPagamento.push(
-                    updateDoc(refNinja, {
-                        ryos: increment(salario)
-                    })
-                );
-                
-                ninjasPagos++;
-                totalRyosInjetados += salario;
+        const folha = usersSnap.docs.map(d => ({ id: d.id, salario: Math.floor(numero(d.data().salario)) })).filter(x => x.salario > 0);
+        const total = folha.reduce((a, x) => a + x.salario, 0);
+        if (!folha.length) return alert("Nenhum ninja tem salário cadastrado.");
+        const fator = saldo >= total ? 1 : Math.max(0, saldo) / total;
+        const pagos = folha.map(x => ({ ...x, valor: Math.floor(x.salario * fator) })).filter(x => x.valor > 0);
+        const pago = pagos.reduce((a, x) => a + x.valor, 0);
+        const aviso = fator < 1
+            ? `⚠️ O cofre tem ${formatarNum(saldo)} Ryos, mas a folha é de ${formatarNum(total)}.\nVai pagar PROPORCIONAL: ${Math.floor(fator * 100)}% de cada salário (${formatarNum(pago)} Ryos no total).`
+            : `Folha: ${formatarNum(total)} Ryos para ${folha.length} ninjas.\nO cofre fica com ${formatarNum(saldo - total)} Ryos.`;
+        if (!pago) return alert(`O cofre está vazio (${formatarNum(saldo)} Ryos). Não há como pagar salários agora.`);
+        if (!confirm(`Pagar os salários de TODOS os ninjas?\n\n${aviso}`)) return;
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Transferindo Ryos...'; }
+        // Lotes de até 400 escritas; o último lote também desconta o cofre e registra a saída
+        for (let a = 0; a < pagos.length; a += 400) {
+            const lote = writeBatch(db);
+            pagos.slice(a, a + 400).forEach(x => lote.update(doc(db, "users", x.id), { ryos: increment(x.valor) }));
+            if (a + 400 >= pagos.length) {
+                lote.update(refCofre(), { saldo: increment(-pago) });
+                lote.set(doc(db, "vila_movimentos", idMovimento('salarios')), { uid: minhaUid(), nome: 'Kage', tipo: 'salarios', valor: -pago, data: serverTimestamp(), ref: fator < 1 ? `proporcional ${Math.floor(fator * 100)}%` : '' });
             }
-        });
-
-        // Executa todas as atualizações no Firebase de uma vez só (muito mais rápido)
-        await Promise.all(promessasPagamento);
-
-        alert(`💰 Pagamento Concluído!\n\n${ninjasPagos} ninjas receberam seus salários.\nTotal injetado na economia: ${formatarNum(totalRyosInjetados)} Ryos.`);
-        
-        // Atualiza a interface do Kage caso ele mesmo tenha recebido salário
-        if (currentUserData && currentUserData.salario > 0) {
-            currentUserData.ryos += currentUserData.salario;
-            const ryosEl = document.getElementById('ryos-text');
-            if (ryosEl) ryosEl.innerText = formatarNum(currentUserData.ryos);
+            await lote.commit();
         }
-
+        alert(`💰 Pagamento concluído!\n\n${pagos.length} ninjas receberam ${fator < 1 ? `${Math.floor(fator * 100)}% do salário` : 'o salário'}.\nSaíram ${formatarNum(pago)} Ryos do Cofre da Vila.`);
+        window.carregarTesouraria();
     } catch (erro) {
         console.error("Erro ao pagar salários:", erro);
-        alert("Ocorreu um erro na tesouraria. Alguns ninjas podem não ter recebido.");
+        alert("Ocorreu um erro na tesouraria: " + erro.message);
     } finally {
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-coins"></i> Pagar Salários';
-        }
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-coins"></i> Pagar Salários'; }
     }
+};
+
+// Painel Kage: saldo do cofre, folha de salários e ajuste manual
+window.carregarTesouraria = async () => {
+    const el = document.getElementById('tesouraria-info');
+    if (!el) return;
+    try {
+        let snap = await getDoc(refCofre());
+        if (!snap.exists()) {
+            // Primeira vez: abre o cofre com o saldo inicial combinado
+            const lote = writeBatch(db);
+            lote.set(refCofre(), { saldo: COFRE.saldoInicial, criadoEm: serverTimestamp() });
+            lote.set(doc(db, "vila_movimentos", idMovimento('abertura')), { uid: minhaUid(), nome: 'Kage', tipo: 'abertura', valor: COFRE.saldoInicial, data: serverTimestamp(), ref: 'Saldo inicial' });
+            await lote.commit();
+            snap = await getDoc(refCofre());
+        }
+        const saldo = numero(snap.data().saldo);
+        const usersSnap = await lerColecao("users", true);
+        let folha = 0, ninjas = 0;
+        usersSnap.forEach(u => { const v = Math.floor(numero(u.data().salario)); if (v > 0) { folha += v; ninjas++; } });
+        el.innerHTML = `<div class="tesouraria-saldo"><span>Cofre da Vila</span><strong>${formatarNum(saldo)} Ryos</strong></div>
+            <div class="tesouraria-folha">Folha de salários: <strong>${formatarNum(folha)} Ryos</strong> (${ninjas} ninjas)
+            ${folha > saldo ? `<br><span class="tesouraria-alerta">O cofre não cobre a folha: o pagamento será proporcional (${Math.floor(Math.max(0, saldo) / folha * 100)}%).</span>` : ''}</div>`;
+    } catch (e) { console.error(e); el.innerHTML = '<p style="color:var(--danger);">Erro ao abrir o cofre.</p>'; }
+};
+window.ajustarCofre = async (sinal) => {
+    const valor = Math.floor(Number(prompt(sinal > 0 ? 'Quantos Ryos DEPOSITAR no cofre?' : 'Quantos Ryos RETIRAR do cofre?')));
+    if (!valor || valor < 1) return;
+    const motivo = (prompt('Motivo (aparece no extrato da vila):') || '').slice(0, 80);
+    try {
+        const lote = writeBatch(db);
+        lote.update(refCofre(), { saldo: increment(sinal * valor) });
+        lote.set(doc(db, "vila_movimentos", idMovimento('ajuste')), { uid: minhaUid(), nome: 'Kage', tipo: 'ajuste', valor: sinal * valor, data: serverTimestamp(), ref: motivo });
+        await lote.commit();
+        window.carregarTesouraria();
+    } catch (e) { console.error(e); alert("Erro ao ajustar o cofre: " + e.message); }
+};
+
+// =====================================================================
+//  ABA BANCO: Cofre da Vila (saldo, doação, extrato e patronos)
+// =====================================================================
+const NOME_MOVIMENTO = { imposto_loja: '🛒 Imposto da loja', missao: '📜 Contrato de missão', arena: '⚔️ Taxa da arena', doacao: '🎁 Doação', salarios: '💰 Salários', ajuste: '⚖️ Ajuste do Kage', abertura: '🏯 Abertura do cofre' };
+window.carregarCofreVila = async () => {
+    const el = document.getElementById('cofre-vila');
+    if (!el) return;
+    try {
+        const snap = await getDoc(refCofre());
+        if (!snap.exists()) { el.innerHTML = '<p class="arena-vazio">O Cofre da Vila ainda não foi aberto pelo Kage.</p>'; return; }
+        const saldo = numero(snap.data().saldo);
+        const digitado = document.getElementById('valor-doacao')?.value || '';   // não apaga o que a pessoa está digitando
+        const [movs, patronos] = await Promise.all([
+            getDocs(query(collection(db, "vila_movimentos"), orderBy("data", "desc"), limit(12))),
+            getDocs(query(collection(db, "users"), orderBy("doado_vila", "desc"), limit(5)))
+        ]);
+        const extrato = movs.docs.map(d => {
+            const m = d.data(), v = numero(m.valor);
+            const quando = m.data?.toDate ? m.data.toDate().toLocaleDateString('pt-BR') : '';
+            return `<li class="${v < 0 ? 'saida' : 'entrada'}"><span>${esc(NOME_MOVIMENTO[m.tipo] || m.tipo)}${m.tipo === 'doacao' || m.tipo === 'missao' || m.tipo === 'arena' || m.tipo === 'imposto_loja' ? ` · ${esc(m.nome || '')}` : ''}${m.ref && (m.tipo === 'ajuste' || m.tipo === 'salarios') ? ` · ${esc(m.ref)}` : ''}<small>${esc(quando)}</small></span><strong>${v < 0 ? '−' : '+'}${formatarNum(Math.abs(v))}</strong></li>`;
+        }).join('');
+        const ranking = patronos.docs.filter(d => numero(d.data().doado_vila) > 0).map((d, i) =>
+            `<li><span>${['🥇', '🥈', '🥉', '4º', '5º'][i]} ${esc(d.data().nome || 'Ninja')}</span><strong>${formatarNum(numero(d.data().doado_vila))}</strong></li>`).join('');
+        el.innerHTML = `
+            <div class="cofre-topo">
+                <div class="cofre-saldo"><span>🏯 Cofre da Vila</span><strong>${formatarNum(saldo)} <small>Ryos</small></strong>
+                    <p>Paga os salários dos ninjas. Cresce com missões (+20% do contrato), compras na loja (+10%), apostas da arena (5%) e doações.</p></div>
+                <div class="cofre-doar">
+                    <label for="valor-doacao"><strong>Doar para a Vila</strong></label>
+                    <div class="cofre-doar-linha"><input type="number" id="valor-doacao" min="1" placeholder="Ryos" class="edit-input" value="${esc(digitado)}"><button class="buy-btn" onclick="window.doarParaVila()">Doar</button></div>
+                    <small>Você tem ${formatarNum(numero(currentUserData?.ryos))} Ryos${numero(currentUserData?.doado_vila) ? ` · já doou ${formatarNum(numero(currentUserData.doado_vila))}` : ''}</small>
+                </div>
+            </div>
+            <div class="cofre-colunas">
+                <div><h4>Extrato recente</h4><ul class="cofre-lista">${extrato || '<li><span>Sem movimentações ainda.</span></li>'}</ul></div>
+                <div><h4>Patronos da Vila</h4><ul class="cofre-lista patronos">${ranking || '<li><span>Ninguém doou ainda. Seja o primeiro!</span></li>'}</ul></div>
+            </div>`;
+    } catch (e) { console.error(e); el.innerHTML = '<p class="arena-vazio">Não foi possível abrir o cofre agora.</p>'; }
+};
+window.doarParaVila = async () => {
+    const v = Math.floor(Number(document.getElementById('valor-doacao')?.value));
+    if (!v || v < 1) return alert("Informe quanto quer doar.");
+    if (v > numero(currentUserData?.ryos)) return alert("Você não tem Ryos suficientes.");
+    if (!confirm(`Doar ${formatarNum(v)} Ryos para o Cofre da Vila?`)) return;
+    try {
+        if (!(await cofreAberto())) return alert("O Cofre da Vila ainda não foi aberto.");
+        const movId = idMovimento('doacao');
+        const lote = writeBatch(db);
+        lote.update(doc(db, "users", minhaUid()), { ryos: increment(-v), doado_vila: increment(v), ultimaDoacao: movId });
+        entradaNoCofre(lote, movId, 'doacao', v);
+        await lote.commit();
+        document.getElementById('valor-doacao').value = '';
+        alert(`🏯 Obrigado! A vila recebeu ${formatarNum(v)} Ryos.`);
+        window.carregarCofreVila();
+    } catch (e) { console.error(e); alert("Não foi possível doar: " + e.message); }
 };
 
 

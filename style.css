@@ -1304,3 +1304,34 @@ body.menos-movimento .arena-lutador[class*="aura-"], body.menos-movimento .aura-
 .resgate-icone { font-size: 2rem; line-height: 80px; }
 .admin-titulo-acoes { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .admin-titulo-acoes .section-title { margin: 0; }
+
+/* ===================== COFRE DA VILA ===================== */
+.cofre-vila { max-width: 960px; margin: 0 auto 28px; }
+.cofre-topo { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; }
+.cofre-saldo, .cofre-doar, .cofre-colunas > div { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow-sm); }
+.cofre-saldo { border-top: 4px solid var(--gold); }
+.cofre-saldo > span { font-weight: 800; color: var(--text-muted); text-transform: uppercase; font-size: .8rem; letter-spacing: .05em; }
+.cofre-saldo strong { display: block; font-size: 2.2rem; color: var(--gold); line-height: 1.2; margin: 4px 0; }
+.cofre-saldo strong small { font-size: 1rem; }
+.cofre-saldo p { margin: 0; color: var(--text-muted); font-size: .88rem; }
+.cofre-doar { display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+.cofre-doar-linha { display: flex; gap: 8px; }
+.cofre-doar-linha input { flex: 1; min-width: 0; }
+.cofre-doar-linha .buy-btn { width: auto; padding: 8px 18px; }
+.cofre-doar small { color: var(--text-muted); font-weight: 700; }
+.cofre-colunas { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; margin-top: 14px; }
+.cofre-colunas h4 { margin: 0 0 8px; }
+.cofre-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.cofre-lista li { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: .9rem; }
+.cofre-lista li:last-child { border-bottom: 0; }
+.cofre-lista li span { display: flex; flex-direction: column; }
+.cofre-lista li small { color: var(--text-muted); font-size: .75rem; }
+.cofre-lista li.entrada strong { color: var(--success); }
+.cofre-lista li.saida strong { color: var(--danger); }
+.tesouraria-info { margin: 0 auto 14px; max-width: 520px; }
+.tesouraria-saldo { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; }
+.tesouraria-saldo strong { font-size: 1.4rem; color: var(--gold); }
+.tesouraria-folha { margin-top: 8px; font-size: .9rem; }
+.tesouraria-alerta { color: var(--warning); font-weight: 800; }
+.tesouraria-ajustes { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
+@media (max-width: 760px) { .cofre-topo, .cofre-colunas { grid-template-columns: 1fr; } .cofre-saldo strong { font-size: 1.8rem; } }
