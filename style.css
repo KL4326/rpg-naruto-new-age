@@ -680,6 +680,57 @@ body.dark-mode .shop-cat-btn.active { background: #c2410c; border-color: #c2410c
 .arena-resultado.empate { background: var(--surface-2); color: var(--text); }
 .arena-resultado-premio { margin-top: 10px; font-size: 1.05rem; color: var(--text); }
 
+/* Imagem das cartas de ação (a mesma da loja). Sem imagem: ícone da função */
+.arena-carta .carta-img, .anim-carta .carta-img, .arena-ameaca-carta .carta-img {
+    position: relative; display: block; width: 100%; height: 74px; border-radius: 8px; overflow: hidden; margin-bottom: 4px;
+    background: linear-gradient(135deg, var(--surface-3), var(--border));
+}
+.carta-img::before { content: attr(data-icone); position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+.carta-img img { position: relative; width: 100%; height: 100%; object-fit: cover; display: block; }
+.arena-carta.ataque .carta-img { background: linear-gradient(135deg, #fecaca, #b91c1c); }
+.arena-carta.esquiva .carta-img { background: linear-gradient(135deg, #bfdbfe, #1d4ed8); }
+.arena-carta.defesa .carta-img { background: linear-gradient(135deg, #fde68a, #a16207); }
+.arena-carta.modo .carta-img { background: linear-gradient(135deg, #ddd6fe, #6d28d9); }
+.arena-carta.suporte .carta-img, .arena-carta.item .carta-img { background: linear-gradient(135deg, #bbf7d0, #15803d); }
+.arena-ameaca { display: grid; grid-template-columns: 96px 1fr; gap: 4px 12px; align-items: center; }
+.arena-ameaca-carta { grid-row: span 3; }
+.arena-ameaca-carta .carta-img { height: 96px; margin: 0; background: linear-gradient(135deg, #fecaca, #b91c1c); box-shadow: 0 0 0 3px var(--hp); }
+
+/* Palco das animações (por cima de tudo; um toque pula) */
+.arena-anim { position: fixed; inset: 0; z-index: 9500; pointer-events: none; }
+.arena-anim.ativo { pointer-events: auto; cursor: pointer; }
+.anim-carta {
+    position: fixed; width: 170px; padding: 8px; border-radius: 14px; text-align: center;
+    background: linear-gradient(160deg, #fff7ed, #fed7aa); color: #231b14;
+    border: 3px solid #1b1e2b; box-shadow: 0 0 0 3px #f97316, 0 18px 40px rgba(0, 0, 0, .45), 0 0 40px rgba(249, 115, 22, .55);
+    transform: translate(-50%, -50%); will-change: transform, opacity;
+}
+.anim-carta .carta-img { height: 110px; }
+.anim-carta.funcao-ataque { box-shadow: 0 0 0 3px #ef4444, 0 18px 40px rgba(0, 0, 0, .45), 0 0 40px rgba(239, 68, 68, .6); }
+.anim-carta.funcao-defesa, .anim-carta.escudo { box-shadow: 0 0 0 3px #eab308, 0 18px 40px rgba(0, 0, 0, .45), 0 0 40px rgba(234, 179, 8, .6); }
+.anim-carta.funcao-esquiva { box-shadow: 0 0 0 3px #3b82f6, 0 18px 40px rgba(0, 0, 0, .45), 0 0 40px rgba(59, 130, 246, .6); }
+.anim-carta.funcao-modo { box-shadow: 0 0 0 3px #8b5cf6, 0 18px 40px rgba(0, 0, 0, .45), 0 0 40px rgba(139, 92, 246, .6); }
+.anim-carta.funcao-suporte, .anim-carta.funcao-item { box-shadow: 0 0 0 3px #22c55e, 0 18px 40px rgba(0, 0, 0, .45), 0 0 40px rgba(34, 197, 94, .6); }
+.anim-carta.pequena { width: 120px; padding: 6px; }
+.anim-carta.pequena .carta-img { height: 76px; }
+.anim-carta-nome { font-weight: 900; font-size: .95rem; line-height: 1.2; }
+.anim-carta.pequena .anim-carta-nome { font-size: .8rem; }
+.anim-carta-resumo { font-weight: 800; font-size: .8rem; color: #9a3412; margin-top: 2px; }
+.anim-texto { position: fixed; font-family: var(--font-display); font-size: 1.7rem; white-space: nowrap; text-shadow: 0 2px 0 #000, 0 0 14px rgba(0, 0, 0, .6); pointer-events: none; }
+.anim-texto.dano { color: #f87171; }
+.anim-texto.esquiva { color: #93c5fd; }
+.anim-texto.defesa { color: #fde047; }
+.anim-texto.clone { color: #fdba74; }
+.anim-escudo, .anim-fumaca { position: fixed; font-size: 3.2rem; transform: translate(-50%, -50%); filter: drop-shadow(0 4px 10px rgba(0, 0, 0, .5)); }
+
+/* "Reduzir animações" ligado no menu: o site fica sem voos, giros e tremores */
+body.menos-movimento *, body.menos-movimento *::before, body.menos-movimento *::after { transition-duration: .01ms !important; animation-iteration-count: 1 !important; }
+body.menos-movimento .olho, body.menos-movimento .olho-tomoes, body.menos-movimento .olho-mangekyou, body.menos-movimento .olho-iris, body.menos-movimento .olho-brilho { animation: none !important; }
+body.menos-movimento .tela-carregamento .olho-tomoes { opacity: 0; }
+body.menos-movimento .tela-carregamento .olho-mangekyou { opacity: 1; transform: none; }
+.estado-opcao { margin-left: auto; font-size: .75rem; font-weight: 900; color: var(--text-muted); background: var(--surface-2); border: 1px solid var(--border); padding: 2px 8px; border-radius: 999px; }
+body.menos-movimento .estado-opcao { color: var(--success); }
+
 /* Botão da Arena pulsa quando há batalha em andamento */
 .luta-ativa { position: relative; }
 .luta-ativa::after { content: ""; position: absolute; top: 10px; right: 12px; width: 10px; height: 10px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 0 0 rgba(239, 68, 68, .7); animation: aoVivo 1.4s infinite; }
@@ -727,6 +778,13 @@ body.dark-mode .shop-cat-btn.active { background: #c2410c; border-color: #c2410c
     .arena-painel { padding: 10px; }
     .arena-cartas { grid-template-columns: 1fr 1fr; gap: 8px; }
     .arena-carta { padding: 8px 10px; min-height: 64px; font-size: .82rem; }
+    .arena-carta .carta-img { height: 56px; }
+    .arena-ameaca { grid-template-columns: 70px 1fr; }
+    .arena-ameaca-carta .carta-img { height: 70px; }
+    .anim-carta { width: 140px; }
+    .anim-carta .carta-img { height: 88px; }
+    .anim-carta.pequena { width: 100px; }
+    .anim-carta.pequena .carta-img { height: 62px; }
     .carta-info { font-size: .7rem; }
     .arena-ameaca { padding: 10px; }
     .arena-ameaca-titulo { font-size: .95rem; }

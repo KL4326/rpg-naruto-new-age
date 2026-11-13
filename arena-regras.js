@@ -46,6 +46,16 @@ export function num(v, padrao = 0) {
     return Number.isFinite(n) ? n : padrao;
 }
 const clonar = (o) => JSON.parse(JSON.stringify(o));
+
+// Dados para as animações das cartas. Só guarda imagens que são LINKS curtos:
+// imagens salvas como texto (base64) ficariam pesadas no registro da luta,
+// e a tela busca essas no catálogo pelo id.
+export function imagemCurta(url) {
+    return typeof url === 'string' && /^https?:\/\//.test(url) && url.length <= 600 ? url : null;
+}
+function cartaDoJutsu(j, extra = {}) {
+    return { jutsuId: j?.id || null, tipoItem: j?.tipoItem || null, nome: j?.nome || 'Jutsu', img: imagemCurta(j?.imagem), funcao: j?.tipoItem === 'item' ? 'item' : funcaoDoJutsu(j), ...extra };
+}
 const limitar = (v, min, max) => Math.max(min, Math.min(max, v));
 
 // "3d8+4" vira a média (17.5 → 18). "40" vira 40.
@@ -307,6 +317,7 @@ function acaoAtaque(estado, uid, jutsu, opcoes, eventos) {
     const nec = necessidadesDoJutsu(jutsu);
     estado.ataquePendente = {
         de: uid,
+        carta: cartaDoJutsu(jutsu, { funcao: 'ataque' }),
         nome: jutsu.nome + (cargas > 1 ? ` (x${cargas})` : '') + (clones > 0 ? ` + ${clones} clone${clones > 1 ? 's' : ''}` : ''),
         categoria: p.categoria,
         dano: p.dano,
@@ -318,6 +329,7 @@ function acaoAtaque(estado, uid, jutsu, opcoes, eventos) {
     };
     estado.ataquesRestantes -= 1;
     const custoTxt = [p.chakra ? `−${p.chakra} CP` : '', p.stamina ? `−${p.stamina} SP` : ''].filter(Boolean).join(' | ');
+    eventos.push({ tipo: 'anim', anim: 'usar', de: uid, carta: { ...estado.ataquePendente.carta, nome: estado.ataquePendente.nome, resumo: `💥 ${p.dano}` } });
     eventos.push({ tipo: 'ataque', de: uid, texto: `⚔️ ${l.nome} prepara ${estado.ataquePendente.nome}: ${p.dano} de dano potencial${custoTxt ? ` (${custoTxt})` : ''}.` });
 }
 
@@ -363,6 +375,7 @@ function acaoSuporte(estado, uid, jutsu, eventos) {
         if (manutencao) partes.push(`manutenção ${manutencao} CP/turno`);
     }
     const custoTxt = [custo.chakra ? `−${custo.chakra} CP` : '', custo.stamina ? `−${custo.stamina} SP` : ''].filter(Boolean).join(' | ');
+    eventos.push({ tipo: 'anim', anim: 'usar', de: uid, carta: cartaDoJutsu(jutsu, { resumo: partes.join(', ') }) });
     eventos.push({ tipo: 'suporte', de: uid, texto: `✨ ${l.nome} usou [${jutsu.nome}]${partes.length ? ': ' + partes.join(', ') : ''}${custoTxt ? ` (${custoTxt})` : ''}.` });
 }
 
@@ -401,8 +414,10 @@ function aplicarReacao(estado, uid, opcao, jutsu, eventos) {
     const av = avaliarReacao(d, atk);
     let dano = atk.dano;
     let texto = '';
+    let resultado = 'acerto';
 
     if (opcao !== 'receber' && !av.percebe) opcao = 'receber';
+    if (opcao === 'receber' && !av.percebe) resultado = 'naopercebeu';
     if (opcao === 'receber') {
         texto = av.percebe ? `${d.nome} recebeu o golpe em cheio.` : `${d.nome} não percebeu o ataque a tempo (Reação ${av.reacao} < ${atk.reacaoNecessaria})!`;
     } else if (opcao === 'esquivar') {
@@ -415,6 +430,7 @@ function aplicarReacao(estado, uid, opcao, jutsu, eventos) {
         }
         const r = resultadoEsquiva(vel, atk.velocidadeNecessaria);
         dano = Math.round(dano * r.fator);
+        resultado = r.fator === 0 ? 'esquiva' : (r.fator < 1 ? 'parcial' : 'esquiva_falhou');
         texto = `💨 ${d.nome} tentou esquivar${jutsu ? ` com [${jutsu.nome}]` : ''} (Velocidade ${vel} × ${atk.velocidadeNecessaria} necessária) e ${r.texto}.`;
     } else if (opcao === 'defender') {
         let absorcao;
@@ -429,6 +445,7 @@ function aplicarReacao(estado, uid, opcao, jutsu, eventos) {
             texto = `🛡️ ${d.nome} bloqueou fisicamente (absorve ${absorcao}).`;
         }
         dano = Math.max(0, dano - absorcao);
+        resultado = dano === 0 ? 'defesa' : 'defesa_parcial';
     } else {
         throw erro('Reação desconhecida.');
     }
@@ -441,7 +458,13 @@ function aplicarReacao(estado, uid, opcao, jutsu, eventos) {
         eventos.push({ tipo: 'efeito', texto: `💥 Um clone de ${d.nome} recebeu o golpe e se desfez!` });
         dano = 0;
         texto = null;
+        resultado = 'clone';
     }
+    eventos.push({
+        tipo: 'anim', anim: 'impacto', de: atk.de, alvo: uid, resultado, dano,
+        carta: { ...(atk.carta || { nome: atk.nome, funcao: 'ataque' }), nome: atk.nome },
+        defesa: jutsu ? cartaDoJutsu(jutsu) : null
+    });
 
     if (texto) eventos.push({ tipo: 'reacao', de: uid, texto });
     if (dano > 0) {

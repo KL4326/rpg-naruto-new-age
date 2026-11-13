@@ -1451,7 +1451,7 @@ async function aceitarDesafio(id) {
     const { estado, eventos } = criarEstadoInicial(fichaDesafiante, d.desafianteId, minhaFicha, eu, agoraArena());
     const atualizacao = {
         status: 'aceito', estado, iniciadaEm: Date.now(), atualizadoEm: serverTimestamp(),
-        historico: eventos.map(e => ({ ...e, t: Date.now() }))
+        historico: eventos.map((e, i) => ({ ...e, t: Date.now(), n: i + 1 })), histN: eventos.length
     };
     if (d.modo === 'competitivo' && d.aposta) {
         const { moeda, valor } = d.aposta;
@@ -1575,6 +1575,14 @@ window.abrirBatalha = async (id) => {
         const primeiraVez = !arena.dados;
         arena.dados = d;
         renderArena();
+        // Animações: só das jogadas que chegaram depois de abrir a luta (não repete as antigas)
+        const hist = d.historico || [];
+        const ultimoN = hist.length ? (hist[hist.length - 1].n || 0) : 0;
+        if (primeiraVez) arena.animadoAte = ultimoN;
+        else if (ultimoN > (arena.animadoAte || 0)) {
+            enfileirarAnimacoes(hist.filter(h => h.tipo === 'anim' && (h.n || 0) > (arena.animadoAte || 0)));
+            arena.animadoAte = ultimoN;
+        }
         if (primeiraVez) baterPresenca(); // avisa logo que voltou (retoma a luta se estava pausada)
         if (d.estado?.status === 'finalizada') posLuta(id, d);
     });
@@ -1628,9 +1636,10 @@ async function enviarAcao(acao, silencioso = false) {
             const d = s.data();
             if (!d.estado) throw new Error("Batalha sem estado.");
             const { estado, eventos } = aplicarAcao(d.estado, minhaUid(), acao, agoraArena());
-            const novos = eventos.map(e => ({ ...e, t: Date.now() }));
+            const base = d.histN || (d.historico || []).length;
+            const novos = eventos.map((e, i) => ({ ...e, t: Date.now(), n: base + i + 1 }));
             const upd = { estado, atualizadoEm: serverTimestamp() };
-            if (novos.length) upd.historico = [...(d.historico || []), ...novos].slice(-ARENA.historicoMax);
+            if (novos.length) { upd.historico = [...(d.historico || []), ...novos].slice(-ARENA.historicoMax); upd.histN = base + novos.length; }
             if (estado.status === 'finalizada' && d.status !== 'finalizada') { upd.status = 'finalizada'; upd.finalizadaEm = Date.now(); }
             tx.update(ref, upd);
         });
@@ -1691,7 +1700,6 @@ function cartaoLutador(l, souEu, ehVez) {
     }).join('');
     const clones = l.clones?.qtd ? `<span class="arena-efeito efeito-clone">👥 ${l.clones.qtd} clone${l.clones.qtd > 1 ? 's' : ''} · ${l.clones.reserva} CP</span>` : '';
     return `
-        <div class="arena-lutador ${souEu ? 'eu' : 'oponente'} ${ehVez ? 'na-vez' : ''}">
             <div class="arena-lutador-topo">
                 <img src="${esc(l.avatar || IMG_PADRAO)}" alt="" onerror="this.src='${IMG_PADRAO}'">
                 <div><div class="arena-lutador-nome">${esc(l.nome)}${souEu ? ' <small>(você)</small>' : ''}</div>
@@ -1700,8 +1708,7 @@ function cartaoLutador(l, souEu, ehVez) {
             ${barraRecurso('Vida', l.vida, l.maxVida, 'r-vida')}
             ${barraRecurso('Chakra', l.chakra, l.maxChakra, 'r-chakra')}
             ${barraRecurso('Stamina', l.stamina, l.maxStamina, 'r-stamina')}
-            <div class="arena-efeitos">${efeitos}${clones}</div>
-        </div>`;
+            <div class="arena-efeitos">${efeitos}${clones}</div>`;
 }
 
 function renderArena() {
@@ -1722,16 +1729,24 @@ function renderArena() {
     document.getElementById('arena-situacao').innerHTML = `Turno ${e.turno} · ${situacao}`;
 
     // Lutadores
-    document.getElementById('arena-lutadores').innerHTML =
-        cartaoLutador(me, true, e.status === 'em_andamento' && ((e.fase === 'acao' && e.vez === eu) || (e.fase === 'reacao' && e.vez !== eu))) +
-        '<div class="arena-vs">VS</div>' +
-        cartaoLutador(ele, false, e.status === 'em_andamento' && ((e.fase === 'acao' && e.vez === adv) || (e.fase === 'reacao' && e.vez !== adv)));
+    // (os quadros dos lutadores são reaproveitados, para as animações não serem cortadas)
+    const cont = document.getElementById('arena-lutadores');
+    if (cont.dataset.uids !== eu + ',' + adv) {
+        cont.innerHTML = `<div class="arena-lutador eu" data-uid="${esc(eu)}"></div><div class="arena-vs">VS</div><div class="arena-lutador oponente" data-uid="${esc(adv)}"></div>`;
+        cont.dataset.uids = eu + ',' + adv;
+    }
+    const naVez = (uid) => e.status === 'em_andamento' && ((e.fase === 'acao' && e.vez === uid) || (e.fase === 'reacao' && e.vez !== uid));
+    [[eu, me, true], [adv, ele, false]].forEach(([uid, l, souEu]) => {
+        const el = cont.querySelector(`[data-uid="${CSS.escape(uid)}"]`);
+        el.classList.toggle('na-vez', naVez(uid));
+        el.innerHTML = cartaoLutador(l, souEu, naVez(uid));
+    });
 
     // Painel central
     const painel = document.getElementById('arena-painel');
     if (e.status === 'finalizada') painel.innerHTML = htmlResultado(d, eu);
     else if (e.pausada) painel.innerHTML = `<div class="arena-aviso">⏸️ A batalha está pausada porque um dos ninjas saiu da arena. Ela continua de onde parou quando os dois voltarem.</div>`;
-    else if (e.fase === 'reacao' && e.vez === adv) painel.innerHTML = htmlReacao(e, me);
+    else if (e.fase === 'reacao' && e.vez === adv) { painel.innerHTML = htmlReacao(e, me); preencherCartaDaAmeaca(e.ataquePendente); }
     else if (e.fase === 'acao' && e.vez === eu) painel.innerHTML = htmlAcoes(e, me);
     else painel.innerHTML = `<div class="arena-aviso"><i class="fa-solid fa-hourglass-half" aria-hidden="true"></i> ${e.fase === 'reacao' ? `${esc(ele.nome)} está reagindo ao seu ataque...` : `${esc(ele.nome)} está fazendo a jogada dele...`}</div>`;
 
@@ -1752,11 +1767,18 @@ function renderArena() {
     const log = document.getElementById('arena-log');
     const hist = d.historico || [];
     if (log.dataset.qtd !== String(hist.length)) {
-        log.innerHTML = hist.map(h => `<div class="log-item log-${h.tipo}${h.de === eu ? ' log-meu' : ''}">${esc(h.texto)}</div>`).join('');
+        log.innerHTML = hist.filter(h => h.texto).map(h => `<div class="log-item log-${h.tipo}${h.de === eu ? ' log-meu' : ''}">${esc(h.texto)}</div>`).join('');
         log.dataset.qtd = String(hist.length);
         log.scrollTop = log.scrollHeight;
     }
     atualizarCronometro(e);
+}
+
+const ICONE_FUNCAO = { ataque: '⚔️', defesa: '🛡️', esquiva: '💨', suporte: '✨', modo: '🌀', item: '🎒', receber: '🎯' };
+// Imagem da carta (a mesma da loja/inventário). Se não tiver ou falhar, mostra o ícone da função.
+function imgCarta(src, funcao) {
+    const icone = ICONE_FUNCAO[funcao] || '⚔️';
+    return `<span class="carta-img" data-icone="${icone}">${src ? `<img src="${esc(src)}" alt="" loading="lazy" onerror="this.remove()">` : ''}</span>`;
 }
 
 function custoTexto(c) {
@@ -1776,7 +1798,7 @@ function htmlAcoes(e, me) {
             const p = previaAtaque(me, j, 1, 0), nec = necessidadesDoJutsu(j);
             const bloqueado = semAcoes || semAtaque || semRecurso;
             ataques.push(`<button class="arena-carta ataque" ${bloqueado ? 'disabled' : ''} onclick="window.arenaUsarJutsu(${i})">
-                <strong>${esc(j.nome)}</strong><span class="carta-dano">💥 ${p.dano}${numero(j.multiplicador_maximo) > 1 ? ` ×até ${numero(j.multiplicador_maximo)}` : ''}</span>
+                ${imgCarta(j.imagem, 'ataque')}<strong>${esc(j.nome)}</strong><span class="carta-dano">💥 ${p.dano}${numero(j.multiplicador_maximo) > 1 ? ` ×até ${numero(j.multiplicador_maximo)}` : ''}</span>
                 <span class="carta-info">${esc(custoTexto(c))} · Reação ${nec.reacao} · Vel. ${nec.velocidade}</span></button>`);
         } else {
             const ativo = f === 'modo' && (me.efeitos || []).some(x => x.id === (j.id || j.nome));
@@ -1785,7 +1807,7 @@ function htmlAcoes(e, me) {
             if (numero(j.clones) || String(j.efeito).toLowerCase() === 'clones') b.push(`${numero(j.clones) || poderDoJutsu(j)} clones`);
             if (numero(j.cura) || String(j.efeito).toLowerCase() === 'cura') b.push(`+${numero(j.cura) || poderDoJutsu(j)} Vida`);
             suportes.push(`<button class="arena-carta ${f}" ${bloqueado ? 'disabled' : ''} onclick="window.arenaUsarJutsu(${i})">
-                <strong>${esc(j.nome)}</strong><span class="carta-tag">${f === 'modo' ? (ativo ? 'Ativo' : 'Modo') : 'Suporte'}</span>
+                ${imgCarta(j.imagem, f)}<strong>${esc(j.nome)}</strong><span class="carta-tag">${f === 'modo' ? (ativo ? 'Ativo' : 'Modo') : 'Suporte'}</span>
                 <span class="carta-info">${esc(custoTexto(c))}${numero(j.custo_por_turno) ? ` · ${numero(j.custo_por_turno)} CP/turno` : ''}${b.length ? ' · ' + esc(b.join(', ')) : ''}</span></button>`);
         }
     });
@@ -1793,7 +1815,7 @@ function htmlAcoes(e, me) {
     const basico = { id: '_basico', nome: 'Ataque Básico', funcao: 'ataque', categoria: 'taijutsu', poder: 0, stamina: 5, rank: 'E' };
     const pb = previaAtaque(me, basico, 1, 0);
     ataques.unshift(`<button class="arena-carta ataque" ${semAcoes || semAtaque || me.stamina < 5 ? 'disabled' : ''} onclick="window.arenaUsarJutsu(-1)">
-        <strong>Ataque Básico</strong><span class="carta-dano">💥 ${pb.dano}</span><span class="carta-info">5 SP · Força</span></button>`);
+        ${imgCarta(null, 'ataque')}<strong>Ataque Básico</strong><span class="carta-dano">💥 ${pb.dano}</span><span class="carta-info">5 SP · Força</span></button>`);
     // Itens do inventário
     itensDaArena().forEach(it => {
         const ehAtaque = it.tipoItem === 'ferramenta';
@@ -1802,7 +1824,7 @@ function htmlAcoes(e, me) {
         const txt = ehAtaque ? `💥 ${previaAtaque(me, it, 1, 0).dano}${numero(it.multiplicador_maximo) > 1 ? ` ×até ${numero(it.multiplicador_maximo)}` : ''}` :
             [numero(it.bonus_hp) && `+${numero(it.bonus_hp)} Vida`, numero(it.bonus_chakra) && `+${numero(it.bonus_chakra)} Chakra`, numero(it.bonus_stamina) && `+${numero(it.bonus_stamina)} Stamina`].filter(Boolean).join(', ');
         const html = `<button class="arena-carta ${ehAtaque ? 'ataque' : 'item'}" ${bloqueado ? 'disabled' : ''} onclick="window.arenaUsarItem('${esc(it.id)}')">
-            <strong>${esc(it.nome)} <small>x${it.qtd}</small></strong><span class="${ehAtaque ? 'carta-dano' : 'carta-tag'}">${esc(txt)}</span>
+            ${imgCarta(it.imagem, ehAtaque ? 'ataque' : 'item')}<strong>${esc(it.nome)} <small>x${it.qtd}</small></strong><span class="${ehAtaque ? 'carta-dano' : 'carta-tag'}">${esc(txt)}</span>
             <span class="carta-info">${it.recuperavel ? 'Recuperável' : 'Gasta ao usar'}${c.stamina ? ` · ${c.stamina} SP` : ''}</span></button>`;
         (ehAtaque ? ataques : suportes).push(html);
     });
@@ -1821,15 +1843,15 @@ function htmlReacao(e, me) {
     const atacante = e.lutadores[atk.de];
     const opcoes = [];
     const vidaApos = (dano) => Math.max(0, me.vida - dano);
-    opcoes.push(`<button class="arena-carta receber" onclick="window.arenaReagir('receber')"><strong>Receber o golpe</strong><span class="carta-dano">−${atk.dano} Vida</span><span class="carta-info">fica com ${vidaApos(atk.dano)}</span></button>`);
+    opcoes.push(`<button class="arena-carta receber" onclick="window.arenaReagir('receber')">${imgCarta(null, 'receber')}<strong>Receber o golpe</strong><span class="carta-dano">−${atk.dano} Vida</span><span class="carta-info">fica com ${vidaApos(atk.dano)}</span></button>`);
     if (av.percebe) {
         if (av.podeEsquivar) {
             const r = resultadoEsquiva(av.velocidade, atk.velocidadeNecessaria);
-            opcoes.push(`<button class="arena-carta esquiva" onclick="window.arenaReagir('esquivar')"><strong>Esquivar</strong><span class="carta-tag">Velocidade ${av.velocidade} × ${atk.velocidadeNecessaria}</span><span class="carta-info">${esc(r.texto)} (−${Math.round(atk.dano * r.fator)})</span></button>`);
+            opcoes.push(`<button class="arena-carta esquiva" onclick="window.arenaReagir('esquivar')">${imgCarta(null, 'esquiva')}<strong>Esquivar</strong><span class="carta-tag">Velocidade ${av.velocidade} × ${atk.velocidadeNecessaria}</span><span class="carta-info">${esc(r.texto)} (−${Math.round(atk.dano * r.fator)})</span></button>`);
         }
         if (av.podeDefenderFisico) {
             const dano = Math.max(0, atk.dano - av.defesaBase);
-            opcoes.push(`<button class="arena-carta defesa" onclick="window.arenaReagir('defender')"><strong>Defender (físico)</strong><span class="carta-tag">absorve ${av.defesaBase}</span><span class="carta-info">−${dano} Vida</span></button>`);
+            opcoes.push(`<button class="arena-carta defesa" onclick="window.arenaReagir('defender')">${imgCarta(null, 'defesa')}<strong>Defender (físico)</strong><span class="carta-tag">absorve ${av.defesaBase}</span><span class="carta-info">−${dano} Vida</span></button>`);
         }
         arena.jutsus.forEach((j, i) => {
             const f = funcaoDoJutsu(j);
@@ -1840,10 +1862,10 @@ function htmlReacao(e, me) {
                 if (!av.podeEsquivar) return;
                 const vel = av.velocidade + poderDoJutsu(j);
                 const r = resultadoEsquiva(vel, atk.velocidadeNecessaria);
-                opcoes.push(`<button class="arena-carta esquiva" ${semRecurso ? 'disabled' : ''} onclick="window.arenaReagir('esquivar', ${i})"><strong>${esc(j.nome)}</strong><span class="carta-tag">Velocidade ${vel} × ${atk.velocidadeNecessaria}</span><span class="carta-info">${esc(r.texto)} · ${esc(custoTexto(c))}</span></button>`);
+                opcoes.push(`<button class="arena-carta esquiva" ${semRecurso ? 'disabled' : ''} onclick="window.arenaReagir('esquivar', ${i})">${imgCarta(j.imagem, 'esquiva')}<strong>${esc(j.nome)}</strong><span class="carta-tag">Velocidade ${vel} × ${atk.velocidadeNecessaria}</span><span class="carta-info">${esc(r.texto)} · ${esc(custoTexto(c))}</span></button>`);
             } else {
                 const abs = av.defesaBase + poderDoJutsu(j);
-                opcoes.push(`<button class="arena-carta defesa" ${semRecurso ? 'disabled' : ''} onclick="window.arenaReagir('defender', ${i})"><strong>${esc(j.nome)}</strong><span class="carta-tag">absorve ${abs}</span><span class="carta-info">−${Math.max(0, atk.dano - abs)} Vida · ${esc(custoTexto(c))}</span></button>`);
+                opcoes.push(`<button class="arena-carta defesa" ${semRecurso ? 'disabled' : ''} onclick="window.arenaReagir('defender', ${i})">${imgCarta(j.imagem, 'defesa')}<strong>${esc(j.nome)}</strong><span class="carta-tag">absorve ${abs}</span><span class="carta-info">−${Math.max(0, atk.dano - abs)} Vida · ${esc(custoTexto(c))}</span></button>`);
             }
         });
     }
@@ -1853,6 +1875,7 @@ function htmlReacao(e, me) {
     if (me.clones?.qtd && me.clones.solidos) avisos.push(`Se você for atingido, um dos seus ${me.clones.qtd} clones recebe o golpe no seu lugar.`);
     return `
         <div class="arena-ameaca">
+            <div class="arena-ameaca-carta" id="arena-ameaca-carta">${imgCarta(atk.carta?.img, 'ataque')}</div>
             <div class="arena-ameaca-titulo">⚠️ ${esc(atacante.nome)} usou <strong>${esc(atk.nome)}</strong>!</div>
             <div class="arena-ameaca-info">💥 ${atk.dano} de dano · Reação necessária ${atk.reacaoNecessaria} (você tem ${av.reacao}) · Velocidade necessária ${atk.velocidadeNecessaria} (você tem ${av.velocidade})</div>
             ${avisos.map(a => `<div class="arena-ameaca-aviso">${esc(a)}</div>`).join('')}
@@ -1960,6 +1983,209 @@ window.arenaReagir = (opcao, i) => {
     if (j && !confirmaEsgotar(me, custosDoJutsu(j).chakra)) return;
     enviarAcao({ tipo: 'reagir', opcao, jutsu: j });
 };
+
+// ---------------- 9. Animações das cartas ----------------
+// Cada jogada gera um evento 'anim' no histórico da luta; as duas telas tocam a mesma cena.
+const filaAnim = { itens: [], tocando: false, pular: false };
+const animacoesReduzidas = () => document.body.classList.contains('menos-movimento')
+    || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+// Descobre a imagem da carta: link salvo na jogada, ou busca no catálogo pelo id
+async function imagemDaCarta(c) {
+    if (!c) return null;
+    if (c.img) return c.img;
+    if (!c.jutsuId) return null;
+    if (c.tipoItem) return globalItensMap[c.jutsuId]?.imagem || null;
+    const minha = arena.jutsus.find(j => j.id === c.jutsuId);
+    if (minha) return minha.imagem || null;
+    try { return (await lerDoCatalogo("jutsus", c.jutsuId))?.imagem || null; } catch (e) { return null; }
+}
+
+function palcoAnim() {
+    let p = document.getElementById('arena-anim');
+    if (!p) {
+        p = document.createElement('div');
+        p.id = 'arena-anim';
+        p.className = 'arena-anim';
+        p.setAttribute('aria-hidden', 'true');
+        p.title = 'Toque para pular a animação';
+        p.addEventListener('click', () => { filaAnim.pular = true; p.getAnimations({ subtree: true }).forEach(a => a.finish()); });
+        document.body.appendChild(p);
+    }
+    return p;
+}
+
+function criarCartaAnim(c, src, classe = '') {
+    const el = document.createElement('div');
+    el.className = 'anim-carta ' + classe + ' funcao-' + (c?.funcao || 'ataque');
+    el.innerHTML = `${imgCarta(src, c?.funcao || 'ataque')}<div class="anim-carta-nome">${esc(c?.nome || 'Jutsu')}</div>${c?.resumo ? `<div class="anim-carta-resumo">${esc(c.resumo)}</div>` : ''}`;
+    return el;
+}
+
+function centroDe(el) {
+    if (!el) return { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    const r = el.getBoundingClientRect();
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+}
+const quadroDe = (uid) => document.querySelector(`.arena-lutador[data-uid="${CSS.escape(uid)}"]`);
+
+function textoFlutuante(alvo, texto, classe) {
+    const c = centroDe(alvo);
+    const t = document.createElement('div');
+    t.className = 'anim-texto ' + (classe || '');
+    t.textContent = texto;
+    t.style.left = c.x + 'px';
+    t.style.top = (c.y - 20) + 'px';
+    palcoAnim().appendChild(t);
+    const a = t.animate([
+        { transform: 'translate(-50%, 0) scale(.6)', opacity: 0 },
+        { transform: 'translate(-50%, -18px) scale(1.15)', opacity: 1, offset: .25 },
+        { transform: 'translate(-50%, -60px) scale(1)', opacity: 0 }
+    ], { duration: 1300, easing: 'ease-out' });
+    a.finished.then(() => t.remove()).catch(() => t.remove());
+    return a.finished.catch(() => {});
+}
+
+const tremer = (el, forca = 10) => el && el.animate([
+    { transform: 'translateX(0)' }, { transform: `translateX(-${forca}px) rotate(-1deg)` }, { transform: `translateX(${forca}px) rotate(1deg)` },
+    { transform: `translateX(-${forca / 2}px)` }, { transform: `translateX(${forca / 2}px)` }, { transform: 'translateX(0)' }
+], { duration: 450, easing: 'ease-in-out' });
+const piscar = (el, cor) => el && el.animate([{ boxShadow: `0 0 0 0 ${cor}` }, { boxShadow: `0 0 0 6px ${cor}, 0 0 30px ${cor}` }, { boxShadow: `0 0 0 0 ${cor}` }], { duration: 600 });
+
+function enfileirarAnimacoes(eventos) {
+    if (!eventos.length) return;
+    const naArena = document.getElementById('batalha')?.classList.contains('active');
+    if (!naArena || document.visibilityState !== 'visible') return; // fora da arena não anima
+    filaAnim.itens.push(...eventos);
+    if (!filaAnim.tocando) tocarFila();
+}
+
+async function tocarFila() {
+    filaAnim.tocando = true;
+    const palco = palcoAnim();
+    palco.classList.add('ativo');
+    while (filaAnim.itens.length) {
+        const ev = filaAnim.itens.shift();
+        if (filaAnim.pular) continue;
+        try { await (ev.anim === 'impacto' ? animarImpacto(ev) : animarUso(ev)); } catch (e) { console.warn('animação', e); }
+    }
+    filaAnim.pular = false;
+    filaAnim.tocando = false;
+    palco.classList.remove('ativo');
+    palco.innerHTML = '';
+}
+
+// Carta sobe do lado de quem usou o jutsu
+async function animarUso(ev) {
+    const palco = palcoAnim();
+    const src = await imagemDaCarta(ev.carta);
+    const carta = criarCartaAnim(ev.carta, src);
+    palco.appendChild(carta);
+    const meio = { x: window.innerWidth / 2, y: window.innerHeight * 0.42 };
+    const origem = centroDe(quadroDe(ev.de));
+    const dx = origem.x - meio.x, dy = origem.y - meio.y;
+    carta.style.left = meio.x + 'px'; carta.style.top = meio.y + 'px';
+    const quadros = animacoesReduzidas()
+        ? [{ transform: 'translate(-50%,-50%)', opacity: 0 }, { transform: 'translate(-50%,-50%)', opacity: 1, offset: .2 }, { transform: 'translate(-50%,-50%)', opacity: 1, offset: .8 }, { transform: 'translate(-50%,-50%)', opacity: 0 }]
+        : [
+            { transform: `translate(-50%,-50%) translate(${dx}px, ${dy + 40}px) scale(.35) rotate(-8deg)`, opacity: 0 },
+            { transform: 'translate(-50%,-50%) scale(1.08) rotate(2deg)', opacity: 1, offset: .35 },
+            { transform: 'translate(-50%,-50%) scale(1) rotate(0)', opacity: 1, offset: .75 },
+            { transform: 'translate(-50%,-70%) scale(.92)', opacity: 0 }
+        ];
+    const a = carta.animate(quadros, { duration: animacoesReduzidas() ? 900 : 1400, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    await a.finished.catch(() => {});
+    carta.remove();
+}
+
+// Carta do ataque voa até o alvo: acerto, esquiva, defesa ou clone
+async function animarImpacto(ev) {
+    const palco = palcoAnim();
+    const alvo = quadroDe(ev.alvo), atacante = quadroDe(ev.de);
+    const [srcAtk, srcDef] = await Promise.all([imagemDaCarta(ev.carta), imagemDaCarta(ev.defesa)]);
+    const carta = criarCartaAnim(ev.carta, srcAtk, 'pequena');
+    palco.appendChild(carta);
+    const pAlvo = centroDe(alvo), pAtk = centroDe(atacante);
+    carta.style.left = pAlvo.x + 'px'; carta.style.top = pAlvo.y + 'px';
+    const dx = pAtk.x - pAlvo.x, dy = pAtk.y - pAlvo.y;
+    const r = ev.resultado;
+    const rotulo = {
+        acerto: [`−${ev.dano}`, 'dano'], naopercebeu: [`Não percebeu! −${ev.dano}`, 'dano'], esquiva_falhou: [`Não escapou! −${ev.dano}`, 'dano'],
+        parcial: [`Raspão! −${ev.dano}`, 'dano'], esquiva: ['💨 Esquivou!', 'esquiva'],
+        defesa: ['🛡️ Bloqueou!', 'defesa'], defesa_parcial: [`🛡️ Defendeu! −${ev.dano}`, 'defesa'], clone: ['💨 Era um clone!', 'clone']
+    }[r] || [ev.dano ? `−${ev.dano}` : '', 'dano'];
+
+    if (animacoesReduzidas()) {
+        const a = carta.animate([{ transform: 'translate(-50%,-50%)', opacity: 0 }, { transform: 'translate(-50%,-50%)', opacity: 1, offset: .3 }, { transform: 'translate(-50%,-50%)', opacity: 0 }], { duration: 900 });
+        await Promise.all([a.finished.catch(() => {}), textoFlutuante(alvo, rotulo[0], rotulo[1])]);
+        carta.remove();
+        return;
+    }
+
+    // Carta de defesa aparece na frente do alvo
+    let escudo = null;
+    if (r === 'defesa' || r === 'defesa_parcial') {
+        escudo = ev.defesa ? criarCartaAnim(ev.defesa, srcDef, 'pequena escudo') : (() => { const e = document.createElement('div'); e.className = 'anim-escudo'; e.textContent = '🛡️'; return e; })();
+        palco.appendChild(escudo);
+        escudo.style.left = (pAlvo.x + dx * 0.18) + 'px'; escudo.style.top = (pAlvo.y + dy * 0.18) + 'px';
+        escudo.animate([{ transform: 'translate(-50%,-50%) scale(.3)', opacity: 0 }, { transform: 'translate(-50%,-50%) scale(1.1)', opacity: 1, offset: .4 }, { transform: 'translate(-50%,-50%) scale(1)', opacity: 1, offset: .85 }, { transform: 'translate(-50%,-50%) scale(1)', opacity: 0 }],
+            { duration: 1500, easing: 'ease-out' });
+    }
+
+    // Voo da carta do ataque
+    const chegada = (r === 'defesa' || r === 'defesa_parcial') ? 0.25 : 0;
+    const voo = [
+        { transform: `translate(-50%,-50%) translate(${dx}px, ${dy}px) scale(.7) rotate(-20deg)`, opacity: 0 },
+        { transform: `translate(-50%,-50%) translate(${dx * 0.8}px, ${dy * 0.8}px) scale(.9) rotate(-10deg)`, opacity: 1, offset: .15 },
+        { transform: `translate(-50%,-50%) translate(${dx * chegada}px, ${dy * chegada}px) scale(1.05) rotate(8deg)`, opacity: 1, offset: .5 }
+    ];
+    if (r === 'esquiva') voo.push({ transform: `translate(-50%,-50%) translate(${-dx * 0.6}px, ${-dy * 0.6}px) scale(.8) rotate(25deg)`, opacity: 0 });
+    else if (r === 'defesa' || r === 'defesa_parcial') voo.push({ transform: `translate(-50%,-50%) translate(${dx * 0.6}px, ${dy * 0.6 - 40}px) scale(.8) rotate(-35deg)`, opacity: 0 });
+    else voo.push({ transform: `translate(-50%,-50%) scale(1.4) rotate(0)`, opacity: 0 });
+    const aVoo = carta.animate(voo, { duration: 1300, easing: 'cubic-bezier(.4,.1,.3,1)' });
+
+    // Reação do alvo no momento do impacto
+    setTimeout(() => {
+        if (filaAnim.pular) return;
+        if (r === 'esquiva') alvo && alvo.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(46px) rotate(4deg)', offset: .4 }, { transform: 'translateX(0)' }], { duration: 650, easing: 'ease-out' });
+        else if (r === 'parcial') { tremer(alvo, 5); piscar(alvo, 'rgba(239,68,68,.55)'); }
+        else if (r === 'defesa' || r === 'defesa_parcial') { tremer(alvo, 3); piscar(alvo, 'rgba(234,179,8,.6)'); }
+        else if (r === 'clone') { const fumaca = document.createElement('div'); fumaca.className = 'anim-fumaca'; fumaca.textContent = '💨'; fumaca.style.left = pAlvo.x + 'px'; fumaca.style.top = pAlvo.y + 'px'; palco.appendChild(fumaca); fumaca.animate([{ transform: 'translate(-50%,-50%) scale(.4)', opacity: 1 }, { transform: 'translate(-50%,-50%) scale(2.6)', opacity: 0 }], { duration: 900, easing: 'ease-out' }).finished.then(() => fumaca.remove()).catch(() => fumaca.remove()); }
+        else { tremer(alvo, 12); piscar(alvo, 'rgba(239,68,68,.75)'); }
+        textoFlutuante(alvo, rotulo[0], rotulo[1]);
+    }, 650);
+
+    await aVoo.finished.catch(() => {});
+    await new Promise(res => setTimeout(res, filaAnim.pular ? 0 : 500));
+    carta.remove();
+    if (escudo) escudo.remove();
+}
+
+// Na tela de reação, mostra a foto do ataque recebido (busca no catálogo se precisar)
+async function preencherCartaDaAmeaca(atk) {
+    if (!atk?.carta || atk.carta.img) return;
+    const src = await imagemDaCarta(atk.carta);
+    const caixa = document.getElementById('arena-ameaca-carta');
+    if (src && caixa && !caixa.querySelector('img')) caixa.innerHTML = imgCarta(src, 'ataque');
+}
+
+// --- Opção "Reduzir animações" (menu do perfil) ---
+function aplicarPreferenciaAnimacoes() {
+    let reduzir = false;
+    try { reduzir = localStorage.getItem('animacoes') === 'reduzidas'; } catch (e) {}
+    document.body.classList.toggle('menos-movimento', reduzir);
+    const item = document.getElementById('item-reduzir-animacoes');
+    if (item) {
+        item.setAttribute('aria-pressed', String(reduzir));
+        item.querySelector('.estado-opcao').textContent = reduzir ? 'Ligado' : 'Desligado';
+    }
+}
+window.alternarAnimacoes = () => {
+    const reduzir = !document.body.classList.contains('menos-movimento');
+    try { localStorage.setItem('animacoes', reduzir ? 'reduzidas' : 'normais'); } catch (e) {}
+    aplicarPreferenciaAnimacoes();
+};
+aplicarPreferenciaAnimacoes();
 
 // ---------------- 8. Depois da luta: estatísticas e cofre ----------------
 async function posLuta(id, d) {

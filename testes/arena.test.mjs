@@ -252,6 +252,35 @@ caso('Alguém sai da arena: pausa e congela o tempo; volta: retoma', () => {
     e = R.aplicarAcao(e, 'B', { tipo: 'presenca' }, T0 + 60000).estado;
     igual([e.pausada, e.prazo], [false, T0 + 65000]);
 });
+// ---------- Dados das animações ----------
+const animDe = (eventos, tipo) => eventos.filter(e => e.tipo === 'anim' && e.anim === tipo);
+function reagirCom(opcao, jutsuReacao, ajuste) {
+    const e = ataqueSoco(); if (ajuste) ajuste(e);
+    return R.aplicarAcao(e, 'B', { tipo: 'reagir', opcao, jutsu: jutsuReacao }, T0 + 2000).eventos;
+}
+caso('Anim: usar um jutsu registra a carta (com link da imagem)', () => {
+    const { eventos } = R.aplicarAcao(novo(), 'A', { tipo: 'jutsu', jutsu: { ...SOCO, imagem: 'https://exemplo.com/soco.png' } }, T0);
+    const u = animDe(eventos, 'usar')[0];
+    igual([u.carta.nome, u.carta.img, u.carta.funcao, u.carta.resumo], ['Soco de Fogo', 'https://exemplo.com/soco.png', 'ataque', '💥 39']);
+});
+caso('Anim: imagem em base64 NÃO é copiada para a luta (fica só o id)', () => {
+    const { eventos } = R.aplicarAcao(novo(), 'A', { tipo: 'jutsu', jutsu: { ...SOCO, imagem: 'data:image/png;base64,AAAA' } }, T0);
+    const u = animDe(eventos, 'usar')[0];
+    igual([u.carta.img, u.carta.jutsuId], [null, 'soco de fogo']);
+});
+caso('Anim: receber = acerto com o dano', () => { const i = animDe(reagirCom('receber'), 'impacto')[0]; igual([i.resultado, i.dano, i.alvo, i.de], ['acerto', 39, 'B', 'A']); });
+caso('Anim: esquiva total', () => igual(animDe(reagirCom('esquivar', null, e => { e.lutadores.B.atributos.velocidade = 7; }), 'impacto')[0].resultado, 'esquiva'));
+caso('Anim: esquiva parcial', () => igual(animDe(reagirCom('esquivar', null, e => { e.lutadores.B.atributos.velocidade = 6; }), 'impacto')[0].resultado, 'parcial'));
+caso('Anim: esquiva que falhou', () => igual(animDe(reagirCom('esquivar'), 'impacto')[0].resultado, 'esquiva_falhou'));
+caso('Anim: defesa com jutsu leva a carta da defesa', () => { const i = animDe(reagirCom('defender', PAREDE), 'impacto')[0]; igual([i.resultado, i.defesa.nome, i.dano], ['defesa', 'Parede de Terra', 0]); });
+caso('Anim: defesa parcial', () => igual(animDe(reagirCom('defender'), 'impacto')[0].resultado, 'defesa_parcial'));
+caso('Anim: clone absorveu', () => igual(animDe(reagirCom('receber', null, e => { e.lutadores.B.clones = { qtd: 1, reserva: 10, solidos: true }; }), 'impacto')[0].resultado, 'clone'));
+caso('Anim: não percebeu o golpe', () => igual(animDe(reagirCom('esquivar', null, e => { e.lutadores.B.atributos.reacao = 1; }), 'impacto')[0].resultado, 'naopercebeu'));
+caso('Anim: tempo de reação esgotado também anima o acerto', () => {
+    const r = R.aplicarAcao(ataqueSoco(), 'A', { tipo: 'tempo_esgotado' }, T0 + 1000 + 21000);
+    igual(animDe(r.eventos, 'impacto')[0].resultado, 'acerto');
+});
+
 caso('XP apostável deixa 10 na barra (30 → 20)', () => igual(R.xpApostavel(30), 20));
 
 console.log(`\n${ok}/${ok + falhas} testes do motor passaram`);

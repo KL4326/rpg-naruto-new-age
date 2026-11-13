@@ -20,7 +20,8 @@
                 const s = await tx.get(ref(id));
                 const d = s.data();
                 const { estado, eventos } = aplicarAcao(d.estado, BOT, acao, Date.now());
-                const upd = { estado, atualizadoEm: serverTimestamp(), historico: [...(d.historico || []), ...eventos.map(e => ({ ...e, t: Date.now() }))] };
+                const base = d.histN || (d.historico || []).length;
+                const upd = { estado, atualizadoEm: serverTimestamp(), histN: base + eventos.length, historico: [...(d.historico || []), ...eventos.map((e, i) => ({ ...e, t: Date.now(), n: base + i + 1 }))] };
                 if (estado.status === 'finalizada') upd.status = 'finalizada';
                 tx.update(ref(id), upd);
             });
@@ -38,7 +39,7 @@
             const fA = (await getDoc(doc(db, 'users', d.desafianteId))).data();
             const fB = (await getDoc(doc(db, 'users', BOT))).data();
             const { estado, eventos } = criarEstadoInicial(fA, d.desafianteId, fB, BOT, Date.now());
-            const upd = { status: 'aceito', estado, historico: eventos.map(e => ({ ...e, t: Date.now() })), atualizadoEm: serverTimestamp() };
+            const upd = { status: 'aceito', estado, historico: eventos.map((e, i) => ({ ...e, t: Date.now(), n: i + 1 })), histN: eventos.length, atualizadoEm: serverTimestamp() };
             if (d.aposta) upd['cofre.' + BOT] = d.aposta.valor;
             await updateDoc(ref(s.id), upd);
         }

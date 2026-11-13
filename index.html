@@ -19,6 +19,7 @@
             var t = null; try { t = localStorage.getItem('tema'); } catch (e) {}
             var escuro = t ? t === 'escuro' : window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches;
             if (escuro) document.body.classList.add('dark-mode');
+            try { if (localStorage.getItem('animacoes') === 'reduzidas') document.body.classList.add('menos-movimento'); } catch (e) {}
         })();
     </script>
 
@@ -133,6 +134,7 @@
                         <div class="user-info" style="padding:10px 15px; font-weight:bold; border-bottom:1px solid var(--border-color);">...</div>
                         <div class="dropdown-item" role="button" tabindex="0" onclick="window.abrirPaginaPerfil(); document.getElementById('user-menu').classList.remove('show');"><i class="fa-solid fa-user-pen"></i> Editar Perfil</div>
                         <div class="dropdown-item" role="button" tabindex="0" onclick="openChangePasswordModal()"><i class="fa-solid fa-lock"></i> Alterar Senha</div>
+                        <div class="dropdown-item" id="item-reduzir-animacoes" role="button" tabindex="0" aria-pressed="false" onclick="window.alternarAnimacoes()"><i class="fa-solid fa-wand-magic-sparkles"></i> Reduzir animações <span class="estado-opcao">Desligado</span></div>
                         <div class="dropdown-item" role="button" tabindex="0" onclick="abrirFeed('saved')"><i class="fa-regular fa-bookmark"></i> Salvos</div>
                         <div class="dropdown-item" role="button" tabindex="0" onclick="abrirFeed('all')"><i class="fa-solid fa-globe"></i> Feed Geral</div>
                         <div class="dropdown-item" role="button" tabindex="0" onclick="fazerLogout()" style="color:var(--danger-color);"><i class="fa-solid fa-arrow-right-from-bracket"></i> Sair</div>
